@@ -23,18 +23,27 @@ body.light{
 html{scrollbar-gutter:stable}
 
 /* ==================== MOBİL GÖRÜNÜM (body.mobile-view) ==================== */
-/* Mobil görünümde ekranı telefon gibi simüle et */
-body.mobile-view .app{
-  max-width:420px;
-  margin:0 auto;
-  box-shadow:0 0 40px rgba(0,0,0,0.5);
-  min-height:100vh;
-  position:relative;
-  flex-direction:column;
+/* Mobil görünümde ekranı telefon gibi simüle et - sadece geniş ekranda */
+@media(min-width:600px){
+  body.mobile-view{ background:#111!important; }
+  body.mobile-view .app{
+    max-width:420px;
+    margin:0 auto;
+    box-shadow:0 0 40px rgba(0,0,0,0.6);
+    min-height:100vh;
+    position:relative;
+    flex-direction:column;
+  }
 }
-body.mobile-view .main{ padding:0!important;height:auto!important;overflow:auto!important; }
+/* Gerçek telefonda tam genişlik */
+@media(max-width:599px){
+  body.mobile-view .app{
+    flex-direction:column;
+    width:100%;
+  }
+}
 
-/* Sidebar → overlay menü */
+body.mobile-view .main{ padding:0!important;height:auto!important;overflow:auto!important; }
 body.mobile-view .sidebar{
   display:none!important;position:fixed;top:0;left:0;bottom:0;
   width:220px;z-index:900;overflow-y:auto;
