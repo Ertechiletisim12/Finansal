@@ -20,6 +20,18 @@ body.light{
   --txt:#1a1c1e; --muted:#6b7280; --accent:#0077cc; --gold:#b86e00;
   --th-bg:#d0d5dd; --th-txt:#1a1c1e; --hover:#edf0f4;
 }
+/* Mobil sidebar overlay */
+@media(max-width:700px){
+  .sidebar.mob-open{
+    display:flex!important;position:fixed;top:0;left:0;bottom:0;
+    width:220px;z-index:900;overflow-y:auto;
+  }
+  #mobileOverlay.mob-open{
+    display:block;position:fixed;inset:0;
+    background:rgba(0,0,0,0.55);z-index:899;
+  }
+}
+
 html{scrollbar-gutter:stable}
 
 /* ===== MOBİL ===== */
@@ -7710,6 +7722,17 @@ function clearAllTrash(){
 
 
 
+
+// ==================== MOBİL MENÜ ====================
+function openMobileMenu(){
+  document.getElementById('mainSidebar').classList.add('mob-open');
+  document.getElementById('mobileOverlay').classList.add('mob-open');
+}
+function closeMobileMenu(){
+  document.getElementById('mainSidebar').classList.remove('mob-open');
+  document.getElementById('mobileOverlay').classList.remove('mob-open');
+}
+// ==================== MOBİL MENÜ SONU ====================
 
 loadTheme();
 checkLock();
