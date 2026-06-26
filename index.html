@@ -534,7 +534,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="mobileTopBar" style="display:none;position:sticky;top:0;z-index:200;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px;align-items:center;justify-content:space-between;gap:8px">
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="font-size:14px;font-weight:800;flex:1;text-align:center" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-  <button onclick="toggleMobileView()" id="viewToggleBtnTop" title="Web görünümüne geç" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:5px 8px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap">🖥️ Web</button>
+
 </div>
 
   <div class="main">
@@ -3137,12 +3137,7 @@ function switchPage(page){
   if(page==='rapor') renderRaporPage();
   if(page==='hedef') renderHedefPage();
   if(page==='trend') renderTrend();
-  if(document.body.classList.contains('mobile-view')){
-    closeMobileMenu();
-    const titles = {dash:'Ana Özet',prim:'Prim Girişi',finans:'Finansal Analiz',hedef:'Hedef Yönetimi',gelir:'Gelir Takibi',not:'Not & Etiket',rapor:'Haftalık/Yıllık',trend:'Trend Analizi'};
-    const t = document.getElementById('mobilePageTitle');
-    if(t) t.textContent = titles[page] || 'ER-TECH';
-  }
+  if(window.innerWidth <= 700) closeMobileMenu();
 }
 
 // ==================== AY KAPANIS SİHİRBAZI ====================
@@ -7714,46 +7709,7 @@ function clearAllTrash(){
 // ==================== ÇÖP KUTUSU SONU ====================
 
 
-// ==================== MOBİL GÖRÜNÜM ====================
-function toggleMobileView(){
-  const isMobile = document.body.classList.toggle('mobile-view');
-  localStorage.setItem('vf_mobile_view', isMobile ? '1' : '0');
-  const btn = document.getElementById('viewToggleBtn');
-  if(btn) btn.textContent = isMobile ? 'Mobil Gorunum' : 'Web Gorunum';
-  const btnTop = document.getElementById('viewToggleBtnTop');
-  if(btnTop) btnTop.textContent = isMobile ? 'Web' : 'Mobil';
-  const vp = document.querySelector('meta[name=viewport]');
-  if(isMobile){
-    if(vp) vp.content = 'width=device-width,initial-scale=1,maximum-scale=1';
-  } else {
-    if(vp) vp.content = 'width=1200';
-    closeMobileMenu();
-  }
-}
-function openMobileMenu(){
-  document.getElementById('mainSidebar').classList.add('mob-open');
-  document.getElementById('mobileOverlay').classList.add('mob-open');
-}
-function closeMobileMenu(){
-  document.getElementById('mainSidebar').classList.remove('mob-open');
-  document.getElementById('mobileOverlay').classList.remove('mob-open');
-}
-function initViewMode(){
-  const saved = localStorage.getItem('vf_mobile_view');
-  const autoMobile = window.innerWidth <= 900;
-  const vp = document.querySelector('meta[name=viewport]');
-  if(saved === '1' || (saved === null && autoMobile)){
-    document.body.classList.add('mobile-view');
-    const btn = document.getElementById('viewToggleBtn');
-    if(btn) btn.textContent = 'Mobil Gorunum';
-    const btnTop = document.getElementById('viewToggleBtnTop');
-    if(btnTop) btnTop.textContent = 'Web';
-    if(vp) vp.content = 'width=device-width,initial-scale=1,maximum-scale=1';
-  } else {
-    if(vp) vp.content = 'width=1200';
-  }
-}
-// ==================== MOBİL GÖRÜNÜM SONU ====================
+
 
 loadTheme();
 checkLock();
