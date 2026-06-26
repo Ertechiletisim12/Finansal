@@ -1595,12 +1595,11 @@ async function pushToCloud(){
 async function pullFromCloud(){
   try{
     updateCloudIndicator('saving');
-    const res = await fetch(JSONBIN_URL + '/latest', {
-      headers: { 'X-Master-Key': JSONBIN_KEY }
+    const res = await fetch(JSONBIN_URL, {
+      headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false' }
     });
     if(!res.ok){ updateCloudIndicator('error'); return false; }
-    const json = await res.json();
-    const data = json.record;
+    const data = await res.json();
     if(!data || data.data === 'init') { updateCloudIndicator('saved'); return false; }
     // Veriyi uygula
     if(data.entries)    entries    = data.entries;
