@@ -1607,6 +1607,8 @@ async function pullFromCloud(){
     if(data.prices)     prices     = data.prices;
     if(data.yatirilan)  yatirilan  = data.yatirilan;
     if(data.hedefler)   hedefler   = data.hedefler;
+    if(data.hedefKatData) hedefKatData = data.hedefKatData;
+    if(data.hedefAciklamaData) hedefAciklamaData = data.hedefAciklamaData;
     if(data.finansData) finansData = data.finansData;
     if(data.gelirData)  gelirData  = data.gelirData;
     if(data.notlarData) notlarData = data.notlarData;
@@ -1617,6 +1619,8 @@ async function pullFromCloud(){
     localStorage.setItem(STORE_KEY_PRICES,    JSON.stringify(prices));
     localStorage.setItem(STORE_KEY_YATIRILAN, JSON.stringify(yatirilan));
     localStorage.setItem(STORE_KEY_HEDEF,     JSON.stringify(hedefler));
+    localStorage.setItem(STORE_KEY_HEDEF_KAT, JSON.stringify(hedefKatData));
+    localStorage.setItem('vf_hedef_aciklama_v1', JSON.stringify(hedefAciklamaData));
     localStorage.setItem(STORE_KEY_FINANS,    JSON.stringify(finansData));
     localStorage.setItem(STORE_KEY_GELIR,     JSON.stringify(gelirData));
     localStorage.setItem(STORE_KEY_NOTLAR,    JSON.stringify(notlarData));
@@ -2197,7 +2201,7 @@ function exportTableToPdf(tableId, titleLabel){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, finansData, gelirData, notlarData, exportedAt: new Date().toISOString(), version: 4 };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, exportedAt: new Date().toISOString(), version: 4 };
 }
 function timeStr(){
   const d = new Date();
@@ -7103,8 +7107,8 @@ function loadHedefExtra(){
   try{ hedefKatData = JSON.parse(localStorage.getItem(STORE_KEY_HEDEF_KAT)||'{}'); }catch(e){ hedefKatData={}; }
   try{ hedefAciklamaData = JSON.parse(localStorage.getItem('vf_hedef_aciklama_v1')||'{}'); }catch(e){ hedefAciklamaData={}; }
 }
-function saveHedefKatStore(){ try{ localStorage.setItem(STORE_KEY_HEDEF_KAT, JSON.stringify(hedefKatData)); }catch(e){} }
-function saveHedefAciklamaStore(){ try{ localStorage.setItem('vf_hedef_aciklama_v1', JSON.stringify(hedefAciklamaData)); }catch(e){} }
+function saveHedefKatStore(){ try{ localStorage.setItem(STORE_KEY_HEDEF_KAT, JSON.stringify(hedefKatData)); }catch(e){} scheduleCloudSync(); }
+function saveHedefAciklamaStore(){ try{ localStorage.setItem('vf_hedef_aciklama_v1', JSON.stringify(hedefAciklamaData)); }catch(e){} scheduleCloudSync(); }
 
 function openHedefModal(ym){
   loadHedefExtra();
