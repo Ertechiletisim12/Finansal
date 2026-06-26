@@ -571,7 +571,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="mobileTopBar" style="display:none;position:sticky;top:0;z-index:200;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px;align-items:center;justify-content:space-between;gap:8px">
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="font-size:14px;font-weight:800;flex:1;text-align:center" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-  <div style="width:36px"></div>
+  <button onclick="toggleMobileView()" id="viewToggleBtnTop" title="Web görünümüne geç" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:5px 8px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap">🖥️ Web</button>
 </div>
 
   <div class="main">
@@ -7757,6 +7757,8 @@ function toggleMobileView(){
   localStorage.setItem('vf_mobile_view', isMobile ? '1' : '0');
   const btn = document.getElementById('viewToggleBtn');
   if(btn) btn.textContent = isMobile ? '📱 Mobil Görünümü' : '🖥️ Web Görünümü';
+  const btnTop = document.getElementById('viewToggleBtnTop');
+  if(btnTop) btnTop.textContent = isMobile ? '🖥️ Web' : '📱 Mobil';
   if(!isMobile) closeMobileMenu();
 }
 function openMobileMenu(){
