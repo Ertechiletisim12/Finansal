@@ -22,14 +22,7 @@ body.light{
 }
 /* Mobil sidebar overlay */
 @media(max-width:700px){
-  #mobileOverlay{
-    display:none;
-    background:rgba(0,0,0,0.55);z-index:800;
-  }
-  #mobileOverlay.mob-open{
-    display:block!important;
-    position:fixed!important;inset:0!important;
-  }
+  #mobileOverlay{ display:none; }
   .sidebar.mob-open{
     display:flex!important;
     position:fixed!important;
@@ -63,13 +56,12 @@ html{scrollbar-gutter:stable}
   .app{ flex-direction:column!important; }
   .main{ height:auto!important;overflow:visible!important; }
 
-  /* Tüm sayfalar tam genişlik, scroll */
+  /* Tüm sayfalar tam genişlik, scroll - display switchPage tarafından kontrol edilir */
   #page-dash,#page-prim,#page-finans,#page-hedef,
   #page-gelir,#page-not,#page-rapor,#page-trend{
     overflow-y:auto!important;padding:0 10px 80px!important;
-    display:block!important;
   }
-  #page-prim{ display:flex!important;flex-direction:column!important;height:auto!important; }
+  #page-prim{ flex-direction:column!important;height:auto!important; }
 
   /* Prim sayfası tek sütun */
   .layout{ flex-direction:column!important;height:auto!important; }
@@ -506,7 +498,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   </div>
 </div>
 <!-- Mobil overlay -->
-<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileMenu()"></div>
+<div id="mobileOverlay" onclick="closeMobileMenu()" style="display:none;background:rgba(0,0,0,0.55)"></div>
 
 <div class="app">
   <div class="sidebar" id="mainSidebar">
@@ -7746,11 +7738,16 @@ function clearAllTrash(){
 // ==================== MOBİL MENÜ ====================
 function openMobileMenu(){
   document.getElementById('mainSidebar').classList.add('mob-open');
-  document.getElementById('mobileOverlay').classList.add('mob-open');
+  const ov = document.getElementById('mobileOverlay');
+  ov.style.display = 'block';
+  ov.style.position = 'fixed';
+  ov.style.inset = '0';
+  ov.style.zIndex = '800';
 }
 function closeMobileMenu(){
   document.getElementById('mainSidebar').classList.remove('mob-open');
-  document.getElementById('mobileOverlay').classList.remove('mob-open');
+  const ov = document.getElementById('mobileOverlay');
+  ov.style.display = 'none';
 }
 // ==================== MOBİL MENÜ SONU ====================
 
