@@ -3025,6 +3025,8 @@ function render(){
   }
   adjustStickyOffsets();
   renderEntryLogCharts();
+  // Ana özet sayfası açıksa otomatik güncelle
+  if(typeof currentPage !== 'undefined' && currentPage === 'dash') renderDash();
 }
 
 document.getElementById('activeDate').addEventListener('change', render);
