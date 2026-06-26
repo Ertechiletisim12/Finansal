@@ -23,10 +23,13 @@ body.light{
 /* Mobil sidebar overlay */
 @media(max-width:700px){
   #mobileOverlay{
-    display:none;position:fixed;inset:0;
+    display:none;
     background:rgba(0,0,0,0.55);z-index:800;
   }
-  #mobileOverlay.mob-open{ display:block!important; }
+  #mobileOverlay.mob-open{
+    display:block!important;
+    position:fixed!important;inset:0!important;
+  }
   .sidebar.mob-open{
     display:flex!important;
     position:fixed!important;
