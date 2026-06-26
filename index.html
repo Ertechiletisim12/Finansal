@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=1200">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Finansal Analiz</title>
@@ -7765,10 +7765,16 @@ function toggleMobileView(){
   const isMobile = document.body.classList.toggle('mobile-view');
   localStorage.setItem('vf_mobile_view', isMobile ? '1' : '0');
   const btn = document.getElementById('viewToggleBtn');
-  if(btn) btn.textContent = isMobile ? '📱 Mobil Görünümü' : '🖥️ Web Görünümü';
+  if(btn) btn.textContent = isMobile ? 'Mobil Gorunum' : 'Web Gorunum';
   const btnTop = document.getElementById('viewToggleBtnTop');
-  if(btnTop) btnTop.textContent = isMobile ? '🖥️ Web' : '📱 Mobil';
-  if(!isMobile) closeMobileMenu();
+  if(btnTop) btnTop.textContent = isMobile ? 'Web' : 'Mobil';
+  const vp = document.querySelector('meta[name=viewport]');
+  if(isMobile){
+    if(vp) vp.content = 'width=device-width,initial-scale=1,maximum-scale=1';
+  } else {
+    if(vp) vp.content = 'width=1200';
+    closeMobileMenu();
+  }
 }
 function openMobileMenu(){
   document.getElementById('mainSidebar').classList.add('mob-open');
@@ -7780,12 +7786,17 @@ function closeMobileMenu(){
 }
 function initViewMode(){
   const saved = localStorage.getItem('vf_mobile_view');
-  // Telefonda otomatik mobil görünüm
-  const autoMobile = window.innerWidth <= 768;
+  const autoMobile = window.innerWidth <= 900;
+  const vp = document.querySelector('meta[name=viewport]');
   if(saved === '1' || (saved === null && autoMobile)){
     document.body.classList.add('mobile-view');
     const btn = document.getElementById('viewToggleBtn');
-    if(btn) btn.textContent = '📱 Mobil Görünümü';
+    if(btn) btn.textContent = 'Mobil Gorunum';
+    const btnTop = document.getElementById('viewToggleBtnTop');
+    if(btnTop) btnTop.textContent = 'Web';
+    if(vp) vp.content = 'width=device-width,initial-scale=1,maximum-scale=1';
+  } else {
+    if(vp) vp.content = 'width=1200';
   }
 }
 // ==================== MOBİL GÖRÜNÜM SONU ====================
