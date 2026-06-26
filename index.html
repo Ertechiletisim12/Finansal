@@ -1581,7 +1581,7 @@ function scheduleCloudSync(){
 async function pushToCloud(){
   try{
     updateCloudIndicator('saving');
-    const payload = buildExportData();
+    const payload = getBackupData();
     const res = await fetch(JSONBIN_URL, {
       method: 'PUT',
       headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_KEY },
