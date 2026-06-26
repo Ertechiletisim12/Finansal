@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1200">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Finansal Analiz</title>
@@ -22,118 +22,73 @@ body.light{
 }
 html{scrollbar-gutter:stable}
 
-/* ==================== MOBİL GÖRÜNÜM (body.mobile-view) ==================== */
-/* Mobil görünümde ekranı telefon gibi simüle et - sadece geniş ekranda */
-@media(min-width:600px){
-  body.mobile-view{ background:#111!important; }
-  body.mobile-view .app{
-    max-width:420px;
-    margin:0 auto;
-    box-shadow:0 0 40px rgba(0,0,0,0.6);
-    min-height:100vh;
-    position:relative;
-    flex-direction:column;
+/* ===== MOBİL ===== */
+@media(max-width:700px){
+  /* Sidebar gizle */
+  .sidebar{ display:none!important; }
+
+  /* App tek sütun */
+  .app{ flex-direction:column!important; }
+  .main{ height:auto!important;overflow:visible!important; }
+
+  /* Tüm sayfalar tam genişlik, scroll */
+  #page-dash,#page-prim,#page-finans,#page-hedef,
+  #page-gelir,#page-not,#page-rapor,#page-trend{
+    overflow-y:auto!important;padding:0 10px 80px!important;
+    display:block!important;
   }
-}
-/* Gerçek telefonda tam genişlik */
-@media(max-width:599px){
-  body.mobile-view .app{
-    flex-direction:column;
-    width:100%;
+  #page-prim{ display:flex!important;flex-direction:column!important;height:auto!important; }
+
+  /* Prim sayfası tek sütun */
+  .layout{ flex-direction:column!important;height:auto!important; }
+  .content-col{ padding:8px 0!important; }
+  .activity-col{ width:100%!important;height:auto!important;max-height:none!important; }
+  .activity-panel{ height:auto!important; }
+
+  /* Kartlar 2 sütun */
+  .cards-row{ display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important; }
+  .card{ min-width:unset!important; }
+  .card.total{ grid-column:1/-1!important; }
+  .stats-row{ flex-direction:column!important; }
+  .range-summary{ flex-direction:column!important; }
+
+  /* Tablolar scroll */
+  .table-wrap{ overflow-x:auto!important; }
+
+  /* Filterbar */
+  .filterbar{ flex-wrap:wrap!important; }
+  .filterbar .quick{ margin-left:0!important;width:100%;overflow-x:auto;flex-wrap:nowrap!important; }
+
+  /* Topbar */
+  .topbar{ flex-wrap:wrap!important;padding:8px!important; }
+  .clock{ display:none!important; }
+  .finans-toolbar{ flex-wrap:wrap!important;gap:6px!important; }
+
+  /* Modallar */
+  #ayKapatModal>div,#finansAyModal>div,#hedefModal>div,
+  #yatirilanModal>div,#hedefGecmisModal>div{
+    width:96vw!important;max-width:96vw!important;
   }
+
+  /* Compare */
+  .compare-hero{ flex-direction:column!important; }
+
+  /* Dash header */
+  #page-dash>div:first-child{ padding:8px!important; }
+  #page-dash>div:first-child h2{ font-size:15px!important; }
+  #dashNavRow{ overflow-x:auto!important;flex-wrap:nowrap!important; }
+  #dashNavRow::-webkit-scrollbar{ display:none; }
+  .dash-nav-pill{ flex-shrink:0!important;min-width:55px!important;padding:5px 8px!important;font-size:10px!important; }
+
+  /* Mobil üst menü */
+  #mobileTopBar{ display:flex!important; }
+
+  /* Butonlar */
+  .btn-hero{ font-size:12px!important;padding:9px 12px!important; }
 }
+/* ===== MOBİL SONU ===== */
 
-body.mobile-view .main{ padding:0!important;height:auto!important;overflow:auto!important; }
-body.mobile-view .sidebar{
-  display:none!important;position:fixed;top:0;left:0;bottom:0;
-  width:220px;z-index:900;overflow-y:auto;
-}
-body.mobile-view .sidebar.mob-open{ display:flex!important; }
-#mobileOverlay{
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,0.55);z-index:899;
-}
-body.mobile-view #mobileOverlay.mob-open{ display:block; }
 
-/* Hamburger - sadece mobil görünümde */
-#mobileMenuBtn{ display:none; }
-body.mobile-view #mobileMenuBtn{
-  display:flex!important;align-items:center;justify-content:center;
-  width:34px;height:34px;background:var(--panel2);border:1px solid var(--line);
-  border-radius:8px;cursor:pointer;font-size:20px;color:var(--txt);flex-shrink:0;
-}
-
-/* Prim sayfası tek sütun */
-body.mobile-view .layout{ flex-direction:column!important;height:auto!important;overflow:visible!important; }
-body.mobile-view .content-col{ padding:8px 10px!important; }
-body.mobile-view .activity-col{ width:100%!important;height:auto!important;overflow:visible!important; }
-body.mobile-view .activity-panel{ height:auto!important;max-height:350px; }
-
-/* Kartlar 2 sütun */
-body.mobile-view .cards-row{ display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important; }
-body.mobile-view .card{ min-width:unset!important; }
-body.mobile-view .card.total{ grid-column:1/-1; }
-body.mobile-view .stats-row{ flex-direction:column!important; }
-body.mobile-view .stat{ min-width:unset!important; }
-body.mobile-view .range-summary{ flex-direction:column!important; }
-
-/* Filter bar */
-body.mobile-view .filterbar{ flex-wrap:wrap!important;padding:6px 10px!important; }
-body.mobile-view .filterbar .quick{
-  margin-left:0!important;width:100%;overflow-x:auto;
-  flex-wrap:nowrap!important;scrollbar-width:none;
-}
-body.mobile-view .filterbar .quick::-webkit-scrollbar{ display:none; }
-
-/* Tablolar */
-body.mobile-view .table-wrap{ overflow-x:auto!important; }
-body.mobile-view table.main-table{ font-size:11px!important; }
-
-/* Topbar */
-body.mobile-view .topbar{ flex-wrap:wrap!important;gap:6px!important;padding:8px 10px!important; }
-body.mobile-view .clock{ display:none!important; }
-body.mobile-view .finans-toolbar{ flex-wrap:wrap!important;gap:6px!important; }
-body.mobile-view .compare-hero{ flex-direction:column!important; }
-body.mobile-view .price-row{ flex-wrap:wrap!important; }
-body.mobile-view .price-row input{ width:100%!important; }
-
-/* Mobil üst navbar */
-body.mobile-view #mobileTopBar{ display:flex!important; }
-body.mobile-view #page-dash>div:first-child{ display:none!important; }
-body.mobile-view #dashNavRow{
-  flex-wrap:nowrap!important;overflow-x:auto!important;
-  scrollbar-width:none;padding-bottom:4px;
-}
-body.mobile-view #dashNavRow::-webkit-scrollbar{ display:none; }
-body.mobile-view .dash-nav-pill{
-  min-width:58px!important;padding:5px 8px!important;
-  font-size:10px!important;flex-shrink:0!important;
-}
-body.mobile-view .dash-nav-pill>span:first-child{ font-size:13px!important; }
-
-/* Modallar tam genişlik */
-body.mobile-view #ayKapatModal>div,
-body.mobile-view #finansAyModal>div,
-body.mobile-view #hedefModal>div,
-body.mobile-view #yatirilanModal>div,
-body.mobile-view #hedefGecmisModal>div,
-body.mobile-view #anomaliPopup>div,
-body.mobile-view #finansTrashModal>div{
-  max-width:98vw!important;width:98vw!important;margin:6px auto!important;
-}
-
-/* Sayfa padding */
-body.mobile-view #page-finans,body.mobile-view #page-hedef,
-body.mobile-view #page-gelir,body.mobile-view #page-not,
-body.mobile-view #page-rapor,body.mobile-view #page-trend{
-  padding:0 8px 60px!important;
-}
-body.mobile-view #dashContent{ padding:0 8px 60px!important; }
-body.mobile-view .btn-hero{ padding:9px 12px!important;font-size:12px!important; }
-body.mobile-view .qbtn{ padding:7px 9px!important;font-size:11px!important; }
-body.mobile-view #hedefGecmisTbl{ font-size:10px!important; }
-body.mobile-view #hedefGecmisTbl th,body.mobile-view #hedefGecmisTbl td{ padding:4px!important; }
-/* ==================== MOBİL GÖRÜNÜM SONU ==================== */
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font-size:14px;transition:background .2s,color .2s}
 .app{display:flex;height:100vh;overflow:hidden}
@@ -541,7 +496,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="sidebar-tools">
       <div class="sidebar-tools-title">Görünüm &amp; Yedekleme</div>
       <div id="cloudSyncIndicator" style="font-size:11px;padding:4px 6px;color:var(--muted)">☁️ Bağlanıyor...</div>
-      <button class="tool-btn" id="viewToggleBtn" onclick="toggleMobileView()" title="Web/Mobil görünüm değiştir">🖥️ Web Görünümü</button>
       <button class="tool-btn" id="themeBtn" onclick="toggleTheme()">🌙 Koyu Mod</button>
       <button class="tool-btn" onclick="backupData()">💾 Yedekle</button>
       <label class="tool-btn" style="cursor:pointer">📂 Geri Yükle<input type="file" accept=".json" onchange="restoreData(event)" style="display:none"></label>
@@ -7802,7 +7756,6 @@ function initViewMode(){
 // ==================== MOBİL GÖRÜNÜM SONU ====================
 
 loadTheme();
-initViewMode();
 checkLock();
 load();
 // Buluttan veri çek — localStorage'dan daha yeni veri varsa uygula
