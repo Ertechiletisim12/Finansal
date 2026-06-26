@@ -22,13 +22,20 @@ body.light{
 }
 /* Mobil sidebar overlay */
 @media(max-width:700px){
-  .sidebar.mob-open{
-    display:flex!important;position:fixed;top:0;left:0;bottom:0;
-    width:220px;z-index:900;overflow-y:auto;
-  }
-  #mobileOverlay.mob-open{
-    display:block;position:fixed;inset:0;
+  #mobileOverlay{
+    display:none;position:fixed;inset:0;
     background:rgba(0,0,0,0.55);z-index:899;
+  }
+  #mobileOverlay.mob-open{ display:block!important; }
+  .sidebar.mob-open{
+    display:flex!important;
+    position:fixed!important;
+    top:0!important;left:0!important;bottom:0!important;
+    width:220px!important;
+    z-index:900!important;
+    overflow-y:auto!important;
+    height:100vh!important;
+    flex-direction:column!important;
   }
 }
 
