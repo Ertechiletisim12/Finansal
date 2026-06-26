@@ -1587,7 +1587,7 @@ async function pushToCloud(){
       headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_KEY },
       body: JSON.stringify(payload)
     });
-    if(res.ok){ updateCloudIndicator('saved'); }
+    if(res.ok || res.status === 304){ updateCloudIndicator('saved'); }
     else { updateCloudIndicator('error'); }
   } catch(e){ updateCloudIndicator('error'); }
 }
@@ -1596,7 +1596,7 @@ async function pullFromCloud(){
   try{
     updateCloudIndicator('saving');
     const res = await fetch(JSONBIN_URL, {
-      headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false' }
+      headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' }
     });
     if(!res.ok){ updateCloudIndicator('error'); return false; }
     const data = await res.json();
