@@ -441,7 +441,29 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 .compare-grid .up{color:#4cd964}
 .compare-grid .down{color:#ff5252}
 
-/* range summary under cards */
+/* ===== ORTA EKRAN (pencere modu) 700-1000px ===== */
+@media(min-width:701px) and (max-width:1000px){
+  .sidebar{ width:160px!important; }
+  .sidebar h1{ font-size:11px!important;padding:0 10px!important; }
+  .nav-item{ padding:9px 10px!important;font-size:11px!important;gap:6px!important; }
+  .sidebar-tools .tool-btn{ font-size:10px!important;padding:6px 8px!important; }
+  .activity-col{ width:200px!important; }
+  .card{ padding:8px 10px!important;min-width:unset!important; }
+  .cards-row{ gap:6px!important; }
+  .stat{ min-width:120px!important;padding:10px 12px!important; }
+  .stat .v{ font-size:16px!important; }
+  .content-col{ padding:6px 10px 14px 10px!important; }
+}
+@media(min-width:701px) and (max-width:850px){
+  .sidebar{ width:130px!important; }
+  .sidebar h1{ display:none!important; }
+  .nav-item{ padding:8px!important;font-size:10px!important;flex-direction:column!important;gap:2px!important;text-align:center!important; }
+  .activity-col{ width:180px!important; }
+  .card{ padding:6px 8px!important; }
+  .cnt{ font-size:20px!important; }
+  .ctrl button{ width:28px!important;height:28px!important;font-size:16px!important; }
+}
+
 .range-summary{display:flex;gap:10px;margin:4px 0 14px;flex-wrap:wrap}
 .range-summary .box{background:var(--panel2);border:1px dashed var(--line);border-radius:7px;padding:8px 14px;flex:1;min-width:160px}
 .range-summary .box .t{font-size:11px;color:var(--accent)}
