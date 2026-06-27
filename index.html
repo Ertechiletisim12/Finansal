@@ -2234,13 +2234,32 @@ function changeCount(cat, delta){
   let e = entries.find(e=>e.date===date && e.cat===cat);
   if(!e){ e = {date, cat, count:0}; entries.push(e); }
   e.count = Math.max(0, e.count + delta);
+
   if(delta > 0){
     entryLog.push({date, cat, time: nowTimeStr(), platform: getPlatformName()});
   } else if(delta < 0){
+    // En son kaydı sil
     for(let i=entryLog.length-1;i>=0;i--){
       if(entryLog[i].date===date && entryLog[i].cat===cat){ entryLog.splice(i,1); break; }
     }
   }
+
+  // count 0 olan entry'leri temizle
+  entries = entries.filter(e=>e.count>0);
+
+  // entryLog'da bu date+cat için fazla kayıt varsa count kadar tut
+  const currentCount = entries.find(e=>e.date===date&&e.cat===cat)?.count||0;
+  const logEntries = [];
+  let kept = 0;
+  for(let i=entryLog.length-1;i>=0;i--){
+    if(entryLog[i].date===date && entryLog[i].cat===cat){
+      if(kept < currentCount){ logEntries.unshift(entryLog[i]); kept++; }
+    } else {
+      logEntries.unshift(entryLog[i]);
+    }
+  }
+  entryLog = logEntries;
+
   saveEntries(); saveEntryLog(); render();
 }
 
