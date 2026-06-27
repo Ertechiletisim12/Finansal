@@ -72,7 +72,7 @@ body.light{
 }
 
 html{scrollbar-gutter:stable}
-body{min-width:800px;}
+body.locked{overflow:hidden!important;}
 
 /* ===== MOBİL ===== */
 @media(max-width:420px){
@@ -701,7 +701,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 }
 
 /* ---- kilit ekranı ---- */
-#lockScreen{position:fixed;top:0;left:0;width:100vw;height:100vh;background:#1a1c1e;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;overflow:auto}
+#lockScreen{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:#1a1c1e;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;overflow:auto}
 #lockScreen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(226,35,26,0.10) 0%,transparent 65%);pointer-events:none}
 .lock-card{position:relative;background:#2a2d31;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:40px 44px 34px;width:380px;max-width:92vw;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.6);animation:lockCardIn .35s cubic-bezier(.34,1.56,.64,1) both}
 @keyframes lockCardIn{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
@@ -2358,10 +2358,12 @@ function tryUnlock(){
       setTimeout(()=>{
         document.getElementById('lockScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = '';
+        document.body.style.overflow = '';
       }, 380);
     } else {
       document.getElementById('lockScreen').style.display = 'none';
       document.getElementById('mainApp').style.display = '';
+      document.body.style.overflow = '';
     }
   } else {
     lockMsg.textContent = '❌ Yanlış PIN — tekrar deneyin';
@@ -2382,9 +2384,11 @@ function checkLock(){
   if(pin){
     document.getElementById('lockScreen').style.display = 'flex';
     document.getElementById('mainApp').style.display = 'none';
+    document.body.style.overflow = 'hidden';
   } else {
     document.getElementById('lockScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = '';
+    document.body.style.overflow = '';
   }
 }
 
