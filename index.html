@@ -2016,19 +2016,23 @@ function mergeEntries(local, cloud){
 async function pushToCloud(){
   try{
     updateCloudIndicator('saving');
-    // Önce cloud'u çek, merge et
+    // Race condition'ı azaltmak için rastgele kısa gecikme (0-1500ms)
+    await new Promise(r=>setTimeout(r, Math.random()*1500));
+    // Cloud'u çek, merge et
     const res0 = await fetch(JSONBIN_URL, {
       headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' }
     });
     if(res0.ok){
       const cloudData = await res0.json();
       if(cloudData && cloudData.data !== 'init'){
-        // Entry'leri merge et
-        if(cloudData.entries) entries = mergeEntries(entries, cloudData.entries);
-        if(cloudData.entryLog) entryLog = [...new Map([...(cloudData.entryLog||[]),...(entryLog||[])].map(e=>[e.id||e.ts,e])).values()];
+        // Delta merge: bu cihazda ne kadar eklendi?
+        entries = mergeEntries(entries, cloudData.entries||[]);
+        if(cloudData.entryLog) entryLog = [...new Map([...(cloudData.entryLog||[]),...(entryLog||[])].map(e=>[e.date+'_'+e.cat,e])).values()];
         // localStorage güncelle
         localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries));
         localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
+        // lastSyncedEntries'i cloud state ile güncelle (merge sonrası)
+        lastSyncedEntries = JSON.parse(JSON.stringify(entries));
       }
     }
     const payload = getBackupData();
@@ -2038,8 +2042,12 @@ async function pushToCloud(){
       headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_KEY },
       body: JSON.stringify(payload)
     });
-    if(res.ok || res.status === 304){ lastCloudHash = hash; lastSyncedEntries = JSON.parse(JSON.stringify(entries)); updateCloudIndicator('saved'); render(); }
-    else { updateCloudIndicator('error'); }
+    if(res.ok || res.status === 304){
+      lastCloudHash = hash;
+      lastSyncedEntries = JSON.parse(JSON.stringify(entries));
+      updateCloudIndicator('saved');
+      render();
+    } else { updateCloudIndicator('error'); }
   } catch(e){ updateCloudIndicator('error'); }
 }
 
