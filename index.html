@@ -752,7 +752,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 </style>
 </head>
 <body>
-<div id="lockScreen" style="display:none;">
+<div id="lockScreen" style="display:flex;">
   <div class="lock-card">
     <div class="lock-logo">🔐</div>
     <div class="lock-brand">ER-TECH İLETİŞİM</div>
@@ -773,7 +773,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <!-- Mobil overlay -->
 <div id="mobileOverlay" onclick="closeMobileMenu()" style="display:none;background:rgba(0,0,0,0.55)"></div>
 
-<div class="app">
+<div class="app" id="mainApp" style="display:none">
   <div class="sidebar" id="mainSidebar">
     <div style="padding:0 18px;margin-bottom:18px">
       <h1 style="margin:0 0 6px;font-size:13px;letter-spacing:.06em;color:var(--muted);font-weight:700">ER-TECH İLETİŞİM</h1>
@@ -2354,9 +2354,13 @@ function tryUnlock(){
     const card = document.querySelector('.lock-card');
     if(card){
       card.classList.add('unlock-anim');
-      setTimeout(()=>{ document.getElementById('lockScreen').style.display = 'none'; }, 380);
+      setTimeout(()=>{
+        document.getElementById('lockScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = '';
+      }, 380);
     } else {
       document.getElementById('lockScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = '';
     }
   } else {
     lockMsg.textContent = '❌ Yanlış PIN — tekrar deneyin';
@@ -2376,6 +2380,10 @@ function checkLock(){
   const pin = getPin();
   if(pin){
     document.getElementById('lockScreen').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+  } else {
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = '';
   }
 }
 
