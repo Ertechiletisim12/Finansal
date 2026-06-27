@@ -1968,10 +1968,12 @@ let cloudSyncTimer = null;
 let cloudSyncStatus = 'idle'; // idle | saving | saved | error
 let lastCloudHash = ''; // son bilinen cloud snapshot hash
 let cloudPollTimer = null;
+let userChangedData = false; // kullanıcı gerçekten veri değiştirdi mi?
 
 function scheduleCloudSync(){
+  userChangedData = true; // kullanıcı bir şey değiştirdi
   if(cloudSyncTimer) clearTimeout(cloudSyncTimer);
-  cloudSyncTimer = setTimeout(pushToCloud, 1000); // 1 sn bekle, sonra kaydet
+  cloudSyncTimer = setTimeout(pushToCloud, 1500); // 1.5 sn bekle
 }
 
 // Basit hash — veri değişti mi anlayalım
@@ -2029,13 +2031,11 @@ function getPlatformName(){
 
 async function pushToCloud(){
   try{
-    // Local veri son sync'ten beri değişmedi mi? Gereksiz push yapma
-    const currentPayload = getBackupData();
-    const currentHash = quickHash(currentPayload);
-    if(currentHash === lastCloudHash){
-      updateCloudIndicator('saved');
+    // Kullanıcı değişiklik yapmadıysa push etme
+    if(!userChangedData){
       return;
     }
+    userChangedData = false; // flag'i sıfırla
     updateCloudIndicator('saving');
     // Race condition'ı azaltmak için rastgele kısa gecikme (0-1500ms)
     await new Promise(r=>setTimeout(r, Math.random()*300));
@@ -2112,8 +2112,8 @@ async function pullFromCloud(){
     localStorage.setItem(STORE_KEY_TRASH,     JSON.stringify(finansTrash));
     loadHedefExtra();
     recomputeAllFinans();
-    // Sadece aktif sayfayı güncelle — tüm render döngüsünü değil
-    // Bu sayede ekran kararması olmaz
+    // Polling render'ı userChangedData'yı etkilemesin
+    const _ucd = userChangedData;
     requestAnimationFrame(()=>{
       if(typeof currentPage !== 'undefined'){
         if(currentPage === 'prim') render();
@@ -2122,6 +2122,7 @@ async function pullFromCloud(){
         else if(currentPage === 'rapor') renderRapor ? renderRapor() : null;
         else render();
       }
+      userChangedData = _ucd; // render sonrası flag'i geri yükle
     });
     const platformInfo = (data.lastPlatform||'') + (data.lastSavedAt ? ' · '+data.lastSavedAt.slice(11,16) : '');
     updateCloudIndicator('saved', platformInfo || '—');
