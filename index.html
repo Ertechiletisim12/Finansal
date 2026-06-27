@@ -2029,6 +2029,13 @@ function getPlatformName(){
 
 async function pushToCloud(){
   try{
+    // Local veri son sync'ten beri değişmedi mi? Gereksiz push yapma
+    const currentPayload = getBackupData();
+    const currentHash = quickHash(currentPayload);
+    if(currentHash === lastCloudHash){
+      updateCloudIndicator('saved');
+      return;
+    }
     updateCloudIndicator('saving');
     // Race condition'ı azaltmak için rastgele kısa gecikme (0-1500ms)
     await new Promise(r=>setTimeout(r, Math.random()*300));
