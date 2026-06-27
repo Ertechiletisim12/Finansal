@@ -2060,7 +2060,7 @@ async function pushToCloud(){
       lastCloudHash = hash;
       lastSyncedEntries = JSON.parse(JSON.stringify(entries));
       updateCloudIndicator('saved', getPlatformName() + ' · ' + new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
-      render();
+      requestAnimationFrame(()=>{ render(); });
     } else { updateCloudIndicator('error'); }
   } catch(e){ updateCloudIndicator('error'); }
 }
@@ -2105,7 +2105,17 @@ async function pullFromCloud(){
     localStorage.setItem(STORE_KEY_TRASH,     JSON.stringify(finansTrash));
     loadHedefExtra();
     recomputeAllFinans();
-    render();
+    // Sadece aktif sayfayı güncelle — tüm render döngüsünü değil
+    // Bu sayede ekran kararması olmaz
+    requestAnimationFrame(()=>{
+      if(typeof currentPage !== 'undefined'){
+        if(currentPage === 'prim') render();
+        else if(currentPage === 'dash') renderDash();
+        else if(currentPage === 'hedef') renderHedef ? renderHedef() : render();
+        else if(currentPage === 'rapor') renderRapor ? renderRapor() : null;
+        else render();
+      }
+    });
     const platformInfo = (data.lastPlatform||'') + (data.lastSavedAt ? ' · '+data.lastSavedAt.slice(11,16) : '');
     updateCloudIndicator('saved', platformInfo || '—');
     return true;
