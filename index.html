@@ -1971,7 +1971,7 @@ let cloudPollTimer = null;
 
 function scheduleCloudSync(){
   if(cloudSyncTimer) clearTimeout(cloudSyncTimer);
-  cloudSyncTimer = setTimeout(pushToCloud, 3000); // 3 sn bekle, sonra kaydet
+  cloudSyncTimer = setTimeout(pushToCloud, 1000); // 1 sn bekle, sonra kaydet
 }
 
 // Basit hash — veri değişti mi anlayalım
@@ -2031,7 +2031,7 @@ async function pushToCloud(){
   try{
     updateCloudIndicator('saving');
     // Race condition'ı azaltmak için rastgele kısa gecikme (0-1500ms)
-    await new Promise(r=>setTimeout(r, Math.random()*1500));
+    await new Promise(r=>setTimeout(r, Math.random()*300));
     // Cloud'u çek, merge et
     const res0 = await fetch(JSONBIN_URL, {
       headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' }
@@ -2123,13 +2123,13 @@ function updateCloudIndicator(status, extra){
   else el.innerHTML = '☁️';
 }
 
-// 30 saniyede bir cloud'dan çek — diğer cihazların değişikliklerini al
+// 5 saniyede bir cloud'dan çek — diğer cihazların değişikliklerini al
 function startCloudPolling(){
   if(cloudPollTimer) clearInterval(cloudPollTimer);
   cloudPollTimer = setInterval(async ()=>{
-    if(cloudSyncStatus === 'saving') return; // kayıt sırasında polling yapma
+    if(cloudSyncStatus === 'saving') return;
     await pullFromCloud();
-  }, 30000); // 30 saniye
+  }, 5000); // 5 saniye
 }
 // ==================== JSONBIN SONU ====================
 
