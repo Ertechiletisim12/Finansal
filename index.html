@@ -2106,7 +2106,6 @@ async function pullFromCloud(){
     loadHedefExtra();
     recomputeAllFinans();
     render();
-    checkLock();
     const platformInfo = (data.lastPlatform||'') + (data.lastSavedAt ? ' · '+data.lastSavedAt.slice(11,16) : '');
     updateCloudIndicator('saved', platformInfo || '—');
     return true;
