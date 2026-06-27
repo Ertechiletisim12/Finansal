@@ -8371,6 +8371,18 @@ function closeMobileMenu(){
 loadTheme();
 checkLock();
 load();
+
+// Pencereyi ekran ortasına taşı (Chrome uygulama modu için)
+try {
+  const sw = window.screen.width;
+  const sh = window.screen.height;
+  const ww = window.outerWidth  || 900;
+  const wh = window.outerHeight || 700;
+  const x = Math.round((sw - ww) / 2);
+  const y = Math.round((sh - wh) / 2);
+  window.moveTo(x, y);
+} catch(e) {}
+
 // Buluttan veri çek — localStorage'dan daha yeni veri varsa uygula
 setTimeout(()=>{ pullFromCloud().then(()=>startCloudPolling()); }, 800);
 setTimeout(renderDash, 100);
