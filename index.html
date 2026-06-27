@@ -1982,11 +1982,35 @@ function quickHash(obj){
   return h.toString();
 }
 
-// Entry merge: id bazlı birleştir, en son timestamp kazanır
+// Entry merge: date+cat bazlı, delta count ekle
+// lastSyncedEntries = pushToCloud öncesi bilinen cloud state
+let lastSyncedEntries = null;
+
 function mergeEntries(local, cloud){
-  const map = {};
-  [...(cloud||[]), ...(local||[])].forEach(e=>{ map[e.id||e.date+'_'+e.cat] = e; });
-  return Object.values(map);
+  const cloudMap = {};
+  (cloud||[]).forEach(e=>{ cloudMap[e.date+'_'+e.cat] = e.count||0; });
+
+  const baseMap = {};
+  (lastSyncedEntries||cloud||[]).forEach(e=>{ baseMap[e.date+'_'+e.cat] = e.count||0; });
+
+  const result = {};
+  // Cloud'u base al
+  (cloud||[]).forEach(e=>{ result[e.date+'_'+e.cat] = {...e}; });
+
+  // Local'deki her entry için delta hesapla ve cloud'a ekle
+  (local||[]).forEach(e=>{
+    const k = e.date+'_'+e.cat;
+    const localCount = e.count||0;
+    const baseCount  = baseMap[k]||0;
+    const cloudCount = cloudMap[k]||0;
+    const delta = localCount - baseCount; // bu cihazda ne kadar eklendi
+    if(delta > 0){
+      result[k] = {...(result[k]||{date:e.date,cat:e.cat}), count: cloudCount + delta};
+    } else if(!result[k]){
+      result[k] = {...e};
+    }
+  });
+  return Object.values(result);
 }
 
 async function pushToCloud(){
@@ -2014,7 +2038,7 @@ async function pushToCloud(){
       headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_KEY },
       body: JSON.stringify(payload)
     });
-    if(res.ok || res.status === 304){ lastCloudHash = hash; updateCloudIndicator('saved'); render(); }
+    if(res.ok || res.status === 304){ lastCloudHash = hash; lastSyncedEntries = JSON.parse(JSON.stringify(entries)); updateCloudIndicator('saved'); render(); }
     else { updateCloudIndicator('error'); }
   } catch(e){ updateCloudIndicator('error'); }
 }
@@ -2034,7 +2058,7 @@ async function pullFromCloud(){
     lastCloudHash = hash;
     // Veriyi uygula
     if(data.pin) localStorage.setItem('vf_pin', data.pin);
-    if(data.entries)    entries    = data.entries;
+    if(data.entries)    { entries    = data.entries; lastSyncedEntries = JSON.parse(JSON.stringify(entries)); }
     if(data.entryLog)   entryLog   = data.entryLog;
     if(data.prices)     prices     = data.prices;
     if(data.yatirilan)  yatirilan  = data.yatirilan;
