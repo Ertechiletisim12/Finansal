@@ -456,9 +456,20 @@ html{scrollbar-gutter:stable}
     display:grid!important;
     grid-template-columns:repeat(4,1fr)!important;
     gap:5px!important;
-    padding:6px 0!important;
+    padding:6px 10px!important;
     overflow:visible!important;
     width:100%!important;
+    position:fixed!important;
+    top:52px!important;
+    left:0!important;
+    right:0!important;
+    z-index:99!important;
+    background:var(--bg)!important;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15)!important;
+    box-sizing:border-box!important;
+  }
+  #page-dash{
+    padding-top:145px!important;
   }
   #dashNavRow > button{
     min-width:unset!important;
@@ -717,7 +728,11 @@ html{scrollbar-gutter:stable}
   }
 
   .trend-bars-wrap{
-    height:160px!important;
+    height:100px!important;
+    overflow:hidden!important;
+  }
+  .trend-bars-wrap > div > div:nth-child(2){
+    max-height:60px!important;
   }
 
   /* ===== TREND ANALİZİ MOBİL ===== */
@@ -1219,6 +1234,25 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="lock-footer">Korumalı erişim · PIN ile kilitli</div>
   </div>
 </div>
+<!-- Giriş Logları Modalı -->
+<div id="girisLogModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2100;align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;width:92vw;max-width:400px;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#1a1c20,#26282b);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">📋</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--txt)">Giriş Logları</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px">Son 50 giriş kaydı</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button onclick="clearGirisLoglari()" style="background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);color:#ff5252;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer">🗑 Temizle</button>
+        <button onclick="document.getElementById('girisLogModal').style.display='none'" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:30px;height:30px;border-radius:6px;font-size:16px;cursor:pointer">✕</button>
+      </div>
+    </div>
+    <div id="girisLoglariList" style="max-height:400px;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+</div>
 <!-- PIN Ayar Modalı -->
 <div id="pinModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2100;align-items:center;justify-content:center">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:0;width:92vw;max-width:380px;overflow:hidden">
@@ -1327,6 +1361,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button class="tool-btn" onclick="printManagerReport()" title="Güncel verilerle özet bir rapor oluşturur; açılan yazdırma penceresinden 'PDF olarak kaydet' seçilebilir">📄 Yönetici Raporu (PDF)</button>
       <button class="tool-btn" id="notifPanelBtn" onclick="toggleNotifPanel()" title="Bildirim ayarları ve aktif uyarılar">🔔 Bildirimler <span id="notifBadge" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
       <button class="tool-btn" onclick="openPinModal()">🔐 Kilit / PIN Ayarı</button>
+      <button class="tool-btn" onclick="openGirisLogModal()">📋 Giriş Logları</button>
       <div style="border-top:1px solid #34373b;margin-top:6px;padding-top:8px">
         <button class="tool-btn" style="color:#ff5252;border-color:rgba(226,35,26,0.4);font-size:10.5px" onclick="clearAllData()" title="Tüm kayıtları siler — geri alınamaz!">⚠ Tüm Verileri Sıfırla</button>
       </div>
@@ -2275,7 +2310,7 @@ function monthLabel(ym){
   const names=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
   return names[parseInt(m)-1]+" "+y;
 }
-function todayStr(){ return new Date().toISOString().slice(0,10); }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function thisMonthKey(){ return todayStr().slice(0,7); }
 function addMonths(ym, n){
   let [y,m] = ym.split('-').map(Number);
@@ -2656,7 +2691,7 @@ async function pullFromCloud(){
         else if(currentPage === 'rapor') renderRapor ? renderRapor() : null;
         else render();
       }
-      userChangedData = _ucd; // render sonrası flag'i geri yükle
+      userChangedData = _ucd;
     });
     const platformInfo = (data.lastPlatform||'') + (data.lastSavedAt ? ' · '+data.lastSavedAt.slice(11,16) : '');
     updateCloudIndicator('saved', platformInfo || '—');
@@ -2841,6 +2876,7 @@ function openPinModal(){
   document.getElementById('pinConfirmInput').value = '';
   document.getElementById('pinModalMsg').textContent = '';
   document.getElementById('pinModal').style.display = 'flex';
+  renderGirisLoglari();
 }
 function closePinModal(){
   document.getElementById('pinModal').style.display = 'none';
@@ -2933,19 +2969,7 @@ const OTO_KILIT_DK = 10; // dakika
 
 function resetOtoKilit(){
   if(!getPin() || sessionStorage.getItem('unlocked')!=='1') return;
-  clearTimeout(_otoKilitTimeout);
-  const sure = document.getElementById('otoKilitSure');
-  if(sure) sure.textContent = '';
-  _otoKilitTimeout = setTimeout(()=>{
-    oturumKapat();
-  }, OTO_KILIT_DK * 60 * 1000);
-  // Son 2 dakikada uyarı göster
-  setTimeout(()=>{
-    if(sessionStorage.getItem('unlocked')==='1'){
-      const s = document.getElementById('otoKilitSure');
-      if(s) s.textContent = '⚠ 2dk sonra kilitlenecek';
-    }
-  }, (OTO_KILIT_DK - 2) * 60 * 1000);
+  sessionStorage.setItem('lastActivity', Date.now());
 }
 
 function startOturumTimer(){
@@ -2953,19 +2977,28 @@ function startOturumTimer(){
   if(!sessionStorage.getItem('oturumBaslangic')){
     sessionStorage.setItem('oturumBaslangic', Date.now());
   }
+  sessionStorage.setItem('lastActivity', Date.now());
   // Mobil kutuyu göster
   const mobBox = document.getElementById('mobileOturumBox');
   if(mobBox) mobBox.style.display='flex';
   // Sidebar kutusunu göster
   const sbBox = document.getElementById('sidebarOturumBox');
   if(sbBox) sbBox.style.display='block';
-  resetOtoKilit();
+
   _oturumInterval = setInterval(()=>{
     const bas = parseInt(sessionStorage.getItem('oturumBaslangic') || Date.now());
+    const lastAct = parseInt(sessionStorage.getItem('lastActivity') || Date.now());
     const gecenSn = Math.floor((Date.now() - bas) / 1000);
-    const kalanSn = Math.max(0, OTO_KILIT_DK * 60 - gecenSn);
+    const idleSn = Math.floor((Date.now() - lastAct) / 1000);
+    const kalanSn = Math.max(0, OTO_KILIT_DK * 60 - idleSn);
 
-    // Kalan süre (geri sayım)
+    // Süre dolduysa kilitle
+    if(kalanSn <= 0 && sessionStorage.getItem('unlocked')==='1'){
+      oturumKapat();
+      return;
+    }
+
+    // Kalan süre (geri sayım - hareketsizliğe göre)
     const kalanDk = Math.floor(kalanSn / 60);
     const kalanS = kalanSn % 60;
     const kalanStr = `${kalanDk}:${String(kalanS).padStart(2,'0')}`;
@@ -2975,8 +3008,6 @@ function startOturumTimer(){
     const acikS = gecenSn % 60;
     const acikStr = `${acikDk}:${String(acikS).padStart(2,'0')}`;
 
-    const el = document.getElementById('oturumSure');
-    if(el) el.textContent = `⏱ ${kalanStr}`;
     const mobEl = document.getElementById('mobileOturumSure');
     if(mobEl) mobEl.textContent = `⏱ ${kalanStr}`;
     const mobAcik = document.getElementById('mobileAcikSure');
@@ -2985,16 +3016,57 @@ function startOturumTimer(){
     if(sbEl) sbEl.textContent = kalanStr;
     const sbAcik = document.getElementById('sidebarAcikSure');
     if(sbAcik) sbAcik.textContent = `${acikStr} açık`;
-    // 2dk uyarısı sidebar'da da göster
+    // 2dk uyarısı
     const sbUyari = document.getElementById('sidebarUyari');
     if(sbUyari) sbUyari.textContent = kalanSn <= 120 ? '⚠ Yakında kilitlenecek' : '';
   }, 1000);
+}
+
+function openGirisLogModal(){
+  renderGirisLoglari();
+  document.getElementById('girisLogModal').style.display = 'flex';
+}
+function renderGirisLoglari(){
+  const list = document.getElementById('girisLoglariList');
+  if(!list) return;
+  try{
+    const loglar = JSON.parse(localStorage.getItem('giris_loglari')||'[]');
+    if(!loglar.length){
+      list.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:20px">Henüz giriş logu yok</div>';
+      return;
+    }
+    list.innerHTML = loglar.map(l=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--panel2);border-radius:8px;border-left:3px solid ${l.basarili?'#4cd964':'#ff5252'}">
+        <span style="font-size:16px">${l.basarili?'✅':'❌'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;color:var(--txt)">${l.cihaz}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px">${l.tarih}</div>
+        </div>
+        <span style="font-size:11px;font-weight:700;color:${l.basarili?'#4cd964':'#ff5252'};white-space:nowrap">${l.basarili?'Başarılı':'Başarısız'}</span>
+      </div>`).join('');
+  }catch(e){ list.innerHTML = ''; }
+}
+function clearGirisLoglari(){
+  localStorage.removeItem('giris_loglari');
+  renderGirisLoglari();
+}
+function logGiris(basarili){
+  try{
+    const loglar = JSON.parse(localStorage.getItem('giris_loglari')||'[]');
+    const cihaz = window.innerWidth <= 700 ? '📱 Mobil' : '🖥️ PC';
+    const tarih = new Date().toLocaleString('tr-TR');
+    loglar.unshift({ tarih, cihaz, basarili });
+    if(loglar.length > 50) loglar.splice(50);
+    localStorage.setItem('giris_loglari', JSON.stringify(loglar));
+  }catch(e){}
 }
 
 function tryUnlock(){
   const val = document.getElementById('lockPinInput').value.trim();
   const lockMsg = document.getElementById('lockMsg');
   if(val === getPin()){
+    logGiris(true);
+    if(window._lockObserver){ window._lockObserver.disconnect(); window._lockObserver = null; }
     sessionStorage.setItem('unlocked','1');
     sessionStorage.setItem('oturumBaslangic', Date.now());
     const panel = document.getElementById('oturumPanel');
@@ -3008,6 +3080,7 @@ function tryUnlock(){
       document.getElementById('lockScreen').style.display = 'none';
     }
   } else {
+    logGiris(false);
     lockMsg.textContent = '❌ Yanlış PIN — tekrar deneyin';
     const inp = document.getElementById('lockPinInput');
     inp.classList.add('shake');
@@ -3019,17 +3092,12 @@ function tryUnlock(){
 function oturumKapat(){
   sessionStorage.removeItem('unlocked');
   sessionStorage.removeItem('oturumBaslangic');
+  sessionStorage.removeItem('lastActivity');
   clearInterval(_oturumInterval);
   clearTimeout(_otoKilitTimeout);
-  const panel = document.getElementById('oturumPanel');
-  if(panel) panel.style.display='none';
-  const mobBox = document.getElementById('mobileOturumBox');
-  if(mobBox) mobBox.style.display='none';
-  const sbBox = document.getElementById('sidebarOturumBox');
-  if(sbBox) sbBox.style.display='none';
-  document.getElementById('lockPinInput').value = '';
-  updateLockDots();
-  document.getElementById('lockScreen').style.display = 'flex';
+  if(typeof cloudPollTimer !== 'undefined') clearInterval(cloudPollTimer);
+  // Kısa gecikme ile yenile — devam eden işlemlerin bitmesini bekle
+  setTimeout(()=>{ location.reload(); }, 200);
 }
 
 
@@ -3124,7 +3192,7 @@ function openExportPreview(tableId, fileLabel){
 
     const now = new Date().toLocaleString('tr-TR');
     const stamp = xlsTimestamp();
-    const win = window.open('','_blank');
+    const win = window.open('','win_'+Date.now());
     if(!win){ alert('Açılır pencere engellendi.'); return; }
     win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
@@ -3243,7 +3311,7 @@ function openExportPreview(tableId, fileLabel){
     return `<tr class="${i%2===0?'z':'o'}">${cells}</tr>`;
   }).join('');
 
-  const win = window.open('','_blank');
+  const win = window.open('','win_'+Date.now());
   if(!win){ alert('Açılır pencere engellendi. Lütfen tarayıcı ayarlarından izin verin.'); return; }
 
   win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8">
@@ -3347,7 +3415,7 @@ function exportTableToPdf(tableId, titleLabel){
     return `<tr class="${i%2===0?'even':'odd'}">${cells}</tr>`;
   }).join('');
 
-  const win = window.open('','_blank','width=1050,height=760');
+  const win = window.open('','win_'+Date.now(),'width=1050,height=760');
   if(!win){ alert('Açılır pencere engellendi. Lütfen tarayıcı ayarlarından izin verin.'); return; }
   win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8">
   <title>${titleLabel} — Vodafone Prim Takip</title>
@@ -4910,20 +4978,21 @@ function renderDash(){
     trend6.push({ ym, v: financeFor(ym,mMap).genelToplamTutar, adet });
   }
   const maxTrend = Math.max(...trend6.map(t=>t.v),1);
+  const isMob = window.innerWidth <= 700;
   const trendBars = trend6.map((t,i)=>{
-    const h=Math.max(Math.round(t.v/maxTrend*260),8), isCur=i===5;
+    const h=Math.max(Math.round(t.v/maxTrend*(isMob?55:260)),isMob?4:8), isCur=i===5;
     const color = isCur ? '#3fd0ff' : 'rgba(63,208,255,0.3)';
     const ayKisa = monthLabel(t.ym).split(' ')[0];
     const adetColor  = isCur ? '#3fd0ff' : '#999';
     const tutarColor = isCur ? '#4cd964' : '#aaa';
     const tutarTam = t.v > 0 ? t.v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺' : '—';
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1;min-width:44px;cursor:default" title="${monthLabel(t.ym)}&#10;Adet: ${t.adet}&#10;Tutar: ${tutarTam}">
-      <div style="font-size:9px;font-weight:700;text-align:center;line-height:1.5;margin-bottom:4px;width:100%">
+      <div style="font-size:${isMob?'7px':'9px'};font-weight:700;text-align:center;line-height:1.5;margin-bottom:4px;width:100%">
         ${t.adet>0 ? `<div style="color:${adetColor}">${t.adet} ad</div>` : '<div>&nbsp;</div>'}
         ${t.v>0 ? `<div style="color:${tutarColor}">${fmtF(t.v)}</div>` : '<div>&nbsp;</div>'}
       </div>
-      <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;min-height:6px"></div>
-      <div style="font-size:10px;font-weight:600;color:${isCur?'#3fd0ff':'#aaa'};white-space:nowrap;margin-top:4px;padding-top:3px;width:100%;text-align:center">${ayKisa}</div>
+      <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;min-height:${isMob?3:6}px"></div>
+      <div style="font-size:${isMob?'8px':'10px'};font-weight:600;color:${isCur?'#3fd0ff':'#aaa'};white-space:nowrap;margin-top:4px;padding-top:3px;width:100%;text-align:center">${ayKisa}</div>
     </div>`;
   }).join('');
 
@@ -6828,7 +6897,7 @@ function buildManagerReportHTML(){
 function printManagerReport(){
   const reportHtml = buildManagerReportHTML();
   const now = new Date().toLocaleString('tr-TR');
-  const win = window.open('', '_blank', 'width=1060,height=780');
+  const win = window.open('','win_'+Date.now(),'width=1060,height=780');
   if(!win){ alert('Açılır pencere engellendi. Lütfen tarayıcı ayarlarından açılır pencerelere izin verin.'); return; }
   win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
   <title>Yönetici Raporu — Vodafone Prim Takip</title>
@@ -8339,6 +8408,11 @@ function exportRaporModal() {
   const stamp = xlsTimestamp();
   const modal = document.getElementById('exportFullModal');
 
+  // Her açılışta temizle
+  _activeExportTable = null;
+  document.getElementById('exportModalContent').innerHTML = '';
+  document.getElementById('exportModalTabs').innerHTML = '';
+
   document.getElementById('exportModalTitle').textContent = '📅 ' + title;
   document.getElementById('exportModalSub').textContent = now;
 
@@ -8346,21 +8420,31 @@ function exportRaporModal() {
   const chartBox = document.getElementById('raporChartBox');
   const chartClone = chartBox ? chartBox.cloneNode(true) : null;
   if (chartClone) {
-    chartClone.style.cssText = 'margin-bottom:12px;background:var(--panel);border-radius:8px;padding:12px;border:1px solid var(--line)';
+    chartClone.style.cssText = 'margin-bottom:12px;background:#fff;border-radius:8px;padding:12px;border:1px solid #e5e7eb';
   }
 
   // Tablo
   const srcTable = document.getElementById('raporTable');
   const tableClone = srcTable ? srcTable.cloneNode(true) : null;
   if (tableClone) {
-    tableClone.style.cssText = 'width:100%;border-collapse:collapse;font-size:11px';
-    Array.from(tableClone.querySelectorAll('th')).forEach(th => {
-      th.style.cssText = 'padding:8px 10px;background:#1a1c20;color:#9aa0a6;font-size:10px;border-bottom:2px solid #e2231a;text-align:left;white-space:nowrap';
+    Array.from(tableClone.querySelectorAll('*')).forEach(el => el.removeAttribute('class'));
+    tableClone.removeAttribute('class');
+    tableClone.style.cssText = 'width:100%;border-collapse:collapse;font-size:11px;background:#26282b';
+    Array.from(tableClone.querySelectorAll('th')).forEach((th, i) => {
+      const sticky = i===0 ? 'position:sticky;left:0;z-index:3;' : '';
+      th.style.cssText = `padding:8px 10px;background:#1a1c20;color:#9aa0a6;font-size:10px;border-bottom:2px solid #e2231a;text-align:${i===0?'left':'right'};white-space:nowrap;${sticky}`;
     });
     Array.from(tableClone.querySelectorAll('tr')).forEach((tr, i) => {
       tr.removeAttribute('onclick');tr.removeAttribute('onmouseover');tr.removeAttribute('onmouseout');
-      tr.style.background = i % 2 === 0 ? '#26282b' : '#2c2f33';
-      Array.from(tr.querySelectorAll('td')).forEach(td => { td.style.color = '#d1d5db'; td.style.background = 'transparent'; td.style.padding = '7px 10px'; td.style.whiteSpace = 'nowrap'; });
+      const isTfoot = tr.closest('tfoot') !== null;
+      const bg = isTfoot ? '#1a1c20' : (i%2===0 ? '#26282b' : '#2c2f33');
+      tr.style.cssText = `background:${bg}`;
+      Array.from(tr.querySelectorAll('td')).forEach((td, j) => {
+        const savedColor = td.style.color || '#d1d5db';
+        const sticky = j===0 ? 'position:sticky;left:0;z-index:2;' : '';
+        td.style.cssText = `padding:7px 10px;border-bottom:1px solid #2e3035;white-space:nowrap;background:${bg};position:static;text-align:${j===0?'left':'right'};${sticky}`;
+        td.style.color = savedColor;
+      });
     });
   }
 
@@ -8386,8 +8470,8 @@ function exportRaporModal() {
     XLSX.writeFile(wb, `Rapor_${title}_${stamp}.xlsx`);
   };
 
-  // PDF butonunu rapor için özel fonksiyona yönlendir
-  document.getElementById('exportModalPdfBtn').onclick = function(){ exportRaporPdf(); };
+  // PDF butonunu rapor için özel fonksiyona yönlendir — KALDIR, HTML onclick yeterli
+  // document.getElementById('exportModalPdfBtn').onclick = function(){ exportRaporPdf(); };
 
   modal.style.display = 'flex';
 }
@@ -8429,7 +8513,7 @@ function exportRaporPdf(){
 
   function fmt2(n){ return (Math.round(n)).toLocaleString('tr-TR')+' ₺'; }
 
-  const win = window.open('','_blank','width=1060,height=780');
+  const win = window.open('','raporPdfWin_'+Date.now(),'width=1060,height=780');
   if(!win){ alert('Açılır pencere engellendi.'); return; }
   win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
   <title>${title}</title>
@@ -9366,12 +9450,18 @@ function showDayDetail(date, cat){
 }
 
 function exportModalPrint(){
-  const title = document.getElementById('exportModalTitle').textContent.replace(/^📊\s*/,'');
+  // Rapor modalı mı kontrol et
+  const modalTitle = document.getElementById('exportModalTitle').textContent;
+  if(modalTitle.startsWith('📅') && window._raporXlsData){
+    exportRaporPdf();
+    return;
+  }
+  const title = modalTitle.replace(/^📊\s*/,'');
   const sub   = document.getElementById('exportModalSub').textContent;
-  const srcTable = document.getElementById('exportModalContent').querySelector('table');
+  const allTables = document.getElementById('exportModalContent').querySelectorAll('table');
+  const srcTable = _activeExportTable || (allTables.length ? allTables[allTables.length-1] : null);
   if(!srcTable){ alert('Yazdırılacak tablo bulunamadı.'); return; }
 
-  // Tablo verilerini düz metin olarak oku
   const rows = Array.from(srcTable.querySelectorAll('tr'));
   const isHead = r => r.querySelector('th') !== null;
   const readRow = r => Array.from(r.querySelectorAll('th,td')).map(c=>(c.innerText||c.textContent||'').trim().replace(/\s+/g,' '));
@@ -9385,7 +9475,7 @@ function exportModalPrint(){
   const tdHtml = bodyRows.map((r,i)=>`<tr class="${i%2===0?'even':'odd'}">`+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('');
 
   const now = new Date().toLocaleString('tr-TR');
-  const win = window.open('','_blank','width=1060,height=780');
+  const win = window.open('','exportPrintWin_'+Date.now(),'width=1060,height=780');
   if(!win){ alert('Açılır pencere engellendi. Lütfen tarayıcı ayarlarından izin verin.'); return; }
 
   win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
@@ -9412,7 +9502,7 @@ function exportModalPrint(){
       body{background:#fff}
       .toolbar{display:none}
       .wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}
-      @page{margin:10mm;size:A4 ${orientation}}    }
+      @page{margin:10mm;size:A4 ${orientation}}}
   </style>
   </head><body>
   <div class="toolbar">
@@ -9431,11 +9521,20 @@ function exportModalPrint(){
 }
 function closeExportModal(){
   document.getElementById('exportFullModal').style.display = 'none';
+  document.getElementById('exportModalContent').innerHTML = '';
+  document.getElementById('exportModalTabs').innerHTML = '';
 }
+
+let _activeExportTable = null;
 
 // Mobilde window.open yerine modal kullan
 const _origOpenExportPreview = openExportPreview;
 function openExportPreview(tableId, fileLabel){
+  // Her açılışta temizle
+  _activeExportTable = null;
+  document.getElementById('exportModalContent').innerHTML = '';
+  document.getElementById('exportModalTabs').innerHTML = '';
+
   // window.open yerine modal kullanan tablolar
   const modalTables = ['compareTable','mainTable','financeTable','priceHistTable','gelirTable','capitalTable','marjTable','finansDetailTable'];
   if(modalTables.includes(tableId)){
@@ -9475,19 +9574,29 @@ function openExportPreview(tableId, fileLabel){
       tr.removeAttribute('onclick');
       tr.removeAttribute('onmouseover');
       tr.removeAttribute('onmouseout');
-      const bg = i%2===0 ? '#26282b' : '#2c2f33';
+      const isTfoot = tr.closest('tfoot') !== null;
+      const bg = isTfoot ? '#1a1c20' : (i%2===0 ? '#26282b' : '#2c2f33');
       tr.style.cssText = `background:${bg}`;
       Array.from(tr.querySelectorAll('td')).forEach((td)=>{
         const isFirst = td.cellIndex === 0;
         const savedColor = td.style.color || '#d1d5db';
         const sticky = isFirst ? 'position:sticky;left:0;z-index:2;max-width:140px;overflow:hidden;text-overflow:ellipsis;' : '';
-        td.style.cssText = `padding:7px 10px;border-bottom:1px solid #2e3035;white-space:nowrap;background:${bg};text-align:${isFirst?'left':'right'};${sticky}`;
+        td.style.cssText = `padding:7px 10px;border-bottom:1px solid #2e3035;white-space:nowrap;background:${bg} !important;text-align:${isFirst?'left':'right'};${sticky}`;
         td.style.color = savedColor;
       });
     });
 
     document.getElementById('exportModalContent').innerHTML =
-      `<div style="overflow-x:auto;background:#26282b;border-radius:8px">${clone.outerHTML}</div>`;
+      `<style>
+        #exportModalContent table, #exportModalContent tr, #exportModalContent td, #exportModalContent th {
+          background: unset !important;
+          border-color: #2e3035 !important;
+          color: #d1d5db !important;
+        }
+      </style>
+      <div style="overflow-x:auto;background:#26282b;border-radius:8px">${clone.outerHTML}</div>`;
+
+    _activeExportTable = clone;
 
     // Excel butonu
     document.getElementById('exportModalXlsBtn').onclick = function(){
