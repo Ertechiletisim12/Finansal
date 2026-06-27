@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Finansal Analiz</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root{
   --bg:#26282b; --panel:#323539; --panel2:#3c4045; --line:#46494e;
@@ -34,14 +37,37 @@ body.light{
     flex-direction:column!important;
   }
 
-  /* Ana özet kartları alt alta */
-  #dashContent .stats-row,
-  #dashContent .cards-row{
-    flex-direction:column!important;
+  /* Finansal analiz kartları mobil */
+  #finansContent .stats-row{ flex-direction:column!important;flex-wrap:wrap!important; }
+  #finansContent .stat{
+    min-width:unset!important;
+    width:100%!important;
+    flex:1 1 100%!important;
+    box-sizing:border-box!important;
   }
-  #dashContent .stat,
-  #dashContent .card{
-    width:100%!important;min-width:unset!important;
+  #finansContent .table-wrap{ overflow-x:auto!important; }
+  #finansContent table{ min-width:480px; }
+  /* Pivot tablo scroll */
+  .pivot-wrap{ overflow-x:auto!important;max-width:100%!important; }
+  /* Pay dağılımı kartı tam genişlik */
+  #finansContent [style*="min-width:420px"],
+  #finansContent [style*="min-width:300px"],
+  #finansContent [style*="min-width:200px"]{
+    min-width:unset!important;
+    width:100%!important;
+  }
+  /* Finans toolbar */
+  .finans-toolbar{ flex-wrap:wrap!important;gap:6px!important; }
+  .finans-toolbar .btn-hero,.finans-toolbar button{
+    font-size:11px!important;padding:7px 10px!important;
+  }
+  #dashContent > div[style*="grid-template-columns:1fr 1fr"],
+  #dashContent > div > div[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr!important;
+  }
+  /* grid-row:span 2 kaldır */
+  #dashContent [style*="grid-row:span"]{
+    grid-row:auto!important;
   }
 }
 
@@ -53,33 +79,191 @@ html{scrollbar-gutter:stable}
   .sidebar{ display:none!important; }
 
   /* App tek sütun */
-  .app{ flex-direction:column!important; }
+  .app{ flex-direction:column!important;height:auto!important;overflow:visible!important;min-height:100vh!important; }
+  .app>.main{ overflow:visible!important;height:auto!important;max-height:none!important; }
+  body,html{ overflow-y:auto!important;height:auto!important; }
   .main{ height:auto!important;overflow:visible!important; }
 
   /* Tüm sayfalar tam genişlik, scroll - display switchPage tarafından kontrol edilir */
   #page-dash,#page-prim,#page-finans,#page-hedef,
-  #page-gelir,#page-not,#page-rapor,#page-trend{
+  #page-gelir,#page-not,#page-trend{
+    overflow-y:visible!important;padding:0 10px 80px!important;
+    height:auto!important;max-height:none!important;
+  }
+  #page-rapor{
     overflow-y:auto!important;padding:0 10px 80px!important;
+    height:100%!important;max-height:100%!important;
   }
   #page-prim{ flex-direction:column!important;height:auto!important; }
+  #page-prim .layout{ overflow:visible!important; }
+
+  #primTitleBar{ display:none!important; }
+  #primFilterBar{
+    display:block!important;
+    position:fixed!important;
+    top:52px!important;
+    left:0!important;
+    right:0!important;
+    z-index:100!important;
+    background:var(--bg)!important;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15)!important;
+    padding:6px 10px!important;
+  }
+  /* Sabit barların yüksekliği kadar içeriği aşağı it */
+  #page-prim{ padding-top:160px!important; }
+  
+  /* Ana scroll body'de olsun */
+  body{ overflow-y:auto!important; }
+  .app > .main{
+    overflow:visible!important;
+    height:auto!important;
+    max-height:none!important;
+  }
 
   /* Prim sayfası tek sütun */
   .layout{ flex-direction:column!important;height:auto!important; }
-  .content-col{ padding:8px 0!important; }
+  .content-col{ padding:8px 0 0 0!important; }
   .activity-col{ width:100%!important;height:auto!important;max-height:none!important; }
   .activity-panel{ height:auto!important; }
 
   /* Kartlar 2 sütun */
-  .cards-row{ display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important; }
-  .card{ min-width:unset!important; }
-  .card.total{ grid-column:1/-1!important; }
+  .cards-row{ display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;box-sizing:border-box!important; }
+  .card{ min-width:unset!important;padding:14px 14px!important;border-radius:12px!important; }
+  #catCards{ margin:0 -14px!important;padding:0!important;box-sizing:border-box!important;width:calc(100% + 28px)!important; }
+  .card.total{ grid-column:auto!important; }
   .stats-row{ flex-direction:column!important; }
+  #raporKpiRow{ display:grid!important;grid-template-columns:1fr 1fr!important;flex-direction:unset!important;gap:8px!important; }
+  #raporKpiRow .stat{ min-width:0!important; }
+  #hedefSummaryRow{ display:grid!important;grid-template-columns:1fr 1fr!important;flex-direction:unset!important;gap:8px!important; }
+  #hedefSummaryRow .stat{ min-width:0!important; }
   .range-summary{ flex-direction:column!important; }
 
   /* Tablolar scroll */
-  .table-wrap{ overflow-x:auto!important; }
+  /* Mobil topbar kesinlikle sabit */
+  #mobileTopBar{
+    position:fixed!important;
+    top:0!important;
+    left:0!important;
+    right:0!important;
+    z-index:500!important;
+  }
+  /* Topbar yüksekliği kadar padding ekle ki içerik altında kalmasın */
+  .app>.main{ padding-top:52px!important; }
 
-  /* Filterbar */
+  /* Tablolar sadece kendi içinde scroll */
+  .table-wrap{ overflow-x:auto!important;max-width:100vw!important; }
+  table.main-table{ min-width:480px; }
+  body{ overflow-x:hidden!important; }
+
+  /* Mobil filterbar göster, orijinali gizle - fixed ile üstte sabit */
+  #primFilterBar{
+    display:block!important;
+    position:fixed!important;
+    top:52px!important;
+    left:0!important;
+    right:0!important;
+    z-index:100!important;
+    background:var(--bg)!important;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15)!important;
+    padding:6px 10px!important;
+  }
+  #page-prim .layout > div:last-child > div:first-child > .filterbar{ display:none!important; }
+
+  /* Filtre grid */
+  #primFilterBar .filterbar{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:4px!important;
+    padding:0!important;
+  }
+  /* Başlangıç + Bitiş yan yana - tam genişlik */
+  #primFilterBar .dates-row{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:4px!important;
+  }
+  /* Tarih satırı - aynı genişlikte */
+  #primFilterBar .filterbar > .grp:first-child{
+    width:100%!important;
+  }
+  /* Grup kartı - label üstte, tarih altta */
+  #primFilterBar .grp{
+    display:flex!important;flex-direction:column!important;
+    align-items:flex-start!important;gap:3px!important;
+    background:var(--panel2)!important;
+    border:1px solid var(--line)!important;
+    border-radius:8px!important;
+    padding:5px 8px!important;
+    min-width:0!important;
+  }
+  #primFilterBar .grp label{
+    font-size:9px!important;color:var(--muted)!important;
+    font-weight:700!important;white-space:nowrap!important;
+    text-transform:uppercase!important;letter-spacing:.04em!important;
+  }
+  #primFilterBar .grp .date-nav{
+    width:100%!important;display:flex!important;
+    align-items:center!important;gap:2px!important;
+  }
+  #primFilterBar .grp input[type=date]{
+    flex:1!important;font-size:11px!important;font-weight:600!important;
+    background:transparent!important;border:none!important;
+    color:var(--txt)!important;min-width:0!important;
+  }
+  #primFilterBar .grp .nav-arrow{
+    padding:2px 5px!important;font-size:10px!important;flex-shrink:0!important;
+  }
+  #primFilterBar .quick{
+    margin-left:0!important;width:100%!important;
+    overflow-x:auto!important;flex-wrap:nowrap!important;
+    scrollbar-width:none!important;gap:4px!important;
+    display:flex!important;padding:2px 0!important;
+  }
+  #primFilterBar .quick::-webkit-scrollbar{ display:none; }
+  #primFilterBar .qbtn{
+    padding:5px 10px!important;font-size:10.5px!important;
+    border-radius:6px!important;white-space:nowrap!important;flex-shrink:0!important;
+  }
+
+  /* Başlangıç + Bitiş kartları */
+  #primFilterBar .dates-row .grp{
+    flex-direction:column!important;gap:2px!important;
+  }
+  #primFilterBar .dates-row .grp label{
+    display:flex!important;align-items:center!important;
+    justify-content:space-between!important;
+    width:100%!important;font-size:10px!important;
+    font-weight:700!important;color:var(--muted)!important;
+    text-transform:uppercase!important;
+  }
+  #primFilterBar .dates-row .grp label .nav-arrow{
+    padding:2px 7px!important;font-size:10px!important;
+  }
+  #primFilterBar .dates-row .grp .date-nav{ width:100%!important; }
+  #primFilterBar .dates-row .grp .date-nav .nav-arrow{ display:none!important; }
+  #primFilterBar .dates-row .grp input[type=date]{
+    width:100%!important;font-size:12px!important;font-weight:600!important;
+    border:none!important;background:transparent!important;color:var(--txt)!important;
+  }
+
+  /* Tarih (ilk grp) - label solda inline */
+  #primFilterBar .filterbar > .grp:first-child{
+    flex-direction:row!important;align-items:center!important;gap:6px!important;
+  }
+  #primFilterBar .filterbar > .grp:first-child label{
+    min-width:auto!important;font-size:10px!important;
+    font-weight:700!important;color:var(--muted)!important;
+    text-transform:uppercase!important;white-space:nowrap!important;
+  }
+  #page-prim .activity-col{
+    max-height:380px!important;
+    min-height:unset!important;
+  }
+  #page-prim .activity-panel{ height:100%!important; }
+  #primTitleBar{ padding:8px 10px!important;flex-wrap:wrap!important; }
+  #primTitleBar h2{ font-size:14px!important; }
+  #primTitleBar #clock{ display:none!important; }
+  #primTitleBar .btn-hero{ font-size:11px!important;padding:7px 10px!important;white-space:nowrap!important; }
   .filterbar{ flex-wrap:wrap!important; }
   .filterbar .quick{ margin-left:0!important;width:100%;overflow-x:auto;flex-wrap:nowrap!important; }
 
@@ -90,18 +274,77 @@ html{scrollbar-gutter:stable}
 
   /* Modallar */
   #ayKapatModal>div,#finansAyModal>div,#hedefModal>div,
-  #yatirilanModal>div,#hedefGecmisModal>div{
+  #yatirilanModal>div{
     width:96vw!important;max-width:96vw!important;
+  }
+  #hedefGecmisModal>div{
+    width:100vw!important;max-width:100vw!important;
+    height:100vh!important;max-height:100vh!important;
+    border-radius:0!important;
+    padding-top:max(env(safe-area-inset-top, 0px), 48px)!important;
   }
 
   /* Compare */
   .compare-hero{ flex-direction:column!important; }
 
-  /* Dash header */
-  #page-dash>div:first-child{ padding:8px!important; }
-  #page-dash>div:first-child h2{ font-size:15px!important; }
-  #dashNavRow{ overflow-x:auto!important;flex-wrap:nowrap!important; }
-  #dashNavRow::-webkit-scrollbar{ display:none; }
+  /* Dash başlığı gizle, butonlar kalsın */
+  #page-dash > div:first-child h2,
+  #page-dash > div:first-child #dashSubtitle{ display:none!important; }
+  #page-dash > div:first-child{ padding:6px 0!important;display:block!important; }
+
+  /* Nav pills eşit boyut grid */
+  #dashNavRow{
+    display:grid!important;
+    grid-template-columns:repeat(4,1fr)!important;
+    gap:5px!important;
+    padding:6px 0!important;
+    overflow:visible!important;
+    width:100%!important;
+  }
+  #dashNavRow > button{
+    min-width:unset!important;
+    width:100%!important;
+    padding:8px 4px!important;
+    font-size:9px!important;
+    min-height:60px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:3px!important;
+    text-align:center!important;
+  }
+  #dashNavRow > button > span:first-child{ font-size:18px!important; }
+  #clockDash{ display:none!important; }
+
+  /* Grafik altındaki çizgiyi kaldır */
+  #dashContent [style*="overflow-x:auto;overflow-y:hidden"]{
+    border:none!important;
+  }
+  #dashContent [style*="height:90px"],
+  #dashContent [style*="height:70px"]{
+    border-top:none!important;
+  }
+
+  /* Dış ana grid tek sütun */
+  #dashContent > div[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr!important;
+  }
+  #dashContent > div[style*="grid-template-columns:1fr 1fr"] > div[style*="grid-row:span"]{
+    grid-row:auto!important;
+  }
+  /* İçteki 2x2 bilgi grid'leri koru */
+  #dashContent div[style*="margin-top:8px;display:grid"],
+  #dashContent > div[style*="grid-template-columns:1fr 1fr"] > div[style*="grid-row:span"] > div[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr 1fr!important;
+  }
+  /* Bugün/Ay Sonu kartları alt alta */
+  #dashContent div[style*="display:grid;grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr!important;
+  }
+  /* Genel taşma önleme */
+  #dashContent{ overflow:hidden!important; }
+  #dashContent > *{ max-width:100%!important;box-sizing:border-box!important; }
   .dash-nav-pill{ flex-shrink:0!important;min-width:55px!important;padding:5px 8px!important;font-size:10px!important; }
 
   /* Mobil üst menü */
@@ -175,7 +418,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 .price-history td{padding:4px 6px;text-align:right;border-top:1px solid var(--line)}
 
 /* comparison panel - compact */
-.compare-panel{background:var(--panel);border:none;border-radius:8px;padding:14px;margin-bottom:6px}
+.compare-panel{background:var(--panel);border:none;border-radius:8px;padding:14px;margin-bottom:6px;overflow:hidden}
 .compare-hero{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .compare-hero .box{background:var(--panel2);border-radius:7px;padding:12px 16px;flex:1;min-width:150px;text-align:center}
 .compare-hero .box .t{font-size:11px;color:var(--muted)}
@@ -589,9 +832,44 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div id="primTitleBar" style="background:var(--bg);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px;z-index:40">
       <h2 style="margin:0;font-size:15px;white-space:nowrap">Prim Sayfası</h2>
       <div style="display:flex;gap:10px;align-items:center;flex-shrink:0">
-        <button class="btn-hero" onclick="openYatirilanModal()" style="background:linear-gradient(135deg,#3fd0ff,#1a90b8);color:#000;white-space:nowrap">💳 Yatırılan Prim</button>
+        <button class="btn-hero" onclick="openYatirilanModal()" style="background:linear-gradient(135deg,#92400e,#78350f);border:1px solid #d97706;color:#fcd34d;white-space:nowrap;font-weight:700;letter-spacing:0.03em;box-shadow:0 2px 8px rgba(217,119,6,0.3)">💰 Yatırılan Prim</button>
         <div id="clock" style="text-align:right;line-height:1.3;color:#8fe3a8;font-variant-numeric:tabular-nums;flex-shrink:0"></div>
       </div>
+    </div>
+    <!-- Mobil filterbar - sabit, screenshot stili -->
+    <div id="primFilterBar" style="background:var(--bg);padding:5px 10px 4px;border-bottom:1px solid var(--line);flex-shrink:0;display:none">
+      <!-- Yatırılan Prim butonu -->
+      <button onclick="openYatirilanModal()" style="width:100%;margin-bottom:5px;background:linear-gradient(135deg,#92400e,#78350f);border:1px solid #d97706;color:#fcd34d;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.03em;box-shadow:0 2px 8px rgba(217,119,6,0.3)">💰 Yatırılan Prim</button>
+      <!-- TARİH: label + input yan yana tek satır -->
+      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 8px;margin-bottom:4px;display:flex;align-items:center;gap:6px">
+        <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;flex-shrink:0">TARİH</span>
+        <button class="nav-arrow" onclick="shiftDate('activeDate',-1);document.getElementById('activeDateMob').value=document.getElementById('activeDate').value">◀</button>
+        <div style="flex:1;display:flex;justify-content:center;min-width:0;overflow:hidden">
+          <input type="date" id="activeDateMob" onchange="document.getElementById('activeDate').value=this.value;render()" style="background:transparent;border:none;color:var(--txt);font-size:13px;font-weight:600;text-align:center;width:100%;max-width:160px">
+        </div>
+        <button class="nav-arrow" onclick="shiftDate('activeDate',1);document.getElementById('activeDateMob').value=document.getElementById('activeDate').value">▶</button>
+      </div>
+      <!-- BAŞLANGIÇ + BİTİŞ: tam genişlik, yan yana -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px;width:100%">
+        <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 6px;min-width:0">
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">BAŞLANGIÇ</div>
+          <div style="display:flex;align-items:center;gap:2px">
+            <button class="nav-arrow" onclick="shiftMonth('rangeStart',-1);document.getElementById('rangeStartMob').value=document.getElementById('rangeStart').value" style="width:20px;height:22px;font-size:10px;flex-shrink:0">◀</button>
+            <input type="date" id="rangeStartMob" onchange="document.getElementById('rangeStart').value=this.value;render()" style="flex:1;background:transparent;border:none;color:var(--txt);font-size:10px;font-weight:600;min-width:0;width:0;text-align:center">
+            <button class="nav-arrow" onclick="shiftMonth('rangeStart',1);document.getElementById('rangeStartMob').value=document.getElementById('rangeStart').value" style="width:20px;height:22px;font-size:10px;flex-shrink:0">▶</button>
+          </div>
+        </div>
+        <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 6px;min-width:0">
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">BİTİŞ</div>
+          <div style="display:flex;align-items:center;gap:2px">
+            <button class="nav-arrow" onclick="shiftMonth('rangeEnd',-1);document.getElementById('rangeEndMob').value=document.getElementById('rangeEnd').value" style="width:20px;height:22px;font-size:10px;flex-shrink:0">◀</button>
+            <input type="date" id="rangeEndMob" onchange="document.getElementById('rangeEnd').value=this.value;render()" style="flex:1;background:transparent;border:none;color:var(--txt);font-size:10px;font-weight:600;min-width:0;width:0;text-align:center">
+            <button class="nav-arrow" onclick="shiftMonth('rangeEnd',1);document.getElementById('rangeEndMob').value=document.getElementById('rangeEnd').value" style="width:20px;height:22px;font-size:10px;flex-shrink:0">▶</button>
+          </div>
+        </div>
+      </div>
+      <!-- Hızlı filtre butonları -->
+      <div class="quick" id="quickRangesMob" style="overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none"></div>
     </div>
 
     <!-- İki sütunlu alan: activity-col sabit, sağda üst filtre sabit + içerik scroll -->
@@ -648,13 +926,12 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="section-title">Günlük Ortalama &amp; Ay Sonu Tahmini</div>
     <div class="stats-row" id="statsRowTop"></div>
 
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:18px 0 8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin:18px 0 8px">
       <div class="section-title" id="compareTitle" style="margin:0">Bu Ay / Geçen Ay Karşılaştırması</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--muted)">Karşılaştırma ayı:</span>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin-left:auto">
         <select id="cmpMonthSel" onchange="render()"></select>
         <select id="cmpYearSel" onchange="render()"></select>
-        <button class="preview-btn" onclick="openExportPreview('compareTable','Ay_Karsilastirma')">📤 Dışa Aktar</button>
+        <button class="preview-btn" onclick="openExportPreview('compareTable','Ay_Karsilastirma')" style="white-space:nowrap;flex-shrink:0">📤 Dışa Aktar</button>
       </div>
     </div>
     <div class="compare-panel" id="comparePanel"></div>
@@ -716,7 +993,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
     <div class="heatmap-wrap">
       <h3>🗓 Kategori × Saat Isı Haritası</h3>
-      <div class="heatmap-grid" id="heatmapGrid"></div>
+      <div style="overflow-x:auto;max-width:100%">
+        <div class="heatmap-grid" id="heatmapGrid" style="min-width:500px"></div>
+      </div>
       <div class="hm-legend">
         <span>Az</span>
         <div class="hm-legend-bar" id="hmLegend"></div>
@@ -748,7 +1027,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
           <button class="preview-btn" onclick="openExportPreview('priceHistTable','Fiyat_Gecmisi')">📤 Dışa Aktar</button>
         </div>
-        <table id="priceHistTable"></table>
+        <div style="overflow-x:auto;max-width:100%">
+          <table id="priceHistTable" style="min-width:400px"></table>
+        </div>
       </div>
     </details>
 
@@ -878,7 +1159,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- Tablo -->
       <div class="section-title-row">
         <div class="section-title" id="raporTableTitle">Detay Tablosu</div>
-        <button class="xls-btn" onclick="exportRaporXls()">⬇ Excel</button>
+        <button class="preview-btn" onclick="exportRaporModal()">📤 Dışa Aktar</button>
       </div>
       <div class="table-wrap" style="max-height:380px">
         <table class="main-table" id="raporTable">
@@ -890,11 +1171,11 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
     <!-- ==================== HEDEF YÖNETİM SAYFASI ==================== -->
     <div id="page-hedef" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
-      <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40">
+      <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;gap:8px">
         <h2 style="margin:0;font-size:15px">🎯 Hedef Yönetimi</h2>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <button onclick="openHedefGecmisModal()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer">📋 Geçmiş Hedefler</button>
-          <button class="btn-hero" onclick="openHedefModal()">➕ Yeni Hedef Ekle</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button onclick="openHedefGecmisModal()" style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='var(--panel2)'">📋 Geçmiş</button>
+          <button onclick="openHedefModal()" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#2fae4e,#1f7f37);border:none;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(47,174,78,0.35);transition:filter .15s" onmouseover="this.style.filter='brightness(1.12)'" onmouseout="this.style.filter='none'">➕ Yeni Hedef</button>
         </div>
       </div>
 
@@ -2032,7 +2313,7 @@ function openExportPreview(tableId, fileLabel){
     const win = window.open('','_blank');
     if(!win){ alert('Açılır pencere engellendi.'); return; }
     win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
     <title>İşlem Listesi — Ön İzleme</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>
     <style>
@@ -2683,6 +2964,7 @@ function render(){
   const qDiv = document.getElementById('quickRanges');
   const quicks = [['today','Bugün'],['yesterday','Dün'],['this_week','Bu Hafta'],['last_week','Geçen Hafta'],['this_month','Bu Ay'],['last_month','Geçen Ay'],['last_6','Son 6 Ay'],['this_year','Bu Yıl'],['last_year','Geçen Yıl'],['all','Tümü']];
   qDiv.innerHTML = quicks.map(([k,l])=>`<button class="qbtn ${currentRange===k?'active':''}" onclick="setQuickRange('${k}')">${l}</button>`).join('');
+  window._lastQuicks = quicks;
 
   // ---- range summary hesapla (kategori bazında ve toplam için) ----
   const rEntriesForCards = entries.filter(e=> e.date>=rStart && e.date<=rEnd);
@@ -2831,7 +3113,8 @@ function render(){
   const diffTds = catData.map(x=>`<td style="${tdStyle};color:${x.d>=0?'#4cd964':'#ff5252'};font-weight:700">${x.d>=0?'▲':'▼'} ${Math.abs(x.pct).toFixed(1)}%</td>`).join('');
 
   cmpDiv.innerHTML = `
-    <table id="compareTable" style="width:100%;border-collapse:collapse">
+    <div style="overflow-x:auto;max-width:100%">
+    <table id="compareTable" style="width:100%;border-collapse:collapse;min-width:500px">
       <thead>
         <tr>
           <th style="${thStyle};text-align:left;width:110px"></th>
@@ -2864,7 +3147,8 @@ function render(){
           <td style="${tdStyle};color:${diffColor};font-weight:700">${diffArrow} ${fmt(Math.abs(curTotalKdv-prevTotalKdv))}</td>
         </tr>
       </tbody>
-    </table>`;
+    </table>
+    </div>`;
 
   // ---- Finansal Özet tablosu (KDV, %70/30, Yatırılan/Beklenen Prim) - tüm geçmiş ----
   const allMonths = Object.keys(monthMapAll).sort();
@@ -3134,6 +3418,18 @@ function render(){
   }
   adjustStickyOffsets();
   renderEntryLogCharts();
+  // Mobil filterbar değerlerini güncelle
+  const mob = document.getElementById('primFilterBar');
+  if(mob){
+    const ad = document.getElementById('activeDateMob');
+    const rs = document.getElementById('rangeStartMob');
+    const re = document.getElementById('rangeEndMob');
+    if(ad) ad.value = document.getElementById('activeDate').value;
+    if(rs) rs.value = document.getElementById('rangeStart').value;
+    if(re) re.value = document.getElementById('rangeEnd').value;
+    const qm = document.getElementById('quickRangesMob');
+    if(qm) qm.innerHTML = (window._lastQuicks||[]).map(([k,l])=>`<button class="qbtn ${currentRange===k?'active':''}" onclick="setQuickRange('${k}')">${l}</button>`).join('');
+  }
   // Ana özet sayfası açıksa otomatik güncelle
   if(typeof currentPage !== 'undefined' && currentPage === 'dash') renderDash();
 }
@@ -3801,19 +4097,19 @@ function renderDash(){
   }
   const maxTrend = Math.max(...trend6.map(t=>t.v),1);
   const trendBars = trend6.map((t,i)=>{
-    const h=Math.max(Math.round(t.v/maxTrend*52),3), isCur=i===5;
+    const h=Math.max(Math.round(t.v/maxTrend*50),6), isCur=i===5;
     const color = isCur ? '#3fd0ff' : 'rgba(63,208,255,0.3)';
     const ayKisa = monthLabel(t.ym).split(' ')[0];
     const adetColor  = isCur ? '#3fd0ff' : '#999';
     const tutarColor = isCur ? '#4cd964' : '#aaa';
     const tutarTam = t.v > 0 ? t.v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺' : '—';
-    return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1;cursor:default" title="${monthLabel(t.ym)}&#10;Adet: ${t.adet}&#10;Tutar: ${tutarTam}">
-      <div style="font-size:7.5px;font-weight:700;white-space:nowrap;text-align:center;line-height:1.4;margin-bottom:2px">
-        ${t.adet>0 ? `<span style="color:${adetColor}">${t.adet}</span>` : ''}
-        ${t.v>0 ? `<span style="color:${tutarColor}"> (${tutarTam})</span>` : ''}
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1;min-width:44px;cursor:default" title="${monthLabel(t.ym)}&#10;Adet: ${t.adet}&#10;Tutar: ${tutarTam}">
+      <div style="font-size:6px;font-weight:700;text-align:center;line-height:1.5;margin-bottom:3px;width:100%">
+        ${t.adet>0 ? `<div style="color:${adetColor}">${t.adet} ad</div>` : '<div>&nbsp;</div>'}
+        ${t.v>0 ? `<div style="color:${tutarColor}">${fmtF(t.v)}</div>` : '<div>&nbsp;</div>'}
       </div>
-      <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;min-height:3px"></div>
-      <div style="font-size:8.5px;color:${isCur?'#3fd0ff':'#888'};white-space:nowrap;margin-top:2px">${ayKisa}</div>
+      <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;min-height:4px"></div>
+      <div style="font-size:8px;font-weight:600;color:${isCur?'#3fd0ff':'#aaa'};white-space:nowrap;margin-top:4px;padding-top:3px;width:100%;text-align:center">${ayKisa}</div>
     </div>`;
   }).join('');
 
@@ -3850,7 +4146,7 @@ function renderDash(){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
 
       <!-- Sol: Ana Prim Kartı -->
-      <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;grid-row:span 2">
+      <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;grid-row:span 2;overflow:hidden">
         <div style="font-size:10px;color:#8fe3a8;margin-bottom:4px;font-weight:600">Toplam Prim (KDV Dahil)</div>
         <div style="font-size:22px;font-weight:900;color:#4cd964;letter-spacing:-.5px;line-height:1">${fmtF(curKdv)}</div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
@@ -3890,7 +4186,9 @@ function renderDash(){
         </div>` : ''}
         <div style="margin-top:10px">
           <div style="font-size:9.5px;color:rgba(255,255,255,0.5);margin-bottom:5px">Son 6 ay trendi <span style="font-size:8px">(adet · tutar)</span></div>
-          <div style="display:flex;align-items:flex-end;gap:3px;height:48px">${trendBars}</div>
+          <div style="overflow-x:auto;overflow-y:hidden;margin:0 -13px;padding:0 13px 12px">
+            <div style="display:flex;align-items:flex-end;gap:4px;height:100px;padding-top:42px;min-width:320px">${trendBars}</div>
+          </div>
         </div>
       </div>
 
@@ -4546,8 +4844,8 @@ function renderFinans(){
       <div class="section-title">${finansYearFilter==='all' ? 'Vodafone vs MİXY Kâr / Masraf — Yıllara Göre' : 'Vodafone vs MİXY Kâr / Masraf — '+finansYearFilter+' Yılı Ayları'}</div>
       <button class="preview-btn" onclick="openExportPreview('marjTable','Vodafone_MIXY_Kar_Masraf')">📤 Dışa Aktar</button>
     </div>
-    <div class="table-wrap" style="max-height:340px">
-      <table class="main-table" id="marjTable"></table>
+    <div class="table-wrap" style="max-height:340px;overflow-x:auto">
+      <table class="main-table" id="marjTable" style="min-width:500px"></table>
     </div>
 
     <div class="section-title">Aylık Kâr/Zarar Grafiği${entityLabel} — ${finansYearFilter==='all' ? 'Yıllara Göre' : finansYearFilter+' Yılı Ayları'}</div>
@@ -4559,8 +4857,8 @@ function renderFinans(){
       <div class="section-title">Detaylı Tablo</div>
       <button class="preview-btn" onclick="openExportPreview('finansDetailTable','Finans_Detayli_Tablo')">📤 Dışa Aktar</button>
     </div>
-    <div class="table-wrap" style="max-height:420px">
-      <table class="main-table" id="finansDetailTable"></table>
+    <div class="table-wrap" style="max-height:420px;overflow-x:auto">
+      <table class="main-table" id="finansDetailTable" style="min-width:600px"></table>
     </div>
     <div class="note">Mavi noktalı çizgili hücrelere tıklayıp doğrudan yazabilirsiniz (Mevcut Sermaye, Vod./MİXY Kâr, Vod./MİXY Masraf, Açıklama). <b>Gereken Sermaye</b> artık otomatik hesaplanır (önceki ayın mevcut sermayesi + bu ayın toplam kâr/zararı) ve elle düzenlenemez. Bir ayın <b>Mevcut Sermaye</b>'sini henüz girmediyseniz o satır "⏳ Bekliyor" olarak işaretlenir; Gereken Sermaye yine de otomatik hesaplanmaya devam eder. Hücreden çıkınca (Enter veya tıklayarak başka yere geçince) değişiklik kaydedilir.</div>
 
@@ -7194,7 +7492,7 @@ function _renderRaporShared({ chartTitle, bars, avgAmt, kpis, bestLabel, bestVal
   }
 
   // XLS verisi sakla
-  window._raporXlsData = { title: tableTitle, headers: tableHead, data: xlsData };
+  window._raporXlsData = { title: tableTitle, headers: tableHead, data: xlsData, bars: bars };
 }
 
 function exportRaporXls() {
@@ -7205,6 +7503,150 @@ function exportRaporXls() {
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   XLSX.utils.book_append_sheet(wb, ws, title.slice(0,30));
   XLSX.writeFile(wb, `Rapor_${title}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportRaporModal() {
+  if (!window._raporXlsData) return;
+  const { title, headers, data } = window._raporXlsData;
+  const now = new Date().toLocaleString('tr-TR');
+  const stamp = xlsTimestamp();
+  const modal = document.getElementById('exportFullModal');
+
+  document.getElementById('exportModalTitle').textContent = '📅 ' + title;
+  document.getElementById('exportModalSub').textContent = now;
+
+  // Grafik SVG/HTML klonu al
+  const chartBox = document.getElementById('raporChartBox');
+  const chartClone = chartBox ? chartBox.cloneNode(true) : null;
+  if (chartClone) {
+    chartClone.style.cssText = 'margin-bottom:12px;background:var(--panel);border-radius:8px;padding:12px;border:1px solid var(--line)';
+  }
+
+  // Tablo
+  const srcTable = document.getElementById('raporTable');
+  const tableClone = srcTable ? srcTable.cloneNode(true) : null;
+  if (tableClone) {
+    tableClone.style.cssText = 'width:100%;border-collapse:collapse;font-size:11px';
+    Array.from(tableClone.querySelectorAll('th')).forEach(th => {
+      th.style.cssText = 'padding:8px 10px;background:#1a1c20;color:#9aa0a6;font-size:10px;border-bottom:2px solid #e2231a;text-align:left;white-space:nowrap';
+    });
+    Array.from(tableClone.querySelectorAll('tr')).forEach((tr, i) => {
+      tr.removeAttribute('onclick');tr.removeAttribute('onmouseover');tr.removeAttribute('onmouseout');
+      tr.style.background = i % 2 === 0 ? '#26282b' : '#2c2f33';
+      Array.from(tr.querySelectorAll('td')).forEach(td => { td.style.color = '#d1d5db'; td.style.background = 'transparent'; td.style.padding = '7px 10px'; td.style.whiteSpace = 'nowrap'; });
+    });
+  }
+
+  // Tab: sadece "Tablo" (grafik + tablo birlikte içerikte)
+  document.getElementById('exportModalTabs').innerHTML =
+    `<button style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700">📋 Rapor</button>`;
+
+  const contentEl = document.getElementById('exportModalContent');
+  contentEl.innerHTML = '';
+  if (chartClone) contentEl.appendChild(chartClone);
+  const tblWrap = document.createElement('div');
+  tblWrap.style.cssText = 'overflow-x:auto;background:#26282b;border-radius:8px';
+  if (tableClone) tblWrap.appendChild(tableClone);
+  contentEl.appendChild(tblWrap);
+
+  // Excel butonu
+  document.getElementById('exportModalXlsBtn').onclick = function () {
+    if (typeof XLSX === 'undefined') { alert('Excel kütüphanesi yükleniyor.'); return; }
+    const wb = XLSX.utils.book_new();
+    const wsData = [headers, ...data.map(row => headers.map(h => row[h] ?? ''))];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    XLSX.utils.book_append_sheet(wb, ws, title.slice(0, 30));
+    XLSX.writeFile(wb, `Rapor_${title}_${stamp}.xlsx`);
+  };
+
+  // PDF butonunu rapor için özel fonksiyona yönlendir
+  document.getElementById('exportModalPdfBtn').onclick = function(){ exportRaporPdf(); };
+
+  modal.style.display = 'flex';
+}
+
+function exportRaporPdf(){
+  if(!window._raporXlsData) return;
+  const { title, headers, data, bars } = window._raporXlsData;
+  const now = new Date().toLocaleString('tr-TR');
+  // Her zaman landscape — grafik + tablo sığsın
+  const orientation = 'landscape';
+
+  // Tablo satırları
+  const thHtml = '<tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr>';
+  const tdHtml = data.map((row,i)=>
+    `<tr class="${i%2===0?'even':'odd'}">`+headers.map(h=>`<td>${row[h]??''}</td>`).join('')+'</tr>'
+  ).join('');
+
+  // Dikey bar chart — bars dizisinden (label, value, pct)
+  let chartHtml = '';
+  if(bars && bars.length){
+    const maxVal = Math.max(...bars.map(b=>b.value),1);
+    const barW = Math.max(20, Math.min(60, Math.floor(700/bars.length)-8));
+    chartHtml = `
+    <div style="padding:16px 16px 4px">
+      <div style="font-size:11px;font-weight:700;color:#333;margin-bottom:12px">📊 Performans Grafiği</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:160px;border-bottom:2px solid #e5e7eb;padding-bottom:0;overflow-x:auto">
+        ${bars.map(b=>{
+          const pct = Math.round(b.value/maxVal*100);
+          const color = pct>=80?'#16a34a':pct>=50?'#2563eb':'#e2231a';
+          return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:${barW}px;flex:1">
+            <div style="font-size:8px;color:#555;margin-bottom:2px;white-space:nowrap">${b.label2||fmt2(b.value)}</div>
+            <div style="width:70%;background:${color};border-radius:3px 3px 0 0;height:${Math.max(pct,2)}%;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>
+            <div style="font-size:7.5px;color:#666;margin-top:4px;text-align:center;white-space:nowrap;overflow:hidden;max-width:${barW+4}px">${b.label}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  function fmt2(n){ return (Math.round(n)).toLocaleString('tr-TR')+' ₺'; }
+
+  const win = window.open('','_blank','width=1060,height=780');
+  if(!win){ alert('Açılır pencere engellendi.'); return; }
+  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+  <title>${title}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,Helvetica,sans-serif;background:#e8eaed;color:#1a1a1a}
+    .toolbar{position:sticky;top:0;z-index:99;background:#1a1c20;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+    .tit{color:#eef0f2;font-size:13px;font-weight:700;flex:1}
+    .sub{color:#9aa0a6;font-size:10px;margin-top:1px}
+    .btn{border:none;border-radius:7px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer}
+    .btn-print{background:#e2231a;color:#fff}
+    .btn-close{background:transparent;color:#aaa;border:1px solid #555}
+    .wrap{max-width:1020px;margin:20px auto;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+    .cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:20px 24px;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .cover h2{font-size:18px;margin:0 0 4px}
+    .cover p{font-size:10px;opacity:.7}
+    .chart-sec{border-bottom:1px solid #e5e7eb}
+    .tbl-wrap{overflow-x:auto;padding:16px}
+    table{width:100%;border-collapse:collapse;font-size:9px}
+    th{padding:6px 7px;background:#e2231a;color:#fff;text-align:left;font-size:9px;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    td{padding:5px 7px;border-bottom:1px solid #e5e7eb;color:#1a1a1a;white-space:nowrap}
+    tr.even td{background:#f8f9fa;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    @media print{
+      body{background:#fff}
+      .toolbar{display:none}
+      .wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}
+      @page{margin:10mm;size:A4 ${orientation}}
+    }
+  </style>
+  </head><body>
+  <div class="toolbar">
+    <div class="tit"><div>${title}</div><div class="sub">${now}</div></div>
+    <button class="btn btn-print" onclick="window.print()">🖨 PDF / Yazdır</button>
+    <button class="btn btn-close" onclick="window.close()">✕ Kapat</button>
+  </div>
+  <div class="wrap">
+    <div class="cover"><h2>${title}</h2><p>${now}</p></div>
+    <div class="chart-sec">${chartHtml}</div>
+    <div class="tbl-wrap">
+      <table><thead>${thHtml}</thead><tbody>${tdHtml}</tbody></table>
+    </div>
+  </div>
+  </body></html>`);
+  win.document.close();
 }
 // ==================== HAFTALIK / YILLIK RAPOR SONU ====================
 
@@ -7831,25 +8273,25 @@ setTimeout(checkBackupPermissionLost, 2500);
 
 <!-- GEÇMİŞ HEDEFLER MODAL -->
 <div id="hedefGecmisModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1600;align-items:center;justify-content:center">
-  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:1200px;width:98%;max-height:92vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.6)">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:1200px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.6)">
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#1a2035,#2a3060);padding:16px 20px;border-radius:16px 16px 0 0;position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:15px;font-weight:800;color:#fff">📋 Geçmiş Hedefler</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px">Tüm aylara ait hedef ve gerçekleşen veriler</div>
+    <div style="background:linear-gradient(135deg,#1a2035,#2a3060);padding:14px 16px;border-radius:16px 16px 0 0;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div style="min-width:0">
+        <div style="font-size:14px;font-weight:800;color:#fff">📋 Geçmiş Hedefler</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px">Tüm aylara ait hedef ve gerçekleşen veriler</div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <select id="hedefGecmisYilSel" onchange="renderHedefGecmis()" style="padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:#2a2d32;color:#fff;font-size:12px;cursor:pointer">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <select id="hedefGecmisYilSel" onchange="renderHedefGecmis()" style="padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:#2a2d32;color:#fff;font-size:12px;cursor:pointer">
           <option value="hepsi">Tüm Yıllar</option>
         </select>
-        <button onclick="closeHedefGecmisModal()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:17px;font-weight:700;line-height:1">✕</button>
+        <button onclick="closeHedefGecmisModal()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:17px;font-weight:700;line-height:1;flex-shrink:0">✕</button>
       </div>
     </div>
     <!-- Özet bandı -->
-    <div id="hedefGecmisOzet" style="display:flex;gap:0;border-bottom:1px solid var(--line)"></div>
-    <!-- Tablo -->
-    <div style="padding:0 0 16px">
-      <table id="hedefGecmisTbl" class="main-table" style="width:100%"></table>
+    <div id="hedefGecmisOzet" style="display:flex;gap:0;border-bottom:1px solid var(--line);flex-shrink:0;overflow-x:auto"></div>
+    <!-- Tablo - scroll edilebilir -->
+    <div style="flex:1;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <table id="hedefGecmisTbl" class="main-table" style="width:100%;min-width:500px"></table>
     </div>
   </div>
 </div>
@@ -7898,16 +8340,29 @@ function renderHedefGecmis(){
   const hedefliAy = ymList.filter(ym=>hedefler[ym]>0).length;
   const tutanAy = ymList.filter(ym=>(hedefler[ym]>0)&&primForYm(ym)>=hedefler[ym]).length;
   const ozetEl = document.getElementById('hedefGecmisOzet');
-  if(ozetEl) ozetEl.innerHTML = [
-    ['📅 Dönem', ymList.length + ' ay', ''],
-    ['🎯 Top. Hedef', fmtF(toplamHedef), 'var(--gold)'],
-    ['✅ Top. Gerçekleşen', fmtF(toplamGercek), toplamGercek>=toplamHedef?'var(--green)':'var(--accent)'],
-    ['🏆 Hedefe Ulaşılan', `${tutanAy} / ${hedefliAy} ay`, tutanAy===hedefliAy?'var(--green)':'var(--muted)'],
-  ].map(([t,v,c])=>`
-    <div style="flex:1;padding:12px 16px;border-right:1px solid var(--line)">
-      <div style="font-size:10.5px;color:var(--muted);margin-bottom:4px">${t}</div>
-      <div style="font-size:14px;font-weight:700;color:${c||'var(--txt)'}">${v}</div>
-    </div>`).join('');
+  if(ozetEl){
+    const gercekColor  = toplamGercek>=toplamHedef ? '#22c55e' : '#3b82f6';
+    const gercekBg     = toplamGercek>=toplamHedef ? 'linear-gradient(135deg,#052e16,#14532d)' : 'linear-gradient(135deg,#0f172a,#1e3a5f)';
+    const hedefBg      = 'linear-gradient(135deg,#1c1007,#3b2000)';
+    const donemBg      = 'linear-gradient(135deg,#111827,#1f2937)';
+    const trofeColor   = tutanAy===hedefliAy ? '#22c55e' : '#94a3b8';
+    const trofeBg      = tutanAy===hedefliAy ? 'linear-gradient(135deg,#052e16,#14532d)' : 'linear-gradient(135deg,#111827,#1f2937)';
+    const ozetItems = [
+      {icon:'📅', label:'Dönem',           value: ymList.length+' ay',           color:'#e2e8f0', bg: donemBg},
+      {icon:'🎯', label:'Toplam Hedef',    value: fmtF(toplamHedef),             color:'#fbbf24', bg: hedefBg},
+      {icon:'✅', label:'Gerçekleşen',     value: fmtF(toplamGercek),            color: gercekColor, bg: gercekBg},
+      {icon:'🏆', label:'Hedefe Ulaşılan', value: tutanAy+' / '+hedefliAy+' ay',color: trofeColor,  bg: trofeBg},
+    ];
+    ozetEl.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;width:100%;gap:2px;background:rgba(0,0,0,0.3);padding:2px">`+
+      ozetItems.map(k=>`
+        <div style="padding:14px 16px;background:${k.bg};display:flex;align-items:center;gap:12px;border-radius:6px">
+          <div style="font-size:24px;line-height:1;flex-shrink:0">${k.icon}</div>
+          <div style="min-width:0">
+            <div style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,0.5);margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase">${k.label}</div>
+            <div style="font-size:16px;font-weight:800;color:${k.color};line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k.value}</div>
+          </div>
+        </div>`).join('')+`</div>`;
+  }
 
   const tbl = document.getElementById('hedefGecmisTbl');
   if(!tbl) return;
@@ -7973,5 +8428,368 @@ function renderHedefGecmis(){
 }
 </script>
 
+<!-- TAM EKRAN DIŞA AKTAR MODAL -->
+<div id="exportFullModal" style="display:none;position:fixed;inset:0;z-index:2000;background:#1a1c20;flex-direction:column">
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#111;border-bottom:1px solid #333;flex-shrink:0">
+    <div style="flex:1;min-width:0">
+      <div id="exportModalTitle" style="font-size:13px;font-weight:700;color:#fff"></div>
+      <div id="exportModalSub" style="font-size:10px;color:#888;margin-top:1px"></div>
+    </div>
+    <button id="exportModalXlsBtn" style="background:#1a7a3a;border:none;color:#fff;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">📊 Excel</button>
+    <button id="exportModalPdfBtn" onclick="exportModalPrint()" style="background:#7f1d1d;border:none;color:#fca5a5;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">🖨 PDF</button>
+    <button onclick="closeExportModal()" style="background:#7a1f1f;border:none;color:#fff;width:32px;height:32px;border-radius:6px;font-size:16px;cursor:pointer">✕</button>
+  </div>
+  <!-- Tabs -->
+  <div id="exportModalTabs" style="display:flex;border-bottom:1px solid #333;flex-shrink:0;background:#111"></div>
+  <!-- Content -->
+  <div id="exportModalContent" style="flex:1;overflow:auto;padding:12px"></div>
+</div>
+
+<script>
+function showCatDetail(cat, rStart, rEnd){
+  const catEntries = entries
+    .filter(e=>e.cat===cat && e.date>=rStart && e.date<=rEnd && e.count>0)
+    .sort((a,b)=>b.date.localeCompare(a.date));
+
+  const rows = catEntries.map(e=>{
+    const amt = e.count * priceFor(ymKey(e.date), cat);
+    const logs = (entryLog||[]).filter(l=>l.date===e.date && l.cat===cat).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    const saatler = logs.map(l=>l.time||'--:--').join(', ');
+    return `<div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid #2a2d33">
+      <div style="min-width:90px;font-size:12px;font-weight:700;color:#eee">${e.date}</div>
+      <div style="flex:1;font-size:11px;color:#888">${saatler||'—'}</div>
+      <div style="font-size:12px;font-weight:700;color:#fff;min-width:30px;text-align:center">${e.count}</div>
+      <div style="font-size:12px;color:#4cd964;min-width:80px;text-align:right">${fmt(amt)}</div>
+    </div>`;
+  }).join('');
+
+  const totalCount = catEntries.reduce((a,e)=>a+e.count,0);
+  const totalAmt = catEntries.reduce((a,e)=>a+e.count*priceFor(ymKey(e.date),cat),0);
+
+  let popup = document.getElementById('dayDetailPopup');
+  if(popup) popup.remove();
+  popup = document.createElement('div');
+  popup.id = 'dayDetailPopup';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:16px';
+  popup.onclick = function(e){ if(e.target===popup) popup.remove(); };
+  popup.innerHTML = `
+    <div style="background:#1a1c20;border:1px solid #333;border-radius:14px;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #333;flex-shrink:0">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#fff">${cat}</div>
+          <div style="font-size:11px;color:#888;margin-top:2px">${catEntries.length} gün · Toplam ${totalCount} adet · ${fmt(totalAmt)}</div>
+        </div>
+        <button onclick="document.getElementById('dayDetailPopup').remove()" style="background:#333;border:none;color:#fff;width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:16px;line-height:1">✕</button>
+      </div>
+      <div style="display:flex;padding:8px 16px;border-bottom:1px solid #2a2d33;background:#111">
+        <div style="min-width:90px;font-size:10px;color:#888">TARİH</div>
+        <div style="flex:1;font-size:10px;color:#888">SAATLER</div>
+        <div style="min-width:30px;text-align:center;font-size:10px;color:#888">ADET</div>
+        <div style="min-width:80px;text-align:right;font-size:10px;color:#888">TUTAR</div>
+      </div>
+      <div style="overflow-y:auto;flex:1">${rows}</div>
+    </div>`;
+  document.body.appendChild(popup);
+}
+
+function showDayDetail(date, cat){
+  const logs = (entryLog||[]).filter(l=>l.date===date && l.cat===cat)
+    .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+
+  // Toplam adet entries'den
+  const totalEntry = entries.find(e=>e.date===date && e.cat===cat);
+  const totalCount = totalEntry ? totalEntry.count : 0;
+  const unitPrice = priceFor(ymKey(date), cat);
+
+  const html = logs.length ? logs.map((l,i)=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #2a2d33">
+      <div style="font-size:15px;font-weight:800;color:#3fd0ff;min-width:44px">${l.time||'--:--'}</div>
+      <div style="flex:1;font-size:12px;color:#ccc">${l.cat}</div>
+      <div style="font-size:11px;color:#888">${i+1}. kayıt</div>
+    </div>`).join('') + `
+    <div style="padding:12px 16px;background:#111;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:11px;color:#888">Toplam: <b style="color:#fff">${totalCount} adet</b></div>
+      <div style="font-size:13px;font-weight:700;color:#4cd964">${fmt(totalCount * unitPrice)}</div>
+    </div>` :
+    `<div style="padding:20px;text-align:center;color:#888">Saat bilgisi kaydedilmemiş<br><span style="font-size:11px">Toplam: ${totalCount} adet</span></div>`;
+
+  // Popup - ekran ortasında
+  let popup = document.getElementById('dayDetailPopup');
+  if(popup) popup.remove();
+  popup = document.createElement('div');
+  popup.id = 'dayDetailPopup';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:20px';
+  popup.onclick = function(e){ if(e.target===popup) popup.remove(); };
+  popup.innerHTML = `
+    <div style="background:#1a1c20;border:1px solid #333;border-radius:14px;width:100%;max-width:440px;max-height:70vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #333;position:sticky;top:0;background:#1a1c20;border-radius:14px 14px 0 0">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#fff">${date} — ${cat}</div>
+          <div style="font-size:11px;color:#888;margin-top:2px">${logs.length} saat kaydı</div>
+        </div>
+        <button onclick="document.getElementById('dayDetailPopup').remove()" style="background:#333;border:none;color:#fff;width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:16px;line-height:1">✕</button>
+      </div>
+      ${html}
+    </div>`;
+  document.body.appendChild(popup);
+}
+
+function exportModalPrint(){
+  const title = document.getElementById('exportModalTitle').textContent.replace(/^📊\s*/,'');
+  const sub   = document.getElementById('exportModalSub').textContent;
+  const srcTable = document.getElementById('exportModalContent').querySelector('table');
+  if(!srcTable){ alert('Yazdırılacak tablo bulunamadı.'); return; }
+
+  // Tablo verilerini düz metin olarak oku
+  const rows = Array.from(srcTable.querySelectorAll('tr'));
+  const isHead = r => r.querySelector('th') !== null;
+  const readRow = r => Array.from(r.querySelectorAll('th,td')).map(c=>(c.innerText||c.textContent||'').trim().replace(/\s+/g,' '));
+
+  const headRows = rows.filter(isHead).map(readRow);
+  const bodyRows = rows.filter(r=>!isHead(r)).map(readRow);
+  const colCount = (headRows[0]||bodyRows[0]||[]).length;
+  const orientation = colCount > 4 ? 'landscape' : 'portrait';
+
+  const thHtml = headRows.map(r=>'<tr>'+r.map(c=>`<th>${c}</th>`).join('')+'</tr>').join('');
+  const tdHtml = bodyRows.map((r,i)=>`<tr class="${i%2===0?'even':'odd'}">`+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('');
+
+  const now = new Date().toLocaleString('tr-TR');
+  const win = window.open('','_blank','width=1060,height=780');
+  if(!win){ alert('Açılır pencere engellendi. Lütfen tarayıcı ayarlarından izin verin.'); return; }
+
+  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+  <title>${title}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,Helvetica,sans-serif;background:#e8eaed;color:#1a1a1a}
+    .toolbar{position:sticky;top:0;z-index:99;background:#1a1c20;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+    .tit{color:#eef0f2;font-size:13px;font-weight:700;flex:1}
+    .sub{color:#9aa0a6;font-size:10px;margin-top:1px}
+    .btn{border:none;border-radius:7px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer}
+    .btn-print{background:#e2231a;color:#fff}
+    .btn-close{background:transparent;color:#aaa;border:1px solid #555}
+    .wrap{max-width:1020px;margin:20px auto;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+    .cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:20px 24px;color:#fff}
+    .cover h2{font-size:18px;margin:0 0 4px}
+    .cover p{font-size:10px;opacity:.7}
+    .tbl-wrap{overflow-x:auto;padding:16px}
+    table{width:100%;border-collapse:collapse;font-size:9px}
+    th{padding:6px 7px;background:#e2231a;color:#fff;text-align:left;font-size:9px;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    td{padding:5px 7px;border-bottom:1px solid #e5e7eb;color:#1a1a1a;white-space:nowrap}
+    tr.even td{background:#f8f9fa;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    @media print{
+      body{background:#fff}
+      .toolbar{display:none}
+      .wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}
+      @page{margin:10mm;size:A4 ${orientation}}    }
+  </style>
+  </head><body>
+  <div class="toolbar">
+    <div class="tit"><div>${title}</div><div class="sub">${sub}</div></div>
+    <button class="btn btn-print" onclick="window.print()">🖨 PDF / Yazdır</button>
+    <button class="btn btn-close" onclick="window.close()">✕ Kapat</button>
+  </div>
+  <div class="wrap">
+    <div class="cover"><h2>${title}</h2><p>${sub} · ${now}</p></div>
+    <div class="tbl-wrap">
+      <table><thead>${thHtml}</thead><tbody>${tdHtml}</tbody></table>
+    </div>
+  </div>
+  </body></html>`);
+  win.document.close();
+}
+function closeExportModal(){
+  document.getElementById('exportFullModal').style.display = 'none';
+}
+
+// Mobilde window.open yerine modal kullan
+const _origOpenExportPreview = openExportPreview;
+function openExportPreview(tableId, fileLabel){
+  // window.open yerine modal kullanan tablolar
+  const modalTables = ['compareTable','mainTable','financeTable','priceHistTable','gelirTable'];
+  if(modalTables.includes(tableId)){
+    const table = document.getElementById(tableId);
+    if(!table || !table.rows || table.rows.length === 0){ alert('Aktarılacak veri yok.'); return; }
+
+    const now = new Date().toLocaleString('tr-TR');
+    const stamp = xlsTimestamp();
+    const modal = document.getElementById('exportFullModal');
+
+    // Başlık
+    const titles = {
+      compareTable: 'Ay Karşılaştırması',
+      mainTable: 'Aylık Kategori Dağılımı',
+      financeTable: 'Prim / Finans Özeti',
+      priceHistTable: 'Fiyat Geçmişi',
+      gelirTable: 'Gelir / Gider Tablosu'
+    };
+    document.getElementById('exportModalTitle').textContent = '📊 ' + (titles[tableId] || fileLabel);
+    document.getElementById('exportModalSub').textContent = now;
+
+    // Tek tab
+    document.getElementById('exportModalTabs').innerHTML =
+      `<button style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700">📋 Tablo</button>`;
+
+    // Tablo HTML'ini klonla
+    const clone = table.cloneNode(true);
+    clone.style.cssText = 'width:100%;border-collapse:collapse;font-size:11px';
+    Array.from(clone.querySelectorAll('th')).forEach(th=>{
+      th.style.cssText='padding:8px 10px;background:#1a1c20;color:#9aa0a6;font-size:10px;border-bottom:2px solid #e2231a;text-align:left;white-space:nowrap';
+    });
+    Array.from(clone.querySelectorAll('td')).forEach(td=>{
+      td.style.cssText='padding:7px 10px;border-bottom:1px solid #2e3035;color:#d1d5db;white-space:nowrap';
+    });
+    Array.from(clone.querySelectorAll('tr')).forEach((tr,i)=>{
+      tr.removeAttribute('onclick');
+      tr.removeAttribute('onmouseover');
+      tr.removeAttribute('onmouseout');
+      tr.style.background = i % 2 === 0 ? '#26282b' : '#2c2f33';
+      // Satır içindeki td yazı renklerini zorla
+      Array.from(tr.querySelectorAll('td')).forEach(td=>{
+        td.style.color = '#d1d5db';
+        td.style.background = 'transparent';
+      });
+    });
+
+    document.getElementById('exportModalContent').innerHTML =
+      `<div style="overflow-x:auto;background:#26282b;border-radius:8px">${clone.outerHTML}</div>`;
+
+    // Excel butonu
+    document.getElementById('exportModalXlsBtn').onclick = function(){
+      if(typeof XLSX==='undefined'){ alert('Excel kütüphanesi yükleniyor, lütfen tekrar deneyin.'); return; }
+      const wb = XLSX.utils.table_to_book(table, {sheet: fileLabel.slice(0,31)});
+      XLSX.writeFile(wb, fileLabel+'_'+stamp+'.xlsx');
+    };
+
+    modal.style.display = 'flex';
+    return;
+  }
+
+  // activityListTable ve diğerleri orijinal fonksiyona git
+  if(tableId !== 'activityListTable'){
+    return _origOpenExportPreview(tableId, fileLabel);
+  }
+
+  const rStart = document.getElementById('rangeStart').value;
+  const rEnd   = document.getElementById('rangeEnd').value;
+  const filtRows = entries
+    .filter(e => e.date>=rStart && e.date<=rEnd && e.count>0)
+    .slice().sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat));
+  if(!filtRows.length){ alert('Bu aralıkta aktarılacak işlem yok.'); return; }
+
+  const now = new Date().toLocaleString('tr-TR');
+
+  // Detaylı tablo HTML - tarihe tıklayınca detay göster
+  const detayliRows = filtRows.map(e=>{
+    const amt = e.count * priceFor(ymKey(e.date), e.cat);
+    // O güne ait tüm kayıtları bul (entryLog'dan saat bilgisiyle)
+    const dayLogs = (entryLog||[]).filter(l=>l.date===e.date && l.cat===e.cat);
+    const hasLog = dayLogs.length > 0;
+    return `<tr style="border-bottom:1px solid #2a2d33" ${hasLog?`onclick="showDayDetail('${e.date}','${e.cat}')" style="border-bottom:1px solid #2a2d33;cursor:pointer" onmouseover="this.style.background='#2a2d33'" onmouseout="this.style.background=''"`:''}>
+      <td style="padding:8px 6px;font-size:12px;color:#eee;font-weight:600">${e.date}${hasLog?' <span style="color:#3fd0ff;font-size:9px">●</span>':''}</td>
+      <td style="padding:8px 6px;font-size:12px;color:#ccc">${e.cat}</td>
+      <td style="padding:8px 6px;font-size:12px;color:#ccc;text-align:center">${e.count}</td>
+      <td style="padding:8px 6px;font-size:12px;color:#4cd964;text-align:right">${fmt(amt)}</td>
+    </tr>`;
+  }).join('');
+
+  // Özet tablo - DİKEY: her kategori bir satır, tıklayınca tarih detayı
+  const catSummary = CATS.map(c=>{
+    const catEntries = filtRows.filter(e=>e.cat===c);
+    const totalCount = catEntries.reduce((a,e)=>a+e.count,0);
+    if(!totalCount) return '';
+    const totalAmt = catEntries.reduce((a,e)=>a+e.count*priceFor(ymKey(e.date),c),0);
+    const aylar = [...new Set(catEntries.map(e=>ymKey(e.date)))].sort().reverse();
+    return `<tr onclick="showCatDetail('${c}','${rStart}','${rEnd}')" style="border-bottom:1px solid #2a2d33;cursor:pointer" onmouseover="this.style.background='#2a2d33'" onmouseout="this.style.background=''">
+      <td style="padding:10px 8px;font-size:13px;color:#eee;font-weight:700">${c} <span style="color:#3fd0ff;font-size:9px">›</span></td>
+      <td style="padding:10px 8px;font-size:13px;color:#fff;font-weight:700;text-align:center">${totalCount}</td>
+      <td style="padding:10px 8px;font-size:12px;color:#888;text-align:center">${aylar.length} ay</td>
+      <td style="padding:10px 8px;font-size:13px;color:#4cd964;font-weight:700;text-align:right">${fmt(totalAmt)}</td>
+    </tr>`;
+  }).filter(Boolean).join('');
+
+  const toplamCount = filtRows.reduce((a,e)=>a+e.count,0);
+  const toplamAmt = filtRows.reduce((a,e)=>a+e.count*priceFor(ymKey(e.date),e.cat),0);
+
+  const modal = document.getElementById('exportFullModal');
+  document.getElementById('exportModalTitle').textContent = '📋 İşlem Listesi';
+  document.getElementById('exportModalSub').textContent = `${rStart} – ${rEnd} · ${now}`;
+
+  // Tabs
+  document.getElementById('exportModalTabs').innerHTML = `
+    <button id="tabDetayli" onclick="switchExportTab('detayli')" style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">📋 Detaylı (${filtRows.length})</button>
+    <button id="tabOzet" onclick="switchExportTab('ozet')" style="flex:1;padding:10px;background:#111;color:#888;border:none;font-size:12px;cursor:pointer">📊 Özet</button>
+  `;
+
+  // Content
+  const detayliHtml = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr style="background:#e2231a">
+      <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Tarih</th>
+      <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Kategori</th>
+      <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:center">Adet</th>
+      <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:right">Tutar</th>
+    </tr></thead>
+    <tbody>${detayliRows}</tbody>
+  </table>`;
+
+  const ozetHtml = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr style="background:#e2231a">
+      <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:left">Kategori</th>
+      <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:center">Toplam Adet</th>
+      <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:center">Ay Sayısı</th>
+      <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:right">Tutar</th>
+    </tr></thead>
+    <tbody>${catSummary}</tbody>
+    <tfoot><tr style="background:#111;border-top:2px solid #e2231a">
+      <td style="padding:10px 8px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
+      <td style="padding:10px 8px;font-size:13px;color:#fff;font-weight:800;text-align:center">${toplamCount}</td>
+      <td></td>
+      <td style="padding:10px 8px;font-size:13px;color:#4cd964;font-weight:800;text-align:right">${fmt(toplamAmt)}</td>
+    </tr></tfoot>
+  </table>`;
+
+  window._exportDetayliHtml = detayliHtml;
+  window._exportOzetHtml = ozetHtml;
+  window._exportFiltRows = filtRows;
+  window._exportFileLabel = fileLabel;
+
+  document.getElementById('exportModalContent').innerHTML = detayliHtml;
+  window._exportCurrentTab = 'detayli';
+
+  // Excel butonu
+  document.getElementById('exportModalXlsBtn').onclick = function(){
+    exportModalToExcel();
+  };
+
+  modal.style.display = 'flex';
+}
+
+function switchExportTab(tab){
+  window._exportCurrentTab = tab;
+  const d = document.getElementById('tabDetayli');
+  const o = document.getElementById('tabOzet');
+  if(tab === 'detayli'){
+    d.style.background = '#e2231a'; d.style.color = '#fff';
+    o.style.background = '#111'; o.style.color = '#888';
+    document.getElementById('exportModalContent').innerHTML = window._exportDetayliHtml;
+  } else {
+    o.style.background = '#e2231a'; o.style.color = '#fff';
+    d.style.background = '#111'; d.style.color = '#888';
+    document.getElementById('exportModalContent').innerHTML = window._exportOzetHtml;
+  }
+}
+
+function exportModalToExcel(){
+  const rows = window._exportFiltRows || [];
+  const data = [['Tarih','Kategori','Adet','Tutar']].concat(
+    rows.map(e=>[e.date, e.cat, e.count, e.count * priceFor(ymKey(e.date), e.cat)])
+  );
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Islemler');
+  XLSX.writeFile(wb, (window._exportFileLabel||'export') + '.xlsx');
+}
+</script>
 </body>
 </html>
