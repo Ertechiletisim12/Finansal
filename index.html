@@ -86,13 +86,9 @@ html{scrollbar-gutter:stable}
 
   /* Tüm sayfalar tam genişlik, scroll - display switchPage tarafından kontrol edilir */
   #page-dash,#page-prim,#page-finans,#page-hedef,
-  #page-gelir,#page-not,#page-trend{
+  #page-gelir,#page-not,#page-trend,#page-rapor{
     overflow-y:visible!important;padding:0 10px 80px!important;
     height:auto!important;max-height:none!important;
-  }
-  #page-rapor{
-    overflow-y:auto!important;padding:0 10px 80px!important;
-    height:100%!important;max-height:100%!important;
   }
   #page-prim{ flex-direction:column!important;height:auto!important; }
   #page-prim .layout{ overflow:visible!important; }
@@ -111,6 +107,18 @@ html{scrollbar-gutter:stable}
   }
   /* Sabit barların yüksekliği kadar içeriği aşağı it */
   #page-prim{ padding-top:160px!important; }
+  #raporHeader{
+    position:fixed!important;
+    top:52px!important;
+    left:0!important;
+    right:0!important;
+    z-index:99!important;
+    background:var(--bg)!important;
+    padding:8px 10px!important;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15)!important;
+    flex-wrap:wrap!important;
+  }
+  #page-rapor{ padding-top:110px!important; }
   
   /* Ana scroll body'de olsun */
   body{ overflow-y:auto!important; }
@@ -1132,7 +1140,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
     <!-- ===================== HAFTALIK / YILLIK RAPOR SAYFASI ===================== -->
     <div id="page-rapor" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
-      <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;flex-wrap:wrap;gap:8px">
+      <div id="raporHeader" style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;flex-wrap:wrap;gap:8px">
         <h2 style="margin:0;font-size:15px">📅 Haftalık / Yıllık Rapor</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <div id="raporYilBtns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
@@ -1174,7 +1182,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;gap:8px">
         <h2 style="margin:0;font-size:15px">🎯 Hedef Yönetimi</h2>
         <div style="display:flex;gap:8px;align-items:center">
-          <button onclick="openHedefGecmisModal()" style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='var(--panel2)'">📋 Geçmiş</button>
+          <button onclick="openHedefGecmisModal()" style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='var(--panel2)'">📋 Geçmiş Hedefler</button>
           <button onclick="openHedefModal()" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#2fae4e,#1f7f37);border:none;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(47,174,78,0.35);transition:filter .15s" onmouseover="this.style.filter='brightness(1.12)'" onmouseout="this.style.filter='none'">➕ Yeni Hedef</button>
         </div>
       </div>
@@ -1958,22 +1966,55 @@ const JSONBIN_URL    = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 
 let cloudSyncTimer = null;
 let cloudSyncStatus = 'idle'; // idle | saving | saved | error
+let lastCloudHash = ''; // son bilinen cloud snapshot hash
+let cloudPollTimer = null;
 
 function scheduleCloudSync(){
   if(cloudSyncTimer) clearTimeout(cloudSyncTimer);
   cloudSyncTimer = setTimeout(pushToCloud, 3000); // 3 sn bekle, sonra kaydet
 }
 
+// Basit hash — veri değişti mi anlayalım
+function quickHash(obj){
+  const s = JSON.stringify(obj);
+  let h = 0;
+  for(let i=0;i<s.length;i++) h = (Math.imul(31,h)+s.charCodeAt(i))|0;
+  return h.toString();
+}
+
+// Entry merge: id bazlı birleştir, en son timestamp kazanır
+function mergeEntries(local, cloud){
+  const map = {};
+  [...(cloud||[]), ...(local||[])].forEach(e=>{ map[e.id||e.date+'_'+e.cat] = e; });
+  return Object.values(map);
+}
+
 async function pushToCloud(){
   try{
     updateCloudIndicator('saving');
+    // Önce cloud'u çek, merge et
+    const res0 = await fetch(JSONBIN_URL, {
+      headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' }
+    });
+    if(res0.ok){
+      const cloudData = await res0.json();
+      if(cloudData && cloudData.data !== 'init'){
+        // Entry'leri merge et
+        if(cloudData.entries) entries = mergeEntries(entries, cloudData.entries);
+        if(cloudData.entryLog) entryLog = [...new Map([...(cloudData.entryLog||[]),...(entryLog||[])].map(e=>[e.id||e.ts,e])).values()];
+        // localStorage güncelle
+        localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries));
+        localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
+      }
+    }
     const payload = getBackupData();
+    const hash = quickHash(payload);
     const res = await fetch(JSONBIN_URL, {
       method: 'PUT',
       headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_KEY },
       body: JSON.stringify(payload)
     });
-    if(res.ok || res.status === 304){ updateCloudIndicator('saved'); }
+    if(res.ok || res.status === 304){ lastCloudHash = hash; updateCloudIndicator('saved'); render(); }
     else { updateCloudIndicator('error'); }
   } catch(e){ updateCloudIndicator('error'); }
 }
@@ -1987,6 +2028,10 @@ async function pullFromCloud(){
     if(!res.ok){ updateCloudIndicator('error'); return false; }
     const data = await res.json();
     if(!data || data.data === 'init') { updateCloudIndicator('saved'); return false; }
+    // Değişiklik var mı?
+    const hash = quickHash(data);
+    if(hash === lastCloudHash){ updateCloudIndicator('saved'); return false; }
+    lastCloudHash = hash;
     // Veriyi uygula
     if(data.pin) localStorage.setItem('vf_pin', data.pin);
     if(data.entries)    entries    = data.entries;
@@ -2029,6 +2074,15 @@ function updateCloudIndicator(status){
   else if(status === 'saved') el.innerHTML = '☁️ <span style="color:var(--green)">Bulut ✓</span>';
   else if(status === 'error') el.innerHTML = '☁️ <span style="color:#ff5252">Bağlantı yok</span>';
   else el.innerHTML = '☁️';
+}
+
+// 30 saniyede bir cloud'dan çek — diğer cihazların değişikliklerini al
+function startCloudPolling(){
+  if(cloudPollTimer) clearInterval(cloudPollTimer);
+  cloudPollTimer = setInterval(async ()=>{
+    if(cloudSyncStatus === 'saving') return; // kayıt sırasında polling yapma
+    await pullFromCloud();
+  }, 30000); // 30 saniye
 }
 // ==================== JSONBIN SONU ====================
 
@@ -7616,20 +7670,21 @@ function exportRaporPdf(){
     .btn-print{background:#e2231a;color:#fff}
     .btn-close{background:transparent;color:#aaa;border:1px solid #555}
     .wrap{max-width:1020px;margin:20px auto;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
-    .cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:20px 24px;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .cover h2{font-size:18px;margin:0 0 4px}
-    .cover p{font-size:10px;opacity:.7}
-    .chart-sec{border-bottom:1px solid #e5e7eb}
-    .tbl-wrap{overflow-x:auto;padding:16px}
-    table{width:100%;border-collapse:collapse;font-size:9px}
-    th{padding:6px 7px;background:#e2231a;color:#fff;text-align:left;font-size:9px;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    td{padding:5px 7px;border-bottom:1px solid #e5e7eb;color:#1a1a1a;white-space:nowrap}
+    .cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:14px 20px;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .cover h2{font-size:15px;margin:0 0 2px}
+    .cover p{font-size:9px;opacity:.7}
+    .chart-sec{border-bottom:1px solid #e5e7eb;page-break-inside:avoid}
+    .tbl-wrap{padding:10px;page-break-inside:avoid}
+    table{width:100%;border-collapse:collapse;font-size:8px;table-layout:fixed}
+    th{padding:4px 5px;background:#e2231a;color:#fff;text-align:left;font-size:8px;overflow:hidden;text-overflow:ellipsis;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    td{padding:3px 5px;border-bottom:1px solid #e5e7eb;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis}
     tr.even td{background:#f8f9fa;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     @media print{
       body{background:#fff}
       .toolbar{display:none}
       .wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}
-      @page{margin:10mm;size:A4 ${orientation}}
+      .chart-sec,.tbl-wrap{page-break-inside:avoid}
+      @page{margin:8mm;size:A4 landscape}
     }
   </style>
   </head><body>
@@ -8197,7 +8252,7 @@ loadTheme();
 checkLock();
 load();
 // Buluttan veri çek — localStorage'dan daha yeni veri varsa uygula
-setTimeout(()=>{ pullFromCloud(); }, 800);
+setTimeout(()=>{ pullFromCloud().then(()=>startCloudPolling()); }, 800);
 setTimeout(renderDash, 100);
 restoreBackupFolderHandle();
 setTimeout(checkBackupReminder, 1200);
