@@ -2059,7 +2059,7 @@ async function pushToCloud(){
     if(res.ok || res.status === 304){
       lastCloudHash = hash;
       lastSyncedEntries = JSON.parse(JSON.stringify(entries));
-      updateCloudIndicator('saved', getPlatformName());
+      updateCloudIndicator('saved', getPlatformName() + ' · ' + new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
       render();
     } else { updateCloudIndicator('error'); }
   } catch(e){ updateCloudIndicator('error'); }
@@ -2107,8 +2107,8 @@ async function pullFromCloud(){
     recomputeAllFinans();
     render();
     checkLock();
-    const platformInfo = data.lastPlatform ? `Son: ${data.lastPlatform}` : '';
-    updateCloudIndicator('saved', platformInfo);
+    const platformInfo = (data.lastPlatform||'') + (data.lastSavedAt ? ' · '+data.lastSavedAt.slice(11,16) : '');
+    updateCloudIndicator('saved', platformInfo || '—');
     return true;
   } catch(e){ updateCloudIndicator('error'); return false; }
 }
