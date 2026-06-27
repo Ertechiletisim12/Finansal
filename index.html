@@ -512,6 +512,14 @@ html{scrollbar-gutter:stable}
   /* Butonlar */
   .btn-hero{ font-size:12px!important;padding:9px 12px!important; }
 
+  /* Prim trend grafiği mobilde küçük kalsın */
+  #page-prim .trend-bars-wrap{
+    height:100px!important;
+  }
+  #page-prim .trend-bars-wrap > div{
+    font-size:7px!important;
+  }
+
   /* ===== HEDEF YÖNETİMİ MOBİL ===== */
   #page-hedef > div:first-child{
     position:fixed!important;
@@ -706,6 +714,10 @@ html{scrollbar-gutter:stable}
   .section-title-row .preview-btn{
     flex-shrink:0!important;
     margin-left:auto!important;
+  }
+
+  .trend-bars-wrap{
+    height:160px!important;
   }
 
   /* ===== TREND ANALİZİ MOBİL ===== */
@@ -952,7 +964,7 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 
 .chart-box{background:var(--panel);border:none;border-radius:8px;padding:16px;margin-bottom:6px}
 .chart-box h3{margin:0 0 14px;font-size:13.5px;font-weight:700}
-.bars{display:flex;align-items:flex-end;gap:16px;height:200px;padding:0 10px;overflow-x:auto}
+.bars{display:flex;align-items:flex-end;gap:16px;height:300px;padding:0 10px;overflow-x:auto}
 .bar-col{flex:1;min-width:50px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
 .bar-col .n{font-size:10.5px;color:var(--muted);margin-bottom:2px}
 .bar-col .v{font-size:10.5px;font-weight:700;margin-bottom:4px}
@@ -1201,7 +1213,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="lock-title">Finansal Analiz</div>
     <div class="lock-sub">Devam etmek için PIN kodunuzu girin</div>
     <div class="lock-dots" id="lockDots" style="display:flex;gap:8px;justify-content:center;margin:12px 0;min-height:20px;flex-wrap:wrap"></div>
-        <input type="text" id="lockPinInput" inputmode="numeric" placeholder="PIN giriniz..." oninput="updateLockDots()" onkeydown="if(event.key==='Enter')tryUnlock()" style="width:100%;padding:12px 16px;font-size:14px;font-family:var(--font);background:rgba(28,30,33,0.85);border:2px solid rgba(70,73,78,0.6);border-radius:10px;color:#eef0f2;box-sizing:border-box;outline:none;margin-bottom:8px;-webkit-text-security:disc">
+        <input type="text" id="lockPinInput" inputmode="numeric" placeholder="PIN giriniz..." autocomplete="off" oninput="updateLockDots()" onkeydown="if(event.key==='Enter')tryUnlock()" style="width:100%;padding:12px 16px;font-size:14px;font-family:var(--font);background:rgba(28,30,33,0.85);border:2px solid rgba(70,73,78,0.6);border-radius:10px;color:#eef0f2;box-sizing:border-box;outline:none;margin-bottom:8px;-webkit-text-security:disc">
     <div id="lockMsg"></div>
     <button class="lock-unlock-btn" onclick="tryUnlock()">🔓 Kilidi Aç</button>
     <div class="lock-footer">Korumalı erişim · PIN ile kilitli</div>
@@ -1226,19 +1238,19 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- Mevcut PIN (değiştirirken) -->
       <div id="pinCurrentRow" style="display:none;margin-bottom:12px">
         <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:5px">MEVCUT PIN</label>
-        <input type="password" id="pinCurrentInput" inputmode="numeric" placeholder="Mevcut PIN'inizi girin"
+        <input type="password" id="pinCurrentInput" inputmode="numeric" placeholder="Mevcut PIN'inizi girin" autocomplete="off"
           style="width:100%;padding:10px 14px;font-size:14px;font-family:var(--font);background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);box-sizing:border-box;outline:none">
       </div>
       <!-- Yeni PIN -->
       <div style="margin-bottom:12px">
         <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:5px">YENİ PIN <span style="color:var(--muted);font-weight:400">(en az 4 karakter)</span></label>
-        <input type="password" id="pinNewInput" inputmode="numeric" placeholder="Yeni PIN girin"
+        <input type="password" id="pinNewInput" inputmode="numeric" placeholder="Yeni PIN girin" autocomplete="new-password"
           style="width:100%;padding:10px 14px;font-size:14px;font-family:var(--font);background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);box-sizing:border-box;outline:none">
       </div>
       <!-- Tekrar -->
       <div style="margin-bottom:16px">
         <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:5px">PIN TEKRAR</label>
-        <input type="password" id="pinConfirmInput" inputmode="numeric" placeholder="PIN'i tekrar girin"
+        <input type="password" id="pinConfirmInput" inputmode="numeric" placeholder="PIN'i tekrar girin" autocomplete="new-password"
           style="width:100%;padding:10px 14px;font-size:14px;font-family:var(--font);background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);box-sizing:border-box;outline:none">
       </div>
       <div id="pinModalMsg" style="font-size:12px;min-height:18px;margin-bottom:12px;text-align:center"></div>
@@ -1255,13 +1267,35 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 <div class="app">
   <div class="sidebar" id="mainSidebar">
-    <div style="padding:0 18px;margin-bottom:18px">
+    <div style="padding:0 18px;margin-bottom:10px">
       <h1 style="margin:0 0 6px;font-size:13px;letter-spacing:.06em;color:var(--muted);font-weight:700">ER-TECH İLETİŞİM</h1>
       <div id="floatNotifBtn" onclick="toggleNotifPanel()" title="Bildirimler" style="width:28px;height:28px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;transition:background .15s;position:relative" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='var(--panel2)'">
         🔔<span id="floatNotifBadge" style="display:none;position:absolute;top:-3px;right:-3px;background:#e2231a;color:#fff;border-radius:10px;padding:1px 5px;font-size:9px;font-weight:700;min-width:14px;text-align:center"></span>
       </div>
     </div>
-    <div class="nav-item active" id="navDash" onclick="switchPage('dash')" style="cursor:pointer">🏠 Ana Özet</div>
+
+    <!-- Oturum Bilgisi - Kompakt -->
+    <div id="sidebarOturumBox" style="display:none;margin:0 10px 10px;background:rgba(226,35,26,0.08);border:1px solid rgba(226,35,26,0.2);border-radius:8px;padding:7px 10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;gap:10px;align-items:center">
+            <div>
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Kilitlenme</div>
+              <div id="sidebarKalanSure" style="font-size:14px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums">10:00</div>
+            </div>
+            <div style="width:1px;height:28px;background:var(--line)"></div>
+            <div>
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Açık</div>
+              <div id="sidebarAcikSure" style="font-size:14px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums">0:00</div>
+            </div>
+          </div>
+          <div id="sidebarUyari" style="font-size:10px;color:#ff9f0a;margin-top:2px;min-height:14px"></div>
+        </div>
+        <button onclick="oturumKapat()" title="Kilitle" style="background:rgba(226,35,26,0.2);border:1px solid rgba(226,35,26,0.4);color:#ff7070;border-radius:6px;width:34px;height:34px;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">🔒</button>
+      </div>
+    </div>
+
+    <div class="nav-item active" id="navDash" onclick="switchPage('dash')" style="cursor:pointer">🏠 Anasayfa</div>
     <div class="nav-item" id="navPrim" onclick="switchPage('prim')" style="cursor:pointer">📊 Prim Sayfası</div>
     <div class="nav-item" id="navHedef" onclick="switchPage('hedef')" style="cursor:pointer">🎯 Hedef Yönetimi</div>
     <div class="nav-item" id="navRapor" onclick="switchPage('rapor')" style="cursor:pointer">📅 Haftalık / Yıllık</div>
@@ -1303,7 +1337,13 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="mobileTopBar" style="display:none;position:sticky;top:0;z-index:200;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px;align-items:center;justify-content:space-between;gap:8px">
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="font-size:14px;font-weight:800;flex:1;text-align:center" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-
+  <div id="mobileOturumBox" style="display:none;align-items:center;gap:6px;flex-shrink:0">
+    <div style="text-align:right">
+      <div id="mobileOturumSure" style="font-size:11px;font-weight:700;color:var(--txt)">10:00</div>
+      <div id="mobileAcikSure" style="font-size:10px;color:var(--muted)">0:00 açık</div>
+    </div>
+    <button onclick="oturumKapat()" style="background:rgba(226,35,26,0.15);border:1px solid rgba(226,35,26,0.4);color:#ff7070;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer">🔒</button>
+  </div>
 </div>
 
   <div class="main">
@@ -1322,7 +1362,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
             <button onclick="openYatirilanModal()" style="background:#e8f7ff;border:1.5px solid #b0ddf5;color:#1a6e9a;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#d0eeff';this.style.borderColor='#80c8ef'" onmouseout="this.style.background='#e8f7ff';this.style.borderColor='#b0ddf5'"><span style="font-size:16px">💳</span><span>Yatırılan</span></button>
             <button onclick="openFinansAyModal()"  style="background:#fff0f0;border:1.5px solid #f0c0c0;color:#c0302a;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#ffe0e0';this.style.borderColor='#e89090'" onmouseout="this.style.background='#fff0f0';this.style.borderColor='#f0c0c0'"><span style="font-size:16px">➕</span><span>Yeni Ay</span></button>
             <button onclick="openAyKapat()"        style="background:#e8fdf0;border:1.5px solid #8ed8aa;color:#1a7a3a;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#d0f5e0';this.style.borderColor='#5cc48a'" onmouseout="this.style.background='#e8fdf0';this.style.borderColor='#8ed8aa'"><span style="font-size:16px">📅</span><span>Ay Kapat</span></button>
-            <div id="clockDash" style="text-align:right;line-height:1.3;color:#8fe3a8;font-variant-numeric:tabular-nums;flex-shrink:0;margin-left:6px"></div>
+            <div id="clockDash" style="text-align:right;line-height:1.3;color:var(--txt);font-variant-numeric:tabular-nums;flex-shrink:0;margin-left:6px"></div>
           </div>
         </div>
       </div>
@@ -2864,10 +2904,102 @@ function updateLockDots(){
     `<div style="width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);background:${i < val.length ? '#fff' : 'transparent'};transition:background .15s"></div>`
   ).join('');
 }
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Enter' && document.getElementById('lockScreen').style.display !== 'none'){
+    tryUnlock();
+  }
+});
+// Kullanıcı etkileşiminde oto-kilit sayacını sıfırla
+['mousemove','mousedown','keydown','touchstart','scroll'].forEach(ev=>{
+  document.addEventListener(ev, ()=>{ if(sessionStorage.getItem('unlocked')==='1') resetOtoKilit(); }, {passive:true});
+});
+function checkLock(){
+  const pin = getPin();
+  const panel = document.getElementById('oturumPanel');
+  if(!pin){ if(panel) panel.style.display='none'; return; }
+  if(sessionStorage.getItem('unlocked') === '1'){
+    if(panel) panel.style.display='';
+    startOturumTimer();
+    return;
+  }
+  if(panel) panel.style.display='none';
+  document.getElementById('lockScreen').style.display = 'flex';
+}
+
+// Oturum süresi ve otomatik kilit
+let _oturumInterval = null;
+let _otoKilitTimeout = null;
+const OTO_KILIT_DK = 10; // dakika
+
+function resetOtoKilit(){
+  if(!getPin() || sessionStorage.getItem('unlocked')!=='1') return;
+  clearTimeout(_otoKilitTimeout);
+  const sure = document.getElementById('otoKilitSure');
+  if(sure) sure.textContent = '';
+  _otoKilitTimeout = setTimeout(()=>{
+    oturumKapat();
+  }, OTO_KILIT_DK * 60 * 1000);
+  // Son 2 dakikada uyarı göster
+  setTimeout(()=>{
+    if(sessionStorage.getItem('unlocked')==='1'){
+      const s = document.getElementById('otoKilitSure');
+      if(s) s.textContent = '⚠ 2dk sonra kilitlenecek';
+    }
+  }, (OTO_KILIT_DK - 2) * 60 * 1000);
+}
+
+function startOturumTimer(){
+  clearInterval(_oturumInterval);
+  if(!sessionStorage.getItem('oturumBaslangic')){
+    sessionStorage.setItem('oturumBaslangic', Date.now());
+  }
+  // Mobil kutuyu göster
+  const mobBox = document.getElementById('mobileOturumBox');
+  if(mobBox) mobBox.style.display='flex';
+  // Sidebar kutusunu göster
+  const sbBox = document.getElementById('sidebarOturumBox');
+  if(sbBox) sbBox.style.display='block';
+  resetOtoKilit();
+  _oturumInterval = setInterval(()=>{
+    const bas = parseInt(sessionStorage.getItem('oturumBaslangic') || Date.now());
+    const gecenSn = Math.floor((Date.now() - bas) / 1000);
+    const kalanSn = Math.max(0, OTO_KILIT_DK * 60 - gecenSn);
+
+    // Kalan süre (geri sayım)
+    const kalanDk = Math.floor(kalanSn / 60);
+    const kalanS = kalanSn % 60;
+    const kalanStr = `${kalanDk}:${String(kalanS).padStart(2,'0')}`;
+
+    // Açık kalma süresi
+    const acikDk = Math.floor(gecenSn / 60);
+    const acikS = gecenSn % 60;
+    const acikStr = `${acikDk}:${String(acikS).padStart(2,'0')}`;
+
+    const el = document.getElementById('oturumSure');
+    if(el) el.textContent = `⏱ ${kalanStr}`;
+    const mobEl = document.getElementById('mobileOturumSure');
+    if(mobEl) mobEl.textContent = `⏱ ${kalanStr}`;
+    const mobAcik = document.getElementById('mobileAcikSure');
+    if(mobAcik) mobAcik.textContent = `${acikStr} açık`;
+    const sbEl = document.getElementById('sidebarKalanSure');
+    if(sbEl) sbEl.textContent = kalanStr;
+    const sbAcik = document.getElementById('sidebarAcikSure');
+    if(sbAcik) sbAcik.textContent = `${acikStr} açık`;
+    // 2dk uyarısı sidebar'da da göster
+    const sbUyari = document.getElementById('sidebarUyari');
+    if(sbUyari) sbUyari.textContent = kalanSn <= 120 ? '⚠ Yakında kilitlenecek' : '';
+  }, 1000);
+}
+
 function tryUnlock(){
   const val = document.getElementById('lockPinInput').value.trim();
   const lockMsg = document.getElementById('lockMsg');
   if(val === getPin()){
+    sessionStorage.setItem('unlocked','1');
+    sessionStorage.setItem('oturumBaslangic', Date.now());
+    const panel = document.getElementById('oturumPanel');
+    if(panel) panel.style.display='';
+    startOturumTimer();
     const card = document.querySelector('.lock-card');
     if(card){
       card.classList.add('unlock-anim');
@@ -2884,16 +3016,20 @@ function tryUnlock(){
     setTimeout(()=>{ inp.classList.remove('shake'); lockMsg.textContent=''; }, 1200);
   }
 }
-document.addEventListener('keydown', function(e){
-  if(e.key === 'Enter' && document.getElementById('lockScreen').style.display !== 'none'){
-    tryUnlock();
-  }
-});
-function checkLock(){
-  const pin = getPin();
-  if(pin){
-    document.getElementById('lockScreen').style.display = 'flex';
-  }
+function oturumKapat(){
+  sessionStorage.removeItem('unlocked');
+  sessionStorage.removeItem('oturumBaslangic');
+  clearInterval(_oturumInterval);
+  clearTimeout(_otoKilitTimeout);
+  const panel = document.getElementById('oturumPanel');
+  if(panel) panel.style.display='none';
+  const mobBox = document.getElementById('mobileOturumBox');
+  if(mobBox) mobBox.style.display='none';
+  const sbBox = document.getElementById('sidebarOturumBox');
+  if(sbBox) sbBox.style.display='none';
+  document.getElementById('lockPinInput').value = '';
+  updateLockDots();
+  document.getElementById('lockScreen').style.display = 'flex';
 }
 
 
@@ -4775,19 +4911,19 @@ function renderDash(){
   }
   const maxTrend = Math.max(...trend6.map(t=>t.v),1);
   const trendBars = trend6.map((t,i)=>{
-    const h=Math.max(Math.round(t.v/maxTrend*50),6), isCur=i===5;
+    const h=Math.max(Math.round(t.v/maxTrend*260),8), isCur=i===5;
     const color = isCur ? '#3fd0ff' : 'rgba(63,208,255,0.3)';
     const ayKisa = monthLabel(t.ym).split(' ')[0];
     const adetColor  = isCur ? '#3fd0ff' : '#999';
     const tutarColor = isCur ? '#4cd964' : '#aaa';
     const tutarTam = t.v > 0 ? t.v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺' : '—';
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1;min-width:44px;cursor:default" title="${monthLabel(t.ym)}&#10;Adet: ${t.adet}&#10;Tutar: ${tutarTam}">
-      <div style="font-size:6px;font-weight:700;text-align:center;line-height:1.5;margin-bottom:3px;width:100%">
+      <div style="font-size:9px;font-weight:700;text-align:center;line-height:1.5;margin-bottom:4px;width:100%">
         ${t.adet>0 ? `<div style="color:${adetColor}">${t.adet} ad</div>` : '<div>&nbsp;</div>'}
         ${t.v>0 ? `<div style="color:${tutarColor}">${fmtF(t.v)}</div>` : '<div>&nbsp;</div>'}
       </div>
-      <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;min-height:4px"></div>
-      <div style="font-size:8px;font-weight:600;color:${isCur?'#3fd0ff':'#aaa'};white-space:nowrap;margin-top:4px;padding-top:3px;width:100%;text-align:center">${ayKisa}</div>
+      <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;min-height:6px"></div>
+      <div style="font-size:10px;font-weight:600;color:${isCur?'#3fd0ff':'#aaa'};white-space:nowrap;margin-top:4px;padding-top:3px;width:100%;text-align:center">${ayKisa}</div>
     </div>`;
   }).join('');
 
@@ -4824,7 +4960,7 @@ function renderDash(){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
 
       <!-- Sol: Ana Prim Kartı -->
-      <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;grid-row:span 2;overflow:hidden">
+      <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;grid-row:span 3;overflow:hidden">
         <div style="font-size:10px;color:#8fe3a8;margin-bottom:4px;font-weight:600">Toplam Prim (KDV Dahil)</div>
         <div style="font-size:22px;font-weight:900;color:#4cd964;letter-spacing:-.5px;line-height:1">${fmtF(curKdv)}</div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
@@ -4865,7 +5001,7 @@ function renderDash(){
         <div style="margin-top:10px">
           <div style="font-size:9.5px;color:rgba(255,255,255,0.5);margin-bottom:5px">Son 6 ay trendi <span style="font-size:8px">(adet · tutar)</span></div>
           <div style="overflow-x:auto;overflow-y:hidden;margin:0 -13px;padding:0 13px 12px">
-            <div style="display:flex;align-items:flex-end;gap:4px;height:100px;padding-top:42px;min-width:320px">${trendBars}</div>
+            <div class="trend-bars-wrap" style="display:flex;align-items:flex-end;gap:4px;height:320px;padding-top:8px;min-width:320px">${trendBars}</div>
           </div>
         </div>
       </div>
@@ -4930,25 +5066,25 @@ function renderDash(){
           `}
         </div>
       </div>
-    </div>
 
-    <!-- ── BÖLÜM 3: Kategori Tablosu (adet + tutar + hedef) ── -->
-    <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px;margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-size:10.5px;color:var(--muted);font-weight:600">📦 Kategori Dağılımı — ${monthLabel(now)}</div>
-        ${Object.keys(catHedefler).length ? '<div style="font-size:9.5px;color:var(--muted)">🎯 Hedef karşılaştırması aktif</div>' : ''}
+      <!-- ── BÖLÜM 3: Kategori Tablosu sağ sütunda ── -->
+      <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:10.5px;color:var(--muted);font-weight:600">📦 Kategori Dağılımı — ${monthLabel(now)}</div>
+          ${Object.keys(catHedefler).length ? '<div style="font-size:9px;color:var(--muted);white-space:nowrap;margin-left:auto">🎯 Hedef karşılaştırması aktif</div>' : ''}
+        </div>
       </div>
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:11.5px">
-          <thead>
-            <tr style="border-bottom:1px solid var(--line)">
-              <th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Kategori</th>
-              <th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Adet</th>
-              ${Object.keys(catHedefler).length ? '<th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Hedef</th><th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Fark</th>' : ''}
-              <th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Tutar (KDV)</th>
-              <th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600;min-width:80px">Dağılım</th>
-            </tr>
-          </thead>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:11.5px">
+            <thead>
+              <tr style="border-bottom:1px solid var(--line)">
+                <th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Kategori</th>
+                <th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Adet</th>
+                ${Object.keys(catHedefler).length ? '<th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Hedef</th><th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Fark</th>' : ''}
+                <th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Tutar (KDV)</th>
+                <th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600;min-width:80px">Dağılım</th>
+              </tr>
+            </thead>
           <tbody>
             ${CATS.map(cat=>{
               const cnt   = catCounts[cat]||0;
@@ -4996,6 +5132,7 @@ function renderDash(){
             </tr>
           </tfoot>
         </table>
+        </div>
       </div>
     </div>
 
