@@ -61,6 +61,129 @@ body.light{
   .finans-toolbar .btn-hero,.finans-toolbar button{
     font-size:11px!important;padding:7px 10px!important;
   }
+
+  /* ===== FİNANSAL ANALİZ MOBİL ===== */
+  /* Sticky header fixed yap */
+  #page-finans .sticky-header{
+    position:fixed!important;
+    top:52px!important;
+    left:0!important;
+    right:0!important;
+    z-index:99!important;
+    background:var(--bg)!important;
+    padding:6px 10px 4px!important;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15)!important;
+    margin-top:0!important;
+  }
+  #page-finans{
+    padding-top:210px!important;
+  }
+  /* Topbar: başlık sol, aksiyon butonları sağ — tek satır */
+  #page-finans .topbar{
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    padding:4px 0!important;
+    gap:8px!important;
+    min-height:unset!important;
+    flex-wrap:nowrap!important;
+  }
+  #page-finans .topbar h2{
+    font-size:15px!important;
+    margin:0!important;
+    white-space:nowrap!important;
+  }
+  #clockFinans{ display:none!important; }
+
+  /* Toolbar: sadece aksiyon butonlarını içeriyor */
+  .finans-toolbar{
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    gap:6px!important;
+    flex-shrink:0!important;
+  }
+  /* Entity butonlarını gizle toolbar'dan, aşağıda ayrı satırda göster */
+  #finansEntityFilterTop{
+    display:none!important;
+  }
+  .finans-toolbar .btn-hero{
+    font-size:11px!important;
+    padding:7px 11px!important;
+    white-space:nowrap!important;
+  }
+  .finans-toolbar > div > button:last-child{
+    font-size:11px!important;
+    padding:7px 11px!important;
+  }
+
+  /* Entity butonları yıl filtresinin üstüne, tam genişlik eşit 3'e böl */
+  #finansYearMonthFilterTop{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:4px!important;
+  }
+  /* Entity satırını JS ile enjekte et yerine CSS ile göster */
+  /* Entity butonlarını ayrı bir wrapper içine al ve göster */
+  .finans-entity-row{
+    display:flex!important;
+    gap:0!important;
+    width:100%!important;
+    border-radius:8px!important;
+    overflow:hidden!important;
+    border:1px solid var(--line)!important;
+  }
+  .finans-entity-row .qbtn{
+    flex:1!important;
+    text-align:center!important;
+    border-radius:0!important;
+    border:none!important;
+    font-size:11px!important;
+    font-weight:600!important;
+    padding:6px 0!important;
+  }
+  /* Yıl/ay filtre barları scroll */
+  #finansYearMonthFilterTop .filterbar{
+    flex-wrap:nowrap!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+    gap:4px!important;
+    padding-bottom:2px!important;
+    margin-top:2px!important;
+  }
+  #finansYearMonthFilterTop .filterbar::-webkit-scrollbar{ display:none; }
+  #finansYearMonthFilterTop .qbtn{
+    flex-shrink:0!important;
+    font-size:10.5px!important;
+    padding:5px 9px!important;
+    white-space:nowrap!important;
+  }
+
+  /* Özet kartlar tek sütun */
+  #finansContent .stats-row{
+    flex-direction:column!important;
+    gap:8px!important;
+  }
+  #finansContent .stat{
+    min-width:unset!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+  }
+  #finansContent [style*="min-width"]{
+    min-width:unset!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+  }
+  #finansContent .table-wrap,
+  #finansContent .pivot-wrap{
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  #finansContent table{
+    min-width:480px!important;
+  }
+  /* ===== FİNANSAL ANALİZ MOBİL SONU ===== */
   #dashContent > div[style*="grid-template-columns:1fr 1fr"],
   #dashContent > div > div[style*="grid-template-columns:1fr 1fr"]{
     grid-template-columns:1fr!important;
@@ -92,6 +215,7 @@ html{scrollbar-gutter:stable}
   }
   #page-prim{ flex-direction:column!important;height:auto!important; }
   #page-prim .layout{ overflow:visible!important; }
+  #page-trend{ padding-top:80px!important; }
 
   #primTitleBar{ display:none!important; }
   #primFilterBar{
@@ -114,11 +238,33 @@ html{scrollbar-gutter:stable}
     right:0!important;
     z-index:99!important;
     background:var(--bg)!important;
-    padding:8px 10px!important;
+    padding:6px 10px!important;
     box-shadow:0 2px 8px rgba(0,0,0,0.15)!important;
-    flex-wrap:wrap!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    gap:4px!important;
   }
-  #page-rapor{ padding-top:110px!important; }
+  #raporHeader h2{ font-size:14px!important; }
+  #raporHeader > div{
+    width:100%!important;
+    flex-wrap:nowrap!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+    gap:4px!important;
+  }
+  #raporHeader > div::-webkit-scrollbar{ display:none; }
+  #raporYilBtns{
+    flex-wrap:nowrap!important;
+    gap:4px!important;
+  }
+  #raporYilBtns .qbtn,
+  #raporViewHafta, #raporViewAy, #raporViewYil{
+    font-size:10.5px!important;
+    padding:5px 8px!important;
+    white-space:nowrap!important;
+    flex-shrink:0!important;
+  }
+  #page-rapor{ padding-top:80px!important; }
   
   /* Ana scroll body'de olsun */
   body{ overflow-y:auto!important; }
@@ -282,7 +428,8 @@ html{scrollbar-gutter:stable}
 
   /* Modallar */
   #ayKapatModal>div,#finansAyModal>div,#hedefModal>div,
-  #yatirilanModal>div{
+  #yatirilanModal>div,#notModal>div,#gelirModal>div,
+  #gelirEditModal>div,#finansTrashModal>div{
     width:96vw!important;max-width:96vw!important;
   }
   #hedefGecmisModal>div{
@@ -290,6 +437,10 @@ html{scrollbar-gutter:stable}
     height:100vh!important;max-height:100vh!important;
     border-radius:0!important;
     padding-top:max(env(safe-area-inset-top, 0px), 48px)!important;
+  }
+  /* Export modal tam ekran */
+  #exportFullModal{
+    padding-top:0!important;
   }
 
   /* Compare */
@@ -360,6 +511,297 @@ html{scrollbar-gutter:stable}
 
   /* Butonlar */
   .btn-hero{ font-size:12px!important;padding:9px 12px!important; }
+
+  /* ===== HEDEF YÖNETİMİ MOBİL ===== */
+  #page-hedef > div:first-child{
+    position:fixed!important;
+    top:52px!important;
+    left:0!important;
+    right:0!important;
+    z-index:99!important;
+    background:var(--bg)!important;
+    padding:8px 10px!important;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15)!important;
+    flex-wrap:nowrap!important;
+    justify-content:space-between!important;
+    align-items:center!important;
+  }
+  #page-hedef > div:first-child h2{
+    font-size:13px!important;
+    white-space:nowrap!important;
+    flex-shrink:1!important;
+    min-width:0!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #page-hedef > div:first-child > div{
+    flex-wrap:nowrap!important;
+    gap:5px!important;
+    flex-shrink:0!important;
+  }
+  #page-hedef > div:first-child button{
+    font-size:10px!important;
+    padding:5px 8px!important;
+    white-space:nowrap!important;
+  }
+  #page-hedef{
+    padding-top:62px!important;
+  }
+  /* Özet kartlar 2 sütun - hedefSummaryRow zaten CSS'de var */
+  /* Yıl/Ay seçici satırları kompakt */
+  #page-hedef > div[style*="display:flex;align-items:center;justify-content:space-between"]{
+    flex-direction:column!important;
+    align-items:flex-start!important;
+  }
+  #page-hedef > div[style*="display:flex;align-items:center;justify-content:space-between"] > div{
+    flex-wrap:wrap!important;
+  }
+  /* ===== HEDEF YÖNETİMİ MOBİL SONU ===== */
+
+  /* ===== TÜM TABLOLAR - İLK SÜTUN STİCKY ===== */
+  .main-table th:first-child,
+  #compareTable th:first-child,
+  #hedefGecmisTbl th:first-child,
+  #priceHistTable th:first-child{
+    position:sticky!important;
+    left:0!important;
+    z-index:3!important;
+  }
+  .main-table td:first-child,
+  #compareTable td:first-child,
+  #hedefGecmisTbl td:first-child,
+  #priceHistTable td:first-child{
+    position:sticky!important;
+    left:0!important;
+    z-index:2!important;
+    background:var(--panel)!important;
+  }
+  /* ===== TÜM TABLOLAR SONU ===== */
+
+  /* ===== NOT & ETİKET MOBİL ===== */
+  #page-not > div:first-child{
+    position:fixed!important;
+    top:52px!important;
+    left:0!important;
+    right:0!important;
+    z-index:99!important;
+    background:var(--bg)!important;
+    padding:8px 10px!important;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15)!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    gap:6px!important;
+  }
+  #page-not > div:first-child h2{
+    font-size:14px!important;
+  }
+  #page-not > div:first-child > div{
+    width:100%!important;
+    flex-wrap:nowrap!important;
+    gap:6px!important;
+  }
+  #notAraInput{
+    flex:1!important;
+    width:auto!important;
+    font-size:12px!important;
+    min-width:0!important;
+  }
+  #page-not > div:first-child .btn-hero{
+    font-size:11px!important;
+    padding:6px 10px!important;
+    white-space:nowrap!important;
+    flex-shrink:0!important;
+  }
+  /* Etiket filtre bar */
+  .note-filter-bar{
+    overflow-x:auto!important;
+    flex-wrap:nowrap!important;
+    scrollbar-width:none!important;
+    padding:4px 0!important;
+    gap:4px!important;
+  }
+  .note-filter-bar::-webkit-scrollbar{ display:none; }
+  .tag-chip{
+    flex-shrink:0!important;
+    white-space:nowrap!important;
+  }
+  /* Özet kartlar 2 sütun */
+  #notSummaryRow{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    flex-direction:unset!important;
+    gap:8px!important;
+  }
+  #notSummaryRow .stat{
+    min-width:0!important;
+  }
+  /* İçerik padding */
+  #page-not{
+    padding-top:100px!important;
+  }
+  /* ===== NOT & ETİKET MOBİL SONU ===== */
+
+  /* ===== GELİR TAKİBİ MOBİL ===== */
+  #gelirTitleBar{
+    position:fixed!important;
+    top:52px!important;
+    left:0!important;
+    right:0!important;
+    z-index:99!important;
+    background:var(--bg)!important;
+    padding:8px 10px!important;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15)!important;
+    flex-wrap:nowrap!important;
+  }
+  #gelirTitleBar h2{
+    font-size:14px!important;
+    white-space:nowrap!important;
+  }
+  #gelirTitleBar > div{
+    flex-wrap:nowrap!important;
+    gap:6px!important;
+  }
+  #gelirTitleBar .btn-hero{
+    font-size:11px!important;
+    padding:6px 10px!important;
+    white-space:nowrap!important;
+  }
+  #gelirYilSel{
+    font-size:12px!important;
+    padding:5px 6px!important;
+  }
+  #page-gelir{
+    padding-top:62px!important;
+  }
+  /* Özet kartlar 2 sütun */
+  #gelirSummaryRow{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:8px!important;
+    flex-direction:unset!important;
+  }
+  #gelirSummaryRow .stat{
+    min-width:0!important;
+  }
+  /* Grafik */
+  #gelirChartBars{
+    height:160px!important;
+  }
+  /* Kategori dağılımı tek sütun */
+  #page-gelir > div[style*="display:flex;gap:10px"]{
+    flex-direction:column!important;
+  }
+  #page-gelir .chart-box[style*="min-width:280px"]{
+    min-width:unset!important;
+    width:100%!important;
+  }
+  /* ===== GELİR TAKİBİ MOBİL SONU ===== */
+
+  /* Dışa Aktar butonu sağa yasla */
+  .section-title-row{
+    flex-wrap:nowrap!important;
+    justify-content:space-between!important;
+    align-items:center!important;
+  }
+  .section-title-row .preview-btn{
+    flex-shrink:0!important;
+    margin-left:auto!important;
+  }
+
+  /* ===== TREND ANALİZİ MOBİL ===== */
+  /* Header: başlık + select alt alta, fixed */
+  #page-trend > div:first-child{
+    position:fixed!important;
+    top:52px!important;
+    left:0!important;
+    right:0!important;
+    z-index:99!important;
+    background:var(--bg)!important;
+    padding:8px 10px 6px!important;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15)!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    gap:6px!important;
+  }
+  #page-trend > div:first-child h2{
+    font-size:14px!important;
+  }
+  #page-trend > div:first-child > div{
+    width:100%!important;
+  }
+  #trendAySayisi{
+    width:100%!important;
+    font-size:13px!important;
+    padding:7px 10px!important;
+    border-radius:8px!important;
+    background:var(--panel2)!important;
+    color:var(--txt)!important;
+    border:1px solid var(--line)!important;
+  }
+
+  /* Kategori butonları: yatay scroll, taşmasın */
+  #trendKatSec{
+    flex-wrap:nowrap!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+    gap:5px!important;
+    padding-bottom:4px!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  #trendKatSec::-webkit-scrollbar{ display:none; }
+  #trendKatSec button{
+    flex-shrink:0!important;
+    font-size:10.5px!important;
+    padding:5px 10px!important;
+    white-space:nowrap!important;
+  }
+
+  /* SVG Grafik: mobilde tam genişlik, scroll olmadan */
+  #page-trend .chart-box{
+    padding:10px 8px!important;
+  }
+  #trendChartSVG{
+    min-width:unset!important;
+    width:100%!important;
+    overflow:hidden!important;
+  }
+  #trendChartSVG svg{
+    width:100%!important;
+    height:auto!important;
+    max-height:200px!important;
+  }
+
+  /* Tablo: yatay scroll, kompakt */
+  #page-trend .table-wrap{
+    overflow-x:auto!important;
+    max-height:none!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  #trendKatTable{
+    min-width:480px!important;
+    font-size:11px!important;
+  }
+  #trendKatTable th,
+  #trendKatTable td{
+    padding:6px 7px!important;
+    font-size:10.5px!important;
+    white-space:nowrap!important;
+  }
+  #trendKatTable td:first-child,
+  #trendKatTable th:first-child{
+    font-size:11px!important;
+    position:sticky!important;
+    left:0!important;
+    background:var(--panel)!important;
+    z-index:2!important;
+  }
+  #trendKatTable th:first-child{
+    background:var(--th-bg)!important;
+  }
+  #trendKatTable tfoot td:first-child{
+    background:var(--th-bg)!important;
+  }
+  /* ===== TREND ANALİZİ MOBİL SONU ===== */
 }
 /* ===== MOBİL SONU ===== */
 
@@ -713,7 +1155,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 .lock-dots{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
 .lock-dot{width:12px;height:12px;border-radius:50%;border:2px solid rgba(154,160,166,0.35);background:transparent;transition:all .15s}
 .lock-dot.filled{background:#3fd0ff;border-color:#3fd0ff;box-shadow:0 0 8px rgba(63,208,255,0.5)}
-#lockPinInput{width:100%;padding:12px 16px;font-size:22px;letter-spacing:10px;text-align:center;background:rgba(28,30,33,0.85);border:2px solid rgba(70,73,78,0.6);border-radius:10px;color:#eef0f2;font-family:inherit;box-sizing:border-box;transition:border-color .2s,box-shadow .2s;outline:none;margin-bottom:8px}
+#lockPinInput{width:100%;padding:12px 16px;font-size:14px;font-family:'Segoe UI',Arial,sans-serif;background:rgba(28,30,33,0.85);border:2px solid rgba(70,73,78,0.6);border-radius:10px;color:#eef0f2;box-sizing:border-box;transition:border-color .2s,box-shadow .2s;outline:none;margin-bottom:8px}
 #lockPinInput:focus{border-color:rgba(63,208,255,0.6);box-shadow:0 0 0 3px rgba(63,208,255,0.12)}
 #lockPinInput.shake{animation:lockShake .4s ease}
 @keyframes lockShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
@@ -758,16 +1200,54 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="lock-brand">ER-TECH İLETİŞİM</div>
     <div class="lock-title">Finansal Analiz</div>
     <div class="lock-sub">Devam etmek için PIN kodunuzu girin</div>
-    <div class="lock-dots" id="lockDots">
-      <div class="lock-dot" id="d0"></div>
-      <div class="lock-dot" id="d1"></div>
-      <div class="lock-dot" id="d2"></div>
-      <div class="lock-dot" id="d3"></div>
-    </div>
-    <input type="password" id="lockPinInput" inputmode="numeric" maxlength="4" placeholder="••••" oninput="updateLockDots()">
+    <div class="lock-dots" id="lockDots" style="display:flex;gap:8px;justify-content:center;margin:12px 0;min-height:20px;flex-wrap:wrap"></div>
+        <input type="text" id="lockPinInput" inputmode="numeric" placeholder="PIN giriniz..." oninput="updateLockDots()" onkeydown="if(event.key==='Enter')tryUnlock()" style="width:100%;padding:12px 16px;font-size:14px;font-family:var(--font);background:rgba(28,30,33,0.85);border:2px solid rgba(70,73,78,0.6);border-radius:10px;color:#eef0f2;box-sizing:border-box;outline:none;margin-bottom:8px;-webkit-text-security:disc">
     <div id="lockMsg"></div>
     <button class="lock-unlock-btn" onclick="tryUnlock()">🔓 Kilidi Aç</button>
     <div class="lock-footer">Korumalı erişim · PIN ile kilitli</div>
+  </div>
+</div>
+<!-- PIN Ayar Modalı -->
+<div id="pinModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2100;align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:0;width:92vw;max-width:380px;overflow:hidden">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,var(--red),var(--red-d));padding:16px 18px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:22px">🔐</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#fff">PIN Kilit Ayarı</div>
+          <div id="pinModalStatus" style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:1px"></div>
+        </div>
+      </div>
+      <button onclick="closePinModal()" style="background:rgba(0,0,0,0.25);border:none;color:#fff;width:30px;height:30px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
+    </div>
+    <!-- Body -->
+    <div style="padding:18px">
+      <!-- Mevcut PIN (değiştirirken) -->
+      <div id="pinCurrentRow" style="display:none;margin-bottom:12px">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:5px">MEVCUT PIN</label>
+        <input type="password" id="pinCurrentInput" inputmode="numeric" placeholder="Mevcut PIN'inizi girin"
+          style="width:100%;padding:10px 14px;font-size:14px;font-family:var(--font);background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);box-sizing:border-box;outline:none">
+      </div>
+      <!-- Yeni PIN -->
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:5px">YENİ PIN <span style="color:var(--muted);font-weight:400">(en az 4 karakter)</span></label>
+        <input type="password" id="pinNewInput" inputmode="numeric" placeholder="Yeni PIN girin"
+          style="width:100%;padding:10px 14px;font-size:14px;font-family:var(--font);background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);box-sizing:border-box;outline:none">
+      </div>
+      <!-- Tekrar -->
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:5px">PIN TEKRAR</label>
+        <input type="password" id="pinConfirmInput" inputmode="numeric" placeholder="PIN'i tekrar girin"
+          style="width:100%;padding:10px 14px;font-size:14px;font-family:var(--font);background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);box-sizing:border-box;outline:none">
+      </div>
+      <div id="pinModalMsg" style="font-size:12px;min-height:18px;margin-bottom:12px;text-align:center"></div>
+      <!-- Butonlar -->
+      <div style="display:flex;gap:8px">
+        <button onclick="savePinModal()" style="flex:1;background:linear-gradient(135deg,var(--red),var(--red-d));border:none;color:#fff;padding:11px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">✓ Kaydet</button>
+        <button id="pinRemoveBtn" onclick="removePinModal()" style="flex:1;background:var(--panel2);border:1px solid var(--line);color:#ff5252;padding:11px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🗑 Kilidi Kaldır</button>
+      </div>
+    </div>
   </div>
 </div>
 <!-- Mobil overlay -->
@@ -812,15 +1292,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
       <button class="tool-btn" onclick="printManagerReport()" title="Güncel verilerle özet bir rapor oluşturur; açılan yazdırma penceresinden 'PDF olarak kaydet' seçilebilir">📄 Yönetici Raporu (PDF)</button>
       <button class="tool-btn" id="notifPanelBtn" onclick="toggleNotifPanel()" title="Bildirim ayarları ve aktif uyarılar">🔔 Bildirimler <span id="notifBadge" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
-      <button class="tool-btn" onclick="togglePinPanel()">🔐 Kilit</button>
-      <div id="pinPanel" style="display:none;flex-direction:column;gap:6px;padding:8px 6px 0">
-        <input type="password" id="pinSetInput" inputmode="numeric" maxlength="4" placeholder="4 haneli PIN" style="width:100%;padding:7px 10px;font-size:14px;letter-spacing:6px;text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-family:inherit;box-sizing:border-box">
-        <div style="display:flex;gap:6px">
-          <button class="tool-btn" style="flex:1" onclick="setPin()">✓ Koy</button>
-          <button class="tool-btn" style="flex:1" onclick="removePin()">✕ Kaldır</button>
-        </div>
-        <div class="pin-msg" id="pinMsg"></div>
-      </div>
+      <button class="tool-btn" onclick="openPinModal()">🔐 Kilit / PIN Ayarı</button>
       <div style="border-top:1px solid #34373b;margin-top:6px;padding-top:8px">
         <button class="tool-btn" style="color:#ff5252;border-color:rgba(226,35,26,0.4);font-size:10.5px" onclick="clearAllData()" title="Tüm kayıtları siler — geri alınamaz!">⚠ Tüm Verileri Sıfırla</button>
       </div>
@@ -1074,8 +1546,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <h2>Finansal Analiz</h2>
           <div class="finans-toolbar">
             <div class="entity-filter-top" id="finansEntityFilterTop"></div>
-            <button class="btn-hero" onclick="openFinansAyModal()">➕ Yeni Ay Verisi Gir</button>
-            <button onclick="openFinansTrashModal()" style="background:rgba(122,31,31,0.25);border:1px solid rgba(226,35,26,0.45);color:#ff7070;border-radius:8px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px" title="Silinen kayıtları görüntüle ve geri yükle" id="trashBtn">🗑️ Çöp Kutusu <span id="trashCount" style="background:#7a1f1f;color:#fff;border-radius:10px;padding:1px 7px;font-size:10.5px;margin-left:2px;display:none">0</span></button>
+            <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
+              <button class="btn-hero" onclick="openFinansAyModal()">➕ Yeni Ay</button>
+              <button onclick="openFinansTrashModal()" style="background:rgba(122,31,31,0.25);border:1px solid rgba(226,35,26,0.45);color:#ff7070;border-radius:8px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px" title="Silinen kayıtları görüntüle ve geri yükle" id="trashBtn">🗑️ <span id="trashCount" style="background:#7a1f1f;color:#fff;border-radius:10px;padding:1px 7px;font-size:10.5px;margin-left:2px;display:none">0</span></button>
+            </div>
             <div class="clock" id="clockFinans"></div>
           </div>
         </div>
@@ -1263,7 +1737,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div id="trendKatSec" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
       <div class="chart-box" style="margin-bottom:10px;overflow-x:auto">
         <h3 id="trendChartTitle">Kategori Trend Grafiği</h3>
-        <div id="trendChartSVG" style="min-width:500px"></div>
+        <div id="trendChartSVG"></div>
       </div>
 
       <!-- Prim Kategori Karşılaştırma Tablosu -->
@@ -2313,39 +2787,82 @@ function loadTheme(){
 
 // ---- PIN kilidi ----
 function togglePinPanel(){
-  const p = document.getElementById('pinPanel');
-  p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+  openPinModal();
 }
 function getPin(){ try{ return localStorage.getItem('vf_pin') || ''; }catch(e){ return ''; } }
-function setPin(){
-  const val = document.getElementById('pinSetInput').value.trim();
-  const msg = document.getElementById('pinMsg');
-  if(!/^\d{4}$/.test(val)){
-    msg.textContent = 'PIN 4 haneli rakam olmalı';
-    msg.style.color = 'var(--red)';
+
+function openPinModal(){
+  const hasPin = !!getPin();
+  document.getElementById('pinModalStatus').textContent = hasPin ? '🔒 Kilit aktif — değiştir veya kaldır' : '🔓 Kilit yok — yeni PIN belirle';
+  document.getElementById('pinCurrentRow').style.display = hasPin ? 'block' : 'none';
+  document.getElementById('pinRemoveBtn').style.display = hasPin ? '' : 'none';
+  document.getElementById('pinCurrentInput').value = '';
+  document.getElementById('pinNewInput').value = '';
+  document.getElementById('pinConfirmInput').value = '';
+  document.getElementById('pinModalMsg').textContent = '';
+  document.getElementById('pinModal').style.display = 'flex';
+}
+function closePinModal(){
+  document.getElementById('pinModal').style.display = 'none';
+}
+function savePinModal(){
+  const hasPin = !!getPin();
+  const current = document.getElementById('pinCurrentInput').value.trim();
+  const newPin = document.getElementById('pinNewInput').value.trim();
+  const confirm = document.getElementById('pinConfirmInput').value.trim();
+  const msg = document.getElementById('pinModalMsg');
+
+  if(hasPin && current !== getPin()){
+    msg.textContent = '❌ Mevcut PIN yanlış';
+    msg.style.color = '#ff5252';
     return;
   }
+  if(newPin.length < 4){
+    msg.textContent = '❌ PIN en az 4 karakter olmalı';
+    msg.style.color = '#ff5252';
+    return;
+  }
+  if(!/^\d+$/.test(newPin)){
+    msg.textContent = '❌ Sadece rakam girin';
+    msg.style.color = '#ff5252';
+    return;
+  }
+  if(newPin !== confirm){
+    msg.textContent = '❌ PIN\'ler eşleşmiyor';
+    msg.style.color = '#ff5252';
+    return;
+  }
+  try{ localStorage.setItem('vf_pin', newPin); }catch(e){}
+  msg.textContent = '✓ PIN kaydedildi!';
+  msg.style.color = '#4cd964';
+  scheduleCloudSync();
+  setTimeout(()=> closePinModal(), 1200);
+}
+function removePinModal(){
+  try{ localStorage.removeItem('vf_pin'); }catch(e){}
+  const msg = document.getElementById('pinModalMsg');
+  msg.textContent = '✓ Kilit kaldırıldı';
+  msg.style.color = '#4cd964';
+  scheduleCloudSync();
+  setTimeout(()=> closePinModal(), 1000);
+}
+function setPin(){
+  const val = document.getElementById('pinSetInput')?.value?.trim();
+  if(!val || val.length < 4){ return; }
   try{ localStorage.setItem('vf_pin', val); }catch(e){}
-  document.getElementById('pinSetInput').value = '';
-  msg.textContent = 'Kilit etkinleştirildi ✓';
-  msg.style.color = 'var(--green)';
-  setTimeout(()=> msg.textContent = "", 3000);
   scheduleCloudSync();
 }
 function removePin(){
   try{ localStorage.removeItem('vf_pin'); }catch(e){}
-  const msg = document.getElementById('pinMsg');
-  msg.textContent = 'Kilit kaldırıldı';
-  msg.style.color = 'var(--muted)';
-  setTimeout(()=> msg.textContent = "", 3000);
   scheduleCloudSync();
 }
 function updateLockDots(){
   const val = document.getElementById('lockPinInput').value;
-  for(let i=0;i<4;i++){
-    const d = document.getElementById('d'+i);
-    if(d) d.classList.toggle('filled', i < val.length);
-  }
+  const dots = document.getElementById('lockDots');
+  if(!dots) return;
+  dots.innerHTML = Array.from({length: Math.max(val.length, 4)}, (_,i) =>
+    `<div style="width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);background:${i < val.length ? '#fff' : 'transparent'};transition:background .15s"></div>`
+  ).join('');
 }
 function tryUnlock(){
   const val = document.getElementById('lockPinInput').value.trim();
@@ -4588,7 +5105,7 @@ function renderFinans(){
 
   // Yıl ve ay filtre barları da sabit (sticky) üst alana yerleştirilir, sayfa kaydırılsa da yerinde kalır
   const ymFilterTopEl = document.getElementById('finansYearMonthFilterTop');
-  if(ymFilterTopEl) ymFilterTopEl.innerHTML = `<div class="filterbar" style="margin-top:8px">${yearBtns}</div>${monthBtns}`;
+  if(ymFilterTopEl) ymFilterTopEl.innerHTML = `<div class="finans-entity-row">${entityBtnsTop}</div><div class="filterbar" style="margin-top:4px">${yearBtns}</div>${monthBtns}`;
 
   let filtered = finansYearFilter==='all' ? data : data.filter(d=>String(d.yil)===String(finansYearFilter));
   if(finansYearFilter!=='all' && finansMonthFilter!=='all'){
@@ -4703,7 +5220,7 @@ function renderFinans(){
     </div>
 
     <div class="stats-row">
-      <div class="stat" style="min-width:420px;flex:2;padding:16px 18px">
+      <div class="stat" style="min-width:420px;flex:2;padding:16px 18px;overflow:hidden;box-sizing:border-box">
         <div class="t" style="display:flex;align-items:center;gap:7px;font-size:13px;margin-bottom:2px">
           <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;background:linear-gradient(135deg,var(--accent),var(--gold));font-size:11px;color:#1a1c1e">⇄</span>
           Vodafone vs MİXY Pay Dağılımı
@@ -4763,17 +5280,17 @@ function renderFinans(){
             ${block('Kâr Dağılımı','▲', vodPct, mixyPct, vodSum, mixySum, total, 'Toplam Kâr', '#3b82f6', '#f59e0b')}
             ${block('Masraf Dağılımı','▼', vodMasrafPct, mixyMasrafPct, vodMasrafSum, mixyMasrafSum, totalMasraf, 'Toplam Masraf', '#8b5cf6', '#f97316')}
             <div style="display:flex;gap:8px;margin-top:2px">
-              <div style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;text-align:center">
-                <div style="font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Toplam Kâr (Vodafone + MİXY)</div>
-                <div style="font-size:13px;font-weight:700;color:#4cd964;margin-top:2px">${fmtF(total)}</div>
+              <div style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px 6px;text-align:center;min-width:0;box-sizing:border-box">
+                <div style="font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;line-height:1.3">Toplam Kâr<br>(Vod + MİXY)</div>
+                <div style="font-size:11px;font-weight:700;color:#4cd964;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fmtF(total)}</div>
               </div>
-              <div style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;text-align:center">
-                <div style="font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Toplam Masraf (Vodafone + MİXY)</div>
-                <div style="font-size:13px;font-weight:700;color:#ff5252;margin-top:2px">${fmtF(totalMasraf)}</div>
+              <div style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px 6px;text-align:center;min-width:0;box-sizing:border-box">
+                <div style="font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;line-height:1.3">Toplam Masraf<br>(Vod + MİXY)</div>
+                <div style="font-size:11px;font-weight:700;color:#ff5252;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fmtF(totalMasraf)}</div>
               </div>
-              <div style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;text-align:center">
-                <div style="font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Kâr − Masraf</div>
-                <div style="font-size:13px;font-weight:800;color:${netToplam>=0?'#4cd964':'#ff5252'};margin-top:2px">${netToplam>=0?'+':''}${fmtF(netToplam)}</div>
+              <div style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px 6px;text-align:center;min-width:0;box-sizing:border-box">
+                <div style="font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;line-height:1.3">Kâr − Masraf<br>&nbsp;</div>
+                <div style="font-size:11px;font-weight:800;color:${netToplam>=0?'#4cd964':'#ff5252'};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${netToplam>=0?'+':''}${fmtF(netToplam)}</div>
               </div>
             </div>
           `;
@@ -5037,6 +5554,18 @@ function renderFinans(){
   renderMarjPivotTable(periodData);
   renderKarZararBars(periodData);
   renderFinansTable(filtered);
+
+  // Mobilde header yüksekliğine göre padding-top dinamik ayarla
+  if(window.innerWidth <= 700){
+    setTimeout(() => {
+      const stickyEl = document.querySelector('#page-finans .sticky-header');
+      const pageEl = document.getElementById('page-finans');
+      if(stickyEl && pageEl){
+        const h = stickyEl.getBoundingClientRect().height;
+        pageEl.style.setProperty('padding-top', (h + 10) + 'px', 'important');
+      }
+    }, 100);
+  }
 }
 
 function setFinansYear(y){
@@ -5233,19 +5762,19 @@ function renderMarjPivotTable(periodData){
   }
   if(showVod && showMixy){
     // Yalnızca "Tümü" filtresinde: Vodafone+MİXY birleşik toplam kâr ve toplam masraf
-    rows += `<tr style="background:var(--panel2)"><td style="text-align:left;font-weight:800">Toplam Kâr (₺)</td>` +
+    rows += `<tr style="background:var(--panel2)"><td style="text-align:left;font-weight:800;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Toplam Kâr (₺)</td>` +
       periodData.map(d=>`<td style="font-weight:700">${fmtF(d.vodKarTutari + d.mixyKarTutari)}</td>`).join('') +
       `<td class="total-col" style="font-weight:800">${fmtF(grandKar)}</td></tr>`;
-    rows += `<tr style="background:var(--panel2)"><td style="text-align:left;font-weight:800">Toplam Masraf (₺)</td>` +
+    rows += `<tr style="background:var(--panel2)"><td style="text-align:left;font-weight:800;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Toplam Masraf (₺)</td>` +
       periodData.map(d=>`<td style="font-weight:700;color:#ff5252">${fmtF(d.vodMasraf + d.mixyMasraf)}</td>`).join('') +
       `<td class="total-col" style="font-weight:800;color:#ff5252">${fmtF(grandMasraf)}</td></tr>`;
   }
 
   // Kalan Tutar (Kâr − Masraf) — filtre ne olursa olsun her zaman gösterilir, etiketi ve değeri filtreye göre değişir
-  const kalanLabel = (showVod && showMixy) ? 'Kalan Tutar (Toplam Kâr − Toplam Masraf)' : (showVod ? 'Vodafone Kâr − Masraf' : 'MİXY Kâr − Masraf');
+  const kalanLabel = (showVod && showMixy) ? 'Kalan Tutar' : (showVod ? 'Vod. Kâr − Masraf' : 'MİXY Kâr − Masraf');
   const periodKalan = d => (showVod ? d.vodKarTutari : 0) + (showMixy ? d.mixyKarTutari : 0) - (showVod ? d.vodMasraf : 0) - (showMixy ? d.mixyMasraf : 0);
   const grandKalanFiltered = periodData.reduce((a,d)=>a+periodKalan(d),0);
-  rows += `<tr style="background:var(--panel2)"><td style="text-align:left;font-weight:800">${kalanLabel}</td>` +
+  rows += `<tr style="background:var(--panel2)"><td style="text-align:left;font-weight:800;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(showVod && showMixy) ? 'Toplam Kâr − Toplam Masraf' : kalanLabel}">${kalanLabel}</td>` +
     periodData.map(d=>{
       const kalan = periodKalan(d);
       return `<td style="font-weight:700;color:${kalan>=0?'#4cd964':'#ff5252'}">${kalan>=0?'+':''}${fmtF(kalan)}</td>`;
@@ -8175,7 +8704,7 @@ function renderTrend(){
     function xPos(i){ return PL + i * xStep; }
     function yPos(v){ return PT + chartH - (v/maxVal) * chartH; }
 
-    let svgContent = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:260px">`;
+    let svgContent = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:260px;display:block">`;
     // Grid lines
     for(let g = 0; g <= 4; g++){
       const y = PT + g * chartH/4;
@@ -8593,19 +9122,21 @@ function renderHedefGecmis(){
 <!-- TAM EKRAN DIŞA AKTAR MODAL -->
 <div id="exportFullModal" style="display:none;position:fixed;inset:0;z-index:2000;background:#1a1c20;flex-direction:column">
   <!-- Header -->
-  <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#111;border-bottom:1px solid #333;flex-shrink:0">
-    <div style="flex:1;min-width:0">
-      <div id="exportModalTitle" style="font-size:13px;font-weight:700;color:#fff"></div>
-      <div id="exportModalSub" style="font-size:10px;color:#888;margin-top:1px"></div>
+  <div style="display:flex;align-items:center;gap:6px;padding:10px 12px;background:#111;border-bottom:1px solid #333;flex-shrink:0;min-height:52px">
+    <div style="flex:1;min-width:0;overflow:hidden">
+      <div id="exportModalTitle" style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+      <div id="exportModalSub" style="font-size:10px;color:#888;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
     </div>
-    <button id="exportModalXlsBtn" style="background:#1a7a3a;border:none;color:#fff;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">📊 Excel</button>
-    <button id="exportModalPdfBtn" onclick="exportModalPrint()" style="background:#7f1d1d;border:none;color:#fca5a5;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">🖨 PDF</button>
-    <button onclick="closeExportModal()" style="background:#7a1f1f;border:none;color:#fff;width:32px;height:32px;border-radius:6px;font-size:16px;cursor:pointer">✕</button>
+    <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+      <button id="exportModalXlsBtn" style="background:#1a7a3a;border:none;color:#fff;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">📊 Excel</button>
+      <button id="exportModalPdfBtn" onclick="exportModalPrint()" style="background:#7f1d1d;border:none;color:#fca5a5;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🖨 PDF</button>
+      <button onclick="closeExportModal()" style="background:#333;border:none;color:#fff;width:32px;height:32px;border-radius:6px;font-size:16px;cursor:pointer;flex-shrink:0">✕</button>
+    </div>
   </div>
   <!-- Tabs -->
   <div id="exportModalTabs" style="display:flex;border-bottom:1px solid #333;flex-shrink:0;background:#111"></div>
   <!-- Content -->
-  <div id="exportModalContent" style="flex:1;overflow:auto;padding:12px"></div>
+  <div id="exportModalContent" style="flex:1;overflow:auto;padding:12px;background:#1a1c20"></div>
 </div>
 
 <script>
@@ -8769,7 +9300,7 @@ function closeExportModal(){
 const _origOpenExportPreview = openExportPreview;
 function openExportPreview(tableId, fileLabel){
   // window.open yerine modal kullanan tablolar
-  const modalTables = ['compareTable','mainTable','financeTable','priceHistTable','gelirTable'];
+  const modalTables = ['compareTable','mainTable','financeTable','priceHistTable','gelirTable','capitalTable','marjTable','finansDetailTable'];
   if(modalTables.includes(tableId)){
     const table = document.getElementById(tableId);
     if(!table || !table.rows || table.rows.length === 0){ alert('Aktarılacak veri yok.'); return; }
@@ -8795,22 +9326,26 @@ function openExportPreview(tableId, fileLabel){
 
     // Tablo HTML'ini klonla
     const clone = table.cloneNode(true);
-    clone.style.cssText = 'width:100%;border-collapse:collapse;font-size:11px';
-    Array.from(clone.querySelectorAll('th')).forEach(th=>{
-      th.style.cssText='padding:8px 10px;background:#1a1c20;color:#9aa0a6;font-size:10px;border-bottom:2px solid #e2231a;text-align:left;white-space:nowrap';
-    });
-    Array.from(clone.querySelectorAll('td')).forEach(td=>{
-      td.style.cssText='padding:7px 10px;border-bottom:1px solid #2e3035;color:#d1d5db;white-space:nowrap';
+    // Tüm class'ları temizle - sayfa CSS'i uygulanmasın
+    Array.from(clone.querySelectorAll('*')).forEach(el => el.removeAttribute('class'));
+    clone.removeAttribute('class');
+    clone.style.cssText = 'width:100%;border-collapse:collapse;font-size:11px;background:#26282b';
+    Array.from(clone.querySelectorAll('th')).forEach((th,i)=>{
+      const sticky = i===0 ? 'position:sticky;left:0;z-index:3;max-width:140px;overflow:hidden;text-overflow:ellipsis;' : '';
+      th.style.cssText=`padding:8px 10px;background:#1a1c20;color:#9aa0a6;font-size:10px;border-bottom:2px solid #e2231a;text-align:${i===0?'left':'right'};white-space:nowrap;${sticky}`;
     });
     Array.from(clone.querySelectorAll('tr')).forEach((tr,i)=>{
       tr.removeAttribute('onclick');
       tr.removeAttribute('onmouseover');
       tr.removeAttribute('onmouseout');
-      tr.style.background = i % 2 === 0 ? '#26282b' : '#2c2f33';
-      // Satır içindeki td yazı renklerini zorla
-      Array.from(tr.querySelectorAll('td')).forEach(td=>{
-        td.style.color = '#d1d5db';
-        td.style.background = 'transparent';
+      const bg = i%2===0 ? '#26282b' : '#2c2f33';
+      tr.style.cssText = `background:${bg}`;
+      Array.from(tr.querySelectorAll('td')).forEach((td)=>{
+        const isFirst = td.cellIndex === 0;
+        const savedColor = td.style.color || '#d1d5db';
+        const sticky = isFirst ? 'position:sticky;left:0;z-index:2;max-width:140px;overflow:hidden;text-overflow:ellipsis;' : '';
+        td.style.cssText = `padding:7px 10px;border-bottom:1px solid #2e3035;white-space:nowrap;background:${bg};text-align:${isFirst?'left':'right'};${sticky}`;
+        td.style.color = savedColor;
       });
     });
 
@@ -8828,10 +9363,7 @@ function openExportPreview(tableId, fileLabel){
     return;
   }
 
-  // activityListTable ve diğerleri orijinal fonksiyona git
-  if(tableId !== 'activityListTable'){
-    return _origOpenExportPreview(tableId, fileLabel);
-  }
+  // activityListTable için devam et (aşağıda modal ile açılır)
 
   const rStart = document.getElementById('rangeStart').value;
   const rEnd   = document.getElementById('rangeEnd').value;
