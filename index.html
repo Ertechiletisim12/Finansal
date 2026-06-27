@@ -1982,35 +1982,49 @@ function quickHash(obj){
   return h.toString();
 }
 
-// Entry merge: date+cat bazlı, delta count ekle
-// lastSyncedEntries = pushToCloud öncesi bilinen cloud state
+// Entry merge: date+cat bazlı, delta count ekle (ekleme ve silme destekli)
+// lastSyncedEntries = son başarılı sync anındaki snapshot
 let lastSyncedEntries = null;
 
 function mergeEntries(local, cloud){
   const cloudMap = {};
   (cloud||[]).forEach(e=>{ cloudMap[e.date+'_'+e.cat] = e.count||0; });
 
+  // Base: son sync anındaki state (yoksa cloud'u kullan)
   const baseMap = {};
   (lastSyncedEntries||cloud||[]).forEach(e=>{ baseMap[e.date+'_'+e.cat] = e.count||0; });
 
-  const result = {};
-  // Cloud'u base al
-  (cloud||[]).forEach(e=>{ result[e.date+'_'+e.cat] = {...e}; });
+  // Tüm key'leri topla
+  const allKeys = new Set([
+    ...Object.keys(cloudMap),
+    ...(local||[]).map(e=>e.date+'_'+e.cat)
+  ]);
 
-  // Local'deki her entry için delta hesapla ve cloud'a ekle
-  (local||[]).forEach(e=>{
-    const k = e.date+'_'+e.cat;
-    const localCount = e.count||0;
+  const result = [];
+  allKeys.forEach(k=>{
+    const [date, cat] = k.split('_');
+    const localEntry = (local||[]).find(e=>e.date+'_'+e.cat===k);
+    const localCount = localEntry ? (localEntry.count||0) : 0;
     const baseCount  = baseMap[k]||0;
     const cloudCount = cloudMap[k]||0;
-    const delta = localCount - baseCount; // bu cihazda ne kadar eklendi
-    if(delta > 0){
-      result[k] = {...(result[k]||{date:e.date,cat:e.cat}), count: cloudCount + delta};
-    } else if(!result[k]){
-      result[k] = {...e};
+    const delta = localCount - baseCount; // bu cihazda yapılan değişiklik (+/-)
+    const merged = cloudCount + delta;
+    if(merged > 0){
+      result.push({date, cat, count: merged});
     }
+    // merged <= 0 ise bu cihaz sildi veya hiç yok — ekleme
   });
-  return Object.values(result);
+  return result;
+}
+
+// Platform algıla
+function getPlatformName(){
+  const ua = navigator.userAgent;
+  if(/Android/i.test(ua)) return '📱 Android';
+  if(/iPhone|iPad/i.test(ua)) return '📱 iOS';
+  if(/Windows/i.test(ua)) return '💻 Windows';
+  if(/Mac/i.test(ua)) return '💻 Mac';
+  return '🖥️ Web';
 }
 
 async function pushToCloud(){
@@ -2045,7 +2059,7 @@ async function pushToCloud(){
     if(res.ok || res.status === 304){
       lastCloudHash = hash;
       lastSyncedEntries = JSON.parse(JSON.stringify(entries));
-      updateCloudIndicator('saved');
+      updateCloudIndicator('saved', getPlatformName());
       render();
     } else { updateCloudIndicator('error'); }
   } catch(e){ updateCloudIndicator('error'); }
@@ -2093,17 +2107,18 @@ async function pullFromCloud(){
     recomputeAllFinans();
     render();
     checkLock();
-    updateCloudIndicator('saved');
+    const platformInfo = data.lastPlatform ? `Son: ${data.lastPlatform}` : '';
+    updateCloudIndicator('saved', platformInfo);
     return true;
   } catch(e){ updateCloudIndicator('error'); return false; }
 }
 
-function updateCloudIndicator(status){
+function updateCloudIndicator(status, extra){
   cloudSyncStatus = status;
   const el = document.getElementById('cloudSyncIndicator');
   if(!el) return;
   if(status === 'saving') el.innerHTML = '☁️ <span style="color:var(--gold)">Kaydediliyor...</span>';
-  else if(status === 'saved') el.innerHTML = '☁️ <span style="color:var(--green)">Bulut ✓</span>';
+  else if(status === 'saved') el.innerHTML = '☁️ <span style="color:var(--green)">Bulut ✓</span>'+(extra?` <span style="color:var(--muted);font-size:10px">${extra}</span>`:'');
   else if(status === 'error') el.innerHTML = '☁️ <span style="color:#ff5252">Bağlantı yok</span>';
   else el.innerHTML = '☁️';
 }
@@ -2677,7 +2692,7 @@ function exportTableToPdf(tableId, titleLabel){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, pin: getPin(), exportedAt: new Date().toISOString(), version: 4 };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, pin: getPin(), exportedAt: new Date().toISOString(), version: 4, lastPlatform: getPlatformName(), lastSavedAt: new Date().toLocaleString('tr-TR') };
 }
 function timeStr(){
   const d = new Date();
