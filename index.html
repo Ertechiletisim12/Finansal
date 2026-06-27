@@ -24,7 +24,7 @@ body.light{
   --th-bg:#d0d5dd; --th-txt:#1a1c1e; --hover:#edf0f4;
 }
 /* Mobil sidebar overlay */
-@media(max-width:700px){
+@media(max-width:420px){
   #mobileOverlay{ display:none; }
   .sidebar.mob-open{
     display:flex!important;
@@ -72,9 +72,10 @@ body.light{
 }
 
 html{scrollbar-gutter:stable}
+body.locked{overflow:hidden!important;}
 
 /* ===== MOBİL ===== */
-@media(max-width:700px){
+@media(max-width:420px){
   /* Sidebar gizle */
   .sidebar{ display:none!important; }
 
@@ -442,7 +443,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 .compare-grid .down{color:#ff5252}
 
 /* ===== ORTA EKRAN (pencere modu) 700-1000px ===== */
-@media(min-width:701px) and (max-width:1000px){
+@media(min-width:421px) and (max-width:1000px){
   .sidebar{ width:160px!important; }
   .sidebar h1{ font-size:11px!important;padding:0 10px!important; }
   .nav-item{ padding:9px 10px!important;font-size:11px!important;gap:6px!important; }
@@ -454,7 +455,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   .stat .v{ font-size:16px!important; }
   .content-col{ padding:6px 10px 14px 10px!important; }
 }
-@media(min-width:701px) and (max-width:850px){
+@media(min-width:421px) and (max-width:850px){
   .sidebar{ width:130px!important; }
   .sidebar h1{ display:none!important; }
   .nav-item{ padding:8px!important;font-size:10px!important;flex-direction:column!important;gap:2px!important;text-align:center!important; }
@@ -700,9 +701,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 }
 
 /* ---- kilit ekranı ---- */
-#lockScreen{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;overflow:auto}
-#lockScreen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 40%,rgba(226,35,26,0.08) 0%,transparent 60%),radial-gradient(ellipse at 70% 60%,rgba(63,208,255,0.06) 0%,transparent 60%);pointer-events:none}
-.lock-card{position:relative;background:rgba(50,53,57,0.97);border:1px solid rgba(70,73,78,0.8);border-radius:20px;padding:36px 40px 30px;width:360px;max-width:96vw;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04);backdrop-filter:blur(16px);animation:lockCardIn .35s cubic-bezier(.34,1.56,.64,1) both}
+#lockScreen{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:#1a1c1e;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;overflow:auto}
+#lockScreen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(226,35,26,0.10) 0%,transparent 65%);pointer-events:none}
+.lock-card{position:relative;background:#2a2d31;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:40px 44px 34px;width:380px;max-width:92vw;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.6);animation:lockCardIn .35s cubic-bezier(.34,1.56,.64,1) both}
 @keyframes lockCardIn{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .lock-card.unlock-anim{animation:lockCardOut .4s ease-in forwards}
 @keyframes lockCardOut{to{opacity:0;transform:scale(1.08) translateY(-30px)}}
@@ -752,7 +753,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 </style>
 </head>
 <body>
-<div id="lockScreen" style="display:none;">
+<div id="lockScreen" style="display:flex;">
   <div class="lock-card">
     <div class="lock-logo">🔐</div>
     <div class="lock-brand">ER-TECH İLETİŞİM</div>
@@ -773,7 +774,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <!-- Mobil overlay -->
 <div id="mobileOverlay" onclick="closeMobileMenu()" style="display:none;background:rgba(0,0,0,0.55)"></div>
 
-<div class="app">
+<div class="app" id="mainApp" style="display:none">
   <div class="sidebar" id="mainSidebar">
     <div style="padding:0 18px;margin-bottom:18px">
       <h1 style="margin:0 0 6px;font-size:13px;letter-spacing:.06em;color:var(--muted);font-weight:700">ER-TECH İLETİŞİM</h1>
@@ -2354,9 +2355,15 @@ function tryUnlock(){
     const card = document.querySelector('.lock-card');
     if(card){
       card.classList.add('unlock-anim');
-      setTimeout(()=>{ document.getElementById('lockScreen').style.display = 'none'; }, 380);
+      setTimeout(()=>{
+        document.getElementById('lockScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = '';
+        document.body.style.overflow = '';
+      }, 380);
     } else {
       document.getElementById('lockScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = '';
+      document.body.style.overflow = '';
     }
   } else {
     lockMsg.textContent = '❌ Yanlış PIN — tekrar deneyin';
@@ -2376,6 +2383,12 @@ function checkLock(){
   const pin = getPin();
   if(pin){
     document.getElementById('lockScreen').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = '';
+    document.body.style.overflow = '';
   }
 }
 
@@ -8358,6 +8371,7 @@ function closeMobileMenu(){
 loadTheme();
 checkLock();
 load();
+
 // Buluttan veri çek — localStorage'dan daha yeni veri varsa uygula
 setTimeout(()=>{ pullFromCloud().then(()=>startCloudPolling()); }, 800);
 setTimeout(renderDash, 100);
