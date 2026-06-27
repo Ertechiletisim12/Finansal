@@ -24,7 +24,7 @@ body.light{
   --th-bg:#d0d5dd; --th-txt:#1a1c1e; --hover:#edf0f4;
 }
 /* Mobil sidebar overlay */
-@media(max-width:700px){
+@media(max-width:420px){
   #mobileOverlay{ display:none; }
   .sidebar.mob-open{
     display:flex!important;
@@ -72,9 +72,10 @@ body.light{
 }
 
 html{scrollbar-gutter:stable}
+body{min-width:800px;}
 
 /* ===== MOBİL ===== */
-@media(max-width:700px){
+@media(max-width:420px){
   /* Sidebar gizle */
   .sidebar{ display:none!important; }
 
@@ -442,7 +443,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 .compare-grid .down{color:#ff5252}
 
 /* ===== ORTA EKRAN (pencere modu) 700-1000px ===== */
-@media(min-width:701px) and (max-width:1000px){
+@media(min-width:421px) and (max-width:1000px){
   .sidebar{ width:160px!important; }
   .sidebar h1{ font-size:11px!important;padding:0 10px!important; }
   .nav-item{ padding:9px 10px!important;font-size:11px!important;gap:6px!important; }
@@ -454,7 +455,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   .stat .v{ font-size:16px!important; }
   .content-col{ padding:6px 10px 14px 10px!important; }
 }
-@media(min-width:701px) and (max-width:850px){
+@media(min-width:421px) and (max-width:850px){
   .sidebar{ width:130px!important; }
   .sidebar h1{ display:none!important; }
   .nav-item{ padding:8px!important;font-size:10px!important;flex-direction:column!important;gap:2px!important;text-align:center!important; }
