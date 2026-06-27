@@ -2128,12 +2128,15 @@ async function pullFromCloud(){
   } catch(e){ updateCloudIndicator('error'); return false; }
 }
 
+let lastPlatformInfo = '';
+
 function updateCloudIndicator(status, extra){
   cloudSyncStatus = status;
   const el = document.getElementById('cloudSyncIndicator');
   if(!el) return;
+  if(extra) lastPlatformInfo = extra; // yeni bilgi varsa sakla
   if(status === 'saving') el.innerHTML = '☁️ <span style="color:var(--gold)">Kaydediliyor...</span>';
-  else if(status === 'saved') el.innerHTML = '☁️ <span style="color:var(--green)">Bulut ✓</span>'+(extra?` <span style="color:var(--muted);font-size:10px">${extra}</span>`:'');
+  else if(status === 'saved') el.innerHTML = '☁️ <span style="color:var(--green)">Bulut ✓</span>'+(lastPlatformInfo?` <span style="color:var(--muted);font-size:10px">${lastPlatformInfo}</span>`:'');
   else if(status === 'error') el.innerHTML = '☁️ <span style="color:#ff5252">Bağlantı yok</span>';
   else el.innerHTML = '☁️';
 }
@@ -2221,7 +2224,8 @@ function getCount(date, cat){ const e = entries.find(e=>e.date===date && e.cat==
 function nowTimeStr(){ const d = new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
 function lastEntryTime(date, cat){
   for(let i=entryLog.length-1;i>=0;i--){
-    if(entryLog[i].date===date && entryLog[i].cat===cat) return entryLog[i].time;
+    if(entryLog[i].date===date && entryLog[i].cat===cat)
+      return { time: entryLog[i].time, platform: entryLog[i].platform||'' };
   }
   return null;
 }
@@ -2231,7 +2235,7 @@ function changeCount(cat, delta){
   if(!e){ e = {date, cat, count:0}; entries.push(e); }
   e.count = Math.max(0, e.count + delta);
   if(delta > 0){
-    entryLog.push({date, cat, time: nowTimeStr()});
+    entryLog.push({date, cat, time: nowTimeStr(), platform: getPlatformName()});
   } else if(delta < 0){
     for(let i=entryLog.length-1;i>=0;i--){
       if(entryLog[i].date===date && entryLog[i].cat===cat){ entryLog.splice(i,1); break; }
@@ -3107,7 +3111,7 @@ function render(){
         <span class="cnt">${cnt}</span>
         <button onclick="changeCount('${cat}',1)">+</button>
       </div>
-      ${lastTime ? `<div style="font-size:10.5px;color:var(--muted);margin-top:4px">🕒 son kayıt: ${lastTime}</div>` : ''}
+      ${lastTime ? `<div style="font-size:10.5px;color:var(--muted);margin-top:4px">🕒 ${lastTime.time}${lastTime.platform ? ` <span style="opacity:.7">${lastTime.platform}</span>` : ''}</div>` : ''}
       <div class="amt">${fmt(amt)}</div>
       <div class="amt" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);font-size:11px;color:var(--accent);font-weight:700">${raCnt(cat)} <span style="opacity:.85;font-weight:600">(${fmt(raAmt(cat))})</span></div>`;
     cardsDiv.appendChild(div);
