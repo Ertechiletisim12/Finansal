@@ -2321,7 +2321,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const CATS = ["PrePaid","PostPaid","Red","P2P","MNP","Mccm","İnternet","Diğer"];
+const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
+// MNP olan kategoriler (+ basınca soru sorulacak)
+const MNP_CATS = ["PrePaid","PostPaid","Red"];
 
 // ---- Kategori Özellikleri ----
 const CAT_CONFIG = {
@@ -2329,7 +2331,7 @@ const CAT_CONFIG = {
   "PostPaid": { delay:0, countForMonth:'entry',      activationInput:false, color:'#ffb74d' },
   "Red":      { delay:0, countForMonth:'entry',      activationInput:false, color:'#e2231a' },
   "P2P":      { delay:0, countForMonth:'entry',      activationInput:false, color:'#2fae4e' },
-  "MNP":      { delay:3, countForMonth:'activation', activationInput:false, color:'#9b59b6' },
+
   "Mccm":     { delay:0, countForMonth:'entry',      activationInput:false, color:'#c084fc' },
   "İnternet": { delay:0, countForMonth:'activation', activationInput:true,  color:'#fb923c' },
   "Diğer":    { delay:0, countForMonth:'entry',      activationInput:false, color:'#888888' },
@@ -2344,7 +2346,8 @@ function mnpActivationDate(entryDate){
 
 // Bir entry hangi aya sayılır?
 function effectiveYm(entry){
-  if(entry.cat==='MNP'){
+  // MNP işareti varsa 3 gün gecikme
+  if(entry.mnp){
     return ymKey(mnpActivationDate(entry.date));
   }
   if(entry.cat==='İnternet' && entry.activationDate){
@@ -2874,7 +2877,7 @@ function financeFor(ym, mMap){
   const genelCats = ["PostPaid","Red","P2P","MNP","PrePaid","Mccm","İnternet"];
   const genelToplamAdet = genelCats.reduce((a,c)=>a+(m[c]||0),0);
   // Birim fiyat + kampanya bonusu
-  let primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0);
+  let primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0); // kampanya: tarih bazlı fiyat entries üzerinden uygulanır
   // Kampanya bonusları ekle
   if(typeof kampanyaBonusFor==='function'){
     CATS.forEach(c=>{ primTutar += kampanyaBonusFor(ym, c, m[c]||0); });
@@ -2901,7 +2904,7 @@ function lastEntryTime(date, cat){
   }
   return null;
 }
-function changeCount(cat, delta, activationDate){
+function changeCount(cat, delta, activationDate, isMnp){
   const date = activeDateVal();
 
   // İnternet: aktivasyon tarihi zorunlu
@@ -2910,20 +2913,18 @@ function changeCount(cat, delta, activationDate){
     return;
   }
 
-  // MNP: aktivasyon tarihi bilgisi göster
-  if(cat==='MNP' && delta>0){
-    const actDate = mnpActivationDate(date);
-    const actYm = ymKey(actDate);
-    const entryYm = ymKey(date);
-    if(actYm !== entryYm){
-      const msg = '⚠️ MNP Bilgisi\n\nGiriş tarihi: '+date+'\nAktivasyonu: '+actDate+'\n\n→ Bu MNP bir sonraki aya ('+actYm+') sayılacak.\n\nDevam etmek istiyor musunuz?';
-      if(!confirm(msg)) return;
-    }
+  // PrePaid/PostPaid/Red: MNP mi Yeni Tesis mi diye sor
+  if(MNP_CATS.includes(cat) && delta>0 && isMnp===undefined){
+    openMnpTesisModal(cat, date);
+    return;
   }
 
   let e = entries.find(e=>e.date===date && e.cat===cat);
   if(!e){ e = {date, cat, count:0}; entries.push(e); }
   e.count = Math.max(0, e.count + delta);
+
+  // MNP işareti
+  if(isMnp) e.mnp = true;
 
   // İnternet aktivasyon tarihini kaydet
   if(cat==='İnternet' && activationDate){
@@ -2931,8 +2932,8 @@ function changeCount(cat, delta, activationDate){
   }
 
   if(delta > 0){
-    const logEntry = {date, cat, time: nowTimeStr(), platform: getPlatformName()};
-    if(cat==='MNP') logEntry.activationDate = mnpActivationDate(date);
+    const logEntry = {date, cat, time: nowTimeStr(), platform: getPlatformName(), mnp: isMnp||false};
+    if(isMnp) logEntry.activationDate = mnpActivationDate(date);
     if(cat==='İnternet' && activationDate) logEntry.activationDate = activationDate;
     entryLog.push(logEntry);
   } else if(delta < 0){
@@ -4077,19 +4078,20 @@ function render(){
   let dayTotal=0, dayCount=0;
   CATS.forEach(cat=>{
     const cnt = getCount(activeDate, cat);
-    const price = priceFor(activeYm, cat);
+    const price = priceFor(activeYm, cat, activeDate); // kampanya fiyatı için tarih gerekli
     const amt = cnt*price;
     dayTotal += amt; dayCount += cnt;
     const lastTime = lastEntryTime(activeDate, cat);
     const div = document.createElement('div');
     div.className='card';
-    // MNP: bu ayın girişlerinden kaçı bu aya, kaçı sonraki aya sayılıyor?
+    // MNP/Yeni Tesis ayrımı: bu kategoride kaç MNP, kaç yeni tesis var?
     let mnpInfo = '';
-    if(cat==='MNP'){
-      const todayMnpEntries = entries.filter(e=>e.cat==='MNP' && ymKey(e.date)===activeYm);
-      const buAya = todayMnpEntries.filter(e=>effectiveYm(e)===activeYm).reduce((a,e)=>a+e.count,0);
-      const sonrakiAya = todayMnpEntries.filter(e=>effectiveYm(e)!==activeYm).reduce((a,e)=>a+e.count,0);
-      if(buAya||sonrakiAya) mnpInfo = `<div style="font-size:10px;color:var(--muted);margin-top:4px">✅ Bu ay: ${buAya} · ⏭ Sonraki ay: ${sonrakiAya}</div>`;
+    if(MNP_CATS.includes(cat)){
+      const ayEntries = entries.filter(e=>e.cat===cat && ymKey(e.date)===activeYm);
+      const mnpAdet = ayEntries.filter(e=>e.mnp).reduce((a,e)=>a+e.count,0);
+      const tesisAdet = ayEntries.filter(e=>!e.mnp).reduce((a,e)=>a+e.count,0);
+      const sonrakiAya = ayEntries.filter(e=>e.mnp && effectiveYm(e)!==activeYm).reduce((a,e)=>a+e.count,0);
+      if(mnpAdet||tesisAdet) mnpInfo = `<div style="font-size:10px;color:var(--muted);margin-top:4px">🆕 Tesis: ${tesisAdet} · 🔄 MNP: ${mnpAdet}${sonrakiAya?` (${sonrakiAya} sonraki aya)`:''}  </div>`;
     }
     // İnternet: aktivasyon tarihi göster
     let intInfo = '';
@@ -7220,6 +7222,46 @@ function printManagerReport(){
   modal.style.display = 'flex';
 }
 
+// ===== MNP / YENİ TESİS MODAL FONKSİYONLARI =====
+let _mnpTesisCat = null;
+let _mnpTesisDate = null;
+
+function openMnpTesisModal(cat, date){
+  _mnpTesisCat = cat;
+  _mnpTesisDate = date;
+  const actDate = mnpActivationDate(date);
+  const actYm = ymKey(actDate);
+  const entryYm = ymKey(date);
+  document.getElementById('mnpTesisTitle').textContent = cat + ' — İşlem Tipi';
+  const info = actYm !== entryYm
+    ? '3 gün sonra açılır → ' + actDate + ' (' + actYm + ' ayına sayılır)'
+    : '3 gün sonra açılır → ' + actDate + ' (aynı ay)';
+  document.getElementById('mnpActDateInfo').textContent = info;
+  document.getElementById('mnpTesisModal').style.display = 'flex';
+}
+function closeMnpTesisModal(){
+  document.getElementById('mnpTesisModal').style.display = 'none';
+  _mnpTesisCat = null;
+  _mnpTesisDate = null;
+}
+function confirmMnpTesis(isMnp){
+  const cat = _mnpTesisCat;
+  const date = _mnpTesisDate;
+  closeMnpTesisModal();
+  if(!cat) return;
+
+  // MNP ve ay sonu uyarısı
+  if(isMnp){
+    const actDate = mnpActivationDate(date);
+    const actYm = ymKey(actDate);
+    const entryYm = ymKey(date);
+    if(actYm !== entryYm){
+      if(!confirm('\u26a0\ufe0f Bu MNP ' + actYm + ' ay\u0131na say\u0131lacak. (Aktivasyon: ' + actDate + ') Devam?')) return;
+    }
+  }
+  changeCount(cat, 1, null, isMnp);
+}
+
 // ===== İNTERNET AKTİVASYON MODAL FONKSİYONLARI =====
 let _internetActDate = null;
 let _internetActCat = null;
@@ -9771,6 +9813,31 @@ function renderHedefGecmis(){
 </script>
 
 <!-- TAM EKRAN DIŞA AKTAR MODAL -->
+<!-- ===== MNP / YENİ TESİS SEÇIM MODALI ===== -->
+<div id="mnpTesisModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border-radius:16px;padding:24px 20px;max-width:320px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.5)">
+    <div style="font-size:16px;font-weight:800;color:var(--txt);margin-bottom:4px;text-align:center" id="mnpTesisTitle">📋 İşlem Tipi</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px;text-align:center" id="mnpTesisSubtitle">Bu işlem nasıl gerçekleşti?</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="confirmMnpTesis(false)" style="padding:14px;background:var(--panel2);border:2px solid var(--line);border-radius:10px;color:var(--txt);font-size:14px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
+        <span style="font-size:22px">🆕</span>
+        <div>
+          <div style="font-weight:800">Yeni Tesis</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:2px">Anlık açılır, bu aya sayılır</div>
+        </div>
+      </button>
+      <button onclick="confirmMnpTesis(true)" style="padding:14px;background:rgba(155,89,182,0.1);border:2px solid rgba(155,89,182,0.4);border-radius:10px;color:var(--txt);font-size:14px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
+        <span style="font-size:22px">🔄</span>
+        <div>
+          <div style="font-weight:800;color:#c084fc">MNP</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:2px" id="mnpActDateInfo">3 gün sonra açılır</div>
+        </div>
+      </button>
+      <button onclick="closeMnpTesisModal()" style="padding:10px;background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:13px;cursor:pointer;margin-top:4px">İptal</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== İNTERNET AKTİVASYON MODALI ===== -->
 <div id="internetActModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:16px">
   <div style="background:var(--panel);border-radius:14px;padding:22px 20px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
