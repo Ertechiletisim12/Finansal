@@ -1376,6 +1376,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
     <div class="sidebar-tools">
       <button id="pwaInstallBtn" class="tool-btn" onclick="installPWA()" style="display:none;background:linear-gradient(90deg,#e2231a,#b81b14);color:#fff;border:none;font-weight:700;justify-content:center">📲 Uygulamayı Kur</button>
+      <button class="tool-btn" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.15);border-color:rgba(255,183,77,0.4);color:#ffb74d;font-weight:700">🎯 Kampanyalar</button>
       <div class="sidebar-tools-title">Görünüm &amp; Yedekleme</div>
       <div id="cloudSyncIndicator" style="font-size:11px;padding:4px 6px;color:var(--muted)">☁️ Bağlanıyor...</div>
       <button class="tool-btn" id="themeBtn" onclick="toggleTheme()">🌙 Koyu Mod</button>
@@ -2320,7 +2321,64 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
+const CATS = ["PrePaid","PostPaid","Red","P2P","MNP","Mccm","İnternet","Diğer"];
+
+// ---- Kategori Özellikleri ----
+const CAT_CONFIG = {
+  "PrePaid":  { delay:0, countForMonth:'entry',      activationInput:false, color:'#3fd0ff' },
+  "PostPaid": { delay:0, countForMonth:'entry',      activationInput:false, color:'#ffb74d' },
+  "Red":      { delay:0, countForMonth:'entry',      activationInput:false, color:'#e2231a' },
+  "P2P":      { delay:0, countForMonth:'entry',      activationInput:false, color:'#2fae4e' },
+  "MNP":      { delay:3, countForMonth:'activation', activationInput:false, color:'#9b59b6' },
+  "Mccm":     { delay:0, countForMonth:'entry',      activationInput:false, color:'#c084fc' },
+  "İnternet": { delay:0, countForMonth:'activation', activationInput:true,  color:'#fb923c' },
+  "Diğer":    { delay:0, countForMonth:'entry',      activationInput:false, color:'#888888' },
+};
+
+// MNP: girilen tarih + 3 gün = aktivasyon tarihi
+function mnpActivationDate(entryDate){
+  const d = new Date(entryDate);
+  d.setDate(d.getDate()+3);
+  return d.toISOString().slice(0,10);
+}
+
+// Bir entry hangi aya sayılır?
+function effectiveYm(entry){
+  if(entry.cat==='MNP'){
+    return ymKey(mnpActivationDate(entry.date));
+  }
+  if(entry.cat==='İnternet' && entry.activationDate){
+    return ymKey(entry.activationDate);
+  }
+  return ymKey(entry.date);
+}
+
+// ---- Kampanya Sistemi ----
+// tip:'fiyat' → o kategorinin birim fiyatını override eder (tarih aralığı bazlı)
+// tip:'bonus' → o ayda minAdet aşılırsa ekstra tutar eklenir
+let kampanyaData = [];
+const STORE_KEY_KAMPANYA = 'vf_kampanya_v1';
+function saveKampanyaStore(){
+  try{ localStorage.setItem(STORE_KEY_KAMPANYA, JSON.stringify(kampanyaData)); }catch(e){}
+  scheduleCloudSync();
+}
+function kampanyaFiyatFor(date, cat, normalFiyat){
+  const aktif = kampanyaData.filter(k=>
+    k.cat===cat && k.tip==='fiyat' &&
+    (!k.startDate||date>=k.startDate) &&
+    (!k.endDate||date<=k.endDate) &&
+    ymKey(date)===k.ym
+  );
+  if(!aktif.length) return normalFiyat;
+  return aktif[aktif.length-1].deger;
+}
+function kampanyaBonusFor(ym, cat, totalAdet){
+  let bonus=0;
+  kampanyaData.filter(k=>k.cat===cat&&k.tip==='bonus'&&k.ym===ym).forEach(k=>{
+    if(totalAdet>=(k.minAdet||0)) bonus+=k.deger;
+  });
+  return bonus;
+}
 const FINANS_DEFAULT_DATA = [{"ym": "2021-02", "yil": 2021, "ay": "\u015eubat", "ayNo": 2, "mevcutSermaye": 219278, "vodKarTutari": 13600, "mixyKarTutari": 0, "vodMasraf": 15030, "mixyMasraf": 0, "vodKarZarar": -1430, "mixyKarZarar": 0, "topKarTutari": 13600, "topMasrafTutari": 15030, "topKarZarar": -1430, "gerekenSermaye": 217848, "sermayeFarki": 1430, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2021-03", "yil": 2021, "ay": "Mart", "ayNo": 3, "mevcutSermaye": 184065, "vodKarTutari": 18859, "mixyKarTutari": 0, "vodMasraf": 54327, "mixyMasraf": 0, "vodKarZarar": -35468, "mixyKarZarar": 0, "topKarTutari": 18859, "topMasrafTutari": 54327, "topKarZarar": -35468, "gerekenSermaye": 183810, "sermayeFarki": 255, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2021-04", "yil": 2021, "ay": "Nisan", "ayNo": 4, "mevcutSermaye": 178431, "vodKarTutari": 16102, "mixyKarTutari": 0, "vodMasraf": 21802, "mixyMasraf": 0, "vodKarZarar": -5700, "mixyKarZarar": 0, "topKarTutari": 16102, "topMasrafTutari": 21802, "topKarZarar": -5700, "gerekenSermaye": 178365, "sermayeFarki": 66, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2021-05", "yil": 2021, "ay": "May\u0131s", "ayNo": 5, "mevcutSermaye": 172601, "vodKarTutari": 9569, "mixyKarTutari": 0, "vodMasraf": 15034, "mixyMasraf": 0, "vodKarZarar": -5465, "mixyKarZarar": 0, "topKarTutari": 9569, "topMasrafTutari": 15034, "topKarZarar": -5465, "gerekenSermaye": 172966, "sermayeFarki": -365, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2021-06", "yil": 2021, "ay": "Haziran", "ayNo": 6, "mevcutSermaye": 180068, "vodKarTutari": 18520, "mixyKarTutari": 0, "vodMasraf": 11675, "mixyMasraf": 0, "vodKarZarar": 6845, "mixyKarZarar": 0, "topKarTutari": 18520, "topMasrafTutari": 11675, "topKarZarar": 6845, "gerekenSermaye": 179446, "sermayeFarki": 622, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2021-07", "yil": 2021, "ay": "Temmuz", "ayNo": 7, "mevcutSermaye": 185159, "vodKarTutari": 23244, "mixyKarTutari": 0, "vodMasraf": 17954, "mixyMasraf": 0, "vodKarZarar": 5290, "mixyKarZarar": 0, "topKarTutari": 23244, "topMasrafTutari": 17954, "topKarZarar": 5290, "gerekenSermaye": 185358, "sermayeFarki": -199, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2021-08", "yil": 2021, "ay": "A\u011fustos", "ayNo": 8, "mevcutSermaye": 189980, "vodKarTutari": 19277, "mixyKarTutari": 0, "vodMasraf": 14285, "mixyMasraf": 0, "vodKarZarar": 4992, "mixyKarZarar": 0, "topKarTutari": 19277, "topMasrafTutari": 14285, "topKarZarar": 4992, "gerekenSermaye": 190151, "sermayeFarki": -171, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2021-09", "yil": 2021, "ay": "Eyl\u00fcl", "ayNo": 9, "mevcutSermaye": 196727, "vodKarTutari": 14640, "mixyKarTutari": 0, "vodMasraf": 8031, "mixyMasraf": 0, "vodKarZarar": 6609, "mixyKarZarar": 0, "topKarTutari": 14640, "topMasrafTutari": 8031, "topKarZarar": 6609, "gerekenSermaye": 196589, "sermayeFarki": 138, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2021-10", "yil": 2021, "ay": "Ekim", "ayNo": 10, "mevcutSermaye": 203813, "vodKarTutari": 22299, "mixyKarTutari": 0, "vodMasraf": 14467, "mixyMasraf": 0, "vodKarZarar": 7832, "mixyKarZarar": 0, "topKarTutari": 22299, "topMasrafTutari": 14467, "topKarZarar": 7832, "gerekenSermaye": 204559, "sermayeFarki": -746, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2021-11", "yil": 2021, "ay": "Kas\u0131m", "ayNo": 11, "mevcutSermaye": 218884, "vodKarTutari": 22846, "mixyKarTutari": 0, "vodMasraf": 8619, "mixyMasraf": 0, "vodKarZarar": 14227, "mixyKarZarar": 0, "topKarTutari": 22846, "topMasrafTutari": 8619, "topKarZarar": 14227, "gerekenSermaye": 218040, "sermayeFarki": 844, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2021-12", "yil": 2021, "ay": "Aral\u0131k", "ayNo": 12, "mevcutSermaye": 224786, "vodKarTutari": 22826.91, "mixyKarTutari": 0, "vodMasraf": 16387.41, "mixyMasraf": 0, "vodKarZarar": 6439.5, "mixyKarZarar": 0, "topKarTutari": 22826.91, "topMasrafTutari": 16387.41, "topKarZarar": 6439.5, "gerekenSermaye": 225323.5, "sermayeFarki": -537.5, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2022-01", "yil": 2022, "ay": "Ocak", "ayNo": 1, "mevcutSermaye": 243001.32, "vodKarTutari": 33448.46, "mixyKarTutari": 0, "vodMasraf": 15448.4, "mixyMasraf": 0, "vodKarZarar": 18000.06, "mixyKarZarar": 0, "topKarTutari": 33448.46, "topMasrafTutari": 15448.4, "topKarZarar": 18000.06, "gerekenSermaye": 242786.06, "sermayeFarki": 215.26, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2022-02", "yil": 2022, "ay": "\u015eubat", "ayNo": 2, "mevcutSermaye": 264710.68, "vodKarTutari": 35115.26, "mixyKarTutari": 0, "vodMasraf": 13475.98, "mixyMasraf": 0, "vodKarZarar": 21639.28, "mixyKarZarar": 0, "topKarTutari": 35115.26, "topMasrafTutari": 13475.98, "topKarZarar": 21639.28, "gerekenSermaye": 264640.6, "sermayeFarki": 70.08, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2022-03", "yil": 2022, "ay": "Mart", "ayNo": 3, "mevcutSermaye": 267783.9, "vodKarTutari": 22268.15, "mixyKarTutari": 0, "vodMasraf": 20683.4, "mixyMasraf": 0, "vodKarZarar": 1584.75, "mixyKarZarar": 0, "topKarTutari": 22268.15, "topMasrafTutari": 20683.4, "topKarZarar": 1584.75, "gerekenSermaye": 266295.43, "sermayeFarki": 1488.47, "vodMarj": 100, "mixyMarj": 0, "aciklama": ""}, {"ym": "2022-04", "yil": 2022, "ay": "Nisan", "ayNo": 4, "mevcutSermaye": 138750.93, "vodKarTutari": 22441.37, "mixyKarTutari": 13462.5, "vodMasraf": 15378.58, "mixyMasraf": 158531.04, "vodKarZarar": 7062.79, "mixyKarZarar": -145068.54, "topKarTutari": 35903.87, "topMasrafTutari": 173909.62, "topKarZarar": -138005.75, "gerekenSermaye": 129778.15, "sermayeFarki": 8972.78, "vodMarj": 63, "mixyMarj": 37, "aciklama": ""}, {"ym": "2022-05", "yil": 2022, "ay": "May\u0131s", "ayNo": 5, "mevcutSermaye": 131908.02, "vodKarTutari": 10934.6, "mixyKarTutari": 14757.09, "vodMasraf": 12084.14, "mixyMasraf": 5802.16, "vodKarZarar": -1149.54, "mixyKarZarar": 8954.93, "topKarTutari": 25691.69, "topMasrafTutari": 17886.3, "topKarZarar": 7805.39, "gerekenSermaye": 146556.32, "sermayeFarki": -14648.3, "vodMarj": 43, "mixyMarj": 57, "aciklama": ""}, {"ym": "2022-06", "yil": 2022, "ay": "Haziran", "ayNo": 6, "mevcutSermaye": 130849.49, "vodKarTutari": 11304.38, "mixyKarTutari": 10586.95, "vodMasraf": 17554.5, "mixyMasraf": 2557.8, "vodKarZarar": -6250.12, "mixyKarZarar": 8029.15, "topKarTutari": 21891.33, "topMasrafTutari": 20112.3, "topKarZarar": 1779.03, "gerekenSermaye": 133687.05, "sermayeFarki": -2837.56, "vodMarj": 52, "mixyMarj": 48, "aciklama": ""}, {"ym": "2022-07", "yil": 2022, "ay": "Temmuz", "ayNo": 7, "mevcutSermaye": 134688.46, "vodKarTutari": 19863.36, "mixyKarTutari": 14118.57, "vodMasraf": 21328.98, "mixyMasraf": 4582.4, "vodKarZarar": -1465.62, "mixyKarZarar": 9536.17, "topKarTutari": 33981.93, "topMasrafTutari": 25911.38, "topKarZarar": 8070.55, "gerekenSermaye": 138920.04, "sermayeFarki": -4231.58, "vodMarj": 58, "mixyMarj": 42, "aciklama": ""}, {"ym": "2022-08", "yil": 2022, "ay": "A\u011fustos", "ayNo": 8, "mevcutSermaye": 155612.22, "vodKarTutari": 27849.21, "mixyKarTutari": 11597.89, "vodMasraf": 15845.03, "mixyMasraf": 3780.37, "vodKarZarar": 12004.18, "mixyKarZarar": 7817.52, "topKarTutari": 39447.1, "topMasrafTutari": 19625.4, "topKarZarar": 19821.7, "gerekenSermaye": 154510.16, "sermayeFarki": 1102.06, "vodMarj": 71, "mixyMarj": 29, "aciklama": ""}, {"ym": "2022-09", "yil": 2022, "ay": "Eyl\u00fcl", "ayNo": 9, "mevcutSermaye": 184048.57, "vodKarTutari": 34540.47, "mixyKarTutari": 17994.56, "vodMasraf": 12789.14, "mixyMasraf": 11712.83, "vodKarZarar": 21751.33, "mixyKarZarar": 6281.73, "topKarTutari": 52535.03, "topMasrafTutari": 24501.97, "topKarZarar": 28033.06, "gerekenSermaye": 183645.28, "sermayeFarki": 403.29, "vodMarj": 66, "mixyMarj": 34, "aciklama": ""}, {"ym": "2022-10", "yil": 2022, "ay": "Ekim", "ayNo": 10, "mevcutSermaye": 222641.39, "vodKarTutari": 48309.8, "mixyKarTutari": 12825.18, "vodMasraf": 17000, "mixyMasraf": 4010, "vodKarZarar": 31309.8, "mixyKarZarar": 8815.18, "topKarTutari": 61134.98, "topMasrafTutari": 21010, "topKarZarar": 40124.98, "gerekenSermaye": 224173.55, "sermayeFarki": -1532.16, "vodMarj": 79, "mixyMarj": 21, "aciklama": ""}, {"ym": "2022-11", "yil": 2022, "ay": "Kas\u0131m", "ayNo": 11, "mevcutSermaye": 264318.27, "vodKarTutari": 54772.22, "mixyKarTutari": 13725.3, "vodMasraf": 19813.12, "mixyMasraf": 7336.02, "vodKarZarar": 34959.1, "mixyKarZarar": 6389.28, "topKarTutari": 68497.52, "topMasrafTutari": 27149.14, "topKarZarar": 41348.38, "gerekenSermaye": 263989.77, "sermayeFarki": 328.5, "vodMarj": 80, "mixyMarj": 20, "aciklama": ""}, {"ym": "2022-12", "yil": 2022, "ay": "Aral\u0131k", "ayNo": 12, "mevcutSermaye": 300676.98, "vodKarTutari": 50148.66, "mixyKarTutari": 15326.19, "vodMasraf": 16545.67, "mixyMasraf": 12372, "vodKarZarar": 33602.99, "mixyKarZarar": 2954.19, "topKarTutari": 65474.85, "topMasrafTutari": 28917.67, "topKarZarar": 36557.18, "gerekenSermaye": 300875.45, "sermayeFarki": -198.47, "vodMarj": 77, "mixyMarj": 23, "aciklama": ""}, {"ym": "2023-01", "yil": 2023, "ay": "Ocak", "ayNo": 1, "mevcutSermaye": 337918.36, "vodKarTutari": 55168.82, "mixyKarTutari": 14945.17, "vodMasraf": 26530.25, "mixyMasraf": 5258.75, "vodKarZarar": 28638.57, "mixyKarZarar": 9686.42, "topKarTutari": 70113.99, "topMasrafTutari": 31789, "topKarZarar": 38324.99, "gerekenSermaye": 339001.97, "sermayeFarki": -1083.61, "vodMarj": 79, "mixyMarj": 21, "aciklama": "M\u0130XY SAYIM YAPILDI"}, {"ym": "2023-02", "yil": 2023, "ay": "\u015eubat", "ayNo": 2, "mevcutSermaye": 362609.92, "vodKarTutari": 54494.67, "mixyKarTutari": 15449.53, "vodMasraf": 38271.93, "mixyMasraf": 6579.74, "vodKarZarar": 16222.74, "mixyKarZarar": 8869.79, "topKarTutari": 69944.2, "topMasrafTutari": 44851.67, "topKarZarar": 25092.53, "gerekenSermaye": 363010.89, "sermayeFarki": -400.97, "vodMarj": 78, "mixyMarj": 22, "aciklama": ""}, {"ym": "2023-03", "yil": 2023, "ay": "Mart", "ayNo": 3, "mevcutSermaye": 400353.71, "vodKarTutari": 51646.77, "mixyKarTutari": 23301.19, "vodMasraf": 27324.43, "mixyMasraf": 9873.5, "vodKarZarar": 24322.34, "mixyKarZarar": 13427.69, "topKarTutari": 74947.96, "topMasrafTutari": 37197.93, "topKarZarar": 37750.03, "gerekenSermaye": 400359.95, "sermayeFarki": -6.24, "vodMarj": 69, "mixyMarj": 31, "aciklama": ""}, {"ym": "2023-04", "yil": 2023, "ay": "Nisan", "ayNo": 4, "mevcutSermaye": 362784.24, "vodKarTutari": 68721.98, "mixyKarTutari": 38714.61, "vodMasraf": 136166.46, "mixyMasraf": 10149.14, "vodKarZarar": -67444.48, "mixyKarZarar": 28565.47, "topKarTutari": 107436.59, "topMasrafTutari": 146315.6, "topKarZarar": -38879.01, "gerekenSermaye": 361474.7, "sermayeFarki": 1309.54, "vodMarj": 64, "mixyMarj": 36, "aciklama": ""}, {"ym": "2023-05", "yil": 2023, "ay": "May\u0131s", "ayNo": 5, "mevcutSermaye": -40765.84, "vodKarTutari": 75665.71, "mixyKarTutari": 28899.25, "vodMasraf": 499136.3, "mixyMasraf": 7268, "vodKarZarar": -423470.59, "mixyKarZarar": 21631.25, "topKarTutari": 104564.96, "topMasrafTutari": 506404.3, "topKarZarar": -401839.34, "gerekenSermaye": -39055.1, "sermayeFarki": -1710.74, "vodMarj": 72, "mixyMarj": 28, "aciklama": ""}, {"ym": "2023-06", "yil": 2023, "ay": "Haziran", "ayNo": 6, "mevcutSermaye": 1765.1, "vodKarTutari": 75881.3, "mixyKarTutari": 35170.27, "vodMasraf": 38099.13, "mixyMasraf": 7675, "vodKarZarar": 37782.17, "mixyKarZarar": 27495.27, "topKarTutari": 111051.57, "topMasrafTutari": 45774.13, "topKarZarar": 65277.44, "gerekenSermaye": 24511.6, "sermayeFarki": -22746.5, "vodMarj": 68, "mixyMarj": 32, "aciklama": ""}, {"ym": "2023-07", "yil": 2023, "ay": "Temmuz", "ayNo": 7, "mevcutSermaye": 56000.49, "vodKarTutari": 108467.94, "mixyKarTutari": 36716.95, "vodMasraf": 84763.13, "mixyMasraf": 6849, "vodKarZarar": 23704.81, "mixyKarZarar": 29867.95, "topKarTutari": 145184.89, "topMasrafTutari": 91612.13, "topKarZarar": 53572.76, "gerekenSermaye": 55337.86, "sermayeFarki": 662.63, "vodMarj": 75, "mixyMarj": 25, "aciklama": ""}, {"ym": "2023-08", "yil": 2023, "ay": "A\u011fustos", "ayNo": 8, "mevcutSermaye": 158084.69, "vodKarTutari": 110202.68, "mixyKarTutari": 26423.32, "vodMasraf": 30231.8, "mixyMasraf": 6636, "vodKarZarar": 79970.88, "mixyKarZarar": 19787.32, "topKarTutari": 136626, "topMasrafTutari": 36867.8, "topKarZarar": 99758.2, "gerekenSermaye": 155758.69, "sermayeFarki": 2326, "vodMarj": 81, "mixyMarj": 19, "aciklama": ""}, {"ym": "2023-09", "yil": 2023, "ay": "Eyl\u00fcl", "ayNo": 9, "mevcutSermaye": 283624.55, "vodKarTutari": 136149.47, "mixyKarTutari": 38914.38, "vodMasraf": 43203.84, "mixyMasraf": 6810, "vodKarZarar": 92945.63, "mixyKarZarar": 32104.38, "topKarTutari": 175063.85, "topMasrafTutari": 50013.84, "topKarZarar": 125050.01, "gerekenSermaye": 283134.7, "sermayeFarki": 489.85, "vodMarj": 78, "mixyMarj": 22, "aciklama": ""}, {"ym": "2023-10", "yil": 2023, "ay": "Ekim", "ayNo": 10, "mevcutSermaye": 370062.14, "vodKarTutari": 110406.52, "mixyKarTutari": 30521.31, "vodMasraf": 54239.97, "mixyMasraf": 4810, "vodKarZarar": 56166.55, "mixyKarZarar": 25711.31, "topKarTutari": 140927.83, "topMasrafTutari": 59049.97, "topKarZarar": 81877.86, "gerekenSermaye": 365502.41, "sermayeFarki": 4559.73, "vodMarj": 78, "mixyMarj": 22, "aciklama": "F\u0130YAT FARKLARI"}, {"ym": "2023-11", "yil": 2023, "ay": "Kas\u0131m", "ayNo": 11, "mevcutSermaye": 417884.58, "vodKarTutari": 87127.18, "mixyKarTutari": 27248.57, "vodMasraf": 63756.34, "mixyMasraf": 5709.67, "vodKarZarar": 23370.84, "mixyKarZarar": 21538.9, "topKarTutari": 114375.75, "topMasrafTutari": 69466.01, "topKarZarar": 44909.74, "gerekenSermaye": 414971.88, "sermayeFarki": 2912.7, "vodMarj": 76, "mixyMarj": 24, "aciklama": "21000 \u20ba Tablet"}, {"ym": "2023-12", "yil": 2023, "ay": "Aral\u0131k", "ayNo": 12, "mevcutSermaye": 424873.01, "vodKarTutari": 77956.66, "mixyKarTutari": 21451.44, "vodMasraf": 83161.16, "mixyMasraf": 8924.37, "vodKarZarar": -5204.5, "mixyKarZarar": 12527.07, "topKarTutari": 99408.1, "topMasrafTutari": 92085.53, "topKarZarar": 7322.57, "gerekenSermaye": 425207.15, "sermayeFarki": -334.14, "vodMarj": 78, "mixyMarj": 22, "aciklama": "\u00e7"}, {"ym": "2024-01", "yil": 2024, "ay": "Ocak", "ayNo": 1, "mevcutSermaye": 496673.08, "vodKarTutari": 109861.7, "mixyKarTutari": 23836.38, "vodMasraf": 43759.05, "mixyMasraf": 8256.31, "vodKarZarar": 66102.65, "mixyKarZarar": 15580.07, "topKarTutari": 133698.08, "topMasrafTutari": 52015.36, "topKarZarar": 81682.72, "gerekenSermaye": 506555.73, "sermayeFarki": -9882.65, "vodMarj": 82, "mixyMarj": 18, "aciklama": "M\u0130XY SYIM"}, {"ym": "2024-02", "yil": 2024, "ay": "\u015eubat", "ayNo": 2, "mevcutSermaye": 495014.84, "vodKarTutari": 114467.61, "mixyKarTutari": 36522.64, "vodMasraf": 145155.5, "mixyMasraf": 8668.68, "vodKarZarar": -30687.89, "mixyKarZarar": 27853.96, "topKarTutari": 150990.25, "topMasrafTutari": 153824.18, "topKarZarar": -2833.93, "gerekenSermaye": 493839.15, "sermayeFarki": 1175.69, "vodMarj": 76, "mixyMarj": 24, "aciklama": "13.24"}, {"ym": "2024-03", "yil": 2024, "ay": "Mart", "ayNo": 3, "mevcutSermaye": 527397.13, "vodKarTutari": 74264.19, "mixyKarTutari": 41299.02, "vodMasraf": 60994.51, "mixyMasraf": 26177.24, "vodKarZarar": 13269.68, "mixyKarZarar": 15121.78, "topKarTutari": 115563.21, "topMasrafTutari": 87171.75, "topKarZarar": 28391.46, "gerekenSermaye": 523406.3, "sermayeFarki": 3990.83, "vodMarj": 64, "mixyMarj": 36, "aciklama": "MUH\u0130TT\u0130N+"}, {"ym": "2024-04", "yil": 2024, "ay": "Nisan", "ayNo": 4, "mevcutSermaye": 652244.45, "vodKarTutari": 87589.06, "mixyKarTutari": 87295.74, "vodMasraf": 38970.17, "mixyMasraf": 11665.5, "vodKarZarar": 48618.89, "mixyKarZarar": 75630.24, "topKarTutari": 174884.8, "topMasrafTutari": 50635.67, "topKarZarar": 124249.13, "gerekenSermaye": 651646.26, "sermayeFarki": 598.19, "vodMarj": 50, "mixyMarj": 50, "aciklama": ""}, {"ym": "2024-05", "yil": 2024, "ay": "May\u0131s", "ayNo": 5, "mevcutSermaye": 832879.96, "vodKarTutari": 94593.24, "mixyKarTutari": 58964.45, "vodMasraf": 58335.09, "mixyMasraf": 9351.4, "vodKarZarar": 36258.15, "mixyKarZarar": 49613.05, "topKarTutari": 153557.69, "topMasrafTutari": 67686.49, "topKarZarar": 85871.2, "gerekenSermaye": 738115.65, "sermayeFarki": 94764.31, "vodMarj": 62, "mixyMarj": 38, "aciklama": ""}, {"ym": "2024-06", "yil": 2024, "ay": "Haziran", "ayNo": 6, "mevcutSermaye": 914104.6, "vodKarTutari": 97076.92, "mixyKarTutari": 58863.09, "vodMasraf": 67020.98, "mixyMasraf": 8986.75, "vodKarZarar": 30055.94, "mixyKarZarar": 49876.34, "topKarTutari": 155940.01, "topMasrafTutari": 76007.73, "topKarZarar": 79932.28, "gerekenSermaye": 912812.24, "sermayeFarki": 1292.36, "vodMarj": 62, "mixyMarj": 38, "aciklama": ""}, {"ym": "2024-07", "yil": 2024, "ay": "Temmuz", "ayNo": 7, "mevcutSermaye": 1081996.04, "vodKarTutari": 194719.24, "mixyKarTutari": 50072.36, "vodMasraf": 70291.53, "mixyMasraf": 9645, "vodKarZarar": 124427.71, "mixyKarZarar": 40427.36, "topKarTutari": 244791.6, "topMasrafTutari": 79936.53, "topKarZarar": 164855.07, "gerekenSermaye": 1078959.67, "sermayeFarki": 3036.37, "vodMarj": 80, "mixyMarj": 20, "aciklama": ""}, {"ym": "2024-08", "yil": 2024, "ay": "A\u011fustos", "ayNo": 8, "mevcutSermaye": 1154345.35, "vodKarTutari": 153254.64, "mixyKarTutari": 63463.4, "vodMasraf": 133179.56, "mixyMasraf": 14304, "vodKarZarar": 20075.08, "mixyKarZarar": 49159.4, "topKarTutari": 216718.04, "topMasrafTutari": 147483.56, "topKarZarar": 69234.48, "gerekenSermaye": 1151230.52, "sermayeFarki": 3114.83, "vodMarj": 71, "mixyMarj": 29, "aciklama": ""}, {"ym": "2024-09", "yil": 2024, "ay": "Eyl\u00fcl", "ayNo": 9, "mevcutSermaye": 1280868.57, "vodKarTutari": 130244.38, "mixyKarTutari": 63356.29, "vodMasraf": 44688.29, "mixyMasraf": 25426.7, "vodKarZarar": 85556.09, "mixyKarZarar": 37929.59, "topKarTutari": 193600.67, "topMasrafTutari": 70114.99, "topKarZarar": 123485.68, "gerekenSermaye": 1277831.03, "sermayeFarki": 3037.54, "vodMarj": 67, "mixyMarj": 33, "aciklama": ""}, {"ym": "2024-10", "yil": 2024, "ay": "Ekim", "ayNo": 10, "mevcutSermaye": 1396440.34, "vodKarTutari": 101926.03, "mixyKarTutari": 68310.77, "vodMasraf": 45782.52, "mixyMasraf": 10814.01, "vodKarZarar": 56143.51, "mixyKarZarar": 57496.76, "topKarTutari": 170236.8, "topMasrafTutari": 56596.53, "topKarZarar": 113640.27, "gerekenSermaye": 1394508.84, "sermayeFarki": 1931.5, "vodMarj": 60, "mixyMarj": 40, "aciklama": "SAYIM"}, {"ym": "2024-11", "yil": 2024, "ay": "Kas\u0131m", "ayNo": 11, "mevcutSermaye": 1062691.48, "vodKarTutari": 98870.3, "mixyKarTutari": 49317.93, "vodMasraf": 469676.92, "mixyMasraf": 14676.69, "vodKarZarar": -370806.62, "mixyKarZarar": 34641.24, "topKarTutari": 148188.23, "topMasrafTutari": 484353.61, "topKarZarar": -336165.38, "gerekenSermaye": 1060274.96, "sermayeFarki": 2416.52, "vodMarj": 67, "mixyMarj": 33, "aciklama": "ARABA 400 000"}, {"ym": "2024-12", "yil": 2024, "ay": "Aral\u0131k", "ayNo": 12, "mevcutSermaye": 1144900.74, "vodKarTutari": 132027.27, "mixyKarTutari": 63682.04, "vodMasraf": 96983.64, "mixyMasraf": 13997.02, "vodKarZarar": 35043.63, "mixyKarZarar": 49685.02, "topKarTutari": 195709.31, "topMasrafTutari": 110980.66, "topKarZarar": 84728.65, "gerekenSermaye": 1147420.13, "sermayeFarki": -2519.39, "vodMarj": 67, "mixyMarj": 33, "aciklama": "VODAFONE SAYIM"}, {"ym": "2025-01", "yil": 2025, "ay": "Ocak", "ayNo": 1, "mevcutSermaye": 1197607.67, "vodKarTutari": 83159.23, "mixyKarTutari": 56070.32, "vodMasraf": 55274.65, "mixyMasraf": 33243.07, "vodKarZarar": 27884.58, "mixyKarZarar": 22827.25, "topKarTutari": 139229.55, "topMasrafTutari": 88517.72, "topKarZarar": 50711.83, "gerekenSermaye": 1195612.57, "sermayeFarki": 1995.1, "vodMarj": 60, "mixyMarj": 40, "aciklama": "YIL SONU DEV\u0130R"}, {"ym": "2025-02", "yil": 2025, "ay": "\u015eubat", "ayNo": 2, "mevcutSermaye": 1106934.02, "vodKarTutari": 80914.62, "mixyKarTutari": 61598.79, "vodMasraf": 223703.96, "mixyMasraf": 11739.59, "vodKarZarar": -142789.34, "mixyKarZarar": 49859.2, "topKarTutari": 142513.41, "topMasrafTutari": 235443.55, "topKarZarar": -92930.14, "gerekenSermaye": 1104677.53, "sermayeFarki": 2256.49, "vodMarj": 57, "mixyMarj": 43, "aciklama": "T\u00dcRKCELL"}, {"ym": "2025-03", "yil": 2025, "ay": "Mart", "ayNo": 3, "mevcutSermaye": 1002905.45, "vodKarTutari": 111775.18, "mixyKarTutari": 106788.77, "vodMasraf": 302492.59, "mixyMasraf": 20839.01, "vodKarZarar": -190717.41, "mixyKarZarar": 85949.76, "topKarTutari": 218563.95, "topMasrafTutari": 323331.6, "topKarZarar": -104767.65, "gerekenSermaye": 1002166.37, "sermayeFarki": 739.08, "vodMarj": 51, "mixyMarj": 49, "aciklama": ""}, {"ym": "2025-04", "yil": 2025, "ay": "Nisan", "ayNo": 4, "mevcutSermaye": 858378.46, "vodKarTutari": 111386.15, "mixyKarTutari": 73711.02, "vodMasraf": 317977.48, "mixyMasraf": 14831.46, "vodKarZarar": -206591.33, "mixyKarZarar": 58879.56, "topKarTutari": 185097.17, "topMasrafTutari": 332808.94, "topKarZarar": -147711.77, "gerekenSermaye": 855193.68, "sermayeFarki": 3184.78, "vodMarj": 60, "mixyMarj": 40, "aciklama": ""}, {"ym": "2025-05", "yil": 2025, "ay": "May\u0131s", "ayNo": 5, "mevcutSermaye": 693154.08, "vodKarTutari": 100588.76, "mixyKarTutari": 89577.34, "vodMasraf": 316851.18, "mixyMasraf": 43042.98, "vodKarZarar": -216262.42, "mixyKarZarar": 46534.36, "topKarTutari": 190166.1, "topMasrafTutari": 359894.16, "topKarZarar": -169728.06, "gerekenSermaye": 688650.4, "sermayeFarki": 4503.68, "vodMarj": 53, "mixyMarj": 47, "aciklama": ""}, {"ym": "2025-06", "yil": 2025, "ay": "Haziran", "ayNo": 6, "mevcutSermaye": 816529.12, "vodKarTutari": 145097.29, "mixyKarTutari": 112377.85, "vodMasraf": 115219.84, "mixyMasraf": 22551.05, "vodKarZarar": 29877.45, "mixyKarZarar": 89826.8, "topKarTutari": 257475.14, "topMasrafTutari": 137770.89, "topKarZarar": 119704.25, "gerekenSermaye": 812858.33, "sermayeFarki": 3670.79, "vodMarj": 56, "mixyMarj": 44, "aciklama": ""}, {"ym": "2025-07", "yil": 2025, "ay": "Temmuz", "ayNo": 7, "mevcutSermaye": 832678.59, "vodKarTutari": 110748.55, "mixyKarTutari": 84573.65, "vodMasraf": 171758.77, "mixyMasraf": 15313.99, "vodKarZarar": -61010.22, "mixyKarZarar": 69259.66, "topKarTutari": 195322.2, "topMasrafTutari": 187072.76, "topKarZarar": 8249.44, "gerekenSermaye": 824778.56, "sermayeFarki": 7900.03, "vodMarj": 57, "mixyMarj": 43, "aciklama": ""}, {"ym": "2025-08", "yil": 2025, "ay": "A\u011fustos", "ayNo": 8, "mevcutSermaye": 1012142.1, "vodKarTutari": 178088.96, "mixyKarTutari": 111917.14, "vodMasraf": 94192.9, "mixyMasraf": 22555.82, "vodKarZarar": 83896.06, "mixyKarZarar": 89361.32, "topKarTutari": 290006.1, "topMasrafTutari": 116748.72, "topKarZarar": 173257.38, "gerekenSermaye": 1005935.97, "sermayeFarki": 6206.13, "vodMarj": 61, "mixyMarj": 39, "aciklama": ""}, {"ym": "2025-09", "yil": 2025, "ay": "Eyl\u00fcl", "ayNo": 9, "mevcutSermaye": 1244601.62, "vodKarTutari": 202630.34, "mixyKarTutari": 116751.81, "vodMasraf": 73070.23, "mixyMasraf": 15282, "vodKarZarar": 129560.11, "mixyKarZarar": 101469.81, "topKarTutari": 319382.15, "topMasrafTutari": 88352.23, "topKarZarar": 231029.92, "gerekenSermaye": 1243172.02, "sermayeFarki": 1429.6, "vodMarj": 63, "mixyMarj": 37, "aciklama": ""}, {"ym": "2025-10", "yil": 2025, "ay": "Ekim", "ayNo": 10, "mevcutSermaye": 1389785.8, "vodKarTutari": 161669.09, "mixyKarTutari": 74517.22, "vodMasraf": 78923.57, "mixyMasraf": 12806, "vodKarZarar": 82745.52, "mixyKarZarar": 61711.22, "topKarTutari": 236186.31, "topMasrafTutari": 91729.57, "topKarZarar": 144456.74, "gerekenSermaye": 1389058.36, "sermayeFarki": 727.44, "vodMarj": 68, "mixyMarj": 32, "aciklama": ""}, {"ym": "2025-11", "yil": 2025, "ay": "Kas\u0131m", "ayNo": 11, "mevcutSermaye": 776281.45, "vodKarTutari": 177591.16, "mixyKarTutari": 89110.78, "vodMasraf": 865457.09, "mixyMasraf": 20950.4, "vodKarZarar": -687865.93, "mixyKarZarar": 68160.38, "topKarTutari": 266701.94, "topMasrafTutari": 886407.49, "topKarZarar": -619705.55, "gerekenSermaye": 770080.25, "sermayeFarki": 6201.2, "vodMarj": 67, "mixyMarj": 33, "aciklama": ""}, {"ym": "2025-12", "yil": 2025, "ay": "Aral\u0131k", "ayNo": 12, "mevcutSermaye": 1190530.22, "vodKarTutari": 434240.68, "mixyKarTutari": 89244.29, "vodMasraf": 81716.05, "mixyMasraf": 29388.79, "vodKarZarar": 352524.63, "mixyKarZarar": 59855.5, "topKarTutari": 523484.97, "topMasrafTutari": 111104.84, "topKarZarar": 412380.13, "gerekenSermaye": 1188661.58, "sermayeFarki": 1868.64, "vodMarj": 83, "mixyMarj": 17, "aciklama": ""}, {"ym": "2026-01", "yil": 2026, "ay": "Ocak", "ayNo": 1, "mevcutSermaye": 1319706.06, "vodKarTutari": 152285.63, "mixyKarTutari": 87195.27, "vodMasraf": 90923.24, "mixyMasraf": 20356.17, "vodKarZarar": 61362.39, "mixyKarZarar": 66839.1, "topKarTutari": 239480.9, "topMasrafTutari": 111279.41, "topKarZarar": 128201.49, "gerekenSermaye": 1318731.71, "sermayeFarki": 974.35, "vodMarj": 64, "mixyMarj": 36, "aciklama": ""}, {"ym": "2026-02", "yil": 2026, "ay": "\u015eubat", "ayNo": 2, "mevcutSermaye": 1194215.3, "vodKarTutari": 125310.55, "mixyKarTutari": 94806.19, "vodMasraf": 327578.11, "mixyMasraf": 19098.45, "vodKarZarar": -202267.56, "mixyKarZarar": 75707.74, "topKarTutari": 220116.74, "topMasrafTutari": 346676.56, "topKarZarar": -126559.82, "gerekenSermaye": 1193146.24, "sermayeFarki": 1069.06, "vodMarj": 57, "mixyMarj": 43, "aciklama": ""}, {"ym": "2026-03", "yil": 2026, "ay": "Mart", "ayNo": 3, "mevcutSermaye": 1352634.65, "vodKarTutari": 142786.98, "mixyKarTutari": 143298, "vodMasraf": 110755.55, "mixyMasraf": 18981.7, "vodKarZarar": 32031.43, "mixyKarZarar": 124316.3, "topKarTutari": 286084.98, "topMasrafTutari": 129737.25, "topKarZarar": 156347.73, "gerekenSermaye": 1350563.03, "sermayeFarki": 2071.62, "vodMarj": 50, "mixyMarj": 50, "aciklama": ""}, {"ym": "2026-04", "yil": 2026, "ay": "Nisan", "ayNo": 4, "mevcutSermaye": 1441164.7, "vodKarTutari": 130711.78, "mixyKarTutari": 85517.02, "vodMasraf": 112324.47, "mixyMasraf": 16555.54, "vodKarZarar": 18387.31, "mixyKarZarar": 68961.48, "topKarTutari": 216228.8, "topMasrafTutari": 128880.01, "topKarZarar": 87348.79, "gerekenSermaye": 1439983.44, "sermayeFarki": 1181.26, "vodMarj": 60, "mixyMarj": 40, "aciklama": ""}, {"ym": "2026-05", "yil": 2026, "ay": "May\u0131s", "ayNo": 5, "mevcutSermaye": 684259.66, "vodKarTutari": 169680.14, "mixyKarTutari": 107903.11, "vodMasraf": 1015765.93, "mixyMasraf": 18794.74, "vodKarZarar": -846085.79, "mixyKarZarar": 89108.37, "topKarTutari": 277583.25, "topMasrafTutari": 1034560.67, "topKarZarar": -756977.42, "gerekenSermaye": 684187.28, "sermayeFarki": 72.38, "vodMarj": 61, "mixyMarj": 39, "aciklama": ""}]
 ;
 let entries = [];   // {date, cat, count}
@@ -2361,12 +2419,29 @@ function addMonths(ym, n){
   return y+'-'+String(m).padStart(2,'0');
 }
 
-function priceFor(ym, cat){
+function priceFor(ym, cat, date){
   const keys = Object.keys(prices).filter(k=>k<=ym).sort();
+  let base = 0;
   for(let i=keys.length-1;i>=0;i--){
-    if(prices[keys[i]] && prices[keys[i]][cat]!=null) return prices[keys[i]][cat];
+    if(prices[keys[i]] && prices[keys[i]][cat]!=null){ base=prices[keys[i]][cat]; break; }
   }
-  return 0;
+  // Tarih varsa kampanya fiyatını kontrol et
+  if(date && typeof kampanyaFiyatFor==='function'){
+    return kampanyaFiyatFor(date, cat, base);
+  }
+  return base;
+}
+
+// Aya göre efektif adet: MNP ve İnternet aktivasyon ayına göre sayılır
+function effectiveCountForYm(ym){
+  const map = {};
+  entries.forEach(e=>{
+    const eym = effectiveYm(e);
+    if(eym===ym){
+      map[e.cat] = (map[e.cat]||0) + e.count;
+    }
+  });
+  return map;
 }
 
 // ---- persistence: localStorage (kalıcı, tarayıcı kapatılıp açılsa da silinmez) ----
@@ -2680,6 +2755,7 @@ async function pullFromCloud(){
     if(data.finansData) finansData = data.finansData;
     if(data.gelirData)  gelirData  = data.gelirData;
     if(data.notlarData) notlarData = data.notlarData;
+    if(data.kampanyaData) kampanyaData = data.kampanyaData;
     if(data.finansTrash) finansTrash = data.finansTrash;
     localStorage.setItem(STORE_KEY_ENTRIES,   JSON.stringify(entries));
     localStorage.setItem(STORE_KEY_LOG,       JSON.stringify(entryLog));
@@ -2692,6 +2768,7 @@ async function pullFromCloud(){
     localStorage.setItem(STORE_KEY_GELIR,     JSON.stringify(gelirData));
     localStorage.setItem(STORE_KEY_NOTLAR,    JSON.stringify(notlarData));
     localStorage.setItem(STORE_KEY_TRASH,     JSON.stringify(finansTrash));
+    localStorage.setItem(STORE_KEY_KAMPANYA,  JSON.stringify(kampanyaData));
     loadHedefExtra();
     recomputeAllFinans();
     const _ucd = userChangedData;
@@ -2742,6 +2819,7 @@ function load(){
   try{ hedefler = JSON.parse(localStorage.getItem(STORE_KEY_HEDEF) || '{}'); }catch(e){ hedefler = {}; }
   try{ gelirData = JSON.parse(localStorage.getItem(STORE_KEY_GELIR) || '[]'); }catch(e){ gelirData = []; }
   try{ notlarData = JSON.parse(localStorage.getItem(STORE_KEY_NOTLAR) || '[]'); }catch(e){ notlarData = []; }
+  try{ kampanyaData = JSON.parse(localStorage.getItem(STORE_KEY_KAMPANYA) || '[]'); }catch(e){ kampanyaData = []; }
   try{ finansTrash = JSON.parse(localStorage.getItem(STORE_KEY_TRASH) || '[]'); }catch(e){ finansTrash = []; }
   try{
     const stored = localStorage.getItem(STORE_KEY_FINANS);
@@ -2784,17 +2862,28 @@ function onYatirilanEdit(el){
 // ---- Finansal hesaplamalar (KDV %20, %70/%30 bölüşüm, Beklenen Prim) ----
 // finance(ym): o aya ait adet/tutar kırılımını döndürür (tüm kayıtlardan, filtreden bağımsız)
 function financeFor(ym, mMap){
-  const m = mMap[ym] || {};
-  const postCats = ["PostPaid","Red","P2P"];
+  // mMap varsa eski uyumluluk (ay bazlı map), yoksa entries'ten efektif hesapla
+  let m;
+  if(mMap){
+    m = mMap[ym] || {};
+  } else {
+    m = effectiveCountForYm(ym);
+  }
+  const postCats = ["PostPaid","Red","P2P","MNP"];
   const postToplam = postCats.reduce((a,c)=>a+(m[c]||0),0);
-  const genelCats = ["PostPaid","Red","P2P","PrePaid","Mccm","İnternet"];
+  const genelCats = ["PostPaid","Red","P2P","MNP","PrePaid","Mccm","İnternet"];
   const genelToplamAdet = genelCats.reduce((a,c)=>a+(m[c]||0),0);
-  const primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0);
+  // Birim fiyat + kampanya bonusu
+  let primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0);
+  // Kampanya bonusları ekle
+  if(typeof kampanyaBonusFor==='function'){
+    CATS.forEach(c=>{ primTutar += kampanyaBonusFor(ym, c, m[c]||0); });
+  }
   const kdv = primTutar * KDV_ORANI;
   const genelToplamTutar = primTutar + kdv;
   const p70 = genelToplamTutar * 0.7;
   const p30 = genelToplamTutar * 0.3;
-  return {postToplam, genelToplamAdet, primTutar, kdv, genelToplamTutar, p70, p30};
+  return {postToplam, genelToplamAdet, primTutar, kdv, genelToplamTutar, p70, p30, m};
 }
 function beklenenPrim(ym, mMap){
   const cur = financeFor(ym, mMap).genelToplamTutar;
@@ -2812,14 +2901,47 @@ function lastEntryTime(date, cat){
   }
   return null;
 }
-function changeCount(cat, delta){
+function changeCount(cat, delta, activationDate){
   const date = activeDateVal();
+
+  // İnternet: aktivasyon tarihi zorunlu
+  if(cat==='İnternet' && delta>0 && !activationDate){
+    openInternetActivationModal(date);
+    return;
+  }
+
+  // MNP: aktivasyon tarihi bilgisi göster
+  if(cat==='MNP' && delta>0){
+    const actDate = mnpActivationDate(date);
+    const actYm = ymKey(actDate);
+    const entryYm = ymKey(date);
+    if(actYm !== entryYm){
+      const msg = `⚠️ MNP Bilgisi
+
+Giriş tarihi: ${date}
+Aktivasyonu: ${actDate}
+
+→ Bu MNP bir sonraki aya (${actYm}) sayılacak.`;
+      if(!confirm(msg+'
+
+Devam etmek istiyor musunuz?')) return;
+    }
+  }
+
   let e = entries.find(e=>e.date===date && e.cat===cat);
   if(!e){ e = {date, cat, count:0}; entries.push(e); }
   e.count = Math.max(0, e.count + delta);
 
+  // İnternet aktivasyon tarihini kaydet
+  if(cat==='İnternet' && activationDate){
+    e.activationDate = activationDate;
+  }
+
   if(delta > 0){
-    entryLog.push({date, cat, time: nowTimeStr(), platform: getPlatformName()});
+    const logEntry = {date, cat, time: nowTimeStr(), platform: getPlatformName()};
+    if(cat==='MNP') logEntry.activationDate = mnpActivationDate(date);
+    if(cat==='İnternet' && activationDate) logEntry.activationDate = activationDate;
+    entryLog.push(logEntry);
   } else if(delta < 0){
     // En son kaydı sil
     for(let i=entryLog.length-1;i>=0;i--){
@@ -3573,7 +3695,7 @@ function exportTableToPdf(tableId, titleLabel){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, pin: getPin(), exportedAt: new Date().toISOString(), version: 4, lastPlatform: getPlatformName(), lastSavedAt: new Date().toLocaleString('tr-TR') };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: new Date().toLocaleString('tr-TR') };
 }
 function timeStr(){
   const d = new Date();
@@ -3633,6 +3755,7 @@ function restoreData(event){
       hedefler = data.hedefler || {};
       gelirData = data.gelirData || [];
       notlarData = data.notlarData || [];
+      kampanyaData = data.kampanyaData || [];
       if(data.finansData) finansData = data.finansData;
       saveEntries(); saveEntryLog(); savePricesStore(); saveYatirilanStore(); saveGelirStore(); saveNotlarStore(); saveFinansStore(); saveHedefStore();
       render();
@@ -3967,6 +4090,20 @@ function render(){
     const lastTime = lastEntryTime(activeDate, cat);
     const div = document.createElement('div');
     div.className='card';
+    // MNP: bu ayın girişlerinden kaçı bu aya, kaçı sonraki aya sayılıyor?
+    let mnpInfo = '';
+    if(cat==='MNP'){
+      const todayMnpEntries = entries.filter(e=>e.cat==='MNP' && ymKey(e.date)===activeYm);
+      const buAya = todayMnpEntries.filter(e=>effectiveYm(e)===activeYm).reduce((a,e)=>a+e.count,0);
+      const sonrakiAya = todayMnpEntries.filter(e=>effectiveYm(e)!==activeYm).reduce((a,e)=>a+e.count,0);
+      if(buAya||sonrakiAya) mnpInfo = `<div style="font-size:10px;color:var(--muted);margin-top:4px">✅ Bu ay: ${buAya} · ⏭ Sonraki ay: ${sonrakiAya}</div>`;
+    }
+    // İnternet: aktivasyon tarihi göster
+    let intInfo = '';
+    if(cat==='İnternet'){
+      const intEntries = entries.filter(e=>e.cat==='İnternet' && e.date===activeDate && e.activationDate);
+      if(intEntries.length) intInfo = `<div style="font-size:10px;color:var(--muted);margin-top:4px">📶 Aktivasyon: ${intEntries[intEntries.length-1].activationDate}</div>`;
+    }
     div.innerHTML = `<div class="label">${cat}</div>
       <div class="ctrl">
         <button onclick="changeCount('${cat}',-1)">−</button>
@@ -3974,6 +4111,7 @@ function render(){
         <button onclick="changeCount('${cat}',1)">+</button>
       </div>
       ${lastTime ? `<div style="font-size:10.5px;color:var(--muted);margin-top:4px">🕒 ${lastTime.time}${lastTime.platform ? ` <span style="opacity:.7">${lastTime.platform}</span>` : ''}</div>` : ''}
+      ${mnpInfo}${intInfo}
       <div class="amt">${fmt(amt)}</div>
       <div class="amt" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);font-size:11px;color:var(--accent);font-weight:700">${raCnt(cat)} <span style="opacity:.85;font-weight:600">(${fmt(raAmt(cat))})</span></div>`;
     cardsDiv.appendChild(div);
@@ -7025,75 +7163,183 @@ function buildManagerReportHTML(){
 function printManagerReport(){
   const reportHtml = buildManagerReportHTML();
   const now = new Date().toLocaleString('tr-TR');
-  const win = window.open('','win_'+Date.now());
-  if(!win){ alert('Açılır pencere engellendi. Lütfen tarayıcı ayarlarından açılır pencerelere izin verin.'); return; }
-  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Yönetici Raporu — Vodafone Prim Takip</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,Helvetica,sans-serif;background:#e8eaed;color:#1a1a1a}
-    /* Araç çubuğu */
-    .toolbar{position:sticky;top:0;z-index:99;background:#1a1c20;padding:12px 20px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.5)}
-    .tit{color:#eef0f2;font-size:13px;font-weight:700;flex:1}
-    .sub{color:#9aa0a6;font-size:10.5px;margin-top:1px}
-    .btn{border:none;border-radius:7px;padding:9px 18px;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-    .btn-print{background:#e2231a;color:#fff}.btn-print:hover{background:#c41c14}
-    .btn-close{background:transparent;color:#aaa;border:1px solid #555}.btn-close:hover{background:#333;color:#fff}
-    /* Rapor wrapper */
-    .report-wrap{max-width:1020px;margin:22px auto;box-shadow:0 4px 24px rgba(0,0,0,.18);border-radius:6px;overflow:hidden}
-    /* ---- Rapor dokümanı ---- */
-    .report-doc{background:#f4f6f8;color:#1a1a1a;font-family:Arial,Helvetica,sans-serif}
-    .report-cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:28px 32px 22px;color:#fff}
-    .report-cover h1{font-size:22px;margin:0 0 4px;letter-spacing:.02em}
-    .report-cover .rc-sub{font-size:11px;opacity:.7;margin-bottom:14px}
-    .report-cover .rc-meta{display:flex;gap:12px;flex-wrap:wrap}
-    .report-cover .rc-meta span{font-size:10.5px;background:rgba(255,255,255,.12);padding:4px 10px;border-radius:20px}
-    .report-section{padding:18px 24px 10px}
-    .report-h2{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:6px 12px;border-radius:4px;margin:0 0 12px;display:inline-block}
-    .report-h2.green{background:#e6f4ea;color:#1e7e34;border-left:3px solid #1e7e34}
-    .report-h2.blue{background:#e3f0ff;color:#1558b0;border-left:3px solid #1558b0}
-    .report-h2.red{background:#fce8e6;color:#c0392b;border-left:3px solid #c0392b}
-    .report-h2.gold{background:#fef9e7;color:#7d5a00;border-left:3px solid #f39c12}
-    .report-h2.purple{background:#f3e8ff;color:#6b21a8;border-left:3px solid #9333ea}
-    .report-kpi-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-    .report-kpi{flex:1;min-width:140px;background:#fff;border-radius:8px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-top:3px solid #e2231a}
-    .report-kpi.green-top{border-top-color:#1e8e3e}
-    .report-kpi.blue-top{border-top-color:#1558b0}
-    .report-kpi.gold-top{border-top-color:#f39c12}
-    .kpi-label{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
-    .kpi-val{font-size:16px;font-weight:800;color:#1a1a1a}
-    .kpi-sub{font-size:9px;color:#888;margin-top:3px}
-    .report-doc table{width:100%;border-collapse:collapse;font-size:10.5px;margin-bottom:4px;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.07)}
-    .report-doc thead tr{background:#2b2d30;color:#fff}
-    .report-doc th{padding:7px 10px;text-align:center;font-weight:700;font-size:10px;letter-spacing:.03em}
-    .report-doc th:first-child{text-align:left}
-    .report-doc td{padding:6px 10px;text-align:center;border-bottom:1px solid #eef0f2;color:#1a1a1a;font-size:10.5px}
-    .report-doc td:first-child{text-align:left;font-weight:700;color:#2b2d30}
-    .report-doc tbody tr:nth-child(even){background:#f8fafb}
-    .report-doc tbody tr:hover{background:#eef6ff}
-    .report-doc .pos{color:#1e8e3e;font-weight:700}
-    .report-doc .neg{color:#d93025;font-weight:700}
-    .report-doc .neutral{color:#888}
-    .report-divider{height:1px;background:linear-gradient(90deg,transparent,#ddd,transparent);margin:4px 24px}
-    .report-footer{text-align:center;padding:14px;font-size:9px;background:#2b2d30;color:#888;margin-top:0}
-    @media print{
-      .toolbar{display:none!important}
-      .report-wrap{box-shadow:none;margin:0;border-radius:0}
-      body{background:#fff}
-      @page{margin:10mm}
-    }
-  </style></head><body>
-  <div class="toolbar">
-    <div style="flex:1">
-      <div class="tit">📊 Yönetici Raporu Ön İzleme</div>
-      <div class="sub">Vodafone Prim Takip · ${now}</div>
+
+  // Mobil uyumlu: uygulama içi modal kullan
+  let modal = document.getElementById('managerReportModal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'managerReportModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:3500;background:#1a1c20;display:flex;flex-direction:column;overflow:hidden';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#111;border-bottom:1px solid #333;flex-shrink:0;min-height:52px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📊 Yönetici Raporu</div>
+        <div style="font-size:10px;color:#888;margin-top:1px">${now}</div>
+      </div>
+      <button onclick="shareManagerReport()" style="background:#1a5276;border:none;color:#fff;padding:7px 11px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">📤 Paylaş</button>
+      <button onclick="document.getElementById('managerReportModal').remove()" style="background:#333;border:none;color:#fff;width:34px;height:34px;border-radius:6px;font-size:18px;cursor:pointer;flex-shrink:0">✕</button>
     </div>
-    <button class="btn btn-close" onclick="window.close()">✕ Kapat</button>
-    <button class="btn btn-print" onclick="window.print()">🖨 PDF / Yazdır</button>
-  </div>
-  <div class="report-wrap">${reportHtml}</div>
-  </body></html>`);
-  win.document.close();
+    <!-- İçerik -->
+    <div id="managerReportBody" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#e8eaed">
+      <style>
+        #managerReportBody .report-doc{background:#f4f6f8;color:#1a1a1a;font-family:Arial,Helvetica,sans-serif}
+        #managerReportBody .report-cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:16px 14px 14px;color:#fff}
+        #managerReportBody .report-cover h1{font-size:15px;margin:0 0 4px;letter-spacing:.01em;line-height:1.3}
+        #managerReportBody .report-cover .rc-sub{font-size:10px;opacity:.7;margin-bottom:10px}
+        #managerReportBody .report-cover .rc-meta{display:flex;gap:6px;flex-wrap:wrap}
+        #managerReportBody .report-cover .rc-meta span{font-size:9.5px;background:rgba(255,255,255,.12);padding:3px 8px;border-radius:20px}
+        #managerReportBody .report-section{padding:12px 10px 8px}
+        #managerReportBody .report-h2{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:5px 10px;border-radius:4px;margin:0 0 10px;display:inline-block}
+        #managerReportBody .report-h2.green{background:#e6f4ea;color:#1e7e34;border-left:3px solid #1e7e34}
+        #managerReportBody .report-h2.blue{background:#e3f0ff;color:#1558b0;border-left:3px solid #1558b0}
+        #managerReportBody .report-h2.red{background:#fce8e6;color:#c0392b;border-left:3px solid #c0392b}
+        #managerReportBody .report-h2.gold{background:#fef9e7;color:#7d5a00;border-left:3px solid #f39c12}
+        #managerReportBody .report-h2.purple{background:#f3e8ff;color:#6b21a8;border-left:3px solid #9333ea}
+        #managerReportBody .report-kpi-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+        #managerReportBody .report-kpi{flex:1;min-width:130px;background:#fff;border-radius:8px;padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-top:3px solid #e2231a}
+        #managerReportBody .report-kpi.green-top{border-top-color:#1e8e3e}
+        #managerReportBody .report-kpi.blue-top{border-top-color:#1558b0}
+        #managerReportBody .report-kpi.gold-top{border-top-color:#f39c12}
+        #managerReportBody .kpi-label{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+        #managerReportBody .kpi-val{font-size:15px;font-weight:800;color:#1a1a1a}
+        #managerReportBody .kpi-sub{font-size:9px;color:#888;margin-top:2px}
+        #managerReportBody .report-doc table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:4px;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+        #managerReportBody .report-doc thead tr{background:#2b2d30;color:#fff}
+        #managerReportBody .report-doc th{padding:6px 7px;text-align:center;font-weight:700;font-size:9.5px;letter-spacing:.02em;white-space:nowrap}
+        #managerReportBody .report-doc th:first-child{text-align:left}
+        #managerReportBody .report-doc td{padding:5px 7px;text-align:center;border-bottom:1px solid #eef0f2;color:#1a1a1a;font-size:10px;white-space:nowrap}
+        #managerReportBody .report-doc td:first-child{text-align:left;font-weight:700;color:#2b2d30}
+        #managerReportBody .report-doc tbody tr:nth-child(even){background:#f8fafb}
+        #managerReportBody .report-doc .pos{color:#1e8e3e;font-weight:700}
+        #managerReportBody .report-doc .neg{color:#d93025;font-weight:700}
+        #managerReportBody .report-doc .neutral{color:#888}
+        #managerReportBody .report-divider{height:1px;background:linear-gradient(90deg,transparent,#ddd,transparent);margin:4px 10px}
+        #managerReportBody .report-footer{text-align:center;padding:12px;font-size:9px;background:#2b2d30;color:#888;margin-top:0}
+        /* Tablo yatay scroll */
+        #managerReportBody .report-section{overflow-x:auto}
+      </style>
+      ${reportHtml}
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+// ===== İNTERNET AKTİVASYON MODAL FONKSİYONLARI =====
+let _internetActDate = null;
+let _internetActCat = null;
+
+function openInternetActivationModal(entryDate){
+  _internetActDate = entryDate;
+  const modal = document.getElementById('internetActModal');
+  const inp = document.getElementById('internetActDate');
+  // Varsayılan: bugün
+  inp.value = entryDate;
+  inp.min = entryDate; // aktivasyon kurulumdan önce olamaz
+  modal.style.display = 'flex';
+}
+function closeInternetActModal(){
+  document.getElementById('internetActModal').style.display = 'none';
+  _internetActDate = null;
+}
+function confirmInternetActivation(){
+  const actDate = document.getElementById('internetActDate').value;
+  if(!actDate){ alert('Lütfen aktivasyon tarihini girin.'); return; }
+  closeInternetActModal();
+  // Aktivasyon tarihi ile kaydet
+  changeCount('İnternet', 1, actDate);
+}
+
+// ===== KAMPANYA FONKSİYONLARI =====
+function openKampanyaModal(){
+  // Ay alanını bu aya ayarla
+  document.getElementById('kAy').value = thisMonthKey();
+  document.getElementById('kDeger').value = '';
+  document.getElementById('kAciklama').value = '';
+  document.getElementById('kMinAdet').value = '';
+  document.getElementById('kTip').value = 'fiyat';
+  updateKampanyaForm();
+  renderKampanyaList();
+  document.getElementById('kampanyaModal').style.display = 'flex';
+}
+function closeKampanyaModal(){
+  document.getElementById('kampanyaModal').style.display = 'none';
+}
+function updateKampanyaForm(){
+  const tip = document.getElementById('kTip').value;
+  document.getElementById('kFiyatFields').style.display = tip==='fiyat' ? 'grid' : 'none';
+  document.getElementById('kBonusFields').style.display = tip==='bonus' ? 'block' : 'none';
+  document.getElementById('kDegerLabel').textContent = tip==='fiyat' ? 'Yeni Birim Fiyat (₺)' : 'Bonus Tutar (₺)';
+}
+function addKampanya(){
+  const ym = document.getElementById('kAy').value;
+  const cat = document.getElementById('kCat').value;
+  const tip = document.getElementById('kTip').value;
+  const deger = parseFloat(document.getElementById('kDeger').value);
+  const aciklama = document.getElementById('kAciklama').value.trim();
+  if(!ym||!cat||isNaN(deger)||deger<=0){ alert('Ay, kategori ve geçerli bir tutar zorunludur.'); return; }
+  const k = { id: Date.now().toString(), ym, cat, tip, deger, aciklama };
+  if(tip==='fiyat'){
+    k.startDate = document.getElementById('kStartDate').value || null;
+    k.endDate = document.getElementById('kEndDate').value || null;
+  } else {
+    k.minAdet = parseInt(document.getElementById('kMinAdet').value)||0;
+  }
+  kampanyaData.push(k);
+  saveKampanyaStore();
+  renderKampanyaList();
+  // Form temizle
+  document.getElementById('kDeger').value = '';
+  document.getElementById('kAciklama').value = '';
+  document.getElementById('kMinAdet').value = '';
+  document.getElementById('kStartDate').value = '';
+  document.getElementById('kEndDate').value = '';
+}
+function deleteKampanya(id){
+  if(!confirm('Bu kampanyayı silmek istiyor musunuz?')) return;
+  kampanyaData = kampanyaData.filter(k=>k.id!==id);
+  saveKampanyaStore();
+  renderKampanyaList();
+}
+function renderKampanyaList(){
+  const list = document.getElementById('kampanyaList');
+  if(!list) return;
+  if(!kampanyaData.length){
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px">Henüz kampanya eklenmedi.</div>';
+    return;
+  }
+  // Aya göre grupla
+  const grouped = {};
+  kampanyaData.forEach(k=>{ if(!grouped[k.ym]) grouped[k.ym]=[]; grouped[k.ym].push(k); });
+  list.innerHTML = Object.keys(grouped).sort().reverse().map(ym => `
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">${ym}</div>
+      ${grouped[ym].map(k=>`
+        <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;color:var(--txt)">${k.cat} — ${k.tip==='fiyat'?'💰 Fiyat':'🎁 Bonus'}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">
+              ${k.tip==='fiyat'
+                ? `Birim: <b style="color:var(--green)">${k.deger.toLocaleString('tr-TR')}₺</b>${k.startDate?` · ${k.startDate}→${k.endDate||'∞'}`:'·Tüm ay'}`
+                : `Min ${k.minAdet} adet → <b style="color:var(--gold)">${k.deger.toLocaleString('tr-TR')}₺</b> bonus`}
+            </div>
+            ${k.aciklama?`<div style="font-size:10px;color:var(--muted);margin-top:2px">${k.aciklama}</div>`:''}
+          </div>
+          <button onclick="deleteKampanya('${k.id}')" style="background:rgba(226,35,26,0.15);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:6px;width:30px;height:30px;font-size:14px;cursor:pointer;flex-shrink:0">🗑</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function shareManagerReport(){
+  const now = new Date().toLocaleString('tr-TR');
+  const text = `📊 Yönetici Raporu\nEr-Tech İletişim · ${now}\n\nRapor uygulamadan görüntülenebilir.`;
+  if(navigator.share){
+    navigator.share({title:'Yönetici Raporu', text}).catch(()=>{});
+  }
 }
 
 
@@ -9532,6 +9778,88 @@ function renderHedefGecmis(){
 </script>
 
 <!-- TAM EKRAN DIŞA AKTAR MODAL -->
+<!-- ===== İNTERNET AKTİVASYON MODALI ===== -->
+<div id="internetActModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--panel);border-radius:14px;padding:22px 20px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-size:15px;font-weight:800;color:var(--txt);margin-bottom:6px">📶 İnternet Aktivasyon Tarihi</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Kurulum tarihi değil, hattın gerçekten açıldığı tarihi girin.</div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;color:var(--muted);font-weight:600">Aktivasyon Tarihi</label>
+      <input type="date" id="internetActDate" style="width:100%;margin-top:5px;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:14px;box-sizing:border-box">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeInternetActModal()" style="flex:1;padding:11px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:8px;font-size:13px;cursor:pointer">İptal</button>
+      <button onclick="confirmInternetActivation()" style="flex:2;padding:11px;background:#e2231a;border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">✓ Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== KAMPANYA YÖNETİM MODALI ===== -->
+<div id="kampanyaModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.7);align-items:flex-end;justify-content:center;padding:0">
+  <div style="background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;align-items:center;padding:16px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
+      <div style="flex:1;font-size:15px;font-weight:800;color:var(--txt)">🎯 Kampanya Yönetimi</div>
+      <button onclick="closeKampanyaModal()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
+    </div>
+    <!-- Yeni Kampanya Formu -->
+    <div style="padding:14px 16px;border-bottom:1px solid var(--line);flex-shrink:0;background:var(--panel2)">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:10px">Yeni Kampanya Ekle</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <label style="font-size:10px;color:var(--muted)">Ay</label>
+          <input type="month" id="kAy" style="width:100%;padding:7px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box;margin-top:3px">
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--muted)">Kategori</label>
+          <select id="kCat" style="width:100%;padding:7px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box;margin-top:3px">
+            <option value="PrePaid">PrePaid</option><option value="PostPaid">PostPaid</option>
+            <option value="Red">Red</option><option value="P2P">P2P</option>
+            <option value="MNP">MNP</option><option value="Mccm">Mccm</option>
+            <option value="İnternet">İnternet</option><option value="Diğer">Diğer</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <label style="font-size:10px;color:var(--muted)">Kampanya Tipi</label>
+          <select id="kTip" onchange="updateKampanyaForm()" style="width:100%;padding:7px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box;margin-top:3px">
+            <option value="fiyat">💰 Fiyat Değişimi</option>
+            <option value="bonus">🎁 Adet Bonusu</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--muted)" id="kDegerLabel">Yeni Birim Fiyat (₺)</label>
+          <input type="number" id="kDeger" placeholder="0" style="width:100%;padding:7px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box;margin-top:3px">
+        </div>
+      </div>
+      <div id="kFiyatFields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <label style="font-size:10px;color:var(--muted)">Başlangıç Tarihi</label>
+          <input type="date" id="kStartDate" style="width:100%;padding:7px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box;margin-top:3px">
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--muted)">Bitiş Tarihi</label>
+          <input type="date" id="kEndDate" style="width:100%;padding:7px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box;margin-top:3px">
+        </div>
+      </div>
+      <div id="kBonusFields" style="display:none;margin-bottom:8px">
+        <label style="font-size:10px;color:var(--muted)">Minimum Adet Eşiği</label>
+        <input type="number" id="kMinAdet" placeholder="Örn: 10" style="width:100%;padding:7px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box;margin-top:3px">
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="font-size:10px;color:var(--muted)">Açıklama</label>
+        <input type="text" id="kAciklama" placeholder="Örn: Red 1200₺ kampanyası" style="width:100%;padding:7px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box;margin-top:3px">
+      </div>
+      <button onclick="addKampanya()" style="width:100%;padding:10px;background:#e2231a;border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">+ Kampanya Ekle</button>
+    </div>
+    <!-- Mevcut Kampanyalar -->
+    <div style="flex:1;overflow-y:auto;padding:12px 16px">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:10px">Aktif Kampanyalar</div>
+      <div id="kampanyaList"></div>
+    </div>
+  </div>
+</div>
+
 <div id="exportFullModal" style="display:none;position:fixed;inset:0;z-index:2000;background:#1a1c20;flex-direction:column">
   <!-- Header -->
   <div style="display:flex;align-items:center;gap:6px;padding:10px 12px;background:#111;border-bottom:1px solid #333;flex-shrink:0;min-height:52px">
