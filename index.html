@@ -2916,15 +2916,8 @@ function changeCount(cat, delta, activationDate){
     const actYm = ymKey(actDate);
     const entryYm = ymKey(date);
     if(actYm !== entryYm){
-      const msg = `⚠️ MNP Bilgisi
-
-Giriş tarihi: ${date}
-Aktivasyonu: ${actDate}
-
-→ Bu MNP bir sonraki aya (${actYm}) sayılacak.`;
-      if(!confirm(msg+'
-
-Devam etmek istiyor musunuz?')) return;
+      const msg = '⚠️ MNP Bilgisi\n\nGiriş tarihi: '+date+'\nAktivasyonu: '+actDate+'\n\n→ Bu MNP bir sonraki aya ('+actYm+') sayılacak.\n\nDevam etmek istiyor musunuz?';
+      if(!confirm(msg)) return;
     }
   }
 
@@ -4170,7 +4163,7 @@ function render(){
   // ---- monthly aggregation (ALL data, for prev/curr month compare regardless of range filter) ----
   const monthMapAll = {};
   entries.forEach(e=>{
-    const k = ymKey(e.date);
+    const k = effectiveYm(e); // MNP/İnternet aktivasyon ayına sayılır
     if(!monthMapAll[k]) monthMapAll[k] = {};
     monthMapAll[k][e.cat] = (monthMapAll[k][e.cat]||0) + e.count;
   });
@@ -7001,7 +6994,7 @@ function buildManagerReportHTML(){
   // --- Prim performansı (son 6 ay) ---
   const monthMapReport = {};
   entries.forEach(e=>{
-    const k = ymKey(e.date);
+    const k = effectiveYm(e);
     if(!monthMapReport[k]) monthMapReport[k] = {};
     monthMapReport[k][e.cat] = (monthMapReport[k][e.cat]||0) + e.count;
   });
