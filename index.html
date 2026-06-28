@@ -2894,36 +2894,46 @@ function onYatirilanEdit(el){
 // ---- Finansal hesaplamalar (KDV %20, %70/%30 bölüşüm, Beklenen Prim) ----
 // finance(ym): o aya ait adet/tutar kırılımını döndürür (tüm kayıtlardan, filtreden bağımsız)
 function financeFor(ym, mMap){
-  // mMap varsa eski uyumluluk (ay bazlı map), yoksa entries'ten efektif hesapla
+  // Adet haritası
   let m;
   if(mMap){
     m = mMap[ym] || {};
   } else {
     m = effectiveCountForYm(ym);
   }
-  const postCats = ["PostPaid","Red","P2P","MNP"];
+  const postCats = ["PostPaid","Red","P2P"];
   const postToplam = postCats.reduce((a,c)=>a+(m[c]||0),0);
-  const genelCats = ["PostPaid","Red","P2P","MNP","PrePaid","Mccm","İnternet"];
+  const genelCats = ["PostPaid","Red","P2P","PrePaid","Mccm","İnternet"];
   const genelToplamAdet = genelCats.reduce((a,c)=>a+(m[c]||0),0);
-  // Birim fiyat + kampanya bonusu
-  // Kampanya fiyatını doğru uygulamak için entries üzerinden hesapla (tarih bazlı)
+
+  // Kampanya fiyatları: entries üzerinden tarih bazlı hesapla
   let primTutar = 0;
-  if(typeof calcPrimWithKampanya==='function' && !mMap){
-    // Direkt entries'ten hesapla - kampanya tarihleri de doğru uygulanır
-    primTutar = calcPrimWithKampanya(ym);
-  } else {
-    // mMap verilmişse (eski uyumluluk) - kampanya ortalamasıyla hesapla
-    primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0);
-    if(typeof kampanyaBonusFor==='function'){
-      CATS.forEach(c=>{ primTutar += kampanyaBonusFor(ym, c, m[c]||0); });
+  if(typeof kampanyaData!=='undefined' && kampanyaData.length > 0){
+    // Her entry için tarih bazlı kampanya fiyatı uygula
+    entries.forEach(e=>{
+      if(effectiveYm(e) !== ym) return;
+      const fiyat = kampanyaFiyatFor(e.date, e.cat, priceFor(ym, e.cat));
+      primTutar += e.count * fiyat;
+    });
+    // Eğer entries yeterli değilse (mMap modunda) fallback
+    const entriesYm = entries.filter(e=>effectiveYm(e)===ym);
+    if(entriesYm.length === 0){
+      primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0);
     }
+    // Bonus kampanyalar
+    CATS.forEach(c=>{ primTutar += kampanyaBonusFor(ym, c, m[c]||0); });
+  } else {
+    primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0);
   }
+
   const kdv = primTutar * KDV_ORANI;
   const genelToplamTutar = primTutar + kdv;
   const p70 = genelToplamTutar * 0.7;
   const p30 = genelToplamTutar * 0.3;
   return {postToplam, genelToplamAdet, primTutar, kdv, genelToplamTutar, p70, p30, m};
 }
+
+
 function beklenenPrim(ym, mMap){
   const cur = financeFor(ym, mMap).genelToplamTutar;
   const prev2 = financeFor(addMonths(ym,-2), mMap).genelToplamTutar;
@@ -4155,7 +4165,12 @@ function render(){
   let dayTotal=0, dayCount=0;
   CATS.forEach(cat=>{
     const cnt = getCount(activeDate, cat);
-    const price = priceFor(activeYm, cat, activeDate); // kampanya fiyatı için tarih gerekli
+    // Kampanya fiyatı: tarih bazlı
+    const normalFiyat = priceFor(activeYm, cat);
+    const price = (typeof kampanyaFiyatFor==='function')
+      ? kampanyaFiyatFor(activeDate, cat, normalFiyat)
+      : normalFiyat;
+    const kampanyaVar = price !== normalFiyat;
     const amt = cnt*price;
     dayTotal += amt; dayCount += cnt;
     const lastTime = lastEntryTime(activeDate, cat);
@@ -4182,15 +4197,17 @@ function render(){
       const intEntries = entries.filter(e=>e.cat==='İnternet' && e.date===activeDate && e.activationDate);
       if(intEntries.length) intInfo = `<div style="font-size:10px;color:var(--muted);margin-top:4px">📶 Aktivasyon: ${intEntries[intEntries.length-1].activationDate}</div>`;
     }
+    // O gün bu kategoride kaç işlem logu var
+    const dayLogs = entryLog.filter(l=>l.date===activeDate && l.cat===cat);
     div.innerHTML = `<div class="label">${cat}</div>
       <div class="ctrl">
-        <button onclick="changeCount('${cat}',-1)">−</button>
+        <button onclick="openIslemListModal('${cat}','${activeDate}')" style="background:rgba(226,35,26,0.15);border-color:rgba(226,35,26,0.4);color:#ff7070;font-size:14px" title="İşlem listesi / sil">📋</button>
         <span class="cnt">${cnt}</span>
         <button onclick="changeCount('${cat}',1)">+</button>
       </div>
       ${lastTime ? `<div style="font-size:10.5px;color:var(--muted);margin-top:4px">🕒 ${lastTime.time}${lastTime.platform ? ` <span style="opacity:.7">${lastTime.platform}</span>` : ''}</div>` : ''}
       ${mnpInfo}${intInfo}
-      <div class="amt">${fmt(amt)}</div>
+      <div class="amt">${fmt(amt)}${kampanyaVar ? ` <span style="font-size:9px;background:rgba(255,183,77,0.2);color:#ffb74d;border-radius:4px;padding:1px 5px;font-weight:700">🎯 ${fmt(price)}</span>` : ''}</div>
       <div class="amt" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);font-size:11px;color:var(--accent);font-weight:700">${raCnt(cat)} <span style="opacity:.85;font-weight:600">(${fmt(raAmt(cat))})</span></div>`;
     cardsDiv.appendChild(div);
   });
@@ -7305,6 +7322,132 @@ function printManagerReport(){
   modal.style.display = 'flex';
 }
 
+// ===== İŞLEM LİSTESİ / SİLME MODAL FONKSİYONLARI =====
+function openIslemListModal(cat, date){
+  document.getElementById('ilmTitle').textContent = cat + ' — İşlem Listesi';
+  document.getElementById('ilmSub').textContent = date + ' tarihli işlemler';
+  renderIslemList(cat, date);
+  document.getElementById('islemListModal').style.display = 'flex';
+}
+function closeIslemListModal(){
+  document.getElementById('islemListModal').style.display = 'none';
+}
+
+function renderIslemList(cat, date){
+  const list = document.getElementById('ilmList');
+
+  // entryLog'dan bu gün+kategori işlemlerini al (ters sıra = en son üstte)
+  const logs = entryLog
+    .map((l,i)=>({...l,_idx:i}))
+    .filter(l=>l.date===date && l.cat===cat)
+    .reverse();
+
+  // Entries'ten tesis/mnp sayılarını al
+  const tesisE = entries.find(e=>e.date===date&&e.cat===cat&&!e.mnp);
+  const mnpE   = entries.find(e=>e.date===date&&e.cat===cat&&e.mnp);
+  const tesisCnt = tesisE ? tesisE.count : 0;
+  const mnpCnt   = mnpE   ? mnpE.count   : 0;
+  const toplam   = tesisCnt + mnpCnt;
+
+  if(!logs.length && toplam===0){
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Bu tarihte işlem yok.</div>';
+    return;
+  }
+
+  // Özet başlık
+  const ozet = MNP_CATS.includes(cat)
+    ? `<div style="display:flex;gap:10px;padding:10px 16px;background:var(--panel2);border-bottom:1px solid var(--line)">
+        <div style="flex:1;text-align:center;padding:8px;background:rgba(76,217,100,0.1);border-radius:8px;border:1px solid rgba(76,217,100,0.2)">
+          <div style="font-size:10px;color:var(--muted)">🆕 Yeni Tesis</div>
+          <div style="font-size:18px;font-weight:800;color:#4cd964">${tesisCnt}</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:8px;background:rgba(155,89,182,0.1);border-radius:8px;border:1px solid rgba(155,89,182,0.2)">
+          <div style="font-size:10px;color:var(--muted)">🔄 MNP</div>
+          <div style="font-size:18px;font-weight:800;color:#c084fc">${mnpCnt}</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:8px;background:var(--panel2);border-radius:8px;border:1px solid var(--line)">
+          <div style="font-size:10px;color:var(--muted)">Toplam</div>
+          <div style="font-size:18px;font-weight:800;color:var(--txt)">${toplam}</div>
+        </div>
+      </div>`
+    : '';
+
+  if(!logs.length){
+    list.innerHTML = ozet + '<div style="text-align:center;color:var(--muted);padding:24px;font-size:12px">Log kaydı bulunamadı.<br><small>Eski girişlerde log olmayabilir.</small></div>';
+    return;
+  }
+
+  // Her log satırı: müşteri kaydıyla eşleştir
+  const satirlar = logs.map((l,i)=>{
+    const isMnp = !!l.mnp;
+    const tip = MNP_CATS.includes(cat) ? (isMnp ? '🔄 MNP' : '🆕 Tesis') : '';
+    const tipRenk = isMnp ? '#c084fc' : '#4cd964';
+
+    // Müşteri kaydı var mı?
+    const musteri = musteriler.find(m=>
+      m.entryDate===date && m.cat===cat && m.tip===(isMnp?'mnp':'tesis') &&
+      m.entryTime && l.time && m.entryTime.slice(0,5)===l.time.slice(0,5)
+    );
+
+    const aktTarih = l.activationDate ? ` → Aktivasyon: ${l.activationDate}` : '';
+    const musteriInfo = musteri
+      ? `<div style="font-size:11px;color:var(--accent);margin-top:3px">
+          👤 ${musteri.ad||'İsimsiz'} ${musteri.tel?'· '+musteri.tel:''}
+          ${musteri.durum!=='bekliyor'
+            ? `<span style="margin-left:6px;padding:1px 6px;border-radius:8px;font-size:9px;background:rgba(76,217,100,0.15);color:#4cd964">${musteri.durum}</span>`
+            : ''}
+        </div>`
+      : '';
+
+    return `<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);flex-shrink:0">${logs.length - i}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:700;color:var(--txt)">🕒 ${l.time||'--:--'}</span>
+          ${tip ? `<span style="font-size:10px;font-weight:700;color:${tipRenk};padding:1px 7px;border-radius:10px;background:rgba(0,0,0,0.2)">${tip}</span>` : ''}
+          ${l.platform ? `<span style="font-size:10px;color:var(--muted)">${l.platform}</span>` : ''}
+        </div>
+        ${aktTarih ? `<div style="font-size:10px;color:#9b59b6;margin-top:2px">${aktTarih}</div>` : ''}
+        ${musteriInfo}
+      </div>
+      <button onclick="deleteIslemLog(${l._idx},'${cat}','${date}',${isMnp})" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer;flex-shrink:0">🗑</button>
+    </div>`;
+  }).join('');
+
+  list.innerHTML = ozet + satirlar;
+}
+
+function deleteIslemLog(logIdx, cat, date, isMnp){
+  if(!confirm('Bu işlemi silmek istiyor musunuz?')) return;
+
+  // Log kaydını sil
+  if(logIdx >= 0 && logIdx < entryLog.length){
+    entryLog.splice(logIdx, 1);
+  }
+
+  // Entries'teki sayıyı azalt
+  const e = entries.find(x=>x.date===date && x.cat===cat && !!x.mnp===!!isMnp);
+  if(e && e.count > 0){
+    e.count--;
+    if(e.count === 0) entries.splice(entries.indexOf(e), 1);
+  }
+
+  // Eşleşen müşteri kaydını bul ve sil (opsiyonel - sor)
+  const silinecekMusteri = musteriler.find(m=>
+    m.entryDate===date && m.cat===cat && m.tip===(isMnp?'mnp':'tesis')
+  );
+  if(silinecekMusteri){
+    if(confirm('Bu işleme ait müşteri kaydı da silinsin mi?')){
+      musteriler = musteriler.filter(m=>m.id!==silinecekMusteri.id);
+      saveMusteriStore();
+    }
+  }
+
+  saveEntries();
+  renderPrimPage();
+  renderIslemList(cat, date); // modalı güncelle
+}
+
 // ===== SİLME TİP MODAL FONKSİYONLARI =====
 let _silCat = null, _silDate = null;
 function openSilModal(cat, date){
@@ -7603,6 +7746,11 @@ function saveMusteriKayit(){
   takipD.setMonth(takipD.getMonth() + 3);
   const takipTarihi = takipD.toISOString().slice(0,10);
 
+  // Otomatik onay: MNP hariç hepsi aktif sayılır
+  const otomatikAktif = _mkTip !== 'mnp';
+  const baslangicDurum = otomatikAktif ? 'aktif' : 'bekliyor';
+  const baslangicPrim  = otomatikAktif ? 'dahil' : 'bekliyor';
+
   const kayit = {
     id: _mkEditId || Date.now().toString(),
     entryDate: tarih,
@@ -7610,8 +7758,8 @@ function saveMusteriKayit(){
     cat, tip: _mkTip, ad, tel, not,
     aktivasyonTarihi: aktTarih,
     takipTarihi,
-    durum: 'bekliyor',
-    primDurum: 'bekliyor',
+    durum: baslangicDurum,
+    primDurum: baslangicPrim,
     olusturma: new Date().toISOString()
   };
 
@@ -7778,10 +7926,14 @@ function deleteMusteriKayit(id){
 // Takip süresi dolmuş bekleyenleri kontrol et (uygulama açılışında)
 function checkMusteriTakip(){
   const bugun = todayStr();
-  const gecikmiş = musteriler.filter(m=>m.durum==='bekliyor' && m.takipTarihi <= bugun);
-  if(gecikmiş.length > 0){
-    const badge = document.getElementById('musteriTakipBadge');
-    if(badge) badge.textContent = gecikmiş.length;
+  // MNP bekleyenler + süresi geçmiş bekleyenler
+  const mnpBekliyor = musteriler.filter(m=>m.durum==='bekliyor' && m.tip==='mnp');
+  const suresiGecmis = musteriler.filter(m=>m.durum==='bekliyor' && m.takipTarihi <= bugun);
+  const toplamUyari = new Set([...mnpBekliyor, ...suresiGecmis].map(m=>m.id)).size;
+  const badge = document.getElementById('musteriTakipBadge');
+  if(badge){
+    badge.textContent = toplamUyari > 0 ? toplamUyari : '';
+    badge.style.display = toplamUyari > 0 ? 'inline-block' : 'none';
   }
 }
 
@@ -10229,6 +10381,23 @@ function renderHedefGecmis(){
 </script>
 
 <!-- TAM EKRAN DIŞA AKTAR MODAL -->
+<!-- ===== İŞLEM LİSTESİ / SİLME MODALI ===== -->
+<div id="islemListModal" style="display:none;position:fixed;inset:0;z-index:4200;background:rgba(0,0,0,0.8);align-items:flex-end;justify-content:center;padding:0">
+  <div style="background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;align-items:center;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:800;color:var(--txt)" id="ilmTitle">İşlem Listesi</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="ilmSub"></div>
+      </div>
+      <button onclick="closeIslemListModal()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto" id="ilmList"></div>
+    <div style="padding:12px 16px;border-top:1px solid var(--line);flex-shrink:0">
+      <div style="font-size:10px;color:var(--muted);text-align:center">Silmek istediğiniz işlemin üzerindeki 🗑 butonuna basın</div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== SİLME TİP SEÇİM MODALI ===== -->
 <div id="silModal" style="display:none;position:fixed;inset:0;z-index:4001;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--panel);border-radius:16px;padding:22px 20px;max-width:300px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.5)">
