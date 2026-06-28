@@ -8644,9 +8644,10 @@ function exportRaporPdf(){
 
   function fmt2(n){ return (Math.round(n)).toLocaleString('tr-TR')+' ₺'; }
 
-  const win = window.open('','raporPdfWin_'+Date.now());
-  if(!win){ alert('Açılır pencere engellendi.'); return; }
-  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  const win2 = window.open('','raporPdfWin_'+Date.now());
+  if(!win2){ alert('Açılır pencere engellendi.'); return; }
+
+  const raporHtmlStr = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${title}</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"><\/script>
@@ -8664,15 +8665,14 @@ function exportRaporPdf(){
     .cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:14px 20px;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .cover h2{font-size:15px;margin:0 0 2px}
     .cover p{font-size:9px;opacity:.7}
-    .chart-sec{border-bottom:1px solid #e5e7eb;page-break-inside:avoid}
-    .tbl-wrap{padding:10px;page-break-inside:avoid}
+    .chart-sec{border-bottom:1px solid #e5e7eb}
+    .tbl-wrap{padding:10px}
     table{width:100%;border-collapse:collapse;font-size:8px;table-layout:fixed}
-    th{padding:4px 5px;background:#e2231a;color:#fff;text-align:left;font-size:8px;overflow:hidden;text-overflow:ellipsis;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    td{padding:3px 5px;border-bottom:1px solid #e5e7eb;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis}
+    th{padding:4px 5px;background:#e2231a;color:#fff;text-align:left;font-size:8px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    td{padding:3px 5px;border-bottom:1px solid #e5e7eb;color:#1a1a1a}
     tr.even td{background:#f8f9fa;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    @media print{body{background:#fff}.toolbar{display:none}.wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}.chart-sec,.tbl-wrap{page-break-inside:avoid}@page{margin:8mm;size:A4 landscape}}
-  </style>
-  </head><body>
+    @media print{body{background:#fff}.toolbar{display:none}.wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}@page{margin:8mm;size:A4 landscape}}
+  </style></head><body>
   <div class="toolbar">
     <div class="tit"><div>${title}</div><div class="sub">${now}</div></div>
     <div style="display:flex;gap:6px;flex-shrink:0">
@@ -8689,62 +8689,30 @@ function exportRaporPdf(){
     </div>
   </div>
   <script>
-  function trChar(str){
-    return (str||'')
-      .replace(/₺/g,'TL').replace(/\u20ba/g,'TL')
-      .replace(/ğ/g,'g').replace(/Ğ/g,'G')
-      .replace(/ı/g,'i').replace(/İ/g,'I')
-      .replace(/ş/g,'s').replace(/Ş/g,'S')
-      .replace(/ç/g,'c').replace(/Ç/g,'C')
-      .replace(/ö/g,'o').replace(/Ö/g,'O')
-      .replace(/ü/g,'u').replace(/Ü/g,'U')
-      .replace(/[^\x00-\x7F]/g,'?');
+  function trChar(s){return (s||'').replace(/[\u20ba₺]/g,'TL').replace(/ğ/g,'g').replace(/Ğ/g,'G').replace(/ı/g,'i').replace(/İ/g,'I').replace(/ş/g,'s').replace(/Ş/g,'S').replace(/ç/g,'c').replace(/Ç/g,'C').replace(/ö/g,'o').replace(/Ö/g,'O').replace(/ü/g,'u').replace(/Ü/g,'U').replace(/•/g,' ').replace(/–/g,'-').replace(/[^\\x00-\\x7F]/g,'');}
+  function raporPdfPaylasim(){
+    if(!window.jspdf){alert('Yukleniyor...');return;}
+    var jsPDF=window.jspdf.jsPDF;
+    var doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    doc.setFillColor(226,35,26);doc.rect(0,0,doc.internal.pageSize.width,22,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(13);
+    doc.text(trChar('${title.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'),10,14);
+    doc.setFontSize(8);doc.setTextColor(200,200,200);
+    doc.text(trChar('${now}'),10,20);
+    var tbl=document.getElementById('raporMainTbl');
+    var head=[].slice.call(tbl.querySelectorAll('thead tr')).map(function(r){return [].slice.call(r.querySelectorAll('th')).map(function(c){return trChar(c.innerText);});});
+    var body=[].slice.call(tbl.querySelectorAll('tbody tr')).map(function(r){return [].slice.call(r.querySelectorAll('td')).map(function(c){return trChar(c.innerText);});});
+    doc.autoTable({head:head,body:body,startY:26,styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[226,35,26],textColor:255},alternateRowStyles:{fillColor:[248,249,250]}});
+    var blob=doc.output('blob');
+    var fname=trChar('${title.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')+'_${now.replace(/[/:]/g,'-')}.pdf';
+    var file=new File([blob],fname,{type:'application/pdf'});
+    if(navigator.share){navigator.share({files:[file],title:fname}).catch(function(e){if(e.name!=='AbortError'){var u=URL.createObjectURL(blob);var a=document.createElement('a');a.href=u;a.download=fname;a.click();}});}
+    else{var u=URL.createObjectURL(blob);var a=document.createElement('a');a.href=u;a.download=fname;a.click();}
   }
-  async function raporPdfPaylasim(){
-    try{
-      if(typeof window.jspdf === 'undefined'){
-        alert('PDF kutuphanesi yuklenemedi. Internet baglantinizi kontrol edin.');
-        return;
-      }
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-      doc.setFontSize(14);
-      doc.setTextColor(255,255,255);
-      doc.setFillColor(226,35,26);
-      doc.rect(0,0,doc.internal.pageSize.width,22,'F');
-      doc.text(trChar('${title.replace(/'/g,"\\'")}'), 10, 14);
-      doc.setFontSize(8);
-      doc.setTextColor(200,200,200);
-      doc.text(trChar('${now}'), 10, 20);
-      const tbl = document.getElementById('raporMainTbl');
-      const head = Array.from(tbl.querySelectorAll('thead tr')).map(r=>Array.from(r.querySelectorAll('th')).map(c=>trChar(c.innerText)));
-      const body = Array.from(tbl.querySelectorAll('tbody tr')).map(r=>Array.from(r.querySelectorAll('td')).map(c=>trChar(c.innerText)));
-      doc.autoTable({ head, body, startY:26, styles:{fontSize:7,cellPadding:2}, headStyles:{fillColor:[226,35,26],textColor:255}, alternateRowStyles:{fillColor:[248,249,250]} });
-      const blob = doc.output('blob');
-      const fname = trChar('${title.replace(/'/g,"\\'")}')+'_'+new Date().toLocaleDateString('tr-TR').replace(/\./g,'-')+'.pdf';
-      const file = new File([blob], fname, {type:'application/pdf'});
-      if(navigator.share){
-        try{
-          await navigator.share({files:[file], title:trChar('${title.replace(/'/g,"\\'")}')});
-        }catch(err){
-          if(err.name !== 'AbortError'){
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href=url; a.download=fname; a.click();
-            URL.revokeObjectURL(url);
-          }
-        }
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href=url; a.download=fname; a.click();
-        URL.revokeObjectURL(url);
-      }
-    }catch(e){ alert('PDF olusturulamadi: '+e.message); }
-  }
-  <\/script>
-  </body></html>`);
-  win.document.close();
+  <\/script></body></html>`;
+
+  win2.document.write(raporHtmlStr);
+  win2.document.close();
 }
 // ==================== HAFTALIK / YILLIK RAPOR SONU ====================
 
@@ -9646,7 +9614,7 @@ function exportModalPrint(){
   const title = modalTitle.replace(/^📊\s*/,'');
   const sub   = document.getElementById('exportModalSub').textContent;
   const allTables = document.getElementById('exportModalContent').querySelectorAll('table');
-  const srcTable = _activeExportTable || (allTables.length ? allTables[allTables.length-1] : null);
+  const srcTable = _activeExportTable || (allTables.length ? allTables[0] : null);
   if(!srcTable){ alert('Yazdırılacak tablo bulunamadı.'); return; }
 
   const rows = Array.from(srcTable.querySelectorAll('tr'));
@@ -9662,10 +9630,8 @@ function exportModalPrint(){
   const tdHtml = bodyRows.map((r,i)=>`<tr class="${i%2===0?'even':'odd'}">`+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('');
 
   const now = new Date().toLocaleString('tr-TR');
-  const win = window.open('','exportPrintWin_'+Date.now());
-  if(!win){ alert('Açılır pencere engellendi. Lütfen tarayıcı ayarlarından izin verin.'); return; }
 
-  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${title}</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"><\/script>
@@ -9689,8 +9655,7 @@ function exportModalPrint(){
     td{padding:5px 7px;border-bottom:1px solid #e5e7eb;color:#1a1a1a;white-space:nowrap}
     tr.even td{background:#f8f9fa;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     @media print{body{background:#fff}.toolbar{display:none}.wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}@page{margin:10mm;size:A4 ${orientation}}}
-  </style>
-  </head><body>
+  </style></head><body>
   <div class="toolbar">
     <div class="tit"><div>${title}</div><div class="sub">${sub}</div></div>
     <div style="display:flex;gap:6px;flex-shrink:0">
@@ -9706,75 +9671,34 @@ function exportModalPrint(){
     </div>
   </div>
   <script>
-  async function pdfPaylasim(){
-    try{
-      if(typeof window.jspdf === 'undefined'){
-        alert('PDF kutuphanesi yuklenmedii. Internet baglantinizi kontrol edin.');
-        return;
-      }
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: '${orientation}', unit:'mm', format:'a4' });
-
-      // Türkçe karakterleri düzelt
-      function tr(str){ 
-        return (str||'')
-          .replace(/₺/g,'TL').replace(/\u20ba/g,'TL')
-          .replace(/ğ/g,'g').replace(/Ğ/g,'G')
-          .replace(/ı/g,'i').replace(/İ/g,'I')
-          .replace(/ş/g,'s').replace(/Ş/g,'S')
-          .replace(/ç/g,'c').replace(/Ç/g,'C')
-          .replace(/ö/g,'o').replace(/Ö/g,'O')
-          .replace(/ü/g,'u').replace(/Ü/g,'U')
-          .replace(/•/g,'-').replace(/[^\x00-\x7F]/g,'?');
-      }
-
-      doc.setFontSize(14);
-      doc.setTextColor(255,255,255);
-      doc.setFillColor(226,35,26);
-      doc.rect(0,0,doc.internal.pageSize.width,22,'F');
-      doc.text(tr('${title.replace(/'/g,"\\'")}'), 10, 14);
-      doc.setFontSize(8);
-      doc.setTextColor(200,200,200);
-      doc.text(tr('${sub.replace(/'/g,"\\'")} · ${now}'), 10, 20);
-
-      const tbl = document.getElementById('mainTbl');
-      const head = Array.from(tbl.querySelectorAll('thead tr')).map(r=>Array.from(r.querySelectorAll('th')).map(c=>tr(c.innerText)));
-      const body = Array.from(tbl.querySelectorAll('tbody tr')).map(r=>Array.from(r.querySelectorAll('td')).map(c=>tr(c.innerText)));
-
-      doc.autoTable({
-        head, body,
-        startY: 26,
-        styles:{ fontSize:8, cellPadding:2, font:'helvetica' },
-        headStyles:{ fillColor:[226,35,26], textColor:255 },
-        alternateRowStyles:{ fillColor:[248,249,250] }
+  function fixStr(s){return (s||'').replace(/[\u20ba₺]/g,'TL').replace(/ğ/g,'g').replace(/Ğ/g,'G').replace(/ı/g,'i').replace(/İ/g,'I').replace(/ş/g,'s').replace(/Ş/g,'S').replace(/ç/g,'c').replace(/Ç/g,'C').replace(/ö/g,'o').replace(/Ö/g,'O').replace(/ü/g,'u').replace(/Ü/g,'U').replace(/•/g,' ').replace(/–/g,'-').replace(/[^\\x00-\\x7F]/g,'');}
+  function pdfPaylasim(){
+    if(!window.jspdf){alert('Yukleniyor, lutfen bekleyin.');return;}
+    var jsPDF=window.jspdf.jsPDF;
+    var doc=new jsPDF({orientation:'${orientation}',unit:'mm',format:'a4'});
+    doc.setFillColor(226,35,26);doc.rect(0,0,doc.internal.pageSize.width,22,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(13);
+    doc.text(fixStr('${title.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'),10,14);
+    doc.setFontSize(8);doc.setTextColor(200,200,200);
+    doc.text(fixStr('${sub.replace(/\\/g,'\\\\').replace(/'/g,"\\'")} - ${now}'),10,20);
+    var tbl=document.getElementById('mainTbl');
+    var head=[].slice.call(tbl.querySelectorAll('thead tr')).map(function(r){return [].slice.call(r.querySelectorAll('th')).map(function(c){return fixStr(c.innerText);});});
+    var body=[].slice.call(tbl.querySelectorAll('tbody tr')).map(function(r){return [].slice.call(r.querySelectorAll('td')).map(function(c){return fixStr(c.innerText);});});
+    doc.autoTable({head:head,body:body,startY:26,styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[226,35,26],textColor:255},alternateRowStyles:{fillColor:[248,249,250]}});
+    var blob=doc.output('blob');
+    var fname=fixStr('${title.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')+'_${now.replace(/[/:]/g,'-')}.pdf';
+    var file=new File([blob],fname,{type:'application/pdf'});
+    if(navigator.share){
+      navigator.share({files:[file],title:fname}).catch(function(e){
+        if(e.name!=='AbortError'){var u=URL.createObjectURL(blob);var a=document.createElement('a');a.href=u;a.download=fname;a.click();}
       });
-
-      const blob = doc.output('blob');
-      const fname = tr('${title.replace(/'/g,"\\'")}')+'_'+new Date().toLocaleDateString('tr-TR').replace(/\./g,'-')+'.pdf';
-      const file = new File([blob], fname, { type:'application/pdf' });
-
-      if(navigator.share){
-        try{
-          await navigator.share({ files:[file], title:tr('${title.replace(/'/g,"\\'")}') });
-        }catch(err){
-          if(err.name !== 'AbortError'){
-            // Paylaşım desteklenmiyorsa indir
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href=url; a.download=fname; a.click();
-            URL.revokeObjectURL(url);
-          }
-        }
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href=url; a.download=fname; a.click();
-        URL.revokeObjectURL(url);
-      }
-    }catch(e){ alert('PDF oluşturulamadı: '+e.message); }
+    }else{var u=URL.createObjectURL(blob);var a=document.createElement('a');a.href=u;a.download=fname;a.click();}
   }
-  <\/script>
-  </body></html>`);
+  <\/script></body></html>`;
+
+  const win = window.open('', 'exportPrintWin_'+Date.now());
+  if(!win){ alert('Acilir pencere engellendi.'); return; }
+  win.document.write(html);
   win.document.close();
 }
 function exportModalShare(){
@@ -9809,186 +9733,129 @@ function closeExportModal(){
   document.getElementById('exportModalTabs').innerHTML = '';
 }
 
+// Mobilde window.open yerine modal kullan
 let _activeExportTable = null;
 
-// Mobilde window.open yerine modal kullan
-const _origOpenExportPreview = openExportPreview;
 function openExportPreview(tableId, fileLabel){
-  // Her açılışta temizle
   _activeExportTable = null;
   document.getElementById('exportModalContent').innerHTML = '';
   document.getElementById('exportModalTabs').innerHTML = '';
 
-  // window.open yerine modal kullanan tablolar
   const modalTables = ['compareTable','mainTable','financeTable','priceHistTable','gelirTable','capitalTable','marjTable','finansDetailTable'];
+
   if(modalTables.includes(tableId)){
     const table = document.getElementById(tableId);
     if(!table || !table.rows || table.rows.length === 0){ alert('Aktarılacak veri yok.'); return; }
-
     const now = new Date().toLocaleString('tr-TR');
     const stamp = xlsTimestamp();
     const modal = document.getElementById('exportFullModal');
-
-    // Başlık
-    const titles = {
-      compareTable: 'Ay Karşılaştırması',
-      mainTable: 'Aylık Kategori Dağılımı',
-      financeTable: 'Prim / Finans Özeti',
-      priceHistTable: 'Fiyat Geçmişi',
-      gelirTable: 'Gelir / Gider Tablosu'
-    };
+    const titles = {compareTable:'Ay Karşılaştırması',mainTable:'Aylık Kategori Dağılımı',financeTable:'Prim / Finans Özeti',priceHistTable:'Fiyat Geçmişi',gelirTable:'Gelir / Gider Tablosu',capitalTable:'Sermaye Gelişimi',marjTable:'Vodafone MIXY Kâr/Masraf',finansDetailTable:'Finans Detaylı Tablo'};
     document.getElementById('exportModalTitle').textContent = '📊 ' + (titles[tableId] || fileLabel);
     document.getElementById('exportModalSub').textContent = now;
-
-    // Tek tab
-    document.getElementById('exportModalTabs').innerHTML =
-      `<button style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700">📋 Tablo</button>`;
-
-    // Tablo HTML'ini klonla
+    document.getElementById('exportModalTabs').innerHTML = `<button style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700">📋 Tablo</button>`;
     const clone = table.cloneNode(true);
-    // Tüm class'ları temizle - sayfa CSS'i uygulanmasın
-    Array.from(clone.querySelectorAll('*')).forEach(el => el.removeAttribute('class'));
+    Array.from(clone.querySelectorAll('*')).forEach(el=>el.removeAttribute('class'));
     clone.removeAttribute('class');
-    clone.style.cssText = 'width:100%;border-collapse:collapse;font-size:11px;background:#26282b';
+    clone.style.cssText='width:100%;border-collapse:collapse;font-size:11px;background:#26282b';
     Array.from(clone.querySelectorAll('th')).forEach((th,i)=>{
-      const sticky = i===0 ? 'position:sticky;left:0;z-index:3;max-width:140px;overflow:hidden;text-overflow:ellipsis;' : '';
-      th.style.cssText=`padding:8px 10px;background:#1a1c20;color:#9aa0a6;font-size:10px;border-bottom:2px solid #e2231a;text-align:${i===0?'left':'right'};white-space:nowrap;${sticky}`;
+      th.style.cssText=`padding:8px 10px;background:#1a1c20;color:#9aa0a6;font-size:10px;border-bottom:2px solid #e2231a;text-align:${i===0?'left':'right'};white-space:nowrap;${i===0?'position:sticky;left:0;z-index:3;':''}`;
     });
     Array.from(clone.querySelectorAll('tr')).forEach((tr,i)=>{
-      tr.removeAttribute('onclick');
-      tr.removeAttribute('onmouseover');
-      tr.removeAttribute('onmouseout');
-      const isTfoot = tr.closest('tfoot') !== null;
-      const bg = isTfoot ? '#1a1c20' : (i%2===0 ? '#26282b' : '#2c2f33');
-      tr.style.cssText = `background:${bg}`;
-      Array.from(tr.querySelectorAll('td')).forEach((td)=>{
-        const isFirst = td.cellIndex === 0;
-        const savedColor = td.style.color || '#d1d5db';
-        const sticky = isFirst ? 'position:sticky;left:0;z-index:2;max-width:140px;overflow:hidden;text-overflow:ellipsis;' : '';
-        td.style.cssText = `padding:7px 10px;border-bottom:1px solid #2e3035;white-space:nowrap;background:${bg} !important;text-align:${isFirst?'left':'right'};${sticky}`;
-        td.style.color = savedColor;
+      tr.removeAttribute('onclick');tr.removeAttribute('onmouseover');tr.removeAttribute('onmouseout');
+      const isTf=tr.closest('tfoot')!==null;
+      const bg=isTf?'#1a1c20':(i%2===0?'#26282b':'#2c2f33');
+      tr.style.cssText=`background:${bg}`;
+      Array.from(tr.querySelectorAll('td')).forEach((td,j)=>{
+        const sc=td.style.color||'#d1d5db';
+        td.style.cssText=`padding:7px 10px;border-bottom:1px solid #2e3035;white-space:nowrap;background:${bg}!important;text-align:${j===0?'left':'right'};${j===0?'position:sticky;left:0;z-index:2;':''}`;
+        td.style.color=sc;
       });
     });
-
-    document.getElementById('exportModalContent').innerHTML =
-      `<style>
-        #exportModalContent table, #exportModalContent tr, #exportModalContent td, #exportModalContent th {
-          background: unset !important;
-          border-color: #2e3035 !important;
-          color: #d1d5db !important;
-        }
-      </style>
-      <div style="overflow-x:auto;background:#26282b;border-radius:8px">${clone.outerHTML}</div>`;
-
-    _activeExportTable = clone;
-
-    // Excel butonu
-    document.getElementById('exportModalXlsBtn').onclick = function(){
-      if(typeof XLSX==='undefined'){ alert('Excel kütüphanesi yükleniyor, lütfen tekrar deneyin.'); return; }
-      const wb = XLSX.utils.table_to_book(table, {sheet: fileLabel.slice(0,31)});
-      XLSX.writeFile(wb, fileLabel+'_'+stamp+'.xlsx');
+    document.getElementById('exportModalContent').innerHTML=`<style>#exportModalContent table,#exportModalContent tr,#exportModalContent td,#exportModalContent th{background:unset!important;border-color:#2e3035!important;color:#d1d5db!important}</style><div style="overflow-x:auto;background:#26282b;border-radius:8px">${clone.outerHTML}</div>`;
+    _activeExportTable=clone;
+    document.getElementById('exportModalXlsBtn').onclick=function(){
+      if(typeof XLSX==='undefined'){alert('Excel kütüphanesi yükleniyor.');return;}
+      const wb=XLSX.utils.table_to_book(table,{sheet:fileLabel.slice(0,31)});
+      XLSX.writeFile(wb,fileLabel+'_'+stamp+'.xlsx');
     };
-
-    modal.style.display = 'flex';
+    modal.style.display='flex';
     return;
   }
 
-  // activityListTable için devam et (aşağıda modal ile açılır)
-
-  const rStart = document.getElementById('rangeStart').value;
-  const rEnd   = document.getElementById('rangeEnd').value;
-  const filtRows = entries
-    .filter(e => e.date>=rStart && e.date<=rEnd && e.count>0)
-    .slice().sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat));
-  if(!filtRows.length){ alert('Bu aralıkta aktarılacak işlem yok.'); return; }
-
-  const now = new Date().toLocaleString('tr-TR');
-
-  // Detaylı tablo HTML - tarihe tıklayınca detay göster
-  const detayliRows = filtRows.map(e=>{
-    const amt = e.count * priceFor(ymKey(e.date), e.cat);
-    // O güne ait tüm kayıtları bul (entryLog'dan saat bilgisiyle)
-    const dayLogs = (entryLog||[]).filter(l=>l.date===e.date && l.cat===e.cat);
-    const hasLog = dayLogs.length > 0;
-    return `<tr style="border-bottom:1px solid #2a2d33" ${hasLog?`onclick="showDayDetail('${e.date}','${e.cat}')" style="border-bottom:1px solid #2a2d33;cursor:pointer" onmouseover="this.style.background='#2a2d33'" onmouseout="this.style.background=''"`:''}>
-      <td style="padding:8px 6px;font-size:12px;color:#eee;font-weight:600">${e.date}${hasLog?' <span style="color:#3fd0ff;font-size:9px">●</span>':''}</td>
-      <td style="padding:8px 6px;font-size:12px;color:#ccc">${e.cat}</td>
-      <td style="padding:8px 6px;font-size:12px;color:#ccc;text-align:center">${e.count}</td>
-      <td style="padding:8px 6px;font-size:12px;color:#4cd964;text-align:right">${fmt(amt)}</td>
-    </tr>`;
-  }).join('');
-
-  // Özet tablo - DİKEY: her kategori bir satır, tıklayınca tarih detayı
-  const catSummary = CATS.map(c=>{
-    const catEntries = filtRows.filter(e=>e.cat===c);
-    const totalCount = catEntries.reduce((a,e)=>a+e.count,0);
-    if(!totalCount) return '';
-    const totalAmt = catEntries.reduce((a,e)=>a+e.count*priceFor(ymKey(e.date),c),0);
-    const aylar = [...new Set(catEntries.map(e=>ymKey(e.date)))].sort().reverse();
-    return `<tr onclick="showCatDetail('${c}','${rStart}','${rEnd}')" style="border-bottom:1px solid #2a2d33;cursor:pointer" onmouseover="this.style.background='#2a2d33'" onmouseout="this.style.background=''">
-      <td style="padding:10px 8px;font-size:13px;color:#eee;font-weight:700">${c} <span style="color:#3fd0ff;font-size:9px">›</span></td>
-      <td style="padding:10px 8px;font-size:13px;color:#fff;font-weight:700;text-align:center">${totalCount}</td>
-      <td style="padding:10px 8px;font-size:12px;color:#888;text-align:center">${aylar.length} ay</td>
-      <td style="padding:10px 8px;font-size:13px;color:#4cd964;font-weight:700;text-align:right">${fmt(totalAmt)}</td>
-    </tr>`;
-  }).filter(Boolean).join('');
-
-  const toplamCount = filtRows.reduce((a,e)=>a+e.count,0);
-  const toplamAmt = filtRows.reduce((a,e)=>a+e.count*priceFor(ymKey(e.date),e.cat),0);
-
-  const modal = document.getElementById('exportFullModal');
-  document.getElementById('exportModalTitle').textContent = '📋 İşlem Listesi';
-  document.getElementById('exportModalSub').textContent = `${rStart} – ${rEnd} · ${now}`;
-
-  // Tabs
-  document.getElementById('exportModalTabs').innerHTML = `
-    <button id="tabDetayli" onclick="switchExportTab('detayli')" style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">📋 Detaylı (${filtRows.length})</button>
-    <button id="tabOzet" onclick="switchExportTab('ozet')" style="flex:1;padding:10px;background:#111;color:#888;border:none;font-size:12px;cursor:pointer">📊 Özet</button>
-  `;
-
-  // Content
-  const detayliHtml = `<table style="width:100%;border-collapse:collapse">
-    <thead><tr style="background:#e2231a">
-      <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Tarih</th>
-      <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Kategori</th>
-      <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:center">Adet</th>
-      <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:right">Tutar</th>
-    </tr></thead>
-    <tbody>${detayliRows}</tbody>
-  </table>`;
-
-  const ozetHtml = `<table style="width:100%;border-collapse:collapse">
-    <thead><tr style="background:#e2231a">
-      <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:left">Kategori</th>
-      <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:center">Toplam Adet</th>
-      <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:center">Ay Sayısı</th>
-      <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:right">Tutar</th>
-    </tr></thead>
-    <tbody>${catSummary}</tbody>
-    <tfoot><tr style="background:#111;border-top:2px solid #e2231a">
-      <td style="padding:10px 8px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
-      <td style="padding:10px 8px;font-size:13px;color:#fff;font-weight:800;text-align:center">${toplamCount}</td>
-      <td></td>
-      <td style="padding:10px 8px;font-size:13px;color:#4cd964;font-weight:800;text-align:right">${fmt(toplamAmt)}</td>
-    </tr></tfoot>
-  </table>`;
-
-  window._exportDetayliHtml = detayliHtml;
-  window._exportOzetHtml = ozetHtml;
-  window._exportFiltRows = filtRows;
-  window._exportFileLabel = fileLabel;
-
-  document.getElementById('exportModalContent').innerHTML = detayliHtml;
-  window._exportCurrentTab = 'detayli';
-
-  // Excel butonu
-  document.getElementById('exportModalXlsBtn').onclick = function(){
-    exportModalToExcel();
-  };
-
-  modal.style.display = 'flex';
+  if(tableId === 'activityListTable'){
+    const rStart = document.getElementById('rangeStart').value;
+    const rEnd   = document.getElementById('rangeEnd').value;
+    const filtRows = entries
+      .filter(e => e.date>=rStart && e.date<=rEnd && e.count>0)
+      .slice().sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat));
+    if(!filtRows.length){ alert('Bu aralıkta aktarılacak işlem yok.'); return; }
+    const now = new Date().toLocaleString('tr-TR');
+    const detayliRows = filtRows.map(e=>{
+      const amt = e.count * priceFor(ymKey(e.date), e.cat);
+      const dayLogs = (entryLog||[]).filter(l=>l.date===e.date && l.cat===e.cat);
+      const hasLog = dayLogs.length > 0;
+      return `<tr style="border-bottom:1px solid #2a2d33" ${hasLog?`onclick="showDayDetail('${e.date}','${e.cat}')" style="border-bottom:1px solid #2a2d33;cursor:pointer" onmouseover="this.style.background='#2a2d33'" onmouseout="this.style.background=''"`:''}>
+        <td style="padding:8px 6px;font-size:12px;color:#eee;font-weight:600">${e.date}${hasLog?' <span style="color:#3fd0ff;font-size:9px">●</span>':''}</td>
+        <td style="padding:8px 6px;font-size:12px;color:#ccc">${e.cat}</td>
+        <td style="padding:8px 6px;font-size:12px;color:#ccc;text-align:center">${e.count}</td>
+        <td style="padding:8px 6px;font-size:12px;color:#4cd964;text-align:right">${fmt(amt)}</td>
+      </tr>`;
+    }).join('');
+    const catSummary = CATS.map(c=>{
+      const catEntries = filtRows.filter(e=>e.cat===c);
+      const totalCount = catEntries.reduce((a,e)=>a+e.count,0);
+      if(!totalCount) return '';
+      const totalAmt = catEntries.reduce((a,e)=>a+e.count*priceFor(ymKey(e.date),c),0);
+      const aylar = [...new Set(catEntries.map(e=>ymKey(e.date)))].sort().reverse();
+      return `<tr onclick="showCatDetail('${c}','${rStart}','${rEnd}')" style="border-bottom:1px solid #2a2d33;cursor:pointer" onmouseover="this.style.background='#2a2d33'" onmouseout="this.style.background=''">
+        <td style="padding:10px 8px;font-size:13px;color:#eee;font-weight:700">${c} <span style="color:#3fd0ff;font-size:9px">›</span></td>
+        <td style="padding:10px 8px;font-size:13px;color:#fff;font-weight:700;text-align:center">${totalCount}</td>
+        <td style="padding:10px 8px;font-size:12px;color:#888;text-align:center">${aylar.length} ay</td>
+        <td style="padding:10px 8px;font-size:13px;color:#4cd964;font-weight:700;text-align:right">${fmt(totalAmt)}</td>
+      </tr>`;
+    }).filter(Boolean).join('');
+    const toplamCount = filtRows.reduce((a,e)=>a+e.count,0);
+    const toplamAmt = filtRows.reduce((a,e)=>a+e.count*priceFor(ymKey(e.date),e.cat),0);
+    const modal = document.getElementById('exportFullModal');
+    document.getElementById('exportModalTitle').textContent = '📋 İşlem Listesi';
+    document.getElementById('exportModalSub').textContent = `${rStart} – ${rEnd} · ${now}`;
+    document.getElementById('exportModalTabs').innerHTML = `
+      <button id="tabDetayli" onclick="switchExportTab('detayli')" style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">📋 Detaylı (${filtRows.length})</button>
+      <button id="tabOzet" onclick="switchExportTab('ozet')" style="flex:1;padding:10px;background:#111;color:#888;border:none;font-size:12px;cursor:pointer">📊 Özet</button>`;
+    const detayliHtml = `<table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:#e2231a">
+        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Tarih</th>
+        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Kategori</th>
+        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:center">Adet</th>
+        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:right">Tutar</th>
+      </tr></thead>
+      <tbody>${detayliRows}</tbody></table>`;
+    const ozetHtml = `<table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:#e2231a">
+        <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:left">Kategori</th>
+        <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:center">Toplam Adet</th>
+        <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:center">Ay Sayısı</th>
+        <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:right">Tutar</th>
+      </tr></thead>
+      <tbody>${catSummary}</tbody>
+      <tfoot><tr style="background:#111;border-top:2px solid #e2231a">
+        <td style="padding:10px 8px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
+        <td style="padding:10px 8px;font-size:13px;color:#fff;font-weight:800;text-align:center">${toplamCount}</td>
+        <td></td>
+        <td style="padding:10px 8px;font-size:13px;color:#4cd964;font-weight:800;text-align:right">${fmt(toplamAmt)}</td>
+      </tr></tfoot></table>`;
+    window._exportDetayliHtml = detayliHtml;
+    window._exportOzetHtml = ozetHtml;
+    window._exportFiltRows = filtRows;
+    window._exportFileLabel = fileLabel;
+    document.getElementById('exportModalContent').innerHTML = detayliHtml;
+    window._exportCurrentTab = 'detayli';
+    _activeExportTable = null;
+    document.getElementById('exportModalXlsBtn').onclick = function(){ exportModalToExcel(); };
+    modal.style.display = 'flex';
+    return;
+  }
 }
-
 function switchExportTab(tab){
   window._exportCurrentTab = tab;
   const d = document.getElementById('tabDetayli');
