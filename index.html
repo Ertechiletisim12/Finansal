@@ -515,7 +515,8 @@ html{scrollbar-gutter:stable}
   /* Genel taşma önleme */
   #dashContent{ overflow:hidden!important; }
   #dashContent > *{ max-width:100%!important;box-sizing:border-box!important; }
-  .dash-nav-pill{ flex-shrink:0!important;min-width:55px!important;padding:5px 8px!important;font-size:10px!important; }
+  #dashWidget{ display:none!important; }
+  @media(max-width:700px){ #dashWidget{ display:block!important; } }
 
   /* Mobil üst menü */
   #mobileTopBar{ display:flex!important; }
@@ -1372,6 +1373,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="mobileTopBar" style="display:none;position:sticky;top:0;z-index:200;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px;align-items:center;justify-content:space-between;gap:8px">
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="font-size:14px;font-weight:800;flex:1;text-align:center" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
+  <!-- Offline göstergesi -->
+  <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
+  <!-- Tema toggle -->
+  <button onclick="toggleTheme()" id="mobileThemeBtn" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:16px;flex-shrink:0">🌙</button>
   <div id="mobileOturumBox" style="display:none;align-items:center;gap:6px;flex-shrink:0">
     <div style="text-align:right">
       <div id="mobileOturumSure" style="font-size:11px;font-weight:700;color:var(--txt)">10:00</div>
@@ -2803,35 +2808,123 @@ function changeCount(cat, delta){
   entryLog = logEntries;
 
   saveEntries(); saveEntryLog(); render();
+  vibrate(delta > 0 ? [30] : [10, 50, 10]); // artış: kısa titreşim, azalış: çift titreşim
 }
 
 // ---- tema ----
 function toggleTheme(){
   const isLight = document.body.classList.toggle('light');
   const btn = document.getElementById('themeBtn');
+  const mobileBtn = document.getElementById('mobileThemeBtn');
   if(btn){
     btn.textContent = isLight ? '🌙 Koyu Mod' : '☀️ Açık Mod';
     btn.classList.toggle('active-theme', !isLight);
   }
+  if(mobileBtn) mobileBtn.textContent = isLight ? '🌙' : '☀️';
   try{ localStorage.setItem('vf_theme', isLight ? 'light' : 'dark'); }catch(e){}
 }
 function loadTheme(){
   try{
     const saved = localStorage.getItem('vf_theme');
-    // İlk açılışta kayıt yoksa dark kaydet
     if(!saved) localStorage.setItem('vf_theme', 'dark');
     const btn = document.getElementById('themeBtn');
+    const mobileBtn = document.getElementById('mobileThemeBtn');
     if(saved === 'light'){
       document.body.classList.add('light');
       if(btn){ btn.textContent = '🌙 Koyu Mod'; btn.classList.remove('active-theme'); }
+      if(mobileBtn) mobileBtn.textContent = '🌙';
     } else {
       document.body.classList.remove('light');
       if(btn){ btn.textContent = '☀️ Açık Mod'; btn.classList.add('active-theme'); }
+      if(mobileBtn) mobileBtn.textContent = '☀️';
     }
   }catch(e){}
 }
 
-// ---- PIN kilidi ----
+// ==================== OFFLİNE GÖSTERGESİ ====================
+function updateOfflineIndicator(){
+  const el = document.getElementById('mobileOfflineIndicator');
+  if(!el) return;
+  el.style.display = navigator.onLine ? 'none' : 'flex';
+}
+window.addEventListener('online',  updateOfflineIndicator);
+window.addEventListener('offline', updateOfflineIndicator);
+// ==================== OFFLİNE GÖSTERGESİ SONU ====================
+
+// ==================== TİTREŞİM ====================
+function vibrate(pattern){
+  try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){}
+}
+// ==================== TİTREŞİM SONU ====================
+
+// ==================== SWIPE İLE SAYFA GEÇİŞİ ====================
+(function(){
+  const pages = ['dash','prim','hedef','rapor','trend','finans','gelir','not'];
+  let touchStartX = 0, touchStartY = 0;
+  document.addEventListener('touchstart', e=>{
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, {passive:true});
+  document.addEventListener('touchend', e=>{
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    // Yatay swipe kontrolü — dikey scroll ile çakışmasın
+    if(Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+    // Yatay scroll olan elementlerde swipe'ı engelle
+    let el = e.target;
+    while(el && el !== document.body){
+      if(el.scrollWidth > el.clientWidth + 10) return;
+      el = el.parentElement;
+    }
+    const cur = pages.indexOf(typeof currentPage !== 'undefined' ? currentPage : 'dash');
+    if(cur === -1) return;
+    if(dx < -60 && cur < pages.length-1) switchPage(pages[cur+1]); // sola → sonraki
+    if(dx > 60  && cur > 0)              switchPage(pages[cur-1]); // sağa → önceki
+  }, {passive:true});
+})();
+// ==================== SWIPE SONU ====================
+
+// ==================== YEDEKLEME HATIRLATICISI ====================
+function checkBackupReminder(){
+  const lastBackup = parseInt(localStorage.getItem('vf_last_backup_ts')||'0');
+  const gecenGun = Math.floor((Date.now() - lastBackup) / (1000*60*60*24));
+  if(gecenGun >= 7){
+    showNotifToast({
+      key: 'backup_reminder_'+Math.floor(Date.now()/86400000),
+      type: 'warn', icon: '💾', cat: 'system',
+      title: `${gecenGun} gündür yedek alınmadı`,
+      msg: 'Sol menüden "Yedekle" butonuna basarak verilerinizi yedekleyin.'
+    });
+  }
+}
+// Yedekleme yapılınca timestamp güncelle
+const _origYedekle = window.yedekle;
+function yedekle(){
+  if(typeof _origYedekle === 'function') _origYedekle();
+  localStorage.setItem('vf_last_backup_ts', Date.now().toString());
+}
+// ==================== YEDEKLEME HATIRLATICISI SONU ====================
+
+// ==================== RAPOR PAYLAŞMA ====================
+function raporPaylasim(){
+  const curYm = thisMonthKey();
+  const hedef = hedefler[curYm] || 0;
+  const curEntries = entries.filter(e => e.date.startsWith(curYm));
+  let realized = 0;
+  curEntries.forEach(e => { realized += e.count * (priceFor(curYm, e.cat) || 0); });
+  const pct = hedef > 0 ? Math.round(realized / hedef * 100) : 0;
+  const metin = `📊 ER-TECH İLETİŞİM — ${curYm}\n`+
+    `💰 Toplam Prim: ${fmt(realized)}\n`+
+    (hedef > 0 ? `🎯 Hedef: ${fmt(hedef)} (%${pct})\n` : '')+
+    `📦 İşlem Adedi: ${curEntries.reduce((a,e)=>a+e.count,0)} adet\n`+
+    `📅 ${new Date().toLocaleDateString('tr-TR')}`;
+  if(navigator.share){
+    navigator.share({ title:'Prim Raporu', text: metin }).catch(()=>{});
+  } else {
+    navigator.clipboard?.writeText(metin).then(()=>alert('Rapor kopyalandı!')).catch(()=>alert(metin));
+  }
+}
+// ==================== RAPOR PAYLAŞMA SONU ====================
 function togglePinPanel(){
   openPinModal();
 }
@@ -3165,7 +3258,7 @@ function openExportPreview(tableId, fileLabel){
     const stamp = xlsTimestamp();
     const win = window.open('','win_'+Date.now());
     if(!win){ alert('Açılır pencere engellendi.'); return; }
-    win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8">
+    win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
     <title>İşlem Listesi — Ön İzleme</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>
@@ -3285,7 +3378,7 @@ function openExportPreview(tableId, fileLabel){
   const win = window.open('','win_'+Date.now());
   if(!win){ alert('Açılır pencere engellendi. Lütfen tarayıcı ayarlarından izin verin.'); return; }
 
-  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8">
+  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${fileLabel} — Ön İzleme</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>
@@ -3386,9 +3479,9 @@ function exportTableToPdf(tableId, titleLabel){
     return `<tr class="${i%2===0?'even':'odd'}">${cells}</tr>`;
   }).join('');
 
-  const win = window.open('','win_'+Date.now(),'width=1050,height=760');
+  const win = window.open('','win_'+Date.now());
   if(!win){ alert('Açılır pencere engellendi. Lütfen tarayıcı ayarlarından izin verin.'); return; }
-  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8">
+  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${titleLabel} — Vodafone Prim Takip</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -4994,6 +5087,34 @@ function renderDash(){
 
   el.innerHTML = `
     ${anomaliBar}
+
+    <!-- ── MOBİL WIDGET ── -->
+    <div id="dashWidget" style="display:none;background:linear-gradient(135deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">📊 Bugünkü Durum</div>
+        <div style="font-size:10px;color:var(--muted)">${d.getDate()} ${MONTHS[d.getMonth()]}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div style="background:rgba(76,217,100,0.08);border:1px solid rgba(76,217,100,0.2);border-radius:10px;padding:8px 4px">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:3px">Bu Ay Prim</div>
+          <div style="font-size:13px;font-weight:800;color:#4cd964">${fmtF(curKdv)}</div>
+        </div>
+        <div style="background:rgba(63,208,255,0.08);border:1px solid rgba(63,208,255,0.2);border-radius:10px;padding:8px 4px">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:3px">Bugün</div>
+          <div style="font-size:13px;font-weight:800;color:#3fd0ff">${(()=>{const t=entries.filter(e=>e.date===today).reduce((a,e)=>a+e.count*(priceFor(today,e.cat)||0),0);return fmtF(t*(1+KDV_ORANI));})()}</div>
+        </div>
+        <div style="background:rgba(255,159,10,0.08);border:1px solid rgba(255,159,10,0.2);border-radius:10px;padding:8px 4px">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:3px">Hedefe</div>
+          <div style="font-size:13px;font-weight:800;color:${hedefler[now]>0?(Math.round(curKdv/hedefler[now]*100)>=90?'#4cd964':'#ff9f0a'):'var(--muted)'}">${hedefler[now]>0?'%'+Math.round(curKdv/hedefler[now]*100):'—'}</div>
+        </div>
+      </div>
+      ${hedefler[now]>0?`
+      <div style="margin-top:8px">
+        <div style="height:5px;background:var(--line);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(Math.round(curKdv/hedefler[now]*100),100)}%;background:${Math.round(curKdv/hedefler[now]*100)>=100?'#4cd964':Math.round(curKdv/hedefler[now]*100)>=80?'#ff9f0a':'#3fd0ff'};border-radius:3px;transition:width .5s"></div>
+        </div>
+      </div>`:``}
+    </div>
 
     <!-- ── BÖLÜM 1: Prim Ana Kart ── -->
     <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📅 ${monthLabel(now)} — Prim Durumu</div>
@@ -6868,9 +6989,9 @@ function buildManagerReportHTML(){
 function printManagerReport(){
   const reportHtml = buildManagerReportHTML();
   const now = new Date().toLocaleString('tr-TR');
-  const win = window.open('','win_'+Date.now(),'width=1060,height=780');
+  const win = window.open('','win_'+Date.now());
   if(!win){ alert('Açılır pencere engellendi. Lütfen tarayıcı ayarlarından açılır pencerelere izin verin.'); return; }
-  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Yönetici Raporu — Vodafone Prim Takip</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -7721,12 +7842,19 @@ function collectAlerts() {
       let realized = 0;
       curEntries.forEach(e => { realized += e.count * (priceFor(curYm, e.cat) || 0); });
       const pct = Math.round(realized / hedef * 100);
-      const esik = notifSettings.hedefEsik || 80;
-      if (pct >= esik && pct < 100) {
-        alerts.push({ key:'hedef_yakin_'+curYm, type:'warn', icon:'🎯', cat:'hedef',
+      // %80 uyarısı
+      if (pct >= 80 && pct < 90) {
+        alerts.push({ key:'hedef_80_'+curYm, type:'warn', icon:'🎯', cat:'hedef',
           title: `Hedefe %${pct} ulaşıldı`,
           msg: `${curYm} hedefi: ${fmt(hedef)}. Gerçekleşen: ${fmt(realized)}. Kalan: ${fmt(hedef - realized)}` });
-      } else if (pct >= 100) {
+      }
+      // %90 uyarısı
+      else if (pct >= 90 && pct < 100) {
+        alerts.push({ key:'hedef_90_'+curYm, type:'warn', icon:'🔥', cat:'hedef',
+          title: `Hedefe %${pct} ulaşıldı — çok yakın!`,
+          msg: `${curYm} hedefi: ${fmt(hedef)}. Gerçekleşen: ${fmt(realized)}. Kalan: ${fmt(hedef - realized)}` });
+      }
+      else if (pct >= 100) {
         alerts.push({ key:'hedef_tamam_'+curYm, type:'ok', icon:'🏆', cat:'hedef',
           title: `Aylık hedef aşıldı! %${pct}`,
           msg: `${curYm} hedefi ${fmt(hedef)} tutarında belirlenmişti. Tebrikler!` });
@@ -7926,6 +8054,28 @@ function closeNotifModal() {
   if (modal) modal.style.display = 'none';
 }
 
+// ==================== TARAYICI BİLDİRİMİ ====================
+function requestNotifPermission(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'default'){
+    Notification.requestPermission();
+  }
+}
+
+function sendBrowserNotif(title, body, icon='🎯'){
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'granted') return;
+  try{
+    new Notification(title, {
+      body: body,
+      icon: 'https://ertechiletisim12.github.io/Finansal/favicon.ico',
+      badge: 'https://ertechiletisim12.github.io/Finansal/favicon.ico',
+      tag: title, // aynı başlıklı bildirimi tekrarlama
+    });
+  }catch(e){}
+}
+// ==================== TARAYICI BİLDİRİMİ SONU ====================
+
 function showNotifToast(alert) {
   const area = document.getElementById('notifToastArea');
   if (!area) return;
@@ -7941,16 +8091,26 @@ function showNotifToast(alert) {
   toast.onclick = () => { toast.remove(); toggleNotifPanel(); };
   area.appendChild(toast);
   setTimeout(() => { if (toast.parentNode) toast.remove(); }, 8000);
+  // Tarayıcı bildirimi de gönder
+  sendBrowserNotif(alert.title, alert.msg);
 }
 
 function runStartupNotifCheck() {
   loadNotifSettings();
+  // Tarayıcı bildirim izni iste
+  requestNotifPermission();
   setTimeout(() => {
     const alerts = checkAllNotifications();
-    // Toast olarak göster - sadece daha önce gösterilmemiş olanları
     alerts.filter(a => a.type !== 'ok').forEach((a, i) => {
       if (!isNotifSeen('toast_'+a.key, 4)) {
         setTimeout(() => { showNotifToast(a); markNotifSeen('toast_'+a.key); }, 1800 + i * 700);
+      }
+    });
+    // Hedef %100 aşıldıysa push bildirim gönder
+    alerts.filter(a => a.cat === 'hedef').forEach(a => {
+      if(!isNotifSeen('push_'+a.key, 24)){
+        sendBrowserNotif(a.title, a.msg);
+        markNotifSeen('push_'+a.key);
       }
     });
   }, 2000);
@@ -8484,18 +8644,21 @@ function exportRaporPdf(){
 
   function fmt2(n){ return (Math.round(n)).toLocaleString('tr-TR')+' ₺'; }
 
-  const win = window.open('','raporPdfWin_'+Date.now(),'width=1060,height=780');
+  const win = window.open('','raporPdfWin_'+Date.now());
   if(!win){ alert('Açılır pencere engellendi.'); return; }
-  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${title}</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"><\/script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:Arial,Helvetica,sans-serif;background:#e8eaed;color:#1a1a1a}
-    .toolbar{position:sticky;top:0;z-index:99;background:#1a1c20;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+    .toolbar{position:sticky;top:0;z-index:99;background:#1a1c20;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.5);flex-wrap:wrap}
     .tit{color:#eef0f2;font-size:13px;font-weight:700;flex:1}
     .sub{color:#9aa0a6;font-size:10px;margin-top:1px}
-    .btn{border:none;border-radius:7px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer}
+    .btn{border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
     .btn-print{background:#e2231a;color:#fff}
+    .btn-share{background:#1a3a7a;color:#a5c8ff}
     .btn-close{background:transparent;color:#aaa;border:1px solid #555}
     .wrap{max-width:1020px;margin:20px auto;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
     .cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:14px 20px;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -8507,27 +8670,79 @@ function exportRaporPdf(){
     th{padding:4px 5px;background:#e2231a;color:#fff;text-align:left;font-size:8px;overflow:hidden;text-overflow:ellipsis;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     td{padding:3px 5px;border-bottom:1px solid #e5e7eb;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis}
     tr.even td{background:#f8f9fa;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    @media print{
-      body{background:#fff}
-      .toolbar{display:none}
-      .wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}
-      .chart-sec,.tbl-wrap{page-break-inside:avoid}
-      @page{margin:8mm;size:A4 landscape}
-    }
+    @media print{body{background:#fff}.toolbar{display:none}.wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}.chart-sec,.tbl-wrap{page-break-inside:avoid}@page{margin:8mm;size:A4 landscape}}
   </style>
   </head><body>
   <div class="toolbar">
     <div class="tit"><div>${title}</div><div class="sub">${now}</div></div>
-    <button class="btn btn-print" onclick="window.print()">🖨 PDF / Yazdır</button>
-    <button class="btn btn-close" onclick="window.close()">✕ Kapat</button>
+    <div style="display:flex;gap:6px;flex-shrink:0">
+      <button class="btn btn-print" onclick="window.print()">🖨 PDF</button>
+      <button class="btn btn-share" onclick="raporPdfPaylasim()">📤 Paylaş</button>
+      <button class="btn btn-close" onclick="window.close()">✕</button>
+    </div>
   </div>
   <div class="wrap">
     <div class="cover"><h2>${title}</h2><p>${now}</p></div>
     <div class="chart-sec">${chartHtml}</div>
     <div class="tbl-wrap">
-      <table><thead>${thHtml}</thead><tbody>${tdHtml}</tbody></table>
+      <table id="raporMainTbl"><thead>${thHtml}</thead><tbody>${tdHtml}</tbody></table>
     </div>
   </div>
+  <script>
+  function trChar(str){
+    return (str||'')
+      .replace(/₺/g,'TL').replace(/\u20ba/g,'TL')
+      .replace(/ğ/g,'g').replace(/Ğ/g,'G')
+      .replace(/ı/g,'i').replace(/İ/g,'I')
+      .replace(/ş/g,'s').replace(/Ş/g,'S')
+      .replace(/ç/g,'c').replace(/Ç/g,'C')
+      .replace(/ö/g,'o').replace(/Ö/g,'O')
+      .replace(/ü/g,'u').replace(/Ü/g,'U')
+      .replace(/[^\x00-\x7F]/g,'?');
+  }
+  async function raporPdfPaylasim(){
+    try{
+      if(typeof window.jspdf === 'undefined'){
+        alert('PDF kutuphanesi yuklenemedi. Internet baglantinizi kontrol edin.');
+        return;
+      }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+      doc.setFontSize(14);
+      doc.setTextColor(255,255,255);
+      doc.setFillColor(226,35,26);
+      doc.rect(0,0,doc.internal.pageSize.width,22,'F');
+      doc.text(trChar('${title.replace(/'/g,"\\'")}'), 10, 14);
+      doc.setFontSize(8);
+      doc.setTextColor(200,200,200);
+      doc.text(trChar('${now}'), 10, 20);
+      const tbl = document.getElementById('raporMainTbl');
+      const head = Array.from(tbl.querySelectorAll('thead tr')).map(r=>Array.from(r.querySelectorAll('th')).map(c=>trChar(c.innerText)));
+      const body = Array.from(tbl.querySelectorAll('tbody tr')).map(r=>Array.from(r.querySelectorAll('td')).map(c=>trChar(c.innerText)));
+      doc.autoTable({ head, body, startY:26, styles:{fontSize:7,cellPadding:2}, headStyles:{fillColor:[226,35,26],textColor:255}, alternateRowStyles:{fillColor:[248,249,250]} });
+      const blob = doc.output('blob');
+      const fname = trChar('${title.replace(/'/g,"\\'")}')+'_'+new Date().toLocaleDateString('tr-TR').replace(/\./g,'-')+'.pdf';
+      const file = new File([blob], fname, {type:'application/pdf'});
+      if(navigator.share){
+        try{
+          await navigator.share({files:[file], title:trChar('${title.replace(/'/g,"\\'")}')});
+        }catch(err){
+          if(err.name !== 'AbortError'){
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href=url; a.download=fname; a.click();
+            URL.revokeObjectURL(url);
+          }
+        }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href=url; a.download=fname; a.click();
+        URL.revokeObjectURL(url);
+      }
+    }catch(e){ alert('PDF olusturulamadi: '+e.message); }
+  }
+  <\/script>
   </body></html>`);
   win.document.close();
 }
@@ -9077,6 +9292,7 @@ function closeMobileMenu(){
 // ==================== MOBİL MENÜ SONU ====================
 
 loadTheme();
+updateOfflineIndicator();
 checkLock();
 load();
 // Buluttan veri çek — localStorage'dan daha yeni veri varsa uygula
@@ -9446,19 +9662,22 @@ function exportModalPrint(){
   const tdHtml = bodyRows.map((r,i)=>`<tr class="${i%2===0?'even':'odd'}">`+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('');
 
   const now = new Date().toLocaleString('tr-TR');
-  const win = window.open('','exportPrintWin_'+Date.now(),'width=1060,height=780');
+  const win = window.open('','exportPrintWin_'+Date.now());
   if(!win){ alert('Açılır pencere engellendi. Lütfen tarayıcı ayarlarından izin verin.'); return; }
 
-  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${title}</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"><\/script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:Arial,Helvetica,sans-serif;background:#e8eaed;color:#1a1a1a}
-    .toolbar{position:sticky;top:0;z-index:99;background:#1a1c20;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.5)}
-    .tit{color:#eef0f2;font-size:13px;font-weight:700;flex:1}
+    .toolbar{position:sticky;top:0;z-index:99;background:#1a1c20;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.5);flex-wrap:wrap}
+    .tit{color:#eef0f2;font-size:13px;font-weight:700;flex:1;min-width:0}
     .sub{color:#9aa0a6;font-size:10px;margin-top:1px}
-    .btn{border:none;border-radius:7px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer}
+    .btn{border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
     .btn-print{background:#e2231a;color:#fff}
+    .btn-share{background:#1a3a7a;color:#a5c8ff}
     .btn-close{background:transparent;color:#aaa;border:1px solid #555}
     .wrap{max-width:1020px;margin:20px auto;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
     .cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:20px 24px;color:#fff}
@@ -9469,27 +9688,121 @@ function exportModalPrint(){
     th{padding:6px 7px;background:#e2231a;color:#fff;text-align:left;font-size:9px;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     td{padding:5px 7px;border-bottom:1px solid #e5e7eb;color:#1a1a1a;white-space:nowrap}
     tr.even td{background:#f8f9fa;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    @media print{
-      body{background:#fff}
-      .toolbar{display:none}
-      .wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}
-      @page{margin:10mm;size:A4 ${orientation}}}
+    @media print{body{background:#fff}.toolbar{display:none}.wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}@page{margin:10mm;size:A4 ${orientation}}}
   </style>
   </head><body>
   <div class="toolbar">
     <div class="tit"><div>${title}</div><div class="sub">${sub}</div></div>
-    <button class="btn btn-print" onclick="window.print()">🖨 PDF / Yazdır</button>
-    <button class="btn btn-close" onclick="window.close()">✕ Kapat</button>
+    <div style="display:flex;gap:6px;flex-shrink:0">
+      <button class="btn btn-print" onclick="window.print()">🖨 PDF</button>
+      <button class="btn btn-share" onclick="pdfPaylasim()">📤 Paylaş</button>
+      <button class="btn btn-close" onclick="window.close()">✕</button>
+    </div>
   </div>
   <div class="wrap">
     <div class="cover"><h2>${title}</h2><p>${sub} · ${now}</p></div>
     <div class="tbl-wrap">
-      <table><thead>${thHtml}</thead><tbody>${tdHtml}</tbody></table>
+      <table id="mainTbl"><thead>${thHtml}</thead><tbody>${tdHtml}</tbody></table>
     </div>
   </div>
+  <script>
+  async function pdfPaylasim(){
+    try{
+      if(typeof window.jspdf === 'undefined'){
+        alert('PDF kutuphanesi yuklenmedii. Internet baglantinizi kontrol edin.');
+        return;
+      }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: '${orientation}', unit:'mm', format:'a4' });
+
+      // Türkçe karakterleri düzelt
+      function tr(str){ 
+        return (str||'')
+          .replace(/₺/g,'TL').replace(/\u20ba/g,'TL')
+          .replace(/ğ/g,'g').replace(/Ğ/g,'G')
+          .replace(/ı/g,'i').replace(/İ/g,'I')
+          .replace(/ş/g,'s').replace(/Ş/g,'S')
+          .replace(/ç/g,'c').replace(/Ç/g,'C')
+          .replace(/ö/g,'o').replace(/Ö/g,'O')
+          .replace(/ü/g,'u').replace(/Ü/g,'U')
+          .replace(/•/g,'-').replace(/[^\x00-\x7F]/g,'?');
+      }
+
+      doc.setFontSize(14);
+      doc.setTextColor(255,255,255);
+      doc.setFillColor(226,35,26);
+      doc.rect(0,0,doc.internal.pageSize.width,22,'F');
+      doc.text(tr('${title.replace(/'/g,"\\'")}'), 10, 14);
+      doc.setFontSize(8);
+      doc.setTextColor(200,200,200);
+      doc.text(tr('${sub.replace(/'/g,"\\'")} · ${now}'), 10, 20);
+
+      const tbl = document.getElementById('mainTbl');
+      const head = Array.from(tbl.querySelectorAll('thead tr')).map(r=>Array.from(r.querySelectorAll('th')).map(c=>tr(c.innerText)));
+      const body = Array.from(tbl.querySelectorAll('tbody tr')).map(r=>Array.from(r.querySelectorAll('td')).map(c=>tr(c.innerText)));
+
+      doc.autoTable({
+        head, body,
+        startY: 26,
+        styles:{ fontSize:8, cellPadding:2, font:'helvetica' },
+        headStyles:{ fillColor:[226,35,26], textColor:255 },
+        alternateRowStyles:{ fillColor:[248,249,250] }
+      });
+
+      const blob = doc.output('blob');
+      const fname = tr('${title.replace(/'/g,"\\'")}')+'_'+new Date().toLocaleDateString('tr-TR').replace(/\./g,'-')+'.pdf';
+      const file = new File([blob], fname, { type:'application/pdf' });
+
+      if(navigator.share){
+        try{
+          await navigator.share({ files:[file], title:tr('${title.replace(/'/g,"\\'")}') });
+        }catch(err){
+          if(err.name !== 'AbortError'){
+            // Paylaşım desteklenmiyorsa indir
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href=url; a.download=fname; a.click();
+            URL.revokeObjectURL(url);
+          }
+        }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href=url; a.download=fname; a.click();
+        URL.revokeObjectURL(url);
+      }
+    }catch(e){ alert('PDF oluşturulamadı: '+e.message); }
+  }
+  <\/script>
   </body></html>`);
   win.document.close();
 }
+function exportModalShare(){
+  const title = document.getElementById('exportModalTitle').textContent.replace(/^📊\s*/,'');
+  const sub = document.getElementById('exportModalSub').textContent;
+  const srcTable = _activeExportTable || document.getElementById('exportModalContent').querySelector('table');
+  if(!srcTable){ alert('Paylaşılacak tablo bulunamadı.'); return; }
+
+  const rows = Array.from(srcTable.querySelectorAll('tr'));
+  const isHead = r => r.querySelector('th') !== null;
+  const readRow = r => Array.from(r.querySelectorAll('th,td')).map(c=>(c.innerText||c.textContent||'').trim().replace(/\s+/g,' '));
+  const headRows = rows.filter(isHead).map(readRow);
+  const bodyRows = rows.filter(r=>!isHead(r)).map(readRow);
+
+  // Metin olarak paylaş
+  const now = new Date().toLocaleString('tr-TR');
+  let text = `📊 ${title}\n${sub} · ${now}\n\n`;
+  if(headRows.length) text += headRows.map(r=>r.join(' | ')).join('\n') + '\n' + '─'.repeat(40) + '\n';
+  text += bodyRows.map(r=>r.join(' | ')).join('\n');
+
+  if(navigator.share){
+    navigator.share({ title, text }).catch(()=>{});
+  } else {
+    // Paylaşım yoksa PDF aç
+    exportModalPrint();
+  }
+}
+
 function closeExportModal(){
   document.getElementById('exportFullModal').style.display = 'none';
   document.getElementById('exportModalContent').innerHTML = '';
