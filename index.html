@@ -1377,6 +1377,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="sidebar-tools">
       <button id="pwaInstallBtn" class="tool-btn" onclick="installPWA()" style="display:none;background:linear-gradient(90deg,#e2231a,#b81b14);color:#fff;border:none;font-weight:700;justify-content:center">📲 Uygulamayı Kur</button>
       <button class="tool-btn" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.15);border-color:rgba(255,183,77,0.4);color:#ffb74d;font-weight:700">🎯 Kampanyalar</button>
+      <button class="tool-btn" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent);font-weight:700">👥 Müşteri Takibi <span id="musteriTakipBadge" style="display:inline-block;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px"></span></button>
       <div class="sidebar-tools-title">Görünüm &amp; Yedekleme</div>
       <div id="cloudSyncIndicator" style="font-size:11px;padding:4px 6px;color:var(--muted)">☁️ Bağlanıyor...</div>
       <button class="tool-btn" id="themeBtn" onclick="toggleTheme()">🌙 Koyu Mod</button>
@@ -2361,6 +2362,14 @@ function effectiveYm(entry){
 // tip:'bonus' → o ayda minAdet aşılırsa ekstra tutar eklenir
 let kampanyaData = [];
 const STORE_KEY_KAMPANYA = 'vf_kampanya_v1';
+const STORE_KEY_MUSTERILER = 'vf_musteriler_v1'; // Müşteri kayıtları
+
+// Müşteri kaydı yapısı:
+// { id, entryDate, entryTime, cat, tip:'tesis'|'mnp', ad, soyad, tel,
+//   durum:'aktif'|'iptal'|'tasima'|'gecissiz'|'bekliyor',
+//   takipTarihi, // giriş+3ay
+//   notlar, primDurum:'dahil'|'haric'|'bekliyor' }
+let musteriler = [];
 function saveKampanyaStore(){
   try{ localStorage.setItem(STORE_KEY_KAMPANYA, JSON.stringify(kampanyaData)); }catch(e){}
   scheduleCloudSync();
@@ -2448,6 +2457,20 @@ function effectiveCountForYm(ym){
     }
   });
   return map;
+}
+// Bir ay için kampanya fiyatı dahil toplam prim tutarı
+function calcPrimWithKampanya(ym){
+  let total = 0;
+  // Entries üzerinden tarih bazlı hesapla (kampanya için tarih şart)
+  entries.forEach(e=>{
+    if(effectiveYm(e)!==ym) return;
+    const fiyat = priceFor(ym, e.cat, e.date);
+    total += e.count * fiyat;
+  });
+  // Bonus kampanyaları
+  const adetMap = effectiveCountForYm(ym);
+  CATS.forEach(c=>{ total += kampanyaBonusFor(ym, c, adetMap[c]||0); });
+  return total;
 }
 
 // ---- persistence: localStorage (kalıcı, tarayıcı kapatılıp açılsa da silinmez) ----
@@ -2762,6 +2785,7 @@ async function pullFromCloud(){
     if(data.gelirData)  gelirData  = data.gelirData;
     if(data.notlarData) notlarData = data.notlarData;
     if(data.kampanyaData) kampanyaData = data.kampanyaData;
+    if(data.musteriler)   musteriler   = data.musteriler;
     if(data.finansTrash) finansTrash = data.finansTrash;
     localStorage.setItem(STORE_KEY_ENTRIES,   JSON.stringify(entries));
     localStorage.setItem(STORE_KEY_LOG,       JSON.stringify(entryLog));
@@ -2775,6 +2799,7 @@ async function pullFromCloud(){
     localStorage.setItem(STORE_KEY_NOTLAR,    JSON.stringify(notlarData));
     localStorage.setItem(STORE_KEY_TRASH,     JSON.stringify(finansTrash));
     localStorage.setItem(STORE_KEY_KAMPANYA,  JSON.stringify(kampanyaData));
+    localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler));
     loadHedefExtra();
     recomputeAllFinans();
     const _ucd = userChangedData;
@@ -2826,6 +2851,7 @@ function load(){
   try{ gelirData = JSON.parse(localStorage.getItem(STORE_KEY_GELIR) || '[]'); }catch(e){ gelirData = []; }
   try{ notlarData = JSON.parse(localStorage.getItem(STORE_KEY_NOTLAR) || '[]'); }catch(e){ notlarData = []; }
   try{ kampanyaData = JSON.parse(localStorage.getItem(STORE_KEY_KAMPANYA) || '[]'); }catch(e){ kampanyaData = []; }
+  try{ musteriler = JSON.parse(localStorage.getItem(STORE_KEY_MUSTERILER) || '[]'); }catch(e){ musteriler = []; }
   try{ finansTrash = JSON.parse(localStorage.getItem(STORE_KEY_TRASH) || '[]'); }catch(e){ finansTrash = []; }
   try{
     const stored = localStorage.getItem(STORE_KEY_FINANS);
@@ -2880,10 +2906,17 @@ function financeFor(ym, mMap){
   const genelCats = ["PostPaid","Red","P2P","MNP","PrePaid","Mccm","İnternet"];
   const genelToplamAdet = genelCats.reduce((a,c)=>a+(m[c]||0),0);
   // Birim fiyat + kampanya bonusu
-  let primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0); // kampanya: tarih bazlı fiyat entries üzerinden uygulanır
-  // Kampanya bonusları ekle
-  if(typeof kampanyaBonusFor==='function'){
-    CATS.forEach(c=>{ primTutar += kampanyaBonusFor(ym, c, m[c]||0); });
+  // Kampanya fiyatını doğru uygulamak için entries üzerinden hesapla (tarih bazlı)
+  let primTutar = 0;
+  if(typeof calcPrimWithKampanya==='function' && !mMap){
+    // Direkt entries'ten hesapla - kampanya tarihleri de doğru uygulanır
+    primTutar = calcPrimWithKampanya(ym);
+  } else {
+    // mMap verilmişse (eski uyumluluk) - kampanya ortalamasıyla hesapla
+    primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0);
+    if(typeof kampanyaBonusFor==='function'){
+      CATS.forEach(c=>{ primTutar += kampanyaBonusFor(ym, c, m[c]||0); });
+    }
   }
   const kdv = primTutar * KDV_ORANI;
   const genelToplamTutar = primTutar + kdv;
@@ -2898,7 +2931,14 @@ function beklenenPrim(ym, mMap){
 }
 
 function activeDateVal(){ return document.getElementById('activeDate').value || todayStr(); }
-function getCount(date, cat){ const e = entries.find(e=>e.date===date && e.cat===cat); return e ? e.count : 0; }
+function getCount(date, cat){
+  // MNP_CATS için tesis + mnp ayrı entry'lerin toplamı
+  if(MNP_CATS.includes(cat)){
+    return entries.filter(e=>e.date===date&&e.cat===cat).reduce((a,e)=>a+e.count,0);
+  }
+  const e = entries.find(e=>e.date===date && e.cat===cat);
+  return e ? e.count : 0;
+}
 function nowTimeStr(){ const d = new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
 function lastEntryTime(date, cat){
   for(let i=entryLog.length-1;i>=0;i--){
@@ -2922,27 +2962,60 @@ function changeCount(cat, delta, activationDate, isMnp){
     return;
   }
 
-  let e = entries.find(e=>e.date===date && e.cat===cat);
-  if(!e){ e = {date, cat, count:0}; entries.push(e); }
+  // Silme işlemi: ne silinecek sor (MNP/Tesis ayrımı varsa)
+  if(delta < 0 && MNP_CATS.includes(cat)){
+    const mnpEntry  = entries.find(e=>e.date===date && e.cat===cat && e.mnp);
+    const tesisEntry= entries.find(e=>e.date===date && e.cat===cat && !e.mnp);
+    const mnpCnt  = mnpEntry  ? mnpEntry.count  : 0;
+    const tesisCnt= tesisEntry? tesisEntry.count : 0;
+    if(mnpCnt>0 && tesisCnt>0){
+      openSilModal(cat, date);
+      return;
+    }
+    // Sadece biri varsa onu sil
+    if(mnpCnt>0)  { _doChangeCount(date, cat, delta, null, true);  return; }
+    if(tesisCnt>0){ _doChangeCount(date, cat, delta, null, false); return; }
+    return;
+  }
+
+  _doChangeCount(date, cat, delta, activationDate, isMnp);
+}
+
+// Gerçek kayıt işlemi - tip ayrımıyla
+function _doChangeCount(date, cat, delta, activationDate, isMnp){
+  // MNP ve Tesis ayrı entry olarak saklanır: key = date + cat + (mnp? '_MNP' : '_TES')
+  const mnpKey = isMnp ? '_MNP' : '_TES';
+  const useSubtype = MNP_CATS.includes(cat);
+
+  let e;
+  if(useSubtype){
+    e = entries.find(e=>e.date===date && e.cat===cat && !!e.mnp===!!isMnp);
+  } else {
+    e = entries.find(e=>e.date===date && e.cat===cat);
+  }
+  if(!e){
+    e = {date, cat, count:0};
+    if(useSubtype) e.mnp = !!isMnp;
+    if(cat==='İnternet' && activationDate) e.activationDate = activationDate;
+    entries.push(e);
+  }
   e.count = Math.max(0, e.count + delta);
-
-  // MNP işareti
-  if(isMnp) e.mnp = true;
-
-  // İnternet aktivasyon tarihini kaydet
-  if(cat==='İnternet' && activationDate){
-    e.activationDate = activationDate;
+  if(e.count === 0){
+    entries = entries.filter(x=>x!==e);
   }
 
   if(delta > 0){
-    const logEntry = {date, cat, time: nowTimeStr(), platform: getPlatformName(), mnp: isMnp||false};
+    const logEntry = {date, cat, time: nowTimeStr(), platform: getPlatformName()};
+    if(useSubtype) logEntry.mnp = !!isMnp;
     if(isMnp) logEntry.activationDate = mnpActivationDate(date);
     if(cat==='İnternet' && activationDate) logEntry.activationDate = activationDate;
     entryLog.push(logEntry);
   } else if(delta < 0){
-    // En son kaydı sil
     for(let i=entryLog.length-1;i>=0;i--){
-      if(entryLog[i].date===date && entryLog[i].cat===cat){ entryLog.splice(i,1); break; }
+      const l=entryLog[i];
+      if(l.date===date && l.cat===cat){
+        if(!useSubtype || !!l.mnp===!!isMnp){ entryLog.splice(i,1); break; }
+      }
     }
   }
 
@@ -3692,7 +3765,7 @@ function exportTableToPdf(tableId, titleLabel){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: new Date().toLocaleString('tr-TR') };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, musteriler, pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: new Date().toLocaleString('tr-TR') };
 }
 function timeStr(){
   const d = new Date();
@@ -3753,6 +3826,7 @@ function restoreData(event){
       gelirData = data.gelirData || [];
       notlarData = data.notlarData || [];
       kampanyaData = data.kampanyaData || [];
+      musteriler   = data.musteriler   || [];
       if(data.finansData) finansData = data.finansData;
       saveEntries(); saveEntryLog(); savePricesStore(); saveYatirilanStore(); saveGelirStore(); saveNotlarStore(); saveFinansStore(); saveHedefStore();
       render();
@@ -4087,14 +4161,20 @@ function render(){
     const lastTime = lastEntryTime(activeDate, cat);
     const div = document.createElement('div');
     div.className='card';
-    // MNP/Yeni Tesis ayrımı: bu kategoride kaç MNP, kaç yeni tesis var?
+    // MNP/Yeni Tesis ayrımı: ayrı entry'lerden oku
     let mnpInfo = '';
     if(MNP_CATS.includes(cat)){
-      const ayEntries = entries.filter(e=>e.cat===cat && ymKey(e.date)===activeYm);
-      const mnpAdet = ayEntries.filter(e=>e.mnp).reduce((a,e)=>a+e.count,0);
-      const tesisAdet = ayEntries.filter(e=>!e.mnp).reduce((a,e)=>a+e.count,0);
-      const sonrakiAya = ayEntries.filter(e=>e.mnp && effectiveYm(e)!==activeYm).reduce((a,e)=>a+e.count,0);
-      if(mnpAdet||tesisAdet) mnpInfo = `<div style="font-size:10px;color:var(--muted);margin-top:4px">🆕 Tesis: ${tesisAdet} · 🔄 MNP: ${mnpAdet}${sonrakiAya?` (${sonrakiAya} sonraki aya)`:''}  </div>`;
+      const mnpE   = entries.find(e=>e.date===activeDate&&e.cat===cat&&e.mnp);
+      const tesisE = entries.find(e=>e.date===activeDate&&e.cat===cat&&!e.mnp);
+      const mnpAdet  = mnpE   ? mnpE.count   : 0;
+      const tesisAdet= tesisE ? tesisE.count  : 0;
+      // Bu aydaki tüm MNP'lerden kaçı sonraki aya sayılıyor
+      const ayMnpEntries = entries.filter(e=>ymKey(e.date)===activeYm&&e.cat===cat&&e.mnp);
+      const ayMnpToplam = ayMnpEntries.reduce((a,e)=>a+e.count,0);
+      const sonrakiAya  = ayMnpEntries.filter(e=>effectiveYm(e)!==activeYm).reduce((a,e)=>a+e.count,0);
+      if(mnpAdet||tesisAdet){
+        mnpInfo = `<div style="font-size:10px;color:var(--muted);margin-top:3px">🆕 ${tesisAdet} Tesis · 🔄 ${mnpAdet} MNP${sonrakiAya?' <span style="color:#ff9f0a">('+sonrakiAya+' sonraki ay)</span>':''}</div>`;
+      }
     }
     // İnternet: aktivasyon tarihi göster
     let intInfo = '';
@@ -7225,6 +7305,29 @@ function printManagerReport(){
   modal.style.display = 'flex';
 }
 
+// ===== SİLME TİP MODAL FONKSİYONLARI =====
+let _silCat = null, _silDate = null;
+function openSilModal(cat, date){
+  _silCat = cat; _silDate = date;
+  const mnpE  = entries.find(e=>e.date===date&&e.cat===cat&&e.mnp);
+  const tesisE= entries.find(e=>e.date===date&&e.cat===cat&&!e.mnp);
+  document.getElementById('silModalTitle').textContent = cat + ' — Hangisini silmek istiyorsunuz?';
+  document.getElementById('silModalSub').textContent =
+    '🆕 Tesis: '+(tesisE?tesisE.count:0)+' adet   🔄 MNP: '+(mnpE?mnpE.count:0)+' adet';
+  document.getElementById('silModal').style.display = 'flex';
+}
+function closeSilModal(){
+  document.getElementById('silModal').style.display = 'none';
+  _silCat = null; _silDate = null;
+}
+function confirmSil(isMnp){
+  const cat=_silCat, date=_silDate;
+  closeSilModal();
+  if(!cat) return;
+  _doChangeCount(date, cat, -1, null, isMnp);
+  saveEntries(); renderPrimPage();
+}
+
 // ===== MNP / YENİ TESİS MODAL FONKSİYONLARI =====
 let _mnpTesisCat = null;
 let _mnpTesisDate = null;
@@ -7252,17 +7355,8 @@ function confirmMnpTesis(isMnp){
   const date = _mnpTesisDate;
   closeMnpTesisModal();
   if(!cat) return;
-
-  // MNP ve ay sonu uyarısı
-  if(isMnp){
-    const actDate = mnpActivationDate(date);
-    const actYm = ymKey(actDate);
-    const entryYm = ymKey(date);
-    if(actYm !== entryYm){
-      if(!confirm('\u26a0\ufe0f Bu MNP ' + actYm + ' ay\u0131na say\u0131lacak. (Aktivasyon: ' + actDate + ') Devam?')) return;
-    }
-  }
-  changeCount(cat, 1, null, isMnp);
+  // Müşteri kayıt modalını aç
+  openMusteriKayit(cat, isMnp, date);
 }
 
 // ===== İNTERNET AKTİVASYON MODAL FONKSİYONLARI =====
@@ -7286,8 +7380,19 @@ function confirmInternetActivation(){
   const actDate = document.getElementById('internetActDate').value;
   if(!actDate){ alert('Lütfen aktivasyon tarihini girin.'); return; }
   closeInternetActModal();
-  // Aktivasyon tarihi ile kaydet
-  changeCount('İnternet', 1, actDate);
+  // Müşteri kayıt modalını aç
+  const m = document.getElementById('musteriKayitModal');
+  document.getElementById('mkCat').value = 'İnternet';
+  document.getElementById('mkAktTarih').value = actDate;
+  document.getElementById('mkTarih').value = _internetActDate || todayStr();
+  setMkTip('tesis');
+  _mkTip = 'tesis';
+  document.getElementById('mkModalTitle').textContent = '📋 Müşteri Kaydı — İnternet';
+  document.getElementById('mkModalSub').textContent = 'Aktivasyon: ' + actDate;
+  // Aktivasyon tarihini sakla
+  document.getElementById('mkAktDiv').style.display = 'block';
+  document.getElementById('mkAktTarih').value = actDate;
+  m.style.display = 'flex';
 }
 
 // ===== KAMPANYA FONKSİYONLARI =====
@@ -7415,6 +7520,271 @@ function renderKampanyaList(){
     </div>
   `).join('');
 }
+// ==================== MÜŞTERİ KAYIT SİSTEMİ ====================
+
+let _mkTip = 'tesis';
+let _mkEditId = null;
+let _musteriRaporFilter = 'hepsi';
+let _durumEditId = null;
+
+function saveMusteriStore(){
+  try{ localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler)); }catch(e){}
+  scheduleCloudSync();
+}
+
+// Müşteri kayıt modalını aç (+ butonundan)
+function openMusteriKayit(cat, isMnp, date){
+  _mkEditId = null;
+  _mkTip = isMnp ? 'mnp' : 'tesis';
+  const now = new Date();
+  document.getElementById('mkModalTitle').textContent = '📋 Müşteri Kaydı — ' + cat;
+  document.getElementById('mkModalSub').textContent = isMnp ? '🔄 MNP İşlemi' : '🆕 Yeni Tesis';
+  document.getElementById('mkEntryId').value = '';
+  document.getElementById('mkCat').value = cat;
+  document.getElementById('mkAd').value = '';
+  document.getElementById('mkTel').value = '';
+  document.getElementById('mkNot').value = '';
+  document.getElementById('mkTarih').value = date || todayStr();
+  document.getElementById('mkSaat').value = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  setMkTip(_mkTip);
+  document.getElementById('musteriKayitModal').style.display = 'flex';
+}
+
+function closeMusteriKayit(){
+  document.getElementById('musteriKayitModal').style.display = 'none';
+}
+
+function setMkTip(tip){
+  _mkTip = tip;
+  const tBtn = document.getElementById('mkTipTesis');
+  const mBtn = document.getElementById('mkTipMnp');
+  tBtn.style.background = tip==='tesis' ? '#e2231a' : 'var(--panel2)';
+  tBtn.style.color      = tip==='tesis' ? '#fff'    : 'var(--txt)';
+  tBtn.style.borderColor= tip==='tesis' ? '#e2231a' : 'var(--line)';
+  mBtn.style.background = tip==='mnp'   ? '#9b59b6' : 'var(--panel2)';
+  mBtn.style.color      = tip==='mnp'   ? '#fff'    : 'var(--txt)';
+  mBtn.style.borderColor= tip==='mnp'   ? '#9b59b6' : 'var(--line)';
+  // MNP aktivasyon tarihi
+  const aktDiv = document.getElementById('mkAktDiv');
+  if(tip==='mnp'){
+    aktDiv.style.display = 'block';
+    updateMkAktTarih();
+  } else {
+    aktDiv.style.display = 'none';
+  }
+}
+
+function updateMkAktTarih(){
+  const tarih = document.getElementById('mkTarih').value;
+  if(!tarih) return;
+  const akt = mnpActivationDate(tarih);
+  document.getElementById('mkAktTarih').value = akt;
+  const aktYm = ymKey(akt);
+  const entYm = ymKey(tarih);
+  document.getElementById('mkAktInfo').textContent =
+    aktYm !== entYm
+      ? '⚠️ Bu MNP ' + aktYm + ' ayına sayılacak!'
+      : '✅ Aynı aya (' + aktYm + ') sayılacak.';
+}
+
+function saveMusteriKayit(){
+  const cat    = document.getElementById('mkCat').value;
+  const ad     = document.getElementById('mkAd').value.trim();
+  const tel    = document.getElementById('mkTel').value.trim();
+  const tarih  = document.getElementById('mkTarih').value;
+  const saat   = document.getElementById('mkSaat').value;
+  const not    = document.getElementById('mkNot').value.trim();
+  const aktTarih = _mkTip==='mnp' ? document.getElementById('mkAktTarih').value : null;
+
+  if(!tarih){ alert('Tarih zorunludur.'); return; }
+
+  // 3 ay sonrası takip tarihi
+  const takipD = new Date(aktTarih || tarih);
+  takipD.setMonth(takipD.getMonth() + 3);
+  const takipTarihi = takipD.toISOString().slice(0,10);
+
+  const kayit = {
+    id: _mkEditId || Date.now().toString(),
+    entryDate: tarih,
+    entryTime: saat,
+    cat, tip: _mkTip, ad, tel, not,
+    aktivasyonTarihi: aktTarih,
+    takipTarihi,
+    durum: 'bekliyor',
+    primDurum: 'bekliyor',
+    olusturma: new Date().toISOString()
+  };
+
+  if(_mkEditId){
+    const idx = musteriler.findIndex(m=>m.id===_mkEditId);
+    if(idx>=0){ musteriler[idx] = {...musteriler[idx], ...kayit, id:_mkEditId}; }
+  } else {
+    musteriler.push(kayit);
+  }
+
+  saveMusteriStore();
+  closeMusteriKayit();
+
+  // Prim sayfasını güncelle (sayı eklendi mi?)
+  if(!_mkEditId){
+    // Fiilen changeCount'u çağır
+    changeCount(cat, 1, aktTarih, _mkTip==='mnp');
+  }
+}
+
+// ===== TAKİP RAPORU =====
+function openMusteriRapor(){
+  _musteriRaporFilter = 'hepsi';
+  renderMusteriRapor();
+  document.getElementById('musteriRaporModal').style.display = 'flex';
+}
+function closeMusteriRapor(){
+  document.getElementById('musteriRaporModal').style.display = 'none';
+}
+function setRaporFilter(f){
+  _musteriRaporFilter = f;
+  document.querySelectorAll('[id^="rf_"]').forEach(b=>{
+    b.style.background = b.id==='rf_'+f ? '#e2231a' : 'var(--panel2)';
+    b.style.color      = b.id==='rf_'+f ? '#fff'    : 'var(--muted)';
+  });
+  renderMusteriRapor();
+}
+
+function renderMusteriRapor(){
+  const list = document.getElementById('musteriRaporList');
+  if(!list) return;
+
+  const bugun = todayStr();
+  let filtered = [...musteriler].sort((a,b)=>b.entryDate.localeCompare(a.entryDate));
+
+  // Takip süresi geçmiş "bekliyor"ları vurgula
+  filtered.forEach(m=>{
+    if(m.durum==='bekliyor' && m.takipTarihi <= bugun) m._gecikti = true;
+    else m._gecikti = false;
+  });
+
+  if(_musteriRaporFilter !== 'hepsi'){
+    filtered = filtered.filter(m=>m.durum===_musteriRaporFilter);
+  }
+
+  if(!filtered.length){
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Kayıt bulunamadı.</div>';
+    return;
+  }
+
+  const durumRenk = {
+    bekliyor:'#ff9f0a', aktif:'#4cd964', iptal:'#ff5252', tasima:'#c084fc', gecissiz:'#ff9f0a'
+  };
+  const durumIcon = {
+    bekliyor:'⏳', aktif:'✅', iptal:'❌', tasima:'🔄', gecissiz:'⚠️'
+  };
+  const durumLabel = {
+    bekliyor:'Takipte', aktif:'Hat Aktif', iptal:'İptal', tasima:'Taşındı', gecissiz:'Geçişsiz'
+  };
+
+  list.innerHTML = filtered.map(m=>{
+    const renk = m._gecikti ? '#ff5252' : (durumRenk[m.durum]||'#888');
+    const kalan = m.takipTarihi >= bugun
+      ? Math.ceil((new Date(m.takipTarihi)-new Date(bugun))/(86400000))+' gün kaldı'
+      : Math.ceil((new Date(bugun)-new Date(m.takipTarihi))/(86400000))+' gün geçti!';
+
+    return `<div style="padding:12px 14px;border-bottom:1px solid var(--line)">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:12px;font-weight:800;color:var(--txt)">${m.ad||'İsimsiz Müşteri'}</span>
+            ${m.tel?`<span style="font-size:11px;color:var(--accent)">${m.tel}</span>`:''}
+            <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:rgba(${m.tip==='mnp'?'155,89,182':'76,217,100'},0.15);color:${m.tip==='mnp'?'#c084fc':'#4cd964'};font-weight:700">${m.tip==='mnp'?'🔄 MNP':'🆕 Tesis'}</span>
+            <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--panel2);color:var(--muted)">${m.cat}</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">
+            📅 ${m.entryDate} ${m.entryTime||''}
+            ${m.aktivasyonTarihi?` · 🔓 Aktivasyon: ${m.aktivasyonTarihi}`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:11px;font-weight:700;color:${renk}">${durumIcon[m.durum]||'⏳'} ${durumLabel[m.durum]||m.durum}</span>
+            <span style="font-size:10px;color:${m._gecikti?'#ff5252':'var(--muted)'}">📆 Takip: ${m.takipTarihi} (${kalan})</span>
+          </div>
+          ${m.not?`<div style="font-size:10px;color:var(--muted);margin-top:4px;font-style:italic">💬 ${m.not}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+          <button onclick="openMusteriDurum('${m.id}')" style="padding:6px 10px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Durum ▼</button>
+          <button onclick="deleteMusteriKayit('${m.id}')" style="padding:5px 8px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:6px;font-size:10px;cursor:pointer">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== DURUM GÜNCELLEME =====
+function openMusteriDurum(id){
+  _durumEditId = id;
+  const m = musteriler.find(x=>x.id===id);
+  if(!m) return;
+  document.getElementById('mdTitle').textContent = (m.ad||'Müşteri') + ' — Durum Güncelle';
+  document.getElementById('mdSub').textContent = m.cat + ' · ' + m.entryDate + (m.tel?' · '+m.tel:'');
+  document.getElementById('musteriDurumModal').style.display = 'flex';
+}
+function closeMusteriDurum(){
+  document.getElementById('musteriDurumModal').style.display = 'none';
+  _durumEditId = null;
+}
+function setMusteriDurum(durum){
+  if(!_durumEditId) return;
+  const m = musteriler.find(x=>x.id===_durumEditId);
+  if(!m){ closeMusteriDurum(); return; }
+
+  m.durum = durum;
+  m.durumTarihi = todayStr();
+
+  // Prim etkisi bildirimi
+  if(['iptal','tasima','gecissiz'].includes(durum)){
+    m.primDurum = 'haric';
+    closeMusteriDurum();
+    saveMusteriStore();
+    renderMusteriRapor();
+    // Kullanıcıya bildirim
+    setTimeout(()=>{
+      const confirmMsg = '\u26a0\ufe0f Prim G\u00fcncellemesi Gerekiyor\n\n'+(m.ad||'M\u00fc\u015fteri')+'('+m.cat+') \u2014 '+m.entryDate+'\nDurum: '+durum.toUpperCase()+'\n\nBu i\u015flemin primini d\u00fc\u015fmek istiyor musunuz?';
+      if(confirm(confirmMsg)){
+        // Entries'ten bu kayıtla eşleşen girişi bul ve sil
+        const isMnp = m.tip==='mnp';
+        const e = entries.find(x=>x.date===m.entryDate&&x.cat===m.cat&&!!x.mnp===isMnp);
+        if(e && e.count>0){
+          e.count--;
+          if(e.count===0) entries.splice(entries.indexOf(e),1);
+          saveEntries();
+          if(typeof renderPrimPage==='function') renderPrimPage();
+          alert('✅ Prim güncellendi. 1 adet '+m.cat+' düşüldü.');
+        } else {
+          alert('Bu aya ait eşleşen giriş bulunamadı. Lütfen manuel kontrol edin.');
+        }
+      }
+    }, 300);
+  } else {
+    m.primDurum = durum==='aktif' ? 'dahil' : 'bekliyor';
+    closeMusteriDurum();
+    saveMusteriStore();
+    renderMusteriRapor();
+  }
+}
+function deleteMusteriKayit(id){
+  if(!confirm('Bu müşteri kaydını silmek istiyor musunuz?')) return;
+  musteriler = musteriler.filter(m=>m.id!==id);
+  saveMusteriStore();
+  renderMusteriRapor();
+}
+
+// Takip süresi dolmuş bekleyenleri kontrol et (uygulama açılışında)
+function checkMusteriTakip(){
+  const bugun = todayStr();
+  const gecikmiş = musteriler.filter(m=>m.durum==='bekliyor' && m.takipTarihi <= bugun);
+  if(gecikmiş.length > 0){
+    const badge = document.getElementById('musteriTakipBadge');
+    if(badge) badge.textContent = gecikmiş.length;
+  }
+}
+
 function shareManagerReport(){
   const now = new Date().toLocaleString('tr-TR');
   const text = `📊 Yönetici Raporu\nEr-Tech İletişim · ${now}\n\nRapor uygulamadan görüntülenebilir.`;
@@ -9859,6 +10229,23 @@ function renderHedefGecmis(){
 </script>
 
 <!-- TAM EKRAN DIŞA AKTAR MODAL -->
+<!-- ===== SİLME TİP SEÇİM MODALI ===== -->
+<div id="silModal" style="display:none;position:fixed;inset:0;z-index:4001;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border-radius:16px;padding:22px 20px;max-width:300px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.5)">
+    <div style="font-size:15px;font-weight:800;color:var(--txt);margin-bottom:4px;text-align:center" id="silModalTitle">Hangi işlemi silmek istiyorsunuz?</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:18px;text-align:center" id="silModalSub"></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="confirmSil(false)" style="padding:13px;background:var(--panel2);border:2px solid var(--line);border-radius:10px;color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">🆕</span><div><div style="font-weight:800">Yeni Tesis Sil</div><div style="font-size:10px;color:var(--muted);margin-top:1px">En son eklenen tesisi siler</div></div>
+      </button>
+      <button onclick="confirmSil(true)" style="padding:13px;background:rgba(155,89,182,0.1);border:2px solid rgba(155,89,182,0.4);border-radius:10px;color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">🔄</span><div><div style="font-weight:800;color:#c084fc">MNP Sil</div><div style="font-size:10px;color:var(--muted);margin-top:1px">En son eklenen MNP'yi siler</div></div>
+      </button>
+      <button onclick="closeSilModal()" style="padding:9px;background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;margin-top:2px">İptal</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MNP / YENİ TESİS SEÇIM MODALI ===== -->
 <div id="mnpTesisModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--panel);border-radius:16px;padding:24px 20px;max-width:320px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.5)">
@@ -9963,6 +10350,112 @@ function renderHedefGecmis(){
       <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px">Kayıtlı Kampanyalar</div>
       <div id="kampanyaList"></div>
     </div>
+  </div>
+</div>
+
+<!-- ===== MÜŞTERİ KAYIT MODALI ===== -->
+<div id="musteriKayitModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.75);align-items:flex-end;justify-content:center;padding:0">
+  <div style="background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:520px;max-height:95vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;align-items:center;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:800;color:var(--txt)" id="mkModalTitle">📋 Müşteri Kaydı</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="mkModalSub"></div>
+      </div>
+      <button onclick="closeMusteriKayit()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:16px">
+      <input type="hidden" id="mkEntryId">
+
+      <!-- İşlem Tipi -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button id="mkTipTesis" onclick="setMkTip('tesis')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--line);background:var(--panel2);color:var(--txt);font-size:12px;font-weight:700;cursor:pointer">🆕 Yeni Tesis</button>
+        <button id="mkTipMnp" onclick="setMkTip('mnp')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--line);background:var(--panel2);color:var(--txt);font-size:12px;font-weight:700;cursor:pointer">🔄 MNP</button>
+      </div>
+
+      <!-- Kategori -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">KATEGORİ</div>
+        <select id="mkCat" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
+          <option>PrePaid</option><option>PostPaid</option><option>Red</option>
+          <option>P2P</option><option>Mccm</option><option>İnternet</option><option>Diğer</option>
+        </select>
+      </div>
+
+      <!-- Ad Soyad + Tel -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">AD SOYAD <span style="color:var(--line)">(opsiyonel)</span></div>
+          <input type="text" id="mkAd" placeholder="Müşteri adı..." style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">TELEFON <span style="color:var(--line)">(opsiyonel)</span></div>
+          <input type="tel" id="mkTel" placeholder="05XX XXX XX XX" inputmode="numeric" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
+        </div>
+      </div>
+
+      <!-- Tarih + Saat -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">TARİH</div>
+          <input type="date" id="mkTarih" onchange="if(_mkTip==='mnp') updateMkAktTarih()" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">SAAT</div>
+          <input type="time" id="mkSaat" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
+        </div>
+      </div>
+
+      <!-- MNP için aktivasyon -->
+      <div id="mkAktDiv" style="display:none;margin-bottom:12px">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">AKTİVASYON TARİHİ <span style="color:#9b59b6">(MNP — 3 gün sonra)</span></div>
+        <input type="date" id="mkAktTarih" style="width:100%;padding:9px 12px;background:rgba(155,89,182,0.1);border:1.5px solid rgba(155,89,182,0.4);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
+        <div style="font-size:10px;color:var(--muted);margin-top:4px" id="mkAktInfo"></div>
+      </div>
+
+      <!-- Notlar -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">NOT <span style="color:var(--line)">(opsiyonel)</span></div>
+        <textarea id="mkNot" rows="2" placeholder="Eklemek istediğiniz not..." style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box;resize:none;font-family:inherit"></textarea>
+      </div>
+
+      <button onclick="saveMusteriKayit()" style="width:100%;padding:13px;background:#e2231a;border:none;color:#fff;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer">✓ Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MÜŞTERİ TAKİP RAPORU MODALI ===== -->
+<div id="musteriRaporModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.75);align-items:flex-end;justify-content:center;padding:0">
+  <div style="background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:560px;max-height:95vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;align-items:center;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
+      <div style="flex:1;font-size:15px;font-weight:800;color:var(--txt)">📊 Müşteri Takip Raporu</div>
+      <button onclick="closeMusteriRapor()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
+    </div>
+    <!-- Filtre -->
+    <div style="display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line);flex-shrink:0;overflow-x:auto">
+      <button onclick="setRaporFilter('hepsi')" id="rf_hepsi" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:#e2231a;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Tümü</button>
+      <button onclick="setRaporFilter('bekliyor')" id="rf_bekliyor" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">⏳ Bekliyor</button>
+      <button onclick="setRaporFilter('aktif')" id="rf_aktif" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">✅ Aktif</button>
+      <button onclick="setRaporFilter('iptal')" id="rf_iptal" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">❌ İptal</button>
+      <button onclick="setRaporFilter('tasima')" id="rf_tasima" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">🔄 Taşıma</button>
+      <button onclick="setRaporFilter('gecissiz')" id="rf_gecissiz" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">⚠️ Geçişsiz</button>
+    </div>
+    <div style="flex:1;overflow-y:auto" id="musteriRaporList"></div>
+  </div>
+</div>
+
+<!-- ===== MÜŞTERİ DURUM GÜNCELLEME MODALI ===== -->
+<div id="musteriDurumModal" style="display:none;position:fixed;inset:0;z-index:4100;background:rgba(0,0,0,0.8);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border-radius:14px;padding:20px;max-width:340px;width:100%">
+    <div style="font-size:14px;font-weight:800;color:var(--txt);margin-bottom:4px" id="mdTitle">Durum Güncelle</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:16px" id="mdSub"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+      <button onclick="setMusteriDurum('aktif')" style="padding:11px;border-radius:8px;border:2px solid rgba(76,217,100,0.4);background:rgba(76,217,100,0.1);color:#4cd964;font-size:13px;font-weight:700;cursor:pointer;text-align:left">✅ Hat Aktif — Prim kesinleşsin</button>
+      <button onclick="setMusteriDurum('iptal')" style="padding:11px;border-radius:8px;border:2px solid rgba(226,35,26,0.4);background:rgba(226,35,26,0.1);color:#ff5252;font-size:13px;font-weight:700;cursor:pointer;text-align:left">❌ Hat İptal — Primi düş</button>
+      <button onclick="setMusteriDurum('tasima')" style="padding:11px;border-radius:8px;border:2px solid rgba(155,89,182,0.4);background:rgba(155,89,182,0.1);color:#c084fc;font-size:13px;font-weight:700;cursor:pointer;text-align:left">🔄 Başka Operatöre Taşındı — Primi düş</button>
+      <button onclick="setMusteriDurum('gecissiz')" style="padding:11px;border-radius:8px;border:2px solid rgba(255,159,10,0.4);background:rgba(255,159,10,0.1);color:#ff9f0a;font-size:13px;font-weight:700;cursor:pointer;text-align:left">⚠️ Geçiş Sağlanamadı — Primi düş</button>
+      <button onclick="setMusteriDurum('bekliyor')" style="padding:11px;border-radius:8px;border:2px solid var(--line);background:var(--panel2);color:var(--muted);font-size:12px;cursor:pointer;text-align:left">⏳ Takipte Bırak</button>
+    </div>
+    <button onclick="closeMusteriDurum()" style="width:100%;padding:9px;background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer">İptal</button>
   </div>
 </div>
 
