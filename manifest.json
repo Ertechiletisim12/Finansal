@@ -1,6 +1,6 @@
 {
-  "name": "Finansal Analiz",
-  "short_name": "Finans",
+  "name": "Er-Tech İletişim",
+  "short_name": "Er-Tech",
   "description": "Finansal analiz ve takip uygulaması",
   "start_url": "./index.html",
   "display": "standalone",
