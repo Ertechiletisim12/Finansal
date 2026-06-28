@@ -2530,24 +2530,21 @@ function renderEntryLogCharts(){
 }
 // ===== EntryLog Saat Analizi Sonu =====
 
-// ==================== JSONBIN BULUT SENKRON ====================
-const JSONBIN_BIN_ID = '6a3e70aef5f4af5e29341c8f';
-const JSONBIN_KEY    = '$2a$10$ppE2ax6U8mCjxO0spE0jbuECRpz401MQW4N.kwTVqGMHyV07e27My';
-const JSONBIN_URL    = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+// ==================== FIREBASE BULUT SENKRON ====================
+const FIREBASE_URL = 'https://finansal-analiz-f85ef-default-rtdb.europe-west1.firebasedatabase.app/data.json';
 
 let cloudSyncTimer = null;
-let cloudSyncStatus = 'idle'; // idle | saving | saved | error
-let lastCloudHash = ''; // son bilinen cloud snapshot hash
+let cloudSyncStatus = 'idle';
+let lastCloudHash = '';
 let cloudPollTimer = null;
-let userChangedData = false; // kullanıcı gerçekten veri değiştirdi mi?
+let userChangedData = false;
 
 function scheduleCloudSync(){
-  userChangedData = true; // kullanıcı bir şey değiştirdi
+  userChangedData = true;
   if(cloudSyncTimer) clearTimeout(cloudSyncTimer);
-  cloudSyncTimer = setTimeout(pushToCloud, 1500); // 1.5 sn bekle
+  cloudSyncTimer = setTimeout(pushToCloud, 1500);
 }
 
-// Basit hash — veri değişti mi anlayalım
 function quickHash(obj){
   const s = JSON.stringify(obj);
   let h = 0;
@@ -2555,24 +2552,17 @@ function quickHash(obj){
   return h.toString();
 }
 
-// Entry merge: date+cat bazlı, delta count ekle (ekleme ve silme destekli)
-// lastSyncedEntries = son başarılı sync anındaki snapshot
 let lastSyncedEntries = null;
 
 function mergeEntries(local, cloud){
   const cloudMap = {};
   (cloud||[]).forEach(e=>{ cloudMap[e.date+'_'+e.cat] = e.count||0; });
-
-  // Base: son sync anındaki state (yoksa cloud'u kullan)
   const baseMap = {};
   (lastSyncedEntries||cloud||[]).forEach(e=>{ baseMap[e.date+'_'+e.cat] = e.count||0; });
-
-  // Tüm key'leri topla
   const allKeys = new Set([
     ...Object.keys(cloudMap),
     ...(local||[]).map(e=>e.date+'_'+e.cat)
   ]);
-
   const result = [];
   allKeys.forEach(k=>{
     const [date, cat] = k.split('_');
@@ -2580,17 +2570,13 @@ function mergeEntries(local, cloud){
     const localCount = localEntry ? (localEntry.count||0) : 0;
     const baseCount  = baseMap[k]||0;
     const cloudCount = cloudMap[k]||0;
-    const delta = localCount - baseCount; // bu cihazda yapılan değişiklik (+/-)
+    const delta = localCount - baseCount;
     const merged = cloudCount + delta;
-    if(merged > 0){
-      result.push({date, cat, count: merged});
-    }
-    // merged <= 0 ise bu cihaz sildi veya hiç yok — ekleme
+    if(merged > 0) result.push({date, cat, count: merged});
   });
   return result;
 }
 
-// Platform algıla
 function getPlatformName(){
   const ua = navigator.userAgent;
   if(/Android/i.test(ua)) return '📱 Android';
@@ -2602,39 +2588,30 @@ function getPlatformName(){
 
 async function pushToCloud(){
   try{
-    // Kullanıcı değişiklik yapmadıysa push etme
-    if(!userChangedData){
-      return;
-    }
-    userChangedData = false; // flag'i sıfırla
+    if(!userChangedData) return;
+    userChangedData = false;
     updateCloudIndicator('saving');
-    // Race condition'ı azaltmak için rastgele kısa gecikme (0-1500ms)
     await new Promise(r=>setTimeout(r, Math.random()*300));
-    // Cloud'u çek, merge et
-    const res0 = await fetch(JSONBIN_URL, {
-      headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' }
-    });
+    // Önce cloud'u çek, merge et
+    const res0 = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if(res0.ok){
       const cloudData = await res0.json();
       if(cloudData && cloudData.data !== 'init'){
-        // Delta merge: bu cihazda ne kadar eklendi?
         entries = mergeEntries(entries, cloudData.entries||[]);
         if(cloudData.entryLog) entryLog = [...new Map([...(cloudData.entryLog||[]),...(entryLog||[])].map(e=>[e.date+'_'+e.cat,e])).values()];
-        // localStorage güncelle
         localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries));
         localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
-        // lastSyncedEntries'i cloud state ile güncelle (merge sonrası)
         lastSyncedEntries = JSON.parse(JSON.stringify(entries));
       }
     }
     const payload = getBackupData();
     const hash = quickHash(payload);
-    const res = await fetch(JSONBIN_URL, {
+    const res = await fetch(FIREBASE_URL, {
       method: 'PUT',
-      headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_KEY },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    if(res.ok || res.status === 304){
+    if(res.ok){
       lastCloudHash = hash;
       lastSyncedEntries = JSON.parse(JSON.stringify(entries));
       updateCloudIndicator('saved', getPlatformName() + ' · ' + new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
@@ -2644,17 +2621,13 @@ async function pushToCloud(){
 
 async function pullFromCloud(){
   try{
-    const res = await fetch(JSONBIN_URL, {
-      headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' }
-    });
+    const res = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if(!res.ok){ updateCloudIndicator('error'); return false; }
     const data = await res.json();
-    if(!data || data.data === 'init') { updateCloudIndicator('saved'); return false; }
-    // Değişiklik var mı?
+    if(!data || data.data === 'init'){ updateCloudIndicator('saved'); return false; }
     const hash = quickHash(data);
     if(hash === lastCloudHash){ updateCloudIndicator('saved'); return false; }
     lastCloudHash = hash;
-    // Veriyi uygula
     if(data.pin) localStorage.setItem('vf_pin', data.pin);
     if(data.entries)    { entries    = data.entries; lastSyncedEntries = JSON.parse(JSON.stringify(entries)); }
     if(data.entryLog)   entryLog   = data.entryLog;
@@ -2667,7 +2640,6 @@ async function pullFromCloud(){
     if(data.gelirData)  gelirData  = data.gelirData;
     if(data.notlarData) notlarData = data.notlarData;
     if(data.finansTrash) finansTrash = data.finansTrash;
-    // localStorage'a da yaz
     localStorage.setItem(STORE_KEY_ENTRIES,   JSON.stringify(entries));
     localStorage.setItem(STORE_KEY_LOG,       JSON.stringify(entryLog));
     localStorage.setItem(STORE_KEY_PRICES,    JSON.stringify(prices));
@@ -2681,7 +2653,6 @@ async function pullFromCloud(){
     localStorage.setItem(STORE_KEY_TRASH,     JSON.stringify(finansTrash));
     loadHedefExtra();
     recomputeAllFinans();
-    // Polling render'ı userChangedData'yı etkilemesin
     const _ucd = userChangedData;
     requestAnimationFrame(()=>{
       if(typeof currentPage !== 'undefined'){
@@ -2705,22 +2676,22 @@ function updateCloudIndicator(status, extra){
   cloudSyncStatus = status;
   const el = document.getElementById('cloudSyncIndicator');
   if(!el) return;
-  if(extra) lastPlatformInfo = extra; // yeni bilgi varsa sakla
+  if(extra) lastPlatformInfo = extra;
   if(status === 'saving') el.innerHTML = '☁️ <span style="color:var(--gold)">Kaydediliyor...</span>';
   else if(status === 'saved') el.innerHTML = '☁️ <span style="color:var(--green)">Bulut ✓</span>'+(lastPlatformInfo?` <span style="color:var(--muted);font-size:10px">${lastPlatformInfo}</span>`:'');
   else if(status === 'error') el.innerHTML = '☁️ <span style="color:#ff5252">Bağlantı yok</span>';
   else el.innerHTML = '☁️';
 }
 
-// 5 saniyede bir cloud'dan çek — diğer cihazların değişikliklerini al
+// 60 saniyede bir cloud'dan çek
 function startCloudPolling(){
   if(cloudPollTimer) clearInterval(cloudPollTimer);
   cloudPollTimer = setInterval(async ()=>{
     if(cloudSyncStatus === 'saving') return;
     await pullFromCloud();
-  }, 5000); // 5 saniye
+  }, 2000);
 }
-// ==================== JSONBIN SONU ====================
+// ==================== FIREBASE SONU ====================
 
 function load(){
   try{ entries = JSON.parse(localStorage.getItem(STORE_KEY_ENTRIES) || '[]'); }catch(e){ entries = []; }
