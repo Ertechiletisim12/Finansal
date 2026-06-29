@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v27 · 29.06.2026 14:13</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v28 · 29.06.2026 14:20</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v27 · Son güncelleme: 29.06.2026 14:13</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v28 · Son güncelleme: 29.06.2026 14:20</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v27';
-const BUILD_DATE = '29.06.2026 14:13';
+const APP_VERSION = 'v28';
+const BUILD_DATE = '29.06.2026 14:20';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -2697,7 +2697,7 @@ let userChangedData = false;
 function scheduleCloudSync(){
   userChangedData = true;
   if(cloudSyncTimer) clearTimeout(cloudSyncTimer);
-  cloudSyncTimer = setTimeout(pushToCloud, 1500);
+  cloudSyncTimer = setTimeout(pushToCloud, 3000);
 }
 
 function quickHash(obj){
@@ -2710,27 +2710,50 @@ function quickHash(obj){
 let lastSyncedEntries = null;
 
 function mergeEntries(local, cloud){
+  // Key: date + '_' + cat + '_' + (mnp ? 'MNP' : 'TES')
+  // MNP ve Tesis ayrımını koru
+  function entryKey(e){
+    const mnpSuffix = (e.mnp === true) ? '_MNP' : '_TES';
+    return e.date + '_' + e.cat + mnpSuffix;
+  }
+
   const cloudMap = {};
-  (cloud||[]).forEach(e=>{ cloudMap[e.date+'_'+e.cat] = e.count||0; });
+  (cloud||[]).forEach(e=>{ cloudMap[entryKey(e)] = {count: e.count||0, entry: e}; });
+
   const baseMap = {};
-  (lastSyncedEntries||cloud||[]).forEach(e=>{ baseMap[e.date+'_'+e.cat] = e.count||0; });
+  (lastSyncedEntries||cloud||[]).forEach(e=>{ baseMap[entryKey(e)] = e.count||0; });
+
   const allKeys = new Set([
     ...Object.keys(cloudMap),
-    ...(local||[]).map(e=>e.date+'_'+e.cat)
+    ...(local||[]).map(e=>entryKey(e))
   ]);
+
   const result = [];
   allKeys.forEach(k=>{
-    const [date, cat] = k.split('_');
-    const localEntry = (local||[]).find(e=>e.date+'_'+e.cat===k);
+    const localEntry = (local||[]).find(e=>entryKey(e)===k);
+    const cloudEntry = cloudMap[k]?.entry;
     const localCount = localEntry ? (localEntry.count||0) : 0;
-    const baseCount  = baseMap[k]||0;
-    const cloudCount = cloudMap[k]||0;
-    const delta = localCount - baseCount;
-    const merged = cloudCount + delta;
-    if(merged > 0) result.push({date, cat, count: merged});
+    const cloudCount = cloudMap[k]?.count || 0;
+    const baseCount  = baseMap[k] || 0;
+
+    // 3-way merge: local değişim + cloud değişim
+    const localDelta = localCount - baseCount;
+    const cloudDelta = cloudCount - baseCount;
+    const merged = Math.max(0, baseCount + localDelta + cloudDelta);
+
+    if(merged > 0){
+      const base = localEntry || cloudEntry || {date:'', cat:''};
+      const parts = k.split('_');
+      const isMnp = k.endsWith('_MNP');
+      const r = {date: base.date, cat: base.cat, count: merged};
+      if(isMnp !== undefined) r.mnp = isMnp;
+      if(base.activationDate) r.activationDate = base.activationDate;
+      result.push(r);
+    }
   });
   return result;
 }
+
 
 function getPlatformName(){
   const ua = navigator.userAgent;
@@ -2753,7 +2776,13 @@ async function pushToCloud(){
       const cloudData = await res0.json();
       if(cloudData && cloudData.data !== 'init'){
         entries = mergeEntries(entries, cloudData.entries||[]);
-        if(cloudData.entryLog) entryLog = [...new Map([...(cloudData.entryLog||[]),...(entryLog||[])].map(e=>[e.date+'_'+e.cat,e])).values()];
+        if(cloudData.entryLog){
+          // ID bazlı merge - her kayıt benzersiz ID ile korunur
+          const logById = new Map();
+          (cloudData.entryLog||[]).forEach(l => { if(l.id) logById.set(l.id, l); });
+          (entryLog||[]).forEach(l => { if(l.id) logById.set(l.id, l); }); // lokal öncelikli
+          entryLog = [...logById.values()].sort((a,b)=>(a.date+a.time||'').localeCompare(b.date+b.time||''));
+        }
         localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries));
         localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
         lastSyncedEntries = JSON.parse(JSON.stringify(entries));
@@ -2775,6 +2804,8 @@ async function pushToCloud(){
 }
 
 async function pullFromCloud(){
+  // Kullanıcı yeni veri girdiyse pull yapma - üzerine yazmasın
+  if(userChangedData) return false;
   try{
     const res = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if(!res.ok){ updateCloudIndicator('error'); return false; }
@@ -7921,61 +7952,57 @@ function updateMkAktTarih(){
 }
 
 function saveMusteriKayit(){
-  const cat    = document.getElementById('mkCat').value;
-  const ad     = document.getElementById('mkAd').value.trim();
-  const tel    = document.getElementById('mkTel').value.trim();
-  const tarih  = document.getElementById('mkTarih').value;
-  const saat   = document.getElementById('mkSaat').value;
-  const not    = document.getElementById('mkNot').value.trim();
-  // _mkTip: hem global değişken hem hidden input'tan kontrol et
-  // mkTipVal: 3 kaynaktan kontrol et - en güvenilirini kullan
-  const _hiddenVal = document.getElementById('mkTipHidden')?.value;
-  const mkTipVal = (window._confirmedIsMnp === true) ? 'mnp' 
-                 : (window._confirmedIsMnp === false) ? 'tesis'
-                 : (_hiddenVal || _mkTip || 'tesis');
-  const aktTarih = mkTipVal==='mnp' ? document.getElementById('mkAktTarih').value : null;
+  const cat     = document.getElementById('mkCat').value;
+  const ad      = document.getElementById('mkAd').value.trim();
+  const tel     = document.getElementById('mkTel').value.trim();
+  const tarih   = document.getElementById('mkTarih').value;
+  const saat    = document.getElementById('mkSaat').value;
+  const not     = document.getElementById('mkNot').value.trim();
+
+  // İşlem tipini belirle - _confirmedIsMnp en güvenilir kaynak
+  // Her kayıt açılışında set edildi, temizlenmeden kullan
+  const isMnp = (window._confirmedIsMnp === true);
+  const mkTipVal = isMnp ? 'mnp' : 'tesis';
+  const aktTarih = isMnp ? (document.getElementById('mkAktTarih').value || null) : null;
 
   if(!tarih){ alert('Tarih zorunludur.'); return; }
 
-  // 3 ay sonrası takip tarihi
+  // Takip tarihi (3 ay sonrası)
   const takipD = new Date(aktTarih || tarih);
   takipD.setMonth(takipD.getMonth() + 3);
   const takipTarihi = takipD.toISOString().slice(0,10);
 
-  // Otomatik onay: MNP hariç hepsi aktif sayılır
-  const otomatikAktif = mkTipVal !== 'mnp';
-  const baslangicDurum = otomatikAktif ? 'aktif' : 'bekliyor';
-  const baslangicPrim  = otomatikAktif ? 'dahil' : 'bekliyor';
-
+  const otomatikAktif = !isMnp;
   const kayit = {
     id: _mkEditId || Date.now().toString(),
-    entryDate: tarih,
-    entryTime: saat,
+    entryDate: tarih, entryTime: saat,
     cat, tip: mkTipVal, ad, tel, not,
-    aktivasyonTarihi: aktTarih,
-    takipTarihi,
-    durum: baslangicDurum,
-    primDurum: baslangicPrim,
+    aktivasyonTarihi: aktTarih, takipTarihi,
+    durum: otomatikAktif ? 'aktif' : 'bekliyor',
+    primDurum: otomatikAktif ? 'dahil' : 'bekliyor',
     olusturma: new Date().toISOString()
   };
 
   if(_mkEditId){
     const idx = musteriler.findIndex(m=>m.id===_mkEditId);
-    if(idx>=0){ musteriler[idx] = {...musteriler[idx], ...kayit, id:_mkEditId}; }
+    if(idx>=0) musteriler[idx] = {...musteriler[idx], ...kayit, id:_mkEditId};
   } else {
     musteriler.push(kayit);
   }
-
   saveMusteriStore();
+
+  // Modal kapat
   closeMusteriKayit();
 
-  // Prim sayısını güncelle - direkt _doChangeCount kullan (modal tetiklemeden)
+  // Prim sayısını güncelle (sadece yeni kayıt, edit değil)
   if(!_mkEditId){
-    _doChangeCount(tarih, cat, 1, aktTarih, mkTipVal==='mnp');
-    saveEntries();
-    if(typeof renderPrimPage==='function') render();
+    _doChangeCount(tarih, cat, 1, aktTarih, isMnp);
   }
+
+  // _confirmedIsMnp'yi temizle - bir sonraki kayıt için taze başlasın
+  window._confirmedIsMnp = null;
 }
+
 
 // ===== TAKİP RAPORU =====
 function openMusteriRapor(){
