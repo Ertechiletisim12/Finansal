@@ -3042,19 +3042,31 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp){
   entries = entries.filter(e=>e.count>0);
 
   // entryLog'da bu date+cat için fazla kayıt varsa count kadar tut
-  const currentCount = entries.find(e=>e.date===date&&e.cat===cat)?.count||0;
+  // MNP ve Tesis AYRI sayılır - her birinin kendi count'u kadar log tutulur
+  const tesisCt = entries.find(e=>e.date===date&&e.cat===cat&&!e.mnp)?.count||0;
+  const mnpCt   = entries.find(e=>e.date===date&&e.cat===cat&&!!e.mnp)?.count||0;
+  const otherCt = MNP_CATS.includes(cat) ? 0 : (entries.find(e=>e.date===date&&e.cat===cat)?.count||0);
   const logEntries = [];
-  let kept = 0;
+  let keptTesis=0, keptMnp=0, keptOther=0;
   for(let i=entryLog.length-1;i>=0;i--){
-    if(entryLog[i].date===date && entryLog[i].cat===cat){
-      if(kept < currentCount){ logEntries.unshift(entryLog[i]); kept++; }
+    const l = entryLog[i];
+    if(l.date===date && l.cat===cat){
+      if(MNP_CATS.includes(cat)){
+        if(!!l.mnp){
+          if(keptMnp < mnpCt){ logEntries.unshift(l); keptMnp++; }
+        } else {
+          if(keptTesis < tesisCt){ logEntries.unshift(l); keptTesis++; }
+        }
+      } else {
+        if(keptOther < otherCt){ logEntries.unshift(l); keptOther++; }
+      }
     } else {
-      logEntries.unshift(entryLog[i]);
+      logEntries.unshift(l);
     }
   }
   entryLog = logEntries;
 
-  saveEntries(); saveEntryLog(); render();
+    saveEntries(); saveEntryLog(); render();
   vibrate(delta > 0 ? [30] : [10, 50, 10]); // artış: kısa titreşim, azalış: çift titreşim
 }
 
@@ -4194,11 +4206,9 @@ function render(){
     // MNP/Yeni Tesis ayrımı
     let mnpInfo = '';
     if(MNP_CATS.includes(cat)){
-      // Bugünkü tarih için
-      const mnpE   = entries.find(e=>e.date===activeDate&&e.cat===cat&&!!e.mnp);
-      const tesisE = entries.find(e=>e.date===activeDate&&e.cat===cat&&!e.mnp);
-      const mnpAdet   = mnpE   ? mnpE.count   : 0;
-      const tesisAdet = tesisE ? tesisE.count  : 0;
+      // Bugünkü tarih için - tüm entries'ten bul (date eşleşmesi)
+      const mnpAdet   = entries.filter(e=>e.date===activeDate&&e.cat===cat&&!!e.mnp).reduce((a,e)=>a+e.count,0);
+      const tesisAdet = entries.filter(e=>e.date===activeDate&&e.cat===cat&&!e.mnp).reduce((a,e)=>a+e.count,0);
       // Bu AYdaki tüm kayıtlar (birden fazla gün)
       const ayMnpEntries = entries.filter(e=>ymKey(e.date)===activeYm&&e.cat===cat&&!!e.mnp);
       const ayTesisEntries = entries.filter(e=>ymKey(e.date)===activeYm&&e.cat===cat&&!e.mnp);
