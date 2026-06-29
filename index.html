@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v28 · 29.06.2026 14:20</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v29 · 29.06.2026 14:31</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v28 · Son güncelleme: 29.06.2026 14:20</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v29 · Son güncelleme: 29.06.2026 14:31</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v28';
-const BUILD_DATE = '29.06.2026 14:20';
+const APP_VERSION = 'v29';
+const BUILD_DATE = '29.06.2026 14:31';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -2693,6 +2693,8 @@ let cloudSyncStatus = 'idle';
 let lastCloudHash = '';
 let cloudPollTimer = null;
 let userChangedData = false;
+let isPushingToCloud = false;
+let lastPushTime = 0;
 
 function scheduleCloudSync(){
   userChangedData = true;
@@ -2767,6 +2769,8 @@ function getPlatformName(){
 async function pushToCloud(){
   try{
     if(!userChangedData) return;
+    if(isPushingToCloud) return;
+    isPushingToCloud = true;
     userChangedData = false;
     updateCloudIndicator('saving');
     await new Promise(r=>setTimeout(r, Math.random()*300));
@@ -2801,11 +2805,15 @@ async function pushToCloud(){
       updateCloudIndicator('saved', getPlatformName() + ' · ' + new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
     } else { updateCloudIndicator('error'); }
   } catch(e){ updateCloudIndicator('error'); }
+  isPushingToCloud = false;
+  lastPushTime = Date.now();
 }
 
 async function pullFromCloud(){
-  // Kullanıcı yeni veri girdiyse pull yapma - üzerine yazmasın
+  // Push devam ediyorsa veya son degisiklikten 5sn gecmemisse pull yapma
+  if(isPushingToCloud) return false;
   if(userChangedData) return false;
+  if(Date.now() - lastPushTime < 5000) return false;
   try{
     const res = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if(!res.ok){ updateCloudIndicator('error'); return false; }
@@ -2879,7 +2887,7 @@ function startCloudPolling(){
   cloudPollTimer = setInterval(async ()=>{
     if(cloudSyncStatus === 'saving') return;
     await pullFromCloud();
-  }, 2000);
+  }, 10000);
 }
 // ==================== FIREBASE SONU ====================
 
@@ -4258,8 +4266,10 @@ function render(){
       ).reduce((a,e)=>a+e.count, 0);
 
       if(mnpAdet || tesisAdet || devirGelenMnp){
+        // Sonraki aya devir gidenleri Tesis/MNP sayısından çıkar - kart sayısına dahil değil
+        const mnpBuAy = mnpAdet - sonrakiAya;  // bu aya sayılan MNP
         mnpInfo = '<div style="font-size:10px;color:var(--muted);margin-top:3px">'
-          + '🆕 ' + tesisAdet + ' Tesis · 🔄 ' + mnpAdet + ' MNP'
+          + '🆕 ' + tesisAdet + ' Tesis · 🔄 ' + Math.max(0,mnpBuAy) + ' MNP'
           + (sonrakiAya ? ' <span style="color:#ff9f0a"> · '+sonrakiAya+' sonraki aya devir</span>' : '')
           + (devirGelenMnp ? ' <span style="color:#4cd964"> · '+devirGelenMnp+' önceki aydan devir</span>' : '')
           + '</div>';
