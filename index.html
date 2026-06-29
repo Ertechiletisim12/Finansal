@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v36 · 29.06.2026 15:48</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v37 · 29.06.2026 15:57</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v36 · Son güncelleme: 29.06.2026 15:48</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v37 · Son güncelleme: 29.06.2026 15:57</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v36';
-const BUILD_DATE = '29.06.2026 15:48';
+const APP_VERSION = 'v37';
+const BUILD_DATE = '29.06.2026 15:57';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -8242,37 +8242,41 @@ function setMusteriDurum(durum){
   m.durum = durum;
   m.durumTarihi = todayStr();
 
-  // Prim etkisi bildirimi
+  // Durum güncelle - her durumda kaydet ve kartları yenile
   if(['iptal','tasima','gecissiz'].includes(durum)){
     m.primDurum = 'haric';
-    closeMusteriDurum();
-    saveMusteriStore();
-    renderMusteriRapor();
-    // Kullanıcıya bildirim
+  } else {
+    m.primDurum = durum==='aktif' ? 'dahil' : 'bekliyor';
+  }
+
+  closeMusteriDurum();
+  saveMusteriStore();
+  renderMusteriRapor();
+  checkMusteriTakip();
+  render(); // Her durumda kartları güncelle
+
+  // İptal/taşıma/geçişsiz ise prim düşme onayı sor
+  if(['iptal','tasima','gecissiz'].includes(durum)){
     setTimeout(()=>{
-      const confirmMsg = '\u26a0\ufe0f Prim G\u00fcncellemesi Gerekiyor\n\n'+(m.ad||'M\u00fc\u015fteri')+'('+m.cat+') \u2014 '+m.entryDate+'\nDurum: '+durum.toUpperCase()+'\n\nBu i\u015flemin primini d\u00fc\u015fmek istiyor musunuz?';
+      const confirmMsg = '\u26a0\ufe0f Prim G\u00fcncellemesi\n\n'+(m.ad||'M\u00fc\u015fteri')+' ('+m.cat+') \u2014 '+m.entryDate+'\nDurum: '+durum.toUpperCase()+'\n\nBu i\u015flemin primini d\u00fc\u015fmek istiyor musunuz?';
       if(confirm(confirmMsg)){
-        // Entries'ten bu kayıtla eşleşen girişi bul ve sil
         const isMnp = m.tip==='mnp';
         const e = entries.find(x=>x.date===m.entryDate&&x.cat===m.cat&&!!x.mnp===isMnp);
         if(e && e.count>0){
           e.count--;
           if(e.count===0) entries.splice(entries.indexOf(e),1);
+          // EntryLog'dan da sil
+          const logIdx = entryLog.findLastIndex(l=>l.date===m.entryDate&&l.cat===m.cat&&!!l.mnp===isMnp);
+          if(logIdx>=0) entryLog.splice(logIdx,1);
           saveEntries();
-          if(typeof renderPrimPage==='function') render();
+          saveEntryLog();
+          render();
           alert('✅ Prim güncellendi. 1 adet '+m.cat+' düşüldü.');
         } else {
-          alert('Bu aya ait eşleşen giriş bulunamadı. Lütfen manuel kontrol edin.');
+          alert('Bu aya ait eşleşen giriş bulunamadı.');
         }
       }
     }, 300);
-  } else {
-    m.primDurum = durum==='aktif' ? 'dahil' : 'bekliyor';
-    closeMusteriDurum();
-    saveMusteriStore();
-    renderMusteriRapor();
-    checkMusteriTakip();
-    render(); // Kartları güncelle
   }
 }
 function toggleSelectAll(checked){
