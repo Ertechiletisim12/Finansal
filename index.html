@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v46 · 29.06.2026 23:14</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v50 · 29.06.2026 23:29</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v46 · Son güncelleme: 29.06.2026 23:14</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v50 · Son güncelleme: 29.06.2026 23:29</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v46';
-const BUILD_DATE = '29.06.2026 23:14';
+const APP_VERSION = 'v50';
+const BUILD_DATE = '29.06.2026 23:29';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -3122,6 +3122,7 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp){
   if(delta > 0){
     // ── EKLE: Her kayıt için benzersiz ID üret ──
     const entryId = 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6);
+    window._lastEntryId = entryId; // saveMusteriKayit okuyacak
 
     // entries: count bazlı (geriye dönük uyumluluk için koru)
     let e;
@@ -5505,9 +5506,9 @@ function renderDash(){
   const dc = document.getElementById('clockDash');
   if(dc) dc.innerHTML = document.getElementById('clock')?.innerHTML || '';
 
-  // Prim hesapla
+  // Prim hesapla - MNP için effectiveYm kullan (aktivasyon ayına say)
   const mMap = {};
-  entries.forEach(e=>{ const k=e.date.slice(0,7); if(!mMap[k]) mMap[k]={}; mMap[k][e.cat]=(mMap[k][e.cat]||0)+e.count; });
+  entries.forEach(e=>{ const k=effectiveYm(e); if(!mMap[k]) mMap[k]={}; mMap[k][e.cat]=(mMap[k][e.cat]||0)+e.count; });
   const curF  = financeFor(now, mMap);
   const prevF = financeFor(prevYm, mMap);
   const curKdv  = curF.genelToplamTutar;
@@ -7701,11 +7702,14 @@ function renderIslemList(cat, date){
     const aktTarih = l.activationDate ? ` · Aktivasyon: ${l.activationDate}` : '';
 
     // Müşteri kaydı eşleştir (id veya saat bazlı)
-    const musteri = musteriler.find(m =>
-      m.entryDate === date && m.cat === cat &&
-      (!MNP_CATS.includes(cat) || m.tip === (isMnp ? 'mnp' : 'tesis')) &&
-      m.entryTime && l.time && m.entryTime.slice(0,5) === l.time.slice(0,5)
-    );
+    // Müşteri eşleştir: önce logId, sonra saat bazlı
+    const silTip2 = MNP_CATS.includes(cat) ? (isMnp ? 'mnp' : 'tesis') : null;
+    const musteri = musteriler.find(m => m.logId && m.logId === l.id)
+      || musteriler.find(m =>
+          m.entryDate === date && m.cat === cat &&
+          (!silTip2 || m.tip === silTip2) &&
+          m.entryTime && l.time && m.entryTime.slice(0,5) === l.time.slice(0,5)
+        );
 
     // Her log benzersiz ID'ye sahip (yeni kayıtlarda e_ prefix'li)
     // Eski kayıtlarda yoksa geçici ID ata
@@ -7723,10 +7727,16 @@ function renderIslemList(cat, date){
           ${l.platform ? `<span style="font-size:10px;color:var(--muted)">${l.platform}</span>` : ''}
         </div>
         ${aktTarih ? `<div style="font-size:11px;color:#9b59b6">${aktTarih}</div>` : ''}
-        ${musteri ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">
-          👤 ${musteri.ad || 'İsimsiz'} ${musteri.tel ? '· ' + musteri.tel : ''}
-          <span style="margin-left:4px;font-size:9px;padding:1px 6px;border-radius:8px;background:${musteri.durum==='aktif'?'rgba(76,217,100,0.15)':'rgba(255,159,10,0.15)'};color:${musteri.durum==='aktif'?'#4cd964':'#ff9f0a'}">${musteri.durum}</span>
-        </div>` : ''}
+        <div style="margin-top:4px;padding:5px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          ${musteri ? `
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-size:12px;font-weight:700;color:var(--txt)">👤 ${musteri.ad || 'İsimsiz Müşteri'}</span>
+              ${musteri.tel ? `<span style="font-size:11px;color:var(--accent)">📞 ${musteri.tel}</span>` : ''}
+              <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${musteri.durum==='aktif'?'rgba(76,217,100,0.2)':musteri.durum==='bekliyor'?'rgba(255,159,10,0.2)':'rgba(255,82,82,0.2)'};color:${musteri.durum==='aktif'?'#4cd964':musteri.durum==='bekliyor'?'#ff9f0a':'#ff5252'};font-weight:700">${musteri.durum==='aktif'?'✅ Aktif':musteri.durum==='bekliyor'?'⏳ Bekliyor':'❌ '+musteri.durum}</span>
+            </div>
+            ${musteri.not ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">📝 ${musteri.not}</div>` : ''}
+          ` : `<span style="font-size:10px;color:var(--muted);font-style:italic">👤 Müşteri kaydı yok</span>`}
+        </div>
       </div>
       <button data-logid="${deleteLogId}" data-cat="${cat}" data-date="${date}" data-mnp="${isMnp===true}" onclick="confirmDeleteIslem(this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="Sil">🗑</button>
     </div>`;
@@ -7840,10 +7850,25 @@ function deleteIslemLog(logRef, cat, date, isMnp){
   }
 
   // ── 3. MÜŞTERİ KAYDINI SİL ──
-  const silinecekMusteri = musteriler.find(m =>
-    m.entryDate === date && m.cat === cat &&
-    (useSubtype ? m.tip === (mnpFlag ? 'mnp' : 'tesis') : true)
-  );
+  const silTip = useSubtype ? (mnpFlag ? 'mnp' : 'tesis') : null;
+
+  // 1. logId ile kesin eşleştir
+  let silinecekMusteri = musteriler.find(m => m.logId && m.logId === refStr);
+
+  // 2. logId yoksa saat bazlı eşleştir
+  if(!silinecekMusteri){
+    const logSaat = (entryLog.find(l=>l.id===refStr)||{time:''}).time.slice(0,5);
+    const adaylar = musteriler.filter(m =>
+      m.entryDate === date && m.cat === cat && (!silTip || m.tip === silTip)
+    );
+    if(adaylar.length === 1){
+      silinecekMusteri = adaylar[0];
+    } else if(logSaat){
+      silinecekMusteri = adaylar.find(m=>(m.entryTime||'').slice(0,5)===logSaat)
+        || adaylar[0];
+    }
+  }
+
   if(silinecekMusteri){
     musteriler = musteriler.filter(m => m.id !== silinecekMusteri.id);
     saveMusteriStore();
@@ -8189,7 +8214,8 @@ function saveMusteriKayit(){
     aktivasyonTarihi: aktTarih, takipTarihi,
     durum: otomatikAktif ? 'aktif' : 'bekliyor',
     primDurum: otomatikAktif ? 'dahil' : 'bekliyor',
-    olusturma: new Date().toISOString()
+    olusturma: new Date().toISOString(),
+    logId: null // _doChangeCount'tan sonra doldurulacak
   };
 
   if(_mkEditId){
@@ -8205,7 +8231,14 @@ function saveMusteriKayit(){
 
   // Prim sayısını güncelle (sadece yeni kayıt, edit değil)
   if(!_mkEditId){
+    window._lastEntryId = null;
     _doChangeCount(tarih, cat, 1, aktTarih, isMnp);
+    // _doChangeCount'un yazdığı logId'yi müşteri kaydına bağla
+    if(window._lastEntryId){
+      const m = musteriler[musteriler.length-1];
+      if(m && !m.logId) m.logId = window._lastEntryId;
+      saveMusteriStore();
+    }
   }
 
   // _confirmedIsMnp'yi temizle - bir sonraki kayıt için taze başlasın
@@ -8308,7 +8341,8 @@ function renderMusteriRapor(){
     const buayStr  = bugunStr.slice(0,7);
     const buyilStr = bugunStr.slice(0,4);
     filtered = filtered.filter(m=>{
-      const d = m.entryDate || '';
+      // MNP için aktivasyon tarihini, diğerleri için giriş tarihini kullan
+      const d = (m.tip==='mnp' && m.aktivasyonTarihi) ? m.aktivasyonTarihi : (m.entryDate || '');
       if(_musteriRaporTarih==='bugun')   return d === bugunStr;
       if(_musteriRaporTarih==='buay')    return d.startsWith(buayStr);
       if(_musteriRaporTarih==='buyil')   return d.startsWith(buyilStr);
@@ -8380,6 +8414,7 @@ function renderMusteriRapor(){
         <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:center">
           ${m.durum==='bekliyor' ? `<input type="checkbox" class="mkSelectBox" data-id="${m.id}" style="width:18px;height:18px;cursor:pointer;accent-color:#4cd964;margin-bottom:2px">` : ''}
           <button onclick="openMusteriDurum('${m.id}')" style="padding:6px 10px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Durum ▼</button>
+          <button onclick="openMusteriEdit('${m.id}')" style="padding:5px 8px;background:var(--panel2);border:1px solid var(--line);color:var(--accent);border-radius:6px;font-size:10px;cursor:pointer">✏️</button>
           <button onclick="deleteMusteriKayit('${m.id}')" style="padding:5px 8px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:6px;font-size:10px;cursor:pointer">🗑</button>
         </div>
       </div>
@@ -8485,6 +8520,26 @@ function topluOnaylaGecmis(tarihEsigi){
   checkMusteriTakip();
   render();
   alert('\u2705 ' + bekleyenler.length + ' kay\u0131t onaylan\u0131d\u0131!');
+}
+
+function openMusteriEdit(id){
+  const m = musteriler.find(x=>x.id===id);
+  if(!m) return;
+  _mkEditId = id;
+  window._confirmedIsMnp = m.tip === 'mnp';
+  // Modalı aç ve doldur
+  openMusteriKayit(m.cat, m.tip==='mnp', m.entryDate);
+  // Alanları doldur
+  setTimeout(()=>{
+    if(m.ad)  document.getElementById('mkAd').value  = m.ad;
+    if(m.tel) document.getElementById('mkTel').value = m.tel;
+    if(m.not) document.getElementById('mkNot').value = m.not;
+    if(m.entryTime) document.getElementById('mkSaat').value = m.entryTime;
+    if(m.aktivasyonTarihi) {
+      const aktEl = document.getElementById('mkAktTarih');
+      if(aktEl) aktEl.value = m.aktivasyonTarihi;
+    }
+  }, 50);
 }
 
 function deleteMusteriKayit(id){
