@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v42 · 29.06.2026 17:04</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v43 · 29.06.2026 23:00</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v42 · Son güncelleme: 29.06.2026 17:04</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v43 · Son güncelleme: 29.06.2026 23:00</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v42';
-const BUILD_DATE = '29.06.2026 17:04';
+const APP_VERSION = 'v43';
+const BUILD_DATE = '29.06.2026 23:00';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -2913,6 +2913,47 @@ function load(){
   }catch(e){ finansData = JSON.parse(JSON.stringify(FINANS_DEFAULT_DATA)); }
   loadHedefExtra();
   recomputeAllFinans();
+
+  // 28 Haziran öncesi müşteri kayıtlarını otomatik onayla
+  const ESIK_TARIH = '2026-06-28';
+  let gecmisGuncellendi = false;
+  musteriler.forEach(m=>{
+    if(m.entryDate && m.entryDate < ESIK_TARIH && m.durum === 'bekliyor'){
+      m.durum = 'aktif';
+      m.primDurum = 'dahil';
+      m.durumTarihi = m.entryDate; // giriş tarihi ile onaylanmış say
+      gecmisGuncellendi = true;
+    }
+  });
+  if(gecmisGuncellendi){
+    saveMusteriStore();
+  }
+
+  // 28 Haziran öncesi entries için formalite log ekle (log yoksa)
+  entries.forEach(e=>{
+    if(e.date && e.date < ESIK_TARIH){
+      const mevcutLog = entryLog.filter(l=>l.date===e.date && l.cat===e.cat);
+      const eksik = e.count - mevcutLog.length;
+      for(let i=0; i<eksik; i++){
+        const fakeId = 'legacy_'+e.date+'_'+e.cat+'_'+(e.mnp?'mnp':'tes')+'_'+i;
+        if(!entryLog.find(l=>l.id===fakeId)){
+          entryLog.push({
+            id: fakeId,
+            date: e.date,
+            cat: e.cat,
+            time: '09:00',
+            platform: 'Geçmiş',
+            mnp: !!e.mnp
+          });
+        }
+      }
+    }
+  });
+  if(gecmisGuncellendi){
+    saveEntryLog();
+    scheduleCloudSync();
+  }
+
   render();
   checkMusteriTakip();
 }
@@ -11173,9 +11214,6 @@ function renderHedefGecmis(){
       <button onclick="setRaporTarih('buay')" id="rft_buay" style="padding:4px 9px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:10px;cursor:pointer;white-space:nowrap">Bu Ay</button>
       <button onclick="setRaporTarih('buyil')" id="rft_buyil" style="padding:4px 9px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:10px;cursor:pointer;white-space:nowrap">Bu Yıl</button>
       <button onclick="setRaporTarih('gelecek')" id="rft_gelecek" style="padding:4px 9px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:10px;cursor:pointer;white-space:nowrap">⏳ Gelecek</button>
-    </div>
-    <div style="padding:6px 14px;border-bottom:1px solid var(--line);flex-shrink:0;display:flex;justify-content:flex-end">
-      <button onclick="topluOnaylaGecmis('2026-06-28')" style="background:rgba(76,217,100,0.15);border:1px solid rgba(76,217,100,0.4);color:#4cd964;border-radius:7px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">⚡ 28 Haziran öncesini onayla</button>
     </div>
     <div id="musteriTopluBar" style="display:none;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:rgba(76,217,100,0.06);flex-shrink:0"></div>
     <div style="flex:1;overflow-y:auto" id="musteriRaporList"></div>
