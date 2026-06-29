@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v30 · 29.06.2026 14:36</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v31 · 29.06.2026 14:45</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v30 · Son güncelleme: 29.06.2026 14:36</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v31 · Son güncelleme: 29.06.2026 14:45</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v30';
-const BUILD_DATE = '29.06.2026 14:36';
+const APP_VERSION = 'v31';
+const BUILD_DATE = '29.06.2026 14:45';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -7432,19 +7432,29 @@ function renderIslemList(cat, date){
   const list = document.getElementById('ilmList');
 
   // entryLog'dan bu gün+kategori işlemlerini al - her biri ayrı satır
-  const logs = entryLog
-    .map((l,i)=>({...l, _origIdx: i}))
-    .filter(l=>l.date===date && l.cat===cat)
-    .reverse(); // en son üstte
-
-  // Entries özeti
+  // Entries özeti - önce hesapla
   const tesisE = entries.find(e=>e.date===date&&e.cat===cat&&!e.mnp);
-  const mnpE   = entries.find(e=>e.date===date&&e.cat===cat&&e.mnp);
+  const mnpE   = entries.find(e=>e.date===date&&e.cat===cat&&!!e.mnp);
   const tesisCnt = tesisE ? tesisE.count : 0;
   const mnpCnt   = mnpE   ? mnpE.count   : 0;
   const diger    = entries.find(e=>e.date===date&&e.cat===cat&&!MNP_CATS.includes(cat));
   const digerCnt = diger ? diger.count : 0;
   const toplam   = MNP_CATS.includes(cat) ? tesisCnt + mnpCnt : digerCnt;
+
+  // Entries 0 ise logları temizle (orphan log) - Firebase'den eski log gelmis olabilir
+  if(toplam === 0){
+    const orphans = entryLog.filter(l=>l.date===date&&l.cat===cat);
+    if(orphans.length > 0){
+      entryLog = entryLog.filter(l=>!(l.date===date&&l.cat===cat));
+      saveEntryLog();
+      scheduleCloudSync(); // Firebase'e de yaz
+    }
+  }
+
+  const logs = entryLog
+    .map((l,i)=>({...l, _origIdx: i}))
+    .filter(l=>l.date===date && l.cat===cat)
+    .reverse(); // en son üstte
 
   if(!logs.length && toplam === 0){
     list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Bu tarihte işlem yok.</div>';
@@ -7665,7 +7675,17 @@ function deleteIslemLog(logRef, cat, date, isMnp){
     saveMusteriStore();
   }
 
-  // ── 4. KAYDET VE GÜNCELLE ──
+  // ── 4. ENTRIES 0 OLUNCA TÜM LOGLARI TEMİZLE ──
+  const kalanCount = MNP_CATS.includes(cat)
+    ? entries.filter(x=>x.date===date&&x.cat===cat).reduce((a,e)=>a+e.count,0)
+    : (entries.find(x=>x.date===date&&x.cat===cat)?.count||0);
+
+  if(kalanCount === 0){
+    // Orphan logları temizle
+    entryLog = entryLog.filter(l=>!(l.date===date&&l.cat===cat));
+  }
+
+  // ── 5. KAYDET VE GÜNCELLE ──
   saveEntries();
   saveEntryLog();
   render();
@@ -7928,6 +7948,7 @@ function closeMusteriKayit(){
 
 function setMkTip(tip){
   _mkTip = tip;
+  window._confirmedIsMnp = (tip === 'mnp'); // HER ZAMAN senkronize tut
   const hidden = document.getElementById('mkTipHidden');
   if(hidden) hidden.value = tip;
   const tBtn = document.getElementById('mkTipTesis');
@@ -10772,8 +10793,8 @@ function renderHedefGecmis(){
 
       <!-- İşlem Tipi -->
       <div style="display:flex;gap:8px;margin-bottom:14px">
-        <button id="mkTipTesis" onclick="setMkTip('tesis')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--line);background:var(--panel2);color:var(--txt);font-size:12px;font-weight:700;cursor:pointer">🆕 Yeni Tesis</button>
-        <button id="mkTipMnp" onclick="setMkTip('mnp')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--line);background:var(--panel2);color:var(--txt);font-size:12px;font-weight:700;cursor:pointer">🔄 MNP</button>
+        <div id="mkTipTesis" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--line);background:var(--panel2);color:var(--txt);font-size:12px;font-weight:700;text-align:center;user-select:none">🆕 Yeni Tesis</div>
+        <div id="mkTipMnp" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--line);background:var(--panel2);color:var(--txt);font-size:12px;font-weight:700;text-align:center;user-select:none">🔄 MNP</div>
       </div>
 
       <!-- Kategori -->

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finansal-analiz-v30';
+const CACHE_NAME = 'finansal-analiz-v31';
 const ASSETS = [
   './index.html',
   './manifest.json',
