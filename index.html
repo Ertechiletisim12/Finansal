@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v41 · 29.06.2026 16:55</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v42 · 29.06.2026 17:04</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v41 · Son güncelleme: 29.06.2026 16:55</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v42 · Son güncelleme: 29.06.2026 17:04</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v41';
-const BUILD_DATE = '29.06.2026 16:55';
+const APP_VERSION = 'v42';
+const BUILD_DATE = '29.06.2026 17:04';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4280,13 +4280,14 @@ function render(){
       ).reduce((a,e)=>a+e.count, 0);
 
       // Bu kategoride onay bekleyen MNP sayisi
-      // Bekleyen MNP: aktivasyon bu ayda olan bekleyenler (effectiveYm bazlı)
-      const bekleyenMnp = musteriler.filter(m=>{
+      // Bekleyen MNP: aktivasyon bu ayda olan bekleyenler - entries count'u gecemesin
+      const mnpEntryCount = entries.filter(e=>e.date&&e.cat===cat&&!!e.mnp&&effectiveYm(e)===activeYm).reduce((a,e)=>a+e.count,0);
+      const bekleyenMnpList = musteriler.filter(m=>{
         if(m.cat!==cat || m.tip!=='mnp' || m.durum!=='bekliyor' || !m.entryDate) return false;
-        // Aktivasyon tarihi bu aya mi dusuyor?
         const aktYm = m.aktivasyonTarihi ? ymKey(m.aktivasyonTarihi) : ymKey(mnpActivationDate(m.entryDate));
         return aktYm === activeYm;
-      }).length;
+      });
+      const bekleyenMnp = Math.min(bekleyenMnpList.length, mnpEntryCount);
 
       if(mnpAdet || tesisAdet || devirGelenMnp){
         const mnpBuAy = mnpAdet - sonrakiAya;
@@ -4294,10 +4295,10 @@ function render(){
           + '🆕 ' + tesisAdet + ' Tesis · 🔄 ' + Math.max(0,mnpBuAy) + ' MNP'
           + (sonrakiAya ? ' <span style="color:#ff9f0a"> · '+sonrakiAya+' sonraki aya devir</span>' : '')
           + (devirGelenMnp ? ' <span style="color:#4cd964"> · '+devirGelenMnp+' önceki aydan devir</span>' : '')
-          + (bekleyenMnp ? ' <span style="color:#ff9f0a;font-weight:700"> · ⏳ '+bekleyenMnp+' onay bekliyor</span>' : '')
+          + (bekleyenMnp ? ' <span onclick="openMusteriRaporFiltered(\'bekliyor\',\''+cat+'\',\'bekleyen\')" style="color:#ff9f0a;font-weight:700;cursor:pointer;text-decoration:underline"> · ⏳ '+bekleyenMnp+' onay bekliyor</span>' : '')
           + '</div>';
       } else if(bekleyenMnp){
-        mnpInfo = '<div style="font-size:10px;color:#ff9f0a;margin-top:3px;font-weight:700">⏳ '+bekleyenMnp+' MNP onay bekliyor</div>';
+        mnpInfo = '<div onclick="openMusteriRaporFiltered(\'bekliyor\',\''+cat+'\',\'bekleyen\')" style="font-size:10px;color:#ff9f0a;margin-top:3px;font-weight:700;cursor:pointer">⏳ '+bekleyenMnp+' MNP onay bekliyor</div>';
       }
     }
     // İnternet: aktivasyon tarihi göster
@@ -8158,6 +8159,18 @@ function openMusteriRapor(){
   renderMusteriRapor();
   document.getElementById('musteriRaporModal').style.display = 'flex';
 }
+function openMusteriRaporFiltered(durum, cat, tarih){
+  _musteriRaporFilter = durum || 'hepsi';
+  _musteriRaporCat    = cat   || 'hepsi';
+  _musteriRaporTarih  = tarih || 'hepsi';
+  renderMusteriRapor();
+  document.getElementById('musteriRaporModal').style.display = 'flex';
+  // Durum filtre butonunu guncelle
+  document.querySelectorAll('[id^="rf_"]').forEach(b=>{
+    b.style.background = b.id==='rf_'+_musteriRaporFilter ? '#e2231a' : 'var(--panel2)';
+    b.style.color      = b.id==='rf_'+_musteriRaporFilter ? '#fff'    : 'var(--muted)';
+  });
+}
 function closeMusteriRapor(){
   document.getElementById('musteriRaporModal').style.display = 'none';
 }
@@ -8377,7 +8390,25 @@ function topluOnayla(){
   renderMusteriRapor();
   checkMusteriTakip();
   render();
-  alert('✅ ' + secilen.length + ' kayıt onaylandı!');
+  alert('\u2705 ' + secilen.length + ' kay\u0131t onaylan\u0131d\u0131!');
+}
+
+// Belirli bir tarihe kadar olan bekleyen kayitlari toplu onayla
+function topluOnaylaGecmis(tarihEsigi){
+  const esik = tarihEsigi || '2026-06-28';
+  const bekleyenler = musteriler.filter(m=>m.durum==='bekliyor' && m.entryDate && m.entryDate <= esik);
+  if(!bekleyenler.length){ alert('Bu tarihe kadar bekleyen kayıt yok.'); return; }
+  if(!confirm(bekleyenler.length + ' kayıt (' + esik + ' ve öncesi) onaylanacak. Emin misiniz?')) return;
+  bekleyenler.forEach(m=>{
+    m.durum = 'aktif';
+    m.primDurum = 'dahil';
+    m.durumTarihi = todayStr();
+  });
+  saveMusteriStore();
+  renderMusteriRapor();
+  checkMusteriTakip();
+  render();
+  alert('\u2705 ' + bekleyenler.length + ' kay\u0131t onaylan\u0131d\u0131!');
 }
 
 function deleteMusteriKayit(id){
@@ -11142,6 +11173,9 @@ function renderHedefGecmis(){
       <button onclick="setRaporTarih('buay')" id="rft_buay" style="padding:4px 9px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:10px;cursor:pointer;white-space:nowrap">Bu Ay</button>
       <button onclick="setRaporTarih('buyil')" id="rft_buyil" style="padding:4px 9px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:10px;cursor:pointer;white-space:nowrap">Bu Yıl</button>
       <button onclick="setRaporTarih('gelecek')" id="rft_gelecek" style="padding:4px 9px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:10px;cursor:pointer;white-space:nowrap">⏳ Gelecek</button>
+    </div>
+    <div style="padding:6px 14px;border-bottom:1px solid var(--line);flex-shrink:0;display:flex;justify-content:flex-end">
+      <button onclick="topluOnaylaGecmis('2026-06-28')" style="background:rgba(76,217,100,0.15);border:1px solid rgba(76,217,100,0.4);color:#4cd964;border-radius:7px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">⚡ 28 Haziran öncesini onayla</button>
     </div>
     <div id="musteriTopluBar" style="display:none;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:rgba(76,217,100,0.06);flex-shrink:0"></div>
     <div style="flex:1;overflow-y:auto" id="musteriRaporList"></div>
