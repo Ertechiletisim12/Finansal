@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v26 · 29.06.2026 11:28</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v27 · 29.06.2026 14:13</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v26 · Son güncelleme: 29.06.2026 11:28</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v27 · Son güncelleme: 29.06.2026 14:13</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v26';
-const BUILD_DATE = '29.06.2026 11:28';
+const APP_VERSION = 'v27';
+const BUILD_DATE = '29.06.2026 14:13';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -3003,50 +3003,74 @@ function changeCount(cat, delta, activationDate, isMnp){
 
 // Gerçek kayıt işlemi - tip ayrımıyla
 function _doChangeCount(date, cat, delta, activationDate, isMnp){
-  // MNP ve Tesis ayrı entry olarak saklanır: key = date + cat + (mnp? '_MNP' : '_TES')
-  const mnpKey = isMnp ? '_MNP' : '_TES';
   const useSubtype = MNP_CATS.includes(cat);
-
-  let e;
-  if(useSubtype){
-    e = entries.find(e=>e.date===date && e.cat===cat && !!e.mnp===!!isMnp);
-  } else {
-    e = entries.find(e=>e.date===date && e.cat===cat);
-  }
-  if(!e){
-    e = {date, cat, count:0};
-    if(useSubtype) e.mnp = !!isMnp;
-    if(cat==='İnternet' && activationDate) e.activationDate = activationDate;
-    entries.push(e);
-  }
-  e.count = Math.max(0, e.count + delta);
-  if(e.count === 0){
-    entries = entries.filter(x=>x!==e);
-  }
+  const mnpFlag = !!isMnp;
 
   if(delta > 0){
-    // Benzersiz id: timestamp + rastgele sayı
-    const logId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-    const logEntry = {id: logId, date, cat, time: nowTimeStr(), platform: getPlatformName()};
-    if(useSubtype) logEntry.mnp = !!isMnp;
-    if(isMnp) logEntry.activationDate = mnpActivationDate(date);
+    // ── EKLE: Her kayıt için benzersiz ID üret ──
+    const entryId = 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6);
+
+    // entries: count bazlı (geriye dönük uyumluluk için koru)
+    let e;
+    if(useSubtype){
+      e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
+    } else {
+      e = entries.find(x => x.date===date && x.cat===cat);
+    }
+    if(!e){
+      e = {date, cat, count:0};
+      if(useSubtype) e.mnp = mnpFlag;
+      if(cat==='İnternet' && activationDate) e.activationDate = activationDate;
+      entries.push(e);
+    }
+    e.count++;
+
+    // entryLog: her kayıt için ayrı satır, entryId ile bağlı
+    const logEntry = {
+      id: entryId,
+      date, cat,
+      time: nowTimeStr(),
+      platform: getPlatformName()
+    };
+    if(useSubtype) logEntry.mnp = mnpFlag;
+    if(mnpFlag) logEntry.activationDate = mnpActivationDate(date);
     if(cat==='İnternet' && activationDate) logEntry.activationDate = activationDate;
     entryLog.push(logEntry);
+
   } else if(delta < 0){
-    for(let i=entryLog.length-1;i>=0;i--){
-      const l=entryLog[i];
+    // ── SİL: Son eklenen eşleşen log kaydını sil ──
+    let logIdx = -1;
+    for(let i = entryLog.length-1; i >= 0; i--){
+      const l = entryLog[i];
       if(l.date===date && l.cat===cat){
-        if(!useSubtype || !!l.mnp===!!isMnp){ entryLog.splice(i,1); break; }
+        if(!useSubtype || !!l.mnp===mnpFlag){
+          logIdx = i;
+          break;
+        }
       }
+    }
+    if(logIdx >= 0) entryLog.splice(logIdx, 1);
+
+    // entries count'u azalt
+    let e;
+    if(useSubtype){
+      e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
+    } else {
+      e = entries.find(x => x.date===date && x.cat===cat);
+    }
+    if(e && e.count > 0){
+      e.count--;
+      if(e.count === 0) entries = entries.filter(x => x !== e);
     }
   }
 
   // count 0 olan entry'leri temizle
-  entries = entries.filter(e=>e.count>0);
+  entries = entries.filter(e => e.count > 0);
 
-  // (Log temizleme kaldırıldı - her + için 1 log eklenir, silince log da silinir)
-    saveEntries(); saveEntryLog(); render();
-  vibrate(delta > 0 ? [30] : [10, 50, 10]); // artış: kısa titreşim, azalış: çift titreşim
+  saveEntries();
+  saveEntryLog();
+  render();
+  vibrate(delta > 0 ? [30] : [10, 50, 10]);
 }
 
 // ---- tema ----
@@ -7458,16 +7482,12 @@ function renderIslemList(cat, date){
       m.entryTime && l.time && m.entryTime.slice(0,5) === l.time.slice(0,5)
     );
 
-    // Silme için: her log'a id yoksa şimdi ata
+    // Her log benzersiz ID'ye sahip (yeni kayıtlarda e_ prefix'li)
+    // Eski kayıtlarda yoksa geçici ID ata
     if(!l.id){
-      l.id = Date.now().toString(36) + Math.random().toString(36).slice(2,5) + l._origIdx;
-      // entryLog'daki orijinal kaydı da güncelle
-      if(l._origIdx >= 0 && l._origIdx < entryLog.length && !entryLog[l._origIdx].id){
-        entryLog[l._origIdx].id = l.id;
-      }
+      l.id = 'old_' + l._origIdx + '_' + (l.time||'').replace(':','');
     }
     const deleteLogId = l.id;
-    const deleteCall = null; // data-attribute üzerinden çalışır
 
     return `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
       <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);flex-shrink:0">${logs.length - displayIdx}</div>
@@ -7557,48 +7577,47 @@ function confirmDeleteIslem(btn){
 }
 
 function deleteIslemLog(logRef, cat, date, isMnp){
-  // isMnp string veya boolean olabilir
   const mnpFlag = (isMnp === true || isMnp === 'true');
+  const useSubtype = MNP_CATS.includes(cat);
 
-  // ── 1. LOG KAYDI BUL ve SİL ──
+  // ── 1. LOG KAYDI BUL ──
   let logIdx = -1;
   const refStr = String(logRef).trim();
 
-  // Önce id ile ara (alfanümerik id)
-  if(refStr && !/^\d+$/.test(refStr)){
-    logIdx = entryLog.findIndex(l => String(l.id) === refStr);
-  }
-  // id bulunamadıysa index ile ara
-  if(logIdx < 0 && /^\d+$/.test(refStr)){
-    const n = parseInt(refStr, 10);
-    if(n >= 0 && n < entryLog.length) logIdx = n;
+  // ID ile ara
+  logIdx = entryLog.findIndex(l => l.id && l.id === refStr);
+
+  // Bulunamazsa — aynı tarih/cat/mnp olan son log
+  if(logIdx < 0){
+    for(let i = entryLog.length-1; i >= 0; i--){
+      const l = entryLog[i];
+      if(l.date===date && l.cat===cat){
+        if(!useSubtype || !!l.mnp===mnpFlag){
+          logIdx = i;
+          break;
+        }
+      }
+    }
   }
 
-  if(logIdx >= 0){
-    entryLog.splice(logIdx, 1);
-  }
+  if(logIdx >= 0) entryLog.splice(logIdx, 1);
 
   // ── 2. ENTRIES SAYISINI AZALT ──
   let e;
-  if(MNP_CATS.includes(cat)){
-    // Tesis (mnp=false/undefined) veya MNP (mnp=true) ayrımı
+  if(useSubtype){
     e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
   } else {
     e = entries.find(x => x.date===date && x.cat===cat);
   }
-
   if(e && e.count > 0){
     e.count--;
-    if(e.count === 0){
-      entries.splice(entries.indexOf(e), 1);
-    }
+    if(e.count === 0) entries = entries.filter(x => x !== e);
   }
 
   // ── 3. MÜŞTERİ KAYDINI SİL ──
   const silinecekMusteri = musteriler.find(m =>
-    m.entryDate === date &&
-    m.cat === cat &&
-    (MNP_CATS.includes(cat) ? m.tip === (mnpFlag ? 'mnp' : 'tesis') : true)
+    m.entryDate === date && m.cat === cat &&
+    (useSubtype ? m.tip === (mnpFlag ? 'mnp' : 'tesis') : true)
   );
   if(silinecekMusteri){
     musteriler = musteriler.filter(m => m.id !== silinecekMusteri.id);
@@ -7609,7 +7628,6 @@ function deleteIslemLog(logRef, cat, date, isMnp){
   saveEntries();
   saveEntryLog();
   render();
-  // Modalı her zaman güncelle (setTimeout ile render'ın bitmesini bekle)
   setTimeout(() => { renderIslemList(cat, date); }, 50);
 }
 
