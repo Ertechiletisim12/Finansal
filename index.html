@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v21 · 29.06.2026</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v22 · 29.06.2026 07:57</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v21 · Son güncelleme: 29.06.2026</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v22 · Son güncelleme: 29.06.2026 07:57</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,6 +2326,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
+const APP_VERSION = 'v22';
+const BUILD_DATE = '29.06.2026 07:57';
+
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
 const MNP_CATS = ["PrePaid","PostPaid","Red"];
@@ -7464,7 +7467,7 @@ function renderIslemList(cat, date){
           <span style="margin-left:4px;font-size:9px;padding:1px 6px;border-radius:8px;background:${musteri.durum==='aktif'?'rgba(76,217,100,0.15)':'rgba(255,159,10,0.15)'};color:${musteri.durum==='aktif'?'#4cd964':'#ff9f0a'}">${musteri.durum}</span>
         </div>` : ''}
       </div>
-      <button data-logid="${deleteLogId}" data-cat="${cat}" data-date="${date}" data-mnp="${isMnp===true}" onclick="deleteIslemLog(this.dataset.logid, this.dataset.cat, this.dataset.date, this.dataset.mnp==='true')" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0">🗑</button>
+      <button data-logid="${deleteLogId}" data-cat="${cat}" data-date="${date}" data-mnp="${isMnp===true}" onclick="confirmDeleteIslem(this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="Sil">🗑</button>
     </div>`;
   }).join('');
 
@@ -7472,56 +7475,90 @@ function renderIslemList(cat, date){
 }
 
 
+function confirmDeleteIslem(btn){
+  const logId = btn.dataset.logid;
+  const cat   = btn.dataset.cat;
+  const date  = btn.dataset.date;
+  const isMnp = btn.dataset.mnp === 'true';
+
+  // Hangi işlem silinecek bilgisini göster
+  const tip = MNP_CATS.includes(cat) ? (isMnp ? ' (MNP)' : ' (Yeni Tesis)') : '';
+  const log = entryLog.find(l => {
+    const refStr = String(logId).trim();
+    return (/^\d+$/.test(refStr))
+      ? entryLog.indexOf(l) === parseInt(refStr, 10)
+      : String(l.id) === refStr;
+  });
+  const saat = log ? log.time || '--:--' : '--:--';
+  const aktStr = log && log.activationDate ? ' → Aktivasyon: ' + log.activationDate : '';
+
+  if(!confirm(
+    cat + tip + ' kaydını silmek istiyor musunuz?' +
+    '\n\nSaat: ' + saat + aktStr +
+    '\nTarih: ' + date
+  )) return;
+
+  deleteIslemLog(logId, cat, date, isMnp);
+}
+
 function deleteIslemLog(logRef, cat, date, isMnp){
+  // isMnp string veya boolean olabilir
   const mnpFlag = (isMnp === true || isMnp === 'true');
 
-  // ID veya index ile log bul
+  // ── 1. LOG KAYDI BUL ve SİL ──
   let logIdx = -1;
-  const refStr = String(logRef);
-  // Sayısal değilse id olarak ara
-  if(isNaN(Number(refStr)) || refStr.length > 10){
-    logIdx = entryLog.findIndex(l => l.id && l.id === refStr);
+  const refStr = String(logRef).trim();
+
+  // Önce id ile ara (alfanümerik id)
+  if(refStr && !/^\d+$/.test(refStr)){
+    logIdx = entryLog.findIndex(l => String(l.id) === refStr);
   }
-  // Bulunamadıysa index olarak dene
-  if(logIdx < 0){
-    const numIdx = parseInt(refStr);
-    if(!isNaN(numIdx)) logIdx = numIdx;
+  // id bulunamadıysa index ile ara
+  if(logIdx < 0 && /^\d+$/.test(refStr)){
+    const n = parseInt(refStr, 10);
+    if(n >= 0 && n < entryLog.length) logIdx = n;
   }
 
-  // Log sil
-  if(logIdx >= 0 && logIdx < entryLog.length){
+  if(logIdx >= 0){
     entryLog.splice(logIdx, 1);
-  } else {
-    // Log bulunamadı - yine de entries'ten düş
-    console.warn('Log bulunamadı:', logRef);
   }
 
-  // Entries sayısını 1 azalt
+  // ── 2. ENTRIES SAYISINI AZALT ──
   let e;
   if(MNP_CATS.includes(cat)){
+    // Tesis (mnp=false/undefined) veya MNP (mnp=true) ayrımı
     e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
   } else {
     e = entries.find(x => x.date===date && x.cat===cat);
   }
+
   if(e && e.count > 0){
     e.count--;
-    if(e.count === 0) entries.splice(entries.indexOf(e), 1);
+    if(e.count === 0){
+      entries.splice(entries.indexOf(e), 1);
+    }
   }
 
-  // Müşteri kaydını otomatik sil
+  // ── 3. MÜŞTERİ KAYDINI SİL ──
   const silinecekMusteri = musteriler.find(m =>
-    m.entryDate===date && m.cat===cat &&
-    (MNP_CATS.includes(cat) ? m.tip===(mnpFlag?'mnp':'tesis') : true)
+    m.entryDate === date &&
+    m.cat === cat &&
+    (MNP_CATS.includes(cat) ? m.tip === (mnpFlag ? 'mnp' : 'tesis') : true)
   );
   if(silinecekMusteri){
     musteriler = musteriler.filter(m => m.id !== silinecekMusteri.id);
     saveMusteriStore();
   }
 
-  // Kaydet ve anında güncelle
+  // ── 4. KAYDET VE GÜNCELLE ──
   saveEntries();
+  saveEntryLog();
   render();
-  renderIslemList(cat, date);
+  // Modal hâlâ açıksa güncelle
+  const modal = document.getElementById('islemListModal');
+  if(modal && modal.style.display !== 'none'){
+    renderIslemList(cat, date);
+  }
 }
 
 
