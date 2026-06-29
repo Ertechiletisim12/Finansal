@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v50 · 29.06.2026 23:29</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v52 · 29.06.2026 23:37</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v50 · Son güncelleme: 29.06.2026 23:29</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v52 · Son güncelleme: 29.06.2026 23:37</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v50';
-const BUILD_DATE = '29.06.2026 23:29';
+const APP_VERSION = 'v52';
+const BUILD_DATE = '29.06.2026 23:37';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -5537,8 +5537,22 @@ function renderDash(){
 
   // Bugün
   const todayEntries = entries.filter(e=>e.date===today);
-  const todayKdv   = todayEntries.reduce((a,e)=>a+e.count*priceFor(now,e.cat)*(1+KDV_ORANI),0);
   const todayCount = todayEntries.reduce((a,e)=>a+e.count,0);
+
+  // Bugünkü işlemleri devir/bu ay diye ayır
+  const nextYm = addMonths(now, 1);
+  let todayBuAyCount=0, todayBuAyKdv=0;
+  let todayDevirCount=0, todayDevirKdv=0;
+  todayEntries.forEach(e=>{
+    const eym = effectiveYm(e);
+    const fiyat = priceFor(eym, e.cat) * e.count * (1+KDV_ORANI);
+    if(eym === now){
+      todayBuAyCount += e.count; todayBuAyKdv += fiyat;
+    } else {
+      todayDevirCount += e.count; todayDevirKdv += fiyat;
+    }
+  });
+  const todayKdv = todayBuAyKdv + todayDevirKdv;
 
   // Hedef (tutar bazlı)
   const hedef     = hedefler[now] ?? null;
@@ -5691,7 +5705,12 @@ function renderDash(){
               <span style="font-size:20px;font-weight:800">${todayCount}</span>
               <span style="font-size:11px;color:var(--muted)">adet</span>
             </div>
-            <div style="font-size:11px;color:var(--accent);margin-top:2px;font-weight:600">${fmtF(todayKdv)}</div>
+            ${todayDevirCount > 0 ? `
+            <div style="font-size:11px;margin-top:3px">
+              <div style="color:var(--accent);font-weight:600">${fmtF(todayBuAyKdv)} <span style="font-weight:400;opacity:.7">(${todayBuAyCount} bu ay)</span></div>
+              <div style="color:#ff9f0a;font-weight:600;margin-top:1px">+${fmtF(todayDevirKdv)} <span style="font-weight:400;opacity:.7">(${todayDevirCount} sonraki aya devir)</span></div>
+            </div>
+            ` : `<div style="font-size:11px;color:var(--accent);margin-top:2px;font-weight:600">${fmtF(todayKdv)}</div>`}
             <div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--line)">
               <div style="font-size:9px;color:var(--muted);margin-bottom:1px">Günlük Ort.</div>
               <div style="font-size:12px;font-weight:700">${fmtF(dailyAvg)}</div>
@@ -7702,14 +7721,20 @@ function renderIslemList(cat, date){
     const aktTarih = l.activationDate ? ` · Aktivasyon: ${l.activationDate}` : '';
 
     // Müşteri kaydı eşleştir (id veya saat bazlı)
-    // Müşteri eşleştir: önce logId, sonra saat bazlı
+    // Müşteri eşleştir: logId > saat > tip bazlı fallback
     const silTip2 = MNP_CATS.includes(cat) ? (isMnp ? 'mnp' : 'tesis') : null;
-    const musteri = musteriler.find(m => m.logId && m.logId === l.id)
-      || musteriler.find(m =>
-          m.entryDate === date && m.cat === cat &&
-          (!silTip2 || m.tip === silTip2) &&
-          m.entryTime && l.time && m.entryTime.slice(0,5) === l.time.slice(0,5)
-        );
+    const logSaat2 = (l.time||'').slice(0,5);
+    // Aday havuzu: aynı gün + kategori + tip
+    const musteriAdaylar = musteriler.filter(m =>
+      m.entryDate === date && m.cat === cat && (!silTip2 || m.tip === silTip2)
+    );
+    const musteri =
+      // 1. logId ile tam eşleştir
+      musteriler.find(m => m.logId && m.logId === l.id)
+      // 2. Saat eşleşmesi (her iki tarafta saat varsa)
+      || (logSaat2 ? musteriAdaylar.find(m => (m.entryTime||'').slice(0,5) === logSaat2) : null)
+      // 3. Tek aday varsa onu kullan
+      || (musteriAdaylar.length === 1 ? musteriAdaylar[0] : null);
 
     // Her log benzersiz ID'ye sahip (yeni kayıtlarda e_ prefix'li)
     // Eski kayıtlarda yoksa geçici ID ata
