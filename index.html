@@ -2340,8 +2340,11 @@ const CAT_CONFIG = {
 
 // MNP: girilen tarih + 3 gün = aktivasyon tarihi
 function mnpActivationDate(entryDate){
+  // Bugün dahil 3 gün: giriş günü 1. gün sayılır
+  // 28 girilen → 28(1), 29(2), 30(3) = 30 Haziran
+  // 29 girilen → 29(1), 30(2), 1(3) = 1 Temmuz
   const d = new Date(entryDate);
-  d.setDate(d.getDate()+3);
+  d.setDate(d.getDate()+2); // +2 çünkü giriş günü dahil
   return d.toISOString().slice(0,10);
 }
 
@@ -3015,7 +3018,9 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp){
   }
 
   if(delta > 0){
-    const logEntry = {date, cat, time: nowTimeStr(), platform: getPlatformName()};
+    // Benzersiz id: timestamp + rastgele sayı
+    const logId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    const logEntry = {id: logId, date, cat, time: nowTimeStr(), platform: getPlatformName()};
     if(useSubtype) logEntry.mnp = !!isMnp;
     if(isMnp) logEntry.activationDate = mnpActivationDate(date);
     if(cat==='İnternet' && activationDate) logEntry.activationDate = activationDate;
@@ -3149,7 +3154,7 @@ function raporPaylasim(){
   const hedef = hedefler[curYm] || 0;
   const curEntries = entries.filter(e => e.date.startsWith(curYm));
   let realized = 0;
-  curEntries.forEach(e => { realized += e.count * (priceFor(curYm, e.cat) || 0); });
+  curEntries.forEach(e => { realized += e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(curYm,e.cat))||0); });
   const pct = hedef > 0 ? Math.round(realized / hedef * 100) : 0;
   const metin = `📊 ER-TECH İLETİŞİM — ${curYm}\n`+
     `💰 Toplam Prim: ${fmt(realized)}\n`+
@@ -4153,11 +4158,17 @@ function render(){
   window._lastQuicks = quicks;
 
   // ---- range summary hesapla (kategori bazında ve toplam için) ----
-  const rEntriesForCards = entries.filter(e=> e.date>=rStart && e.date<=rEnd);
+  // MNP ve İnternet: effectiveYm (aktivasyon tarihi) aralıkta mı kontrol et, diğerleri giriş tarihi
+  const rStartYm = rStart.slice(0,7);
+  const rEndYm   = rEnd.slice(0,7);
+  rEntriesForCards = entries.filter(e=>{
+    const eym = effectiveYm(e); // MNP için aktivasyon ayı, diğerleri giriş ayı
+    return eym >= rStartYm && eym <= rEndYm;
+  });
   let rangeCount=0, rangeAmt=0;
-  rEntriesForCards.forEach(e=>{ rangeCount += e.count; rangeAmt += e.count*priceFor(ymKey(e.date), e.cat); });
+  rEntriesForCards.forEach(e=>{ rangeCount += e.count; rangeAmt += e.count*(kampanyaFiyatFor(e.date,e.cat,priceFor(ymKey(e.date),e.cat))||0); });
   const raCnt = c => rEntriesForCards.filter(e=>e.cat===c).reduce((a,e)=>a+e.count,0);
-  const raAmt = c => rEntriesForCards.filter(e=>e.cat===c).reduce((a,e)=>a+e.count*priceFor(ymKey(e.date),c),0);
+  const raAmt = c => rEntriesForCards.filter(e=>e.cat===c).reduce((a,e)=>a+e.count*(kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c))||0),0);
 
   // ---- category cards (adet +/- for active date) — her kartta hem bugünün hem seçili aralığın özeti ----
   const cardsDiv = document.getElementById('catCards');
@@ -4176,19 +4187,34 @@ function render(){
     const lastTime = lastEntryTime(activeDate, cat);
     const div = document.createElement('div');
     div.className='card';
-    // MNP/Yeni Tesis ayrımı: ayrı entry'lerden oku
+    // MNP/Yeni Tesis ayrımı
     let mnpInfo = '';
     if(MNP_CATS.includes(cat)){
-      const mnpE   = entries.find(e=>e.date===activeDate&&e.cat===cat&&e.mnp);
+      // Bugünkü tarih için
+      const mnpE   = entries.find(e=>e.date===activeDate&&e.cat===cat&&!!e.mnp);
       const tesisE = entries.find(e=>e.date===activeDate&&e.cat===cat&&!e.mnp);
-      const mnpAdet  = mnpE   ? mnpE.count   : 0;
-      const tesisAdet= tesisE ? tesisE.count  : 0;
-      // Bu aydaki tüm MNP'lerden kaçı sonraki aya sayılıyor
-      const ayMnpEntries = entries.filter(e=>ymKey(e.date)===activeYm&&e.cat===cat&&e.mnp);
-      const ayMnpToplam = ayMnpEntries.reduce((a,e)=>a+e.count,0);
-      const sonrakiAya  = ayMnpEntries.filter(e=>effectiveYm(e)!==activeYm).reduce((a,e)=>a+e.count,0);
-      if(mnpAdet||tesisAdet){
-        mnpInfo = `<div style="font-size:10px;color:var(--muted);margin-top:3px">🆕 ${tesisAdet} Tesis · 🔄 ${mnpAdet} MNP${sonrakiAya?' <span style="color:#ff9f0a">('+sonrakiAya+' sonraki ay)</span>':''}</div>`;
+      const mnpAdet   = mnpE   ? mnpE.count   : 0;
+      const tesisAdet = tesisE ? tesisE.count  : 0;
+      // Bu AYdaki tüm kayıtlar (birden fazla gün)
+      const ayMnpEntries = entries.filter(e=>ymKey(e.date)===activeYm&&e.cat===cat&&!!e.mnp);
+      const ayTesisEntries = entries.filter(e=>ymKey(e.date)===activeYm&&e.cat===cat&&!e.mnp);
+      const ayMnpToplam   = ayMnpEntries.reduce((a,e)=>a+e.count,0);
+      const ayTesisToplam = ayTesisEntries.reduce((a,e)=>a+e.count,0);
+      const sonrakiAya = ayMnpEntries.filter(e=>effectiveYm(e)!==activeYm).reduce((a,e)=>a+e.count,0);
+      // Bugün için göster (altında ay toplamı)
+      // Önceki aydan devir gelen MNP'ler (aktivasyon bu ayda ama giriş önceki ayda)
+      const prevYm = addMonths(activeYm, -1);
+      const devirGelenMnp = entries.filter(e=>
+        ymKey(e.date)===prevYm && e.cat===cat && !!e.mnp &&
+        effectiveYm(e)===activeYm
+      ).reduce((a,e)=>a+e.count, 0);
+
+      if(mnpAdet || tesisAdet || devirGelenMnp){
+        mnpInfo = '<div style="font-size:10px;color:var(--muted);margin-top:3px">'
+          + '🆕 ' + tesisAdet + ' Tesis · 🔄 ' + mnpAdet + ' MNP'
+          + (sonrakiAya ? ' <span style="color:#ff9f0a"> · '+sonrakiAya+' sonraki aya devir</span>' : '')
+          + (devirGelenMnp ? ' <span style="color:#4cd964"> · '+devirGelenMnp+' önceki aydan devir</span>' : '')
+          + '</div>';
       }
     }
     // İnternet: aktivasyon tarihi göster
@@ -4269,7 +4295,12 @@ function render(){
     if(!monthMapAll[k]) monthMapAll[k] = {};
     monthMapAll[k][e.cat] = (monthMapAll[k][e.cat]||0) + e.count;
   });
-  const monthAmountAll = (k,c) => (monthMapAll[k]?.[c]||0) * priceFor(k,c);
+  // monthAmountAll: kampanya fiyatıyla hesapla
+  const monthAmountAll = (k,c) => {
+    const ents = entries.filter(e=>effectiveYm(e)===k && e.cat===c);
+    if(ents.length) return ents.reduce((a,e)=>a+e.count*(kampanyaFiyatFor(e.date,c,priceFor(k,c))||0),0);
+    return (monthMapAll[k]?.[c]||0) * priceFor(k,c);
+  };
   const monthSumAll = k => CATS.reduce((a,c)=> a + monthAmountAll(k,c), 0);
 
   // ---- karşılaştırma ay/yıl seçicilerini doldur (ilk render'da) ----
@@ -4416,7 +4447,12 @@ function render(){
     monthMap[k][e.cat] = (monthMap[k][e.cat]||0) + e.count;
   });
   const months = Object.keys(monthMap).sort();
-  const monthAmount = (k,c) => (monthMap[k]?.[c]||0) * priceFor(k,c);
+  // monthAmount: kampanya fiyatıyla hesapla
+  const monthAmount = (k,c) => {
+    const ents = entries.filter(e=>effectiveYm(e)===k && e.cat===c);
+    if(ents.length) return ents.reduce((a,e)=>a+e.count*(kampanyaFiyatFor(e.date,c,priceFor(k,c))||0),0);
+    return (monthMap[k]?.[c]||0) * priceFor(k,c);
+  };
   const monthSum = k => CATS.reduce((a,c)=> a + monthAmount(k,c), 0);
 
   // ---- stats row: Günlük Ortalama, Ay Sonu Tahmini (KDV dahil), Yıllara Göre Aylık Ortalama (yıl seçimli), Yıllara Göre Toplam ----
@@ -5518,7 +5554,7 @@ function renderDash(){
           <tbody>
             ${CATS.map(cat=>{
               const cnt   = catCounts[cat]||0;
-              const tutar = cnt*(priceFor(now,cat)||0)*(1+KDV_ORANI);
+              const tutar = entries.filter(e=>e.date===now&&e.cat===cat).reduce((a,e)=>a+e.count*(kampanyaFiyatFor(e.date,cat,priceFor(now,cat))||0),0)*(1+KDV_ORANI);
               const pct2  = catTotal>0 ? Math.round(cnt/catTotal*100) : 0;
               const color = CAT_COLORS[cat]||'var(--accent)';
               const katH  = catHedefler[cat]||null;
@@ -7114,7 +7150,8 @@ function buildManagerReportHTML(){
   const todayK = todayStr();
   const todayCatData = CATS.map(c=>{
     const cnt = getCount(todayK, c);
-    const amt = cnt * priceFor(ymKey(todayK), c);
+    const ents = entries.filter(e=>e.date===todayK&&e.cat===c);
+    const amt = ents.reduce((a,e)=>a+e.count*(kampanyaFiyatFor(e.date,c,priceFor(ymKey(todayK),c))||0),0);
     return {cat:c, cnt, amt};
   });
   const todayTotalCnt = todayCatData.reduce((a,d)=>a+d.cnt,0);
@@ -7336,120 +7373,140 @@ function closeIslemListModal(){
 function renderIslemList(cat, date){
   const list = document.getElementById('ilmList');
 
-  // entryLog'dan bu gün+kategori işlemlerini al (ters sıra = en son üstte)
+  // entryLog'dan bu gün+kategori işlemlerini al - her biri ayrı satır
   const logs = entryLog
-    .map((l,i)=>({...l,_idx:i}))
+    .map((l,i)=>({...l, _origIdx: i}))
     .filter(l=>l.date===date && l.cat===cat)
-    .reverse();
+    .reverse(); // en son üstte
 
-  // Entries'ten tesis/mnp sayılarını al
+  // Entries özeti
   const tesisE = entries.find(e=>e.date===date&&e.cat===cat&&!e.mnp);
   const mnpE   = entries.find(e=>e.date===date&&e.cat===cat&&e.mnp);
   const tesisCnt = tesisE ? tesisE.count : 0;
   const mnpCnt   = mnpE   ? mnpE.count   : 0;
-  const toplam   = tesisCnt + mnpCnt;
+  const diger    = entries.find(e=>e.date===date&&e.cat===cat&&!MNP_CATS.includes(cat));
+  const digerCnt = diger ? diger.count : 0;
+  const toplam   = MNP_CATS.includes(cat) ? tesisCnt + mnpCnt : digerCnt;
 
-  if(!logs.length && toplam===0){
+  if(!logs.length && toplam === 0){
     list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Bu tarihte işlem yok.</div>';
     return;
   }
 
-  // Özet başlık
-  const ozet = MNP_CATS.includes(cat)
-    ? `<div style="display:flex;gap:10px;padding:10px 16px;background:var(--panel2);border-bottom:1px solid var(--line)">
-        <div style="flex:1;text-align:center;padding:8px;background:rgba(76,217,100,0.1);border-radius:8px;border:1px solid rgba(76,217,100,0.2)">
-          <div style="font-size:10px;color:var(--muted)">🆕 Yeni Tesis</div>
-          <div style="font-size:18px;font-weight:800;color:#4cd964">${tesisCnt}</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:8px;background:rgba(155,89,182,0.1);border-radius:8px;border:1px solid rgba(155,89,182,0.2)">
-          <div style="font-size:10px;color:var(--muted)">🔄 MNP</div>
-          <div style="font-size:18px;font-weight:800;color:#c084fc">${mnpCnt}</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:8px;background:var(--panel2);border-radius:8px;border:1px solid var(--line)">
-          <div style="font-size:10px;color:var(--muted)">Toplam</div>
-          <div style="font-size:18px;font-weight:800;color:var(--txt)">${toplam}</div>
-        </div>
-      </div>`
-    : '';
+  // Özet kutuları (MNP kategorileri için)
+  const ozet = MNP_CATS.includes(cat) ? `
+    <div style="display:flex;gap:10px;padding:10px 16px;background:var(--panel2);border-bottom:1px solid var(--line)">
+      <div style="flex:1;text-align:center;padding:8px;background:rgba(76,217,100,0.1);border-radius:8px;border:1px solid rgba(76,217,100,0.2)">
+        <div style="font-size:10px;color:var(--muted)">🆕 Yeni Tesis</div>
+        <div style="font-size:20px;font-weight:800;color:#4cd964">${tesisCnt}</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:8px;background:rgba(155,89,182,0.1);border-radius:8px;border:1px solid rgba(155,89,182,0.2)">
+        <div style="font-size:10px;color:var(--muted)">🔄 MNP</div>
+        <div style="font-size:20px;font-weight:800;color:#c084fc">${mnpCnt}</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:8px;background:var(--panel2);border-radius:8px;border:1px solid var(--line)">
+        <div style="font-size:10px;color:var(--muted)">Toplam</div>
+        <div style="font-size:20px;font-weight:800;color:var(--txt)">${toplam}</div>
+      </div>
+    </div>` : `
+    <div style="padding:10px 16px;background:var(--panel2);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px">
+      <span style="font-size:13px;font-weight:800;color:var(--txt)">${cat}</span>
+      <span style="font-size:18px;font-weight:800;color:var(--accent)">${toplam} adet</span>
+    </div>`;
 
   if(!logs.length){
     list.innerHTML = ozet + '<div style="text-align:center;color:var(--muted);padding:24px;font-size:12px">Log kaydı bulunamadı.<br><small>Eski girişlerde log olmayabilir.</small></div>';
     return;
   }
 
-  // Her log satırı: müşteri kaydıyla eşleştir
-  const satirlar = logs.map((l,i)=>{
+  const satirlar = logs.map((l, displayIdx) => {
     const isMnp = !!l.mnp;
     const tip = MNP_CATS.includes(cat) ? (isMnp ? '🔄 MNP' : '🆕 Tesis') : '';
     const tipRenk = isMnp ? '#c084fc' : '#4cd964';
+    const aktTarih = l.activationDate ? ` · Aktivasyon: ${l.activationDate}` : '';
 
-    // Müşteri kaydı var mı?
-    const musteri = musteriler.find(m=>
-      m.entryDate===date && m.cat===cat && m.tip===(isMnp?'mnp':'tesis') &&
-      m.entryTime && l.time && m.entryTime.slice(0,5)===l.time.slice(0,5)
+    // Müşteri kaydı eşleştir (id veya saat bazlı)
+    const musteri = musteriler.find(m =>
+      m.entryDate === date && m.cat === cat &&
+      (!MNP_CATS.includes(cat) || m.tip === (isMnp ? 'mnp' : 'tesis')) &&
+      m.entryTime && l.time && m.entryTime.slice(0,5) === l.time.slice(0,5)
     );
 
-    const aktTarih = l.activationDate ? ` → Aktivasyon: ${l.activationDate}` : '';
-    const musteriInfo = musteri
-      ? `<div style="font-size:11px;color:var(--accent);margin-top:3px">
-          👤 ${musteri.ad||'İsimsiz'} ${musteri.tel?'· '+musteri.tel:''}
-          ${musteri.durum!=='bekliyor'
-            ? `<span style="margin-left:6px;padding:1px 6px;border-radius:8px;font-size:9px;background:rgba(76,217,100,0.15);color:#4cd964">${musteri.durum}</span>`
-            : ''}
-        </div>`
-      : '';
+    // Silme için: log id varsa id kullan, yoksa origIdx
+    const deleteRef = l.id ? `'${l.id}'` : `${l._origIdx}`;
+    const deleteCall = `deleteIslemLog(${deleteRef},'${cat}','${date}',${isMnp===true})`;
 
-    return `<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)">
-      <div style="width:28px;height:28px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);flex-shrink:0">${logs.length - i}</div>
+    return `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
+      <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);flex-shrink:0">${logs.length - displayIdx}</div>
       <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-size:13px;font-weight:700;color:var(--txt)">🕒 ${l.time||'--:--'}</span>
-          ${tip ? `<span style="font-size:10px;font-weight:700;color:${tipRenk};padding:1px 7px;border-radius:10px;background:rgba(0,0,0,0.2)">${tip}</span>` : ''}
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+          <span style="font-size:14px;font-weight:700;color:var(--txt)">🕒 ${l.time || '--:--'}</span>
+          ${tip ? `<span style="font-size:11px;font-weight:700;color:${tipRenk};padding:2px 8px;border-radius:10px;background:rgba(0,0,0,0.2)">${tip}</span>` : ''}
           ${l.platform ? `<span style="font-size:10px;color:var(--muted)">${l.platform}</span>` : ''}
         </div>
-        ${aktTarih ? `<div style="font-size:10px;color:#9b59b6;margin-top:2px">${aktTarih}</div>` : ''}
-        ${musteriInfo}
+        ${aktTarih ? `<div style="font-size:11px;color:#9b59b6">${aktTarih}</div>` : ''}
+        ${musteri ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">
+          👤 ${musteri.ad || 'İsimsiz'} ${musteri.tel ? '· ' + musteri.tel : ''}
+          <span style="margin-left:4px;font-size:9px;padding:1px 6px;border-radius:8px;background:${musteri.durum==='aktif'?'rgba(76,217,100,0.15)':'rgba(255,159,10,0.15)'};color:${musteri.durum==='aktif'?'#4cd964':'#ff9f0a'}">${musteri.durum}</span>
+        </div>` : ''}
       </div>
-      <button onclick="deleteIslemLog(${l._idx},'${cat}','${date}',${isMnp})" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer;flex-shrink:0">🗑</button>
+      <button onclick="${deleteCall}" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0">🗑</button>
     </div>`;
   }).join('');
 
   list.innerHTML = ozet + satirlar;
 }
 
-function deleteIslemLog(logIdx, cat, date, isMnp){
+
+function deleteIslemLog(logRef, cat, date, isMnp){
   if(!confirm('Bu işlemi silmek istiyor musunuz?')) return;
 
-  // Log kaydını sil
+  const mnpFlag = (isMnp === true || isMnp === 'true');
+
+  // Log kaydını bul ve sil: önce id ile dene, yoksa index ile
+  let logIdx = -1;
+  if(typeof logRef === 'string' && isNaN(parseInt(logRef))){
+    // id bazlı arama
+    logIdx = entryLog.findIndex(l => l.id === logRef);
+  } else {
+    // index bazlı (eski kayıtlar için)
+    logIdx = parseInt(logRef);
+  }
+
   if(logIdx >= 0 && logIdx < entryLog.length){
     entryLog.splice(logIdx, 1);
   }
 
-  // Entries'teki sayıyı azalt
-  const e = entries.find(x=>x.date===date && x.cat===cat && !!x.mnp===!!isMnp);
+  // Entries'teki sayıyı 1 azalt
+  let e;
+  if(MNP_CATS.includes(cat)){
+    e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
+  } else {
+    e = entries.find(x => x.date===date && x.cat===cat);
+  }
   if(e && e.count > 0){
     e.count--;
     if(e.count === 0) entries.splice(entries.indexOf(e), 1);
   }
 
-  // Eşleşen müşteri kaydını bul ve sil (opsiyonel - sor)
-  const silinecekMusteri = musteriler.find(m=>
-    m.entryDate===date && m.cat===cat && m.tip===(isMnp?'mnp':'tesis')
+  // Müşteri kaydını bul - sil
+  const silinecekMusteri = musteriler.find(m =>
+    m.entryDate===date && m.cat===cat &&
+    (MNP_CATS.includes(cat) ? m.tip===(mnpFlag?'mnp':'tesis') : true)
   );
   if(silinecekMusteri){
     if(confirm('Bu işleme ait müşteri kaydı da silinsin mi?')){
-      musteriler = musteriler.filter(m=>m.id!==silinecekMusteri.id);
+      musteriler = musteriler.filter(m => m.id !== silinecekMusteri.id);
       saveMusteriStore();
     }
   }
 
   saveEntries();
   renderPrimPage();
-  renderIslemList(cat, date); // modalı güncelle
+  renderIslemList(cat, date);
 }
 
-// ===== SİLME TİP MODAL FONKSİYONLARI =====
-let _silCat = null, _silDate = null;
+
 function openSilModal(cat, date){
   _silCat = cat; _silDate = date;
   const mnpE  = entries.find(e=>e.date===date&&e.cat===cat&&e.mnp);
@@ -7773,10 +7830,11 @@ function saveMusteriKayit(){
   saveMusteriStore();
   closeMusteriKayit();
 
-  // Prim sayfasını güncelle (sayı eklendi mi?)
+  // Prim sayısını güncelle - direkt _doChangeCount kullan (modal tetiklemeden)
   if(!_mkEditId){
-    // Fiilen changeCount'u çağır
-    changeCount(cat, 1, aktTarih, _mkTip==='mnp');
+    _doChangeCount(tarih, cat, 1, aktTarih, _mkTip==='mnp');
+    saveEntries();
+    if(typeof renderPrimPage==='function') renderPrimPage();
   }
 }
 
@@ -8725,7 +8783,7 @@ function collectAlerts() {
     if (hedef && hedef > 0) {
       const curEntries = entries.filter(e => e.date.startsWith(curYm));
       let realized = 0;
-      curEntries.forEach(e => { realized += e.count * (priceFor(curYm, e.cat) || 0); });
+      curEntries.forEach(e => { realized += e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(curYm,e.cat))||0); });
       const pct = Math.round(realized / hedef * 100);
       // %80 uyarısı
       if (pct >= 80 && pct < 90) {
@@ -8768,8 +8826,8 @@ function collectAlerts() {
     const curEntries = entries.filter(e => e.date.startsWith(curYm));
     const prevEntries = entries.filter(e => e.date.startsWith(prevYm));
     let curSum = 0, prevSum = 0;
-    curEntries.forEach(e => { curSum += e.count * (priceFor(curYm, e.cat) || 0); });
-    prevEntries.forEach(e => { prevSum += e.count * (priceFor(prevYm, e.cat) || 0); });
+    curEntries.forEach(e => { curSum += e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(curYm,e.cat))||0); });
+    prevEntries.forEach(e => { prevSum += e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(prevYm,e.cat))||0); });
     if (prevSum > 0 && curSum > 0) {
       const dususPct = Math.round((prevSum - curSum) / prevSum * 100);
       const esik = notifSettings.dususEsik || 20;
@@ -9059,7 +9117,7 @@ function renderRaporPage() {
 }
 
 function getEntryAmount(e, ymStr) {
-  const p = priceFor(ymStr, e.cat) || 0;
+  const p = kampanyaFiyatFor(e.date, e.cat, priceFor(ymStr, e.cat)) || 0;
   return e.count * p;
 }
 
@@ -9233,7 +9291,7 @@ function renderRaporAylik(yil, monthNames) {
     const ayEntries = entries.filter(e => e.date.startsWith(ym));
     const count = ayEntries.reduce((a,e) => a + e.count, 0);
     const amount = ayEntries.reduce((a,e) => {
-      return a + e.count * (priceFor(ym, e.cat)||0) * (1+KDV_ORANI);
+      return a + e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(ym,e.cat))||0) * (1+KDV_ORANI);
     }, 0);
     const hedef = hedefler[ym] || 0;
     const pct = hedef > 0 ? Math.min(100, Math.round(amount/hedef*100)) : null;
@@ -9747,7 +9805,7 @@ function renderHedefPage(){
 
   function primForYm(ym){
     return entries.filter(e=>e.date.startsWith(ym)).reduce((s,e)=>{
-      return s + e.count * (priceFor(ym,e.cat)||0) * (1+KDV_ORANI);
+      return s + e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(ym,e.cat))||0) * (1+KDV_ORANI);
     },0);
   }
 
@@ -10276,7 +10334,7 @@ function renderHedefGecmis(){
 
   function primForYm(ym){
     return entries.filter(e=>e.date.startsWith(ym)).reduce((s,e)=>{
-      return s + e.count * (priceFor(ym,e.cat)||0) * (1+KDV_ORANI);
+      return s + e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(ym,e.cat))||0) * (1+KDV_ORANI);
     },0);
   }
   // Gerçekleşen kategori adetleri
