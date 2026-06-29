@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v39 · 29.06.2026 16:37</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v40 · 29.06.2026 16:46</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v39 · Son güncelleme: 29.06.2026 16:37</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v40 · Son güncelleme: 29.06.2026 16:46</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v39';
-const BUILD_DATE = '29.06.2026 16:37';
+const APP_VERSION = 'v40';
+const BUILD_DATE = '29.06.2026 16:46';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4362,36 +4362,51 @@ function render(){
     bekleyenTutar += p;
   });
 
+    // Prim tutari: sadece onaylananlar (aktif musteriler)
+  const primTutari = onaylananTutar;
+  const toplamMusteriAdet = onaylananAdet + bekleyenAdet;
+
   totalCard.innerHTML = `
-    <div class="label">TOPLAM — Bugün: ${activeDate}</div>
-    <div class="ctrl" style="justify-content:center">
-      <span class="cnt">${dayCount} <span style="font-size:13px;font-weight:600;opacity:.85">(${fmt(dayTotal)})</span></span>
+    <div class="label" style="font-size:11px;opacity:.7;margin-bottom:2px">TOPLAM — ${activeDate}</div>
+
+    <!-- Bugun -->
+    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
+      <span class="cnt" style="font-size:24px">${dayCount}</span>
+      <span style="font-size:12px;opacity:.7">${fmt(dayTotal)}</span>
     </div>
-    <div class="range-info">
-      ${rStart} – ${rEnd}
-      <span>${rangeCount} adet (${fmt(rangeAmt)})</span>
+
+    <!-- Aralik -->
+    <div style="font-size:10px;opacity:.6;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.15)">
+      ${rStart} – ${rEnd} &nbsp;·&nbsp; ${rangeCount} adet (${fmt(rangeAmt)})
     </div>
-    ${(onaylananAdet > 0 || bekleyenAdet > 0) ? `
-    <div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.2);padding-top:6px;font-size:11px;display:flex;flex-direction:column;gap:3px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="display:flex;align-items:center;gap:4px"><span style="font-size:9px">✅</span><span style="color:#4cd964;font-weight:700">Onaylanan</span></span>
-        <span style="color:#4cd964;font-weight:700">${onaylananAdet} adet &nbsp;${fmt(onaylananTutar)}</span>
+
+    <!-- Musteri takip ozeti -->
+    ${toplamMusteriAdet > 0 ? `
+    <div style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Müşteri Takibi</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-size:11.5px;margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:#4cd964">✅ Onaylanan</span>
+        <span style="color:#4cd964;font-weight:700">${onaylananAdet} · ${fmt(onaylananTutar)}</span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="display:flex;align-items:center;gap:4px"><span style="font-size:9px">⏳</span><span style="color:#ff9f0a;font-weight:700">Bekleyen</span></span>
-        <span style="color:#ff9f0a;font-weight:700">${bekleyenAdet} adet &nbsp;${fmt(bekleyenTutar)}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:3px;border-top:1px solid rgba(255,255,255,0.12)">
-        <span style="font-weight:700;opacity:.85">Toplam</span>
-        <span style="font-weight:700">${onaylananAdet+bekleyenAdet} adet &nbsp;${fmt(onaylananTutar+bekleyenTutar)}</span>
+      ${bekleyenAdet > 0 ? `<div style="display:flex;justify-content:space-between">
+        <span style="color:#ff9f0a">⏳ Bekleyen</span>
+        <span style="color:#ff9f0a;font-weight:700">${bekleyenAdet} · ${fmt(bekleyenTutar)}</span>
+      </div>` : ''}
+      <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px solid rgba(255,255,255,0.12);font-weight:700">
+        <span>Toplam</span>
+        <span>${toplamMusteriAdet} · ${fmt(onaylananTutar+bekleyenTutar)}</span>
       </div>
     </div>` : ''}
+
+    <!-- Gelir/Gider -->
     ${(rangeGelir>0||rangeGider>0) ? `
-    <div style="margin-top:7px;border-top:1px solid rgba(255,255,255,0.2);padding-top:7px;font-size:11px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="opacity:.75">Gelir:</span><span style="color:#4cd964;font-weight:700">${fmt(rangeGelir)}</span></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="opacity:.75">Gider:</span><span style="color:#ff5252;font-weight:700">${fmt(rangeGider)}</span></div>
-      <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.15);padding-top:4px;margin-top:2px"><span style="opacity:.75;font-weight:700">Net:</span><span style="color:${netColor};font-weight:800">${fmt(rangeNet)}</span></div>
-    </div>` : ''}`;
+    <div style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Gelir / Gider</div>
+    <div style="display:flex;flex-direction:column;gap:2px;font-size:11.5px">
+      <div style="display:flex;justify-content:space-between"><span style="opacity:.8">Gelir</span><span style="color:#4cd964;font-weight:700">${fmt(rangeGelir)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="opacity:.8">Gider</span><span style="color:#ff5252;font-weight:700">${fmt(rangeGider)}</span></div>
+      <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px solid rgba(255,255,255,0.12);font-weight:700"><span>Net</span><span style="color:${netColor}">${fmt(rangeNet)}</span></div>
+    </div>` : ''}
+  `;
   cardsDiv.appendChild(totalCard);
 
   // ---- price panel ----
@@ -8012,6 +8027,7 @@ function renderKampanyaList(){
 let _mkTip = 'tesis';
 let _mkEditId = null;
 let _musteriRaporFilter = 'hepsi';
+let _musteriRaporCat = 'hepsi';
 let _durumEditId = null;
 
 function saveMusteriStore(){
@@ -8137,6 +8153,7 @@ function saveMusteriKayit(){
 // ===== TAKİP RAPORU =====
 function openMusteriRapor(){
   _musteriRaporFilter = 'hepsi';
+  _musteriRaporCat = 'hepsi';
   renderMusteriRapor();
   document.getElementById('musteriRaporModal').style.display = 'flex';
 }
@@ -8148,6 +8165,14 @@ function setRaporFilter(f){
   document.querySelectorAll('[id^="rf_"]').forEach(b=>{
     b.style.background = b.id==='rf_'+f ? '#e2231a' : 'var(--panel2)';
     b.style.color      = b.id==='rf_'+f ? '#fff'    : 'var(--muted)';
+  });
+  renderMusteriRapor();
+}
+function setRaporCat(c){
+  _musteriRaporCat = c;
+  document.querySelectorAll('[id^="rfc_"]').forEach(b=>{
+    b.style.background = b.id==='rfc_'+c ? '#e2231a' : 'var(--panel)';
+    b.style.color      = b.id==='rfc_'+c ? '#fff'    : 'var(--muted)';
   });
   renderMusteriRapor();
 }
@@ -8167,6 +8192,9 @@ function renderMusteriRapor(){
 
   if(_musteriRaporFilter !== 'hepsi'){
     filtered = filtered.filter(m=>m.durum===_musteriRaporFilter);
+  }
+  if(_musteriRaporCat !== 'hepsi'){
+    filtered = filtered.filter(m=>m.cat===_musteriRaporCat);
   }
 
   // Toplu onay butonu - bekliyor olanlar için
@@ -11067,13 +11095,18 @@ function renderHedefGecmis(){
       <button onclick="closeMusteriRapor()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
     </div>
     <!-- Filtre -->
-    <div style="display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line);flex-shrink:0;overflow-x:auto">
-      <button onclick="setRaporFilter('hepsi')" id="rf_hepsi" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:#e2231a;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Tümü</button>
-      <button onclick="setRaporFilter('bekliyor')" id="rf_bekliyor" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">⏳ Bekliyor</button>
-      <button onclick="setRaporFilter('aktif')" id="rf_aktif" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">✅ Aktif</button>
-      <button onclick="setRaporFilter('iptal')" id="rf_iptal" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">❌ İptal</button>
-      <button onclick="setRaporFilter('tasima')" id="rf_tasima" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">🔄 Taşıma</button>
-      <button onclick="setRaporFilter('gecissiz')" id="rf_gecissiz" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">⚠️ Geçişsiz</button>
+    <div style="display:flex;gap:6px;padding:8px 14px;border-bottom:1px solid var(--line);flex-shrink:0;overflow-x:auto">
+      <button onclick="setRaporFilter('hepsi')" id="rf_hepsi" style="padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:#e2231a;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Tümü</button>
+      <button onclick="setRaporFilter('bekliyor')" id="rf_bekliyor" style="padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">⏳ Bekliyor</button>
+      <button onclick="setRaporFilter('aktif')" id="rf_aktif" style="padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">✅ Aktif</button>
+      <button onclick="setRaporFilter('iptal')" id="rf_iptal" style="padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">❌ İptal</button>
+      <button onclick="setRaporFilter('tasima')" id="rf_tasima" style="padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">🔄 Taşıma</button>
+      <button onclick="setRaporFilter('gecissiz')" id="rf_gecissiz" style="padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">⚠️ Geçişsiz</button>
+    </div>
+    <div style="display:flex;gap:5px;padding:6px 14px;border-bottom:1px solid var(--line);flex-shrink:0;overflow-x:auto;background:var(--panel2)">
+      <span style="font-size:10px;color:var(--muted);align-self:center;white-space:nowrap">Kategori:</span>
+      <button onclick="setRaporCat('hepsi')" id="rfc_hepsi" style="padding:4px 9px;border-radius:14px;border:1px solid var(--line);background:#e2231a;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Tümü</button>
+      ${CATS.map(c=>`<button onclick="setRaporCat('${c}')" id="rfc_${c}" style="padding:4px 9px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:10px;cursor:pointer;white-space:nowrap">${c}</button>`).join('')}
     </div>
     <div id="musteriTopluBar" style="display:none;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:rgba(76,217,100,0.06);flex-shrink:0"></div>
     <div style="flex:1;overflow-y:auto" id="musteriRaporList"></div>
