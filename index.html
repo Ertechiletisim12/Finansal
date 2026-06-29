@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v38 · 29.06.2026 16:02</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v39 · 29.06.2026 16:37</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v38 · Son güncelleme: 29.06.2026 16:02</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v39 · Son güncelleme: 29.06.2026 16:37</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v38';
-const BUILD_DATE = '29.06.2026 16:02';
+const APP_VERSION = 'v39';
+const BUILD_DATE = '29.06.2026 16:37';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -2914,6 +2914,7 @@ function load(){
   loadHedefExtra();
   recomputeAllFinans();
   render();
+  checkMusteriTakip();
 }
 function saveEntries(){ try{ localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries)); }catch(e){} scheduleAutoBackup(); setTimeout(checkAllNotifications,500); checkStorageAfterSave(); scheduleCloudSync(); }
 function saveEntryLog(){ try{ localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog)); }catch(e){} checkStorageAfterSave(); scheduleCloudSync(); }
@@ -4336,15 +4337,15 @@ function render(){
     }
     return ymKey(m.entryDate);
   }
+  // Onaylanan/bekleyen: range veya activeYm - hangisi daha genis ise kullan
+  const musteriYmFilter = eym => eym >= rStartYm && eym <= rEndYm || eym === activeYm;
   const onaylananMusteriler = musteriler.filter(m=>{
     if(m.durum!=='aktif' || !m.entryDate) return false;
-    const eym = musteriEffectiveYm(m);
-    return eym >= rStartYm && eym <= rEndYm;
+    return musteriYmFilter(musteriEffectiveYm(m));
   });
   const bekleyenMusteriler = musteriler.filter(m=>{
     if(m.durum!=='bekliyor' || !m.entryDate) return false;
-    const eym = musteriEffectiveYm(m);
-    return eym >= rStartYm && eym <= rEndYm;
+    return musteriYmFilter(musteriEffectiveYm(m));
   });
 
   let onaylananAdet = 0, onaylananTutar = 0;
@@ -4812,6 +4813,8 @@ function render(){
   }
   // Ana özet sayfası açıksa otomatik güncelle
   if(typeof currentPage !== 'undefined' && currentPage === 'dash') renderDash();
+  // Badge her render'da guncel kalsin
+  checkMusteriTakip();
 }
 
 document.getElementById('activeDate').addEventListener('change', render);
@@ -8315,6 +8318,7 @@ function topluOnayla(){
   renderMusteriRapor();
   checkMusteriTakip();
   render();
+  alert('✅ ' + secilen.length + ' kayıt onaylandı!');
 }
 
 function deleteMusteriKayit(id){
