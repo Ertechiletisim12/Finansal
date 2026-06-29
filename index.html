@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v37 · 29.06.2026 15:57</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v38 · 29.06.2026 16:02</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v37 · Son güncelleme: 29.06.2026 15:57</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v38 · Son güncelleme: 29.06.2026 16:02</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v37';
-const BUILD_DATE = '29.06.2026 15:57';
+const APP_VERSION = 'v38';
+const BUILD_DATE = '29.06.2026 16:02';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4279,10 +4279,13 @@ function render(){
       ).reduce((a,e)=>a+e.count, 0);
 
       // Bu kategoride onay bekleyen MNP sayisi
-      const bekleyenMnp = musteriler.filter(m=>
-        m.cat===cat && m.tip==='mnp' && m.durum==='bekliyor' &&
-        m.entryDate && ymKey(m.entryDate)===activeYm
-      ).length;
+      // Bekleyen MNP: aktivasyon bu ayda olan bekleyenler (effectiveYm bazlı)
+      const bekleyenMnp = musteriler.filter(m=>{
+        if(m.cat!==cat || m.tip!=='mnp' || m.durum!=='bekliyor' || !m.entryDate) return false;
+        // Aktivasyon tarihi bu aya mi dusuyor?
+        const aktYm = m.aktivasyonTarihi ? ymKey(m.aktivasyonTarihi) : ymKey(mnpActivationDate(m.entryDate));
+        return aktYm === activeYm;
+      }).length;
 
       if(mnpAdet || tesisAdet || devirGelenMnp){
         const mnpBuAy = mnpAdet - sonrakiAya;
@@ -4326,11 +4329,24 @@ function render(){
   const rangeNet = rangeGelir - rangeGider;
   const netColor = rangeNet >= 0 ? '#4cd964' : '#ff5252';
 
-    // Onaylanan / Bekleyen hesapla (aktif ay bazında)
-  const onaylananMusteriler = musteriler.filter(m=>m.durum==='aktif' && m.entryDate && m.entryDate>=rStart && m.entryDate<=rEnd);
-  const bekleyenMusteriler  = musteriler.filter(m=>m.durum==='bekliyor' && m.entryDate && m.entryDate>=rStart && m.entryDate<=rEnd);
+    // Onaylanan / Bekleyen hesapla - range bazlı, MNP için aktivasyon tarihi
+  function musteriEffectiveYm(m){
+    if(m.tip==='mnp'){
+      return m.aktivasyonTarihi ? ymKey(m.aktivasyonTarihi) : ymKey(mnpActivationDate(m.entryDate));
+    }
+    return ymKey(m.entryDate);
+  }
+  const onaylananMusteriler = musteriler.filter(m=>{
+    if(m.durum!=='aktif' || !m.entryDate) return false;
+    const eym = musteriEffectiveYm(m);
+    return eym >= rStartYm && eym <= rEndYm;
+  });
+  const bekleyenMusteriler = musteriler.filter(m=>{
+    if(m.durum!=='bekliyor' || !m.entryDate) return false;
+    const eym = musteriEffectiveYm(m);
+    return eym >= rStartYm && eym <= rEndYm;
+  });
 
-  // Onaylanan tutarlar - entries üzerinden
   let onaylananAdet = 0, onaylananTutar = 0;
   onaylananMusteriler.forEach(m=>{
     const p = kampanyaFiyatFor(m.entryDate, m.cat, priceFor(ymKey(m.entryDate), m.cat)) || 0;
@@ -4338,7 +4354,6 @@ function render(){
     onaylananTutar += p;
   });
 
-  // Bekleyen tutarlar - entries üzerinden
   let bekleyenAdet = 0, bekleyenTutar = 0;
   bekleyenMusteriler.forEach(m=>{
     const p = kampanyaFiyatFor(m.entryDate, m.cat, priceFor(ymKey(m.entryDate), m.cat)) || 0;
@@ -4356,18 +4371,18 @@ function render(){
       <span>${rangeCount} adet (${fmt(rangeAmt)})</span>
     </div>
     ${(onaylananAdet > 0 || bekleyenAdet > 0) ? `
-    <div style="margin-top:7px;border-top:1px solid rgba(255,255,255,0.2);padding-top:7px;font-size:11px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="color:#4cd964;font-weight:700">✅ Onaylanan</span>
-        <span style="font-weight:700;color:#4cd964">${onaylananAdet} adet · ${fmt(onaylananTutar)}</span>
+    <div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.2);padding-top:6px;font-size:11px;display:flex;flex-direction:column;gap:3px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="display:flex;align-items:center;gap:4px"><span style="font-size:9px">✅</span><span style="color:#4cd964;font-weight:700">Onaylanan</span></span>
+        <span style="color:#4cd964;font-weight:700">${onaylananAdet} adet &nbsp;${fmt(onaylananTutar)}</span>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="color:#ff9f0a;font-weight:700">⏳ Bekleyen</span>
-        <span style="font-weight:700;color:#ff9f0a">${bekleyenAdet} adet · ${fmt(bekleyenTutar)}</span>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="display:flex;align-items:center;gap:4px"><span style="font-size:9px">⏳</span><span style="color:#ff9f0a;font-weight:700">Bekleyen</span></span>
+        <span style="color:#ff9f0a;font-weight:700">${bekleyenAdet} adet &nbsp;${fmt(bekleyenTutar)}</span>
       </div>
-      <div style="display:flex;justify-content:space-between;padding-top:4px;border-top:1px solid rgba(255,255,255,0.15)">
-        <span style="opacity:.8;font-weight:700">Toplam</span>
-        <span style="font-weight:700">${onaylananAdet+bekleyenAdet} adet · ${fmt(onaylananTutar+bekleyenTutar)}</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:3px;border-top:1px solid rgba(255,255,255,0.12)">
+        <span style="font-weight:700;opacity:.85">Toplam</span>
+        <span style="font-weight:700">${onaylananAdet+bekleyenAdet} adet &nbsp;${fmt(onaylananTutar+bekleyenTutar)}</span>
       </div>
     </div>` : ''}
     ${(rangeGelir>0||rangeGider>0) ? `
