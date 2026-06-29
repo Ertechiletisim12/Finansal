@@ -7510,7 +7510,7 @@ function deleteIslemLog(logRef, cat, date, isMnp){
 
   // Kaydet ve anında güncelle
   saveEntries();
-  renderPrimPage();
+  render();
   renderIslemList(cat, date);
 }
 
@@ -7533,7 +7533,7 @@ function confirmSil(isMnp){
   closeSilModal();
   if(!cat) return;
   _doChangeCount(date, cat, -1, null, isMnp);
-  saveEntries(); renderPrimPage();
+  saveEntries(); render();
 }
 
 // ===== MNP / YENİ TESİS MODAL FONKSİYONLARI =====
@@ -7842,7 +7842,7 @@ function saveMusteriKayit(){
   if(!_mkEditId){
     _doChangeCount(tarih, cat, 1, aktTarih, _mkTip==='mnp');
     saveEntries();
-    if(typeof renderPrimPage==='function') renderPrimPage();
+    if(typeof renderPrimPage==='function') render();
   }
 }
 
@@ -7968,7 +7968,7 @@ function setMusteriDurum(durum){
           e.count--;
           if(e.count===0) entries.splice(entries.indexOf(e),1);
           saveEntries();
-          if(typeof renderPrimPage==='function') renderPrimPage();
+          if(typeof renderPrimPage==='function') render();
           alert('✅ Prim güncellendi. 1 adet '+m.cat+' düşüldü.');
         } else {
           alert('Bu aya ait eşleşen giriş bulunamadı. Lütfen manuel kontrol edin.');
