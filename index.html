@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v45 · 29.06.2026 23:11</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v46 · 29.06.2026 23:14</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v45 · Son güncelleme: 29.06.2026 23:11</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v46 · Son güncelleme: 29.06.2026 23:14</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v45';
-const BUILD_DATE = '29.06.2026 23:11';
+const APP_VERSION = 'v46';
+const BUILD_DATE = '29.06.2026 23:14';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4355,10 +4355,10 @@ function render(){
           + '🆕 ' + tesisAdet + ' Tesis · 🔄 ' + Math.max(0,mnpBuAy) + ' MNP'
           + (sonrakiAya ? ' <span style="color:#ff9f0a"> · '+sonrakiAya+' sonraki aya devir</span>' : '')
           + (devirGelenMnp ? ' <span style="color:#4cd964"> · '+devirGelenMnp+' önceki aydan devir</span>' : '')
-          + (bekleyenMnp ? ' <span onclick="openMusteriRaporFiltered(\'bekliyor\',\''+cat+'\',\'bekleyen\')" style="color:#ff9f0a;font-weight:700;cursor:pointer;text-decoration:underline"> · ⏳ '+bekleyenMnp+' onay bekliyor</span>' : '')
+          + (bekleyenMnp ? ' <span onclick="openMusteriRaporFiltered(\'bekliyor\',\''+cat+'\',\'hepsi\')" style="color:#ff9f0a;font-weight:700;cursor:pointer;text-decoration:underline"> · ⏳ '+bekleyenMnp+' onay bekliyor</span>' : '')
           + '</div>';
       } else if(bekleyenMnp){
-        mnpInfo = '<div onclick="openMusteriRaporFiltered(\'bekliyor\',\''+cat+'\',\'bekleyen\')" style="font-size:10px;color:#ff9f0a;margin-top:3px;font-weight:700;cursor:pointer">⏳ '+bekleyenMnp+' MNP onay bekliyor</div>';
+        mnpInfo = '<div onclick="openMusteriRaporFiltered(\'bekliyor\',\''+cat+'\',\'hepsi\')" style="font-size:10px;color:#ff9f0a;margin-top:3px;font-weight:700;cursor:pointer">⏳ '+bekleyenMnp+' MNP onay bekliyor</div>';
       }
     }
     // İnternet: aktivasyon tarihi göster
@@ -8260,6 +8260,20 @@ function setRaporTarih(t){
 function renderMusteriRapor(){
   const list = document.getElementById('musteriRaporList');
   if(!list) return;
+
+  // Durum filtre butonlarini guncelle
+  document.querySelectorAll('[id^="rf_"]').forEach(b=>{
+    const active = b.id === 'rf_' + _musteriRaporFilter;
+    b.style.background = active ? '#e2231a' : 'var(--panel2)';
+    b.style.color = active ? '#fff' : 'var(--muted)';
+    b.style.fontWeight = active ? '700' : 'normal';
+  });
+  // Tarih filtre butonlarini guncelle
+  document.querySelectorAll('[id^="rft_"]').forEach(b=>{
+    const active = b.id === 'rft_' + _musteriRaporTarih;
+    b.style.background = active ? '#e2231a' : 'var(--panel2)';
+    b.style.color = active ? '#fff' : 'var(--muted)';
+  });
 
   // Kategori filtre bar dinamik render
   const catBar = document.getElementById('musteriCatFilterBar');
