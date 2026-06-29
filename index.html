@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v32 · 29.06.2026 14:58</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v33 · 29.06.2026 15:04</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v32 · Son güncelleme: 29.06.2026 14:58</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v33 · Son güncelleme: 29.06.2026 15:04</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v32';
-const BUILD_DATE = '29.06.2026 14:58';
+const APP_VERSION = 'v33';
+const BUILD_DATE = '29.06.2026 15:04';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -2766,6 +2766,14 @@ function getPlatformName(){
   return '🖥️ Web';
 }
 
+// Bir log'un karşılığında geçerli bir entry var mı kontrol et
+function logHasEntry(l){
+  if(MNP_CATS.includes(l.cat)){
+    return entries.some(e=>e.date===l.date&&e.cat===l.cat&&!!e.mnp===!!l.mnp&&e.count>0);
+  }
+  return entries.some(e=>e.date===l.date&&e.cat===l.cat&&e.count>0);
+}
+
 async function pushToCloud(){
   try{
     if(!userChangedData) return;
@@ -2774,24 +2782,18 @@ async function pushToCloud(){
     userChangedData = false;
     updateCloudIndicator('saving');
     await new Promise(r=>setTimeout(r, Math.random()*300));
-    // Önce cloud'u çek, merge et
+    // Push öncesi lokal orphan'ları temizle
+    entryLog = entryLog.filter(l => logHasEntry(l));
+    localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
+    // Cloud'u çek - SADECE entries merge et, entryLog'u ALMA (lokali bozmasın)
     const res0 = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if(res0.ok){
       const cloudData = await res0.json();
       if(cloudData && cloudData.data !== 'init'){
         entries = mergeEntries(entries, cloudData.entries||[]);
-        if(cloudData.entryLog){
-          // ID bazlı merge - ID'si olmayana içerik bazlı key üret
-          function logKey(l, i){
-            return l.id || (l.date+'_'+l.cat+'_'+(l.time||'')+'_'+(l.mnp?'mnp':'tes')+'_'+i);
-          }
-          const logById = new Map();
-          (cloudData.entryLog||[]).forEach((l,i) => logById.set(logKey(l,i), l));
-          (entryLog||[]).forEach((l,i) => logById.set(logKey(l,i), l)); // lokal öncelikli
-          entryLog = [...logById.values()].sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
-        }
+        // entryLog: cloud'dan ALMA - lokal her zaman doğru kaynak
+        // (pull sırasında zaten merge ediliyor)
         localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries));
-        localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
         lastSyncedEntries = JSON.parse(JSON.stringify(entries));
       }
     }
