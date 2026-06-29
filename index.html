@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v31 · 29.06.2026 14:45</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v32 · 29.06.2026 14:58</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v31 · Son güncelleme: 29.06.2026 14:45</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v32 · Son güncelleme: 29.06.2026 14:58</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v31';
-const BUILD_DATE = '29.06.2026 14:45';
+const APP_VERSION = 'v32';
+const BUILD_DATE = '29.06.2026 14:58';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -2781,11 +2781,14 @@ async function pushToCloud(){
       if(cloudData && cloudData.data !== 'init'){
         entries = mergeEntries(entries, cloudData.entries||[]);
         if(cloudData.entryLog){
-          // ID bazlı merge - her kayıt benzersiz ID ile korunur
+          // ID bazlı merge - ID'si olmayana içerik bazlı key üret
+          function logKey(l, i){
+            return l.id || (l.date+'_'+l.cat+'_'+(l.time||'')+'_'+(l.mnp?'mnp':'tes')+'_'+i);
+          }
           const logById = new Map();
-          (cloudData.entryLog||[]).forEach(l => { if(l.id) logById.set(l.id, l); });
-          (entryLog||[]).forEach(l => { if(l.id) logById.set(l.id, l); }); // lokal öncelikli
-          entryLog = [...logById.values()].sort((a,b)=>(a.date+a.time||'').localeCompare(b.date+b.time||''));
+          (cloudData.entryLog||[]).forEach((l,i) => logById.set(logKey(l,i), l));
+          (entryLog||[]).forEach((l,i) => logById.set(logKey(l,i), l)); // lokal öncelikli
+          entryLog = [...logById.values()].sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
         }
         localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries));
         localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
@@ -2991,9 +2994,17 @@ function beklenenPrim(ym, mMap){
 
 function activeDateVal(){ return document.getElementById('activeDate').value || todayStr(); }
 function getCount(date, cat){
-  // MNP_CATS için tesis + mnp ayrı entry'lerin toplamı
+  // MNP_CATS: bu tarihe girilenler (tesis) + bu tarihin ayına effectiveYm'i düşen MNP'ler
   if(MNP_CATS.includes(cat)){
-    return entries.filter(e=>e.date===date&&e.cat===cat).reduce((a,e)=>a+e.count,0);
+    const dateYm = ymKey(date);
+    return entries
+      .filter(e => e.cat===cat && (
+        // Tesis: aynı gün girilmiş
+        (!e.mnp && e.date===date) ||
+        // MNP: effectiveYm bu tarihin ayında (aktivasyonu bu aya düşüyor)
+        (!!e.mnp && effectiveYm(e)===dateYm)
+      ))
+      .reduce((a,e)=>a+e.count,0);
   }
   const e = entries.find(e=>e.date===date && e.cat===cat);
   return e ? e.count : 0;
@@ -10405,6 +10416,27 @@ checkLock();
 load();
 // Buluttan veri çek — localStorage'dan daha yeni veri varsa uygula
 setTimeout(()=>{ pullFromCloud().then(()=>startCloudPolling()); }, 800);
+// Orphan log temizleme - entries ile eslesmeyenleri kaldir
+setTimeout(()=>{
+  let changed = false;
+  const validKeys = new Set(entries.map(e=>e.date+'_'+e.cat+'_'+(e.mnp?'mnp':'tes')));
+  // Her log icin entry var mi kontrol et
+  const cleaned = entryLog.filter(l=>{
+    const lKey = l.date+'_'+l.cat+'_'+(l.mnp?'mnp':'tes');
+    // Bu log icin entry var mi?
+    const hasEntry = MNP_CATS.includes(l.cat)
+      ? entries.some(e=>e.date===l.date&&e.cat===l.cat&&!!e.mnp===!!l.mnp&&e.count>0)
+      : entries.some(e=>e.date===l.date&&e.cat===l.cat&&e.count>0);
+    if(!hasEntry) changed = true;
+    return hasEntry;
+  });
+  if(changed){
+    entryLog = cleaned;
+    saveEntryLog();
+    scheduleCloudSync();
+    render();
+  }
+}, 3000);
 setTimeout(renderDash, 100);
 restoreBackupFolderHandle();
 setTimeout(checkBackupReminder, 1200);
