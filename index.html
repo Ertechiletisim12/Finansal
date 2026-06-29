@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v24 · 29.06.2026 08:11</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v25 · 29.06.2026 11:21</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v24 · Son güncelleme: 29.06.2026 08:11</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v25 · Son güncelleme: 29.06.2026 11:21</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v24';
-const BUILD_DATE = '29.06.2026 08:11';
+const APP_VERSION = 'v25';
+const BUILD_DATE = '29.06.2026 11:21';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -7863,6 +7863,8 @@ function closeMusteriKayit(){
 
 function setMkTip(tip){
   _mkTip = tip;
+  const hidden = document.getElementById('mkTipHidden');
+  if(hidden) hidden.value = tip;
   const tBtn = document.getElementById('mkTipTesis');
   const mBtn = document.getElementById('mkTipMnp');
   tBtn.style.background = tip==='tesis' ? '#e2231a' : 'var(--panel2)';
@@ -7901,7 +7903,9 @@ function saveMusteriKayit(){
   const tarih  = document.getElementById('mkTarih').value;
   const saat   = document.getElementById('mkSaat').value;
   const not    = document.getElementById('mkNot').value.trim();
-  const aktTarih = _mkTip==='mnp' ? document.getElementById('mkAktTarih').value : null;
+  // _mkTip: hem global değişken hem hidden input'tan kontrol et
+  const mkTipVal = document.getElementById('mkTipHidden')?.value || _mkTip || 'tesis';
+  const aktTarih = mkTipVal==='mnp' ? document.getElementById('mkAktTarih').value : null;
 
   if(!tarih){ alert('Tarih zorunludur.'); return; }
 
@@ -7911,7 +7915,7 @@ function saveMusteriKayit(){
   const takipTarihi = takipD.toISOString().slice(0,10);
 
   // Otomatik onay: MNP hariç hepsi aktif sayılır
-  const otomatikAktif = _mkTip !== 'mnp';
+  const otomatikAktif = mkTipVal !== 'mnp';
   const baslangicDurum = otomatikAktif ? 'aktif' : 'bekliyor';
   const baslangicPrim  = otomatikAktif ? 'dahil' : 'bekliyor';
 
@@ -7919,7 +7923,7 @@ function saveMusteriKayit(){
     id: _mkEditId || Date.now().toString(),
     entryDate: tarih,
     entryTime: saat,
-    cat, tip: _mkTip, ad, tel, not,
+    cat, tip: mkTipVal, ad, tel, not,
     aktivasyonTarihi: aktTarih,
     takipTarihi,
     durum: baslangicDurum,
@@ -7939,7 +7943,7 @@ function saveMusteriKayit(){
 
   // Prim sayısını güncelle - direkt _doChangeCount kullan (modal tetiklemeden)
   if(!_mkEditId){
-    _doChangeCount(tarih, cat, 1, aktTarih, _mkTip==='mnp');
+    _doChangeCount(tarih, cat, 1, aktTarih, mkTipVal==='mnp');
     saveEntries();
     if(typeof renderPrimPage==='function') render();
   }
@@ -10699,6 +10703,7 @@ function renderHedefGecmis(){
     </div>
     <div style="flex:1;overflow-y:auto;padding:16px">
       <input type="hidden" id="mkEntryId">
+      <input type="hidden" id="mkTipHidden" value="tesis">
 
       <!-- İşlem Tipi -->
       <div style="display:flex;gap:8px;margin-bottom:14px">
