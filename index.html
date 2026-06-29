@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v34 · 29.06.2026 15:30</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v35 · 29.06.2026 15:36</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v34 · Son güncelleme: 29.06.2026 15:30</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v35 · Son güncelleme: 29.06.2026 15:36</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v34';
-const BUILD_DATE = '29.06.2026 15:30';
+const APP_VERSION = 'v35';
+const BUILD_DATE = '29.06.2026 15:36';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4278,14 +4278,22 @@ function render(){
         effectiveYm(e)===activeYm
       ).reduce((a,e)=>a+e.count, 0);
 
+      // Bu kategoride onay bekleyen MNP sayisi
+      const bekleyenMnp = musteriler.filter(m=>
+        m.cat===cat && m.tip==='mnp' && m.durum==='bekliyor' &&
+        m.entryDate && ymKey(m.entryDate)===activeYm
+      ).length;
+
       if(mnpAdet || tesisAdet || devirGelenMnp){
-        // Sonraki aya devir gidenleri Tesis/MNP sayısından çıkar - kart sayısına dahil değil
-        const mnpBuAy = mnpAdet - sonrakiAya;  // bu aya sayılan MNP
+        const mnpBuAy = mnpAdet - sonrakiAya;
         mnpInfo = '<div style="font-size:10px;color:var(--muted);margin-top:3px">'
           + '🆕 ' + tesisAdet + ' Tesis · 🔄 ' + Math.max(0,mnpBuAy) + ' MNP'
           + (sonrakiAya ? ' <span style="color:#ff9f0a"> · '+sonrakiAya+' sonraki aya devir</span>' : '')
           + (devirGelenMnp ? ' <span style="color:#4cd964"> · '+devirGelenMnp+' önceki aydan devir</span>' : '')
+          + (bekleyenMnp ? ' <span style="color:#ff9f0a;font-weight:700"> · ⏳ '+bekleyenMnp+' onay bekliyor</span>' : '')
           + '</div>';
+      } else if(bekleyenMnp){
+        mnpInfo = '<div style="font-size:10px;color:#ff9f0a;margin-top:3px;font-weight:700">⏳ '+bekleyenMnp+' MNP onay bekliyor</div>';
       }
     }
     // İnternet: aktivasyon tarihi göster
@@ -8108,6 +8116,26 @@ function renderMusteriRapor(){
     filtered = filtered.filter(m=>m.durum===_musteriRaporFilter);
   }
 
+  // Toplu onay butonu - bekliyor olanlar için
+  const bekleyenler = filtered.filter(m=>m.durum==='bekliyor');
+  const topluBar = document.getElementById('musteriTopluBar');
+  if(topluBar){
+    if(bekleyenler.length > 0){
+      topluBar.style.display = 'flex';
+      topluBar.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--muted)">
+            <input type="checkbox" id="mkSelectAll" onchange="toggleSelectAll(this.checked)" style="width:16px;height:16px;cursor:pointer">
+            Tümünü Seç
+          </label>
+          <span style="font-size:11px;color:var(--muted)">${bekleyenler.length} bekleyen</span>
+        </div>
+        <button onclick="topluOnayla()" style="background:#4cd964;border:none;color:#000;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer">✅ Seçilenleri Onayla</button>`;
+    } else {
+      topluBar.style.display = 'none';
+    }
+  }
+
   if(!filtered.length){
     list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Kayıt bulunamadı.</div>';
     return;
@@ -8148,7 +8176,8 @@ function renderMusteriRapor(){
           </div>
           ${m.not?`<div style="font-size:10px;color:var(--muted);margin-top:4px;font-style:italic">💬 ${m.not}</div>`:''}
         </div>
-        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:center">
+          ${m.durum==='bekliyor' ? `<input type="checkbox" class="mkSelectBox" data-id="${m.id}" style="width:18px;height:18px;cursor:pointer;accent-color:#4cd964;margin-bottom:2px">` : ''}
           <button onclick="openMusteriDurum('${m.id}')" style="padding:6px 10px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Durum ▼</button>
           <button onclick="deleteMusteriKayit('${m.id}')" style="padding:5px 8px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:6px;font-size:10px;cursor:pointer">🗑</button>
         </div>
@@ -8209,6 +8238,29 @@ function setMusteriDurum(durum){
     renderMusteriRapor();
   }
 }
+function toggleSelectAll(checked){
+  document.querySelectorAll('.mkSelectBox').forEach(cb => cb.checked = checked);
+}
+
+function topluOnayla(){
+  const secilen = [...document.querySelectorAll('.mkSelectBox:checked')].map(cb=>cb.dataset.id);
+  if(!secilen.length){ alert('Lütfen onaylanacak kayıtları seçin.'); return; }
+  if(!confirm(secilen.length + ' kayıt onaylanacak ve primlerine dahil edilecek. Emin misiniz?')) return;
+
+  secilen.forEach(id=>{
+    const m = musteriler.find(x=>x.id===id);
+    if(!m || m.durum!=='bekliyor') return;
+    m.durum = 'aktif';
+    m.primDurum = 'dahil';
+    m.durumTarihi = todayStr();
+  });
+
+  saveMusteriStore();
+  renderMusteriRapor();
+  checkMusteriTakip();
+  render();
+}
+
 function deleteMusteriKayit(id){
   const m = musteriler.find(x=>x.id===id);
   if(!m) return;
@@ -10963,6 +11015,7 @@ function renderHedefGecmis(){
       <button onclick="setRaporFilter('tasima')" id="rf_tasima" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">🔄 Taşıma</button>
       <button onclick="setRaporFilter('gecissiz')" id="rf_gecissiz" style="padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap">⚠️ Geçişsiz</button>
     </div>
+    <div id="musteriTopluBar" style="display:none;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:rgba(76,217,100,0.06);flex-shrink:0"></div>
     <div style="flex:1;overflow-y:auto" id="musteriRaporList"></div>
   </div>
 </div>
