@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v43 · 29.06.2026 23:00</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v44 · 29.06.2026 23:06</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v43 · Son güncelleme: 29.06.2026 23:00</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v44 · Son güncelleme: 29.06.2026 23:06</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v43';
-const BUILD_DATE = '29.06.2026 23:00';
+const APP_VERSION = 'v44';
+const BUILD_DATE = '29.06.2026 23:06';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -2914,44 +2914,41 @@ function load(){
   loadHedefExtra();
   recomputeAllFinans();
 
-  // 28 Haziran öncesi müşteri kayıtlarını otomatik onayla
-  const ESIK_TARIH = '2026-06-28';
-  let gecmisGuncellendi = false;
-  musteriler.forEach(m=>{
-    if(m.entryDate && m.entryDate < ESIK_TARIH && m.durum === 'bekliyor'){
-      m.durum = 'aktif';
-      m.primDurum = 'dahil';
-      m.durumTarihi = m.entryDate; // giriş tarihi ile onaylanmış say
-      gecmisGuncellendi = true;
-    }
-  });
-  if(gecmisGuncellendi){
-    saveMusteriStore();
-  }
+  // TEK SEFERLİK: 28 Haz öncesi migration (daha önce yapıldıysa atla)
+  if(!localStorage.getItem('legacy_migration_done')){
+    const ESIK = '2026-06-28';
+    let changed = false;
 
-  // 28 Haziran öncesi entries için formalite log ekle (log yoksa)
-  entries.forEach(e=>{
-    if(e.date && e.date < ESIK_TARIH){
-      const mevcutLog = entryLog.filter(l=>l.date===e.date && l.cat===e.cat);
+    // Müşterileri onayla
+    musteriler.forEach(m=>{
+      if(m.entryDate && m.entryDate < ESIK && m.durum==='bekliyor'){
+        m.durum = 'aktif';
+        m.primDurum = 'dahil';
+        m.durumTarihi = m.entryDate;
+        changed = true;
+      }
+    });
+
+    // Entries için formalite log ekle
+    entries.forEach(e=>{
+      if(!e.date || e.date >= ESIK) return;
+      const mevcutLog = entryLog.filter(l=>l.date===e.date&&l.cat===e.cat&&!!l.mnp===!!e.mnp);
       const eksik = e.count - mevcutLog.length;
       for(let i=0; i<eksik; i++){
-        const fakeId = 'legacy_'+e.date+'_'+e.cat+'_'+(e.mnp?'mnp':'tes')+'_'+i;
-        if(!entryLog.find(l=>l.id===fakeId)){
-          entryLog.push({
-            id: fakeId,
-            date: e.date,
-            cat: e.cat,
-            time: '09:00',
-            platform: 'Geçmiş',
-            mnp: !!e.mnp
-          });
+        const lid = 'legacy_'+e.date+'_'+e.cat+'_'+(e.mnp?'mnp':'tes')+'_'+i;
+        if(!entryLog.find(l=>l.id===lid)){
+          entryLog.push({ id:lid, date:e.date, cat:e.cat, time:'09:00', platform:'Geçmiş', mnp:!!e.mnp });
+          changed = true;
         }
       }
+    });
+
+    if(changed){
+      saveMusteriStore();
+      saveEntryLog();
+      scheduleCloudSync();
     }
-  });
-  if(gecmisGuncellendi){
-    saveEntryLog();
-    scheduleCloudSync();
+    localStorage.setItem('legacy_migration_done','1');
   }
 
   render();
@@ -8016,12 +8013,14 @@ function saveKampanya(){
   saveKampanyaStore();
   resetKampanyaForm();
   renderKampanyaList();
+  render();
 }
 function deleteKampanya(id){
   if(!confirm('Bu kampanyayı silmek istiyor musunuz?')) return;
   kampanyaData = kampanyaData.filter(k=>k.id!==id);
   saveKampanyaStore();
   renderKampanyaList();
+  render();
 }
 function renderKampanyaList(){
   const list = document.getElementById('kampanyaList');
