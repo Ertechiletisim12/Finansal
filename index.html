@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v52 · 29.06.2026 23:37</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v54 · 30.06.2026 00:13</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v52 · Son güncelleme: 29.06.2026 23:37</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v54 · Son güncelleme: 30.06.2026 00:13</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -1797,6 +1797,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
     <!-- ==================== HEDEF YÖNETİM SAYFASI ==================== -->
     <div id="page-hedef" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
+      <div id="hedefOzetDiv" style="margin-bottom:10px"></div>
       <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;gap:8px">
         <h2 style="margin:0;font-size:15px">🎯 Hedef Yönetimi</h2>
         <div style="display:flex;gap:8px;align-items:center">
@@ -2326,8 +2327,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v52';
-const BUILD_DATE = '29.06.2026 23:37';
+const APP_VERSION = 'v54';
+const BUILD_DATE = '30.06.2026 00:13';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -2434,7 +2435,16 @@ function monthLabel(ym){
   const names=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
   return names[parseInt(m)-1]+" "+y;
 }
-function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// ── TÜRKİYE SAATİ (UTC+3) ──
+function nowTR(){
+  // Türkiye her zaman UTC+3 (DST yok)
+  const utc = Date.now() + new Date().getTimezoneOffset()*60000;
+  return new Date(utc + 3*3600000);
+}
+function todayStr(){
+  const d = nowTR();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 function thisMonthKey(){ return todayStr().slice(0,7); }
 function addMonths(ym, n){
   let [y,m] = ym.split('-').map(Number);
@@ -2807,7 +2817,7 @@ async function pushToCloud(){
     if(res.ok){
       lastCloudHash = hash;
       lastSyncedEntries = JSON.parse(JSON.stringify(entries));
-      updateCloudIndicator('saved', getPlatformName() + ' · ' + new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
+      updateCloudIndicator('saved', getPlatformName() + ' · ' + nowTR().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
     } else { updateCloudIndicator('error'); }
   } catch(e){ updateCloudIndicator('error'); }
   isPushingToCloud = false;
@@ -3072,7 +3082,7 @@ function getCount(date, cat){
   const e = entries.find(e=>e.date===date && e.cat===cat);
   return e ? e.count : 0;
 }
-function nowTimeStr(){ const d = new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function nowTimeStr(){ const d = nowTR(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
 function lastEntryTime(date, cat){
   for(let i=entryLog.length-1;i>=0;i--){
     if(entryLog[i].date===date && entryLog[i].cat===cat)
@@ -3494,7 +3504,7 @@ function logGiris(basarili){
   try{
     const loglar = JSON.parse(localStorage.getItem('giris_loglari')||'[]');
     const cihaz = window.innerWidth <= 700 ? '📱 Mobil' : '🖥️ PC';
-    const tarih = new Date().toLocaleString('tr-TR');
+    const tarih = nowTR().toLocaleString('tr-TR');
     loglar.unshift({ tarih, cihaz, basarili });
     if(loglar.length > 50) loglar.splice(50);
     localStorage.setItem('giris_loglari', JSON.stringify(loglar));
@@ -3630,7 +3640,7 @@ function openExportPreview(tableId, fileLabel){
       <tr style="background:#1a1c20"><td><b>GENEL TOPLAM</b></td>${grandCols}<td><b>${fmt(grandTotal)}</b></td></tr>
       </tbody>`;
 
-    const now = new Date().toLocaleString('tr-TR');
+    const now = nowTR().toLocaleString('tr-TR');
     const stamp = xlsTimestamp();
     const win = window.open('','win_'+Date.now());
     if(!win){ alert('Açılır pencere engellendi.'); return; }
@@ -3743,7 +3753,7 @@ function openExportPreview(tableId, fileLabel){
 
   if(!table || !table.rows || table.rows.length===0){ alert('Aktarılacak veri yok.'); return; }
 
-  const now = new Date().toLocaleString('tr-TR');
+  const now = nowTR().toLocaleString('tr-TR');
   const stamp = xlsTimestamp();
   const thHtml = Array.from(table.rows[0].cells).map(c=>`<th>${c.innerText||c.textContent}</th>`).join('');
   const tbHtml = Array.from(table.rows).slice(1).map((r,i)=>{
@@ -3847,7 +3857,7 @@ function exportTableToPdf(tableId, titleLabel){
   const table = document.getElementById(tableId);
   if(!table || !table.rows || table.rows.length===0){ alert('Aktarılacak veri yok.'); return; }
 
-  const now = new Date().toLocaleString('tr-TR');
+  const now = nowTR().toLocaleString('tr-TR');
   const rows = Array.from(table.rows);
   const thHtml = Array.from(rows[0].cells).map(c=>`<th>${c.innerText||c.textContent}</th>`).join('');
   const tbHtml = rows.slice(1).map((r,i)=>{
@@ -3913,7 +3923,7 @@ function exportTableToPdf(tableId, titleLabel){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, musteriler, pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: new Date().toLocaleString('tr-TR') };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, musteriler, pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
 }
 function timeStr(){
   const d = new Date();
@@ -3925,7 +3935,7 @@ async function backupData(){
   // Dosya adına saat de eklenir; aksi halde aynı gün içinde alınan önceki yedek üzerine yazılıp kaybolurdu.
   const stamp = todayStr() + '_' + timeStr();
   const fileName = 'vodafone_prim_yedek_' + stamp + '.json';
-  const niceTimestamp = todayStr() + ' ' + new Date().toLocaleTimeString('tr-TR');
+  const niceTimestamp = todayStr() + ' ' + nowTR().toLocaleTimeString('tr-TR');
   // Eğer otomatik yedek klasörü seçiliyse, önce oraya tarih+saatli, benzersiz bir kopya yaz
   if(backupDirHandle){
     try{
@@ -4034,7 +4044,7 @@ function updateAutoBackupUI(status){
     el.textContent = '';
     return;
   }
-  const time = new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  const time = nowTR().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
   if(status==='ok') el.innerHTML = `<span style="color:#4cd964">✓ Otomatik yedek: ${backupDirHandle.name} (${time})</span>`;
   else if(status==='error') el.innerHTML = `<span style="color:#ff5252">⚠ Otomatik yedek yazılamadı</span>`;
   else if(status==='needs-permission') el.innerHTML = `<span style="color:var(--gold);cursor:pointer;text-decoration:underline" onclick="grantBackupPermissionClick()">📁 ${backupDirHandle.name} — izin vermek için tıklayın</span>`;
@@ -4899,6 +4909,52 @@ document.getElementById('rangeEnd').addEventListener('change', ()=>{currentRange
 
 // ==================== FİNANSAL ANALİZ SAYFASI ====================
 let currentPage = 'dash';
+function renderHedefOzet(){
+  const div = document.getElementById('hedefOzetDiv');
+  if(!div) return;
+  const now = thisMonthKey();
+  const MONTHS=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const ayAdi = MONTHS[parseInt(now.slice(5,7))-1] + ' ' + now.slice(0,4);
+
+  // Bu ayın entry'leri - devir ayrımı
+  let buAyAdet=0, buAyTutar=0, devirAdet=0, devirTutar=0;
+  entries.forEach(e=>{
+    const eym = effectiveYm(e);
+    const fiyat = e.count * (priceFor(eym, e.cat)||0);
+    if(eym === now){
+      buAyAdet += e.count; buAyTutar += fiyat;
+    } else if(ymKey(e.date) === now){
+      // Bu ay girildi ama başka aya sayılıyor (devir)
+      devirAdet += e.count; devirTutar += fiyat;
+    }
+  });
+
+  // Bekleyen MNP
+  const bekleyenler = musteriler.filter(m=>m.durum==='bekliyor' && m.aktivasyonTarihi && m.aktivasyonTarihi.startsWith(now));
+
+  div.innerHTML = `
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">${ayAdi} — Prim Özeti</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+        <div style="background:rgba(76,217,100,0.1);border-radius:8px;padding:8px">
+          <div style="color:var(--muted);font-size:10px;margin-bottom:2px">✅ Bu Aya Dahil</div>
+          <div style="font-weight:800;color:#4cd964">${buAyAdet} adet</div>
+          <div style="color:#4cd964;font-size:11px">${fmt(buAyTutar)}</div>
+        </div>
+        ${devirAdet > 0 ? `<div style="background:rgba(255,159,10,0.1);border-radius:8px;padding:8px">
+          <div style="color:var(--muted);font-size:10px;margin-bottom:2px">↩️ Sonraki Aya Devir</div>
+          <div style="font-weight:800;color:#ff9f0a">${devirAdet} adet</div>
+          <div style="color:#ff9f0a;font-size:11px">${fmt(devirTutar)}</div>
+        </div>` : '<div></div>'}
+      </div>
+      ${bekleyenler.length > 0 ? `
+      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="margin-top:8px;background:rgba(255,159,10,0.08);border:1px solid rgba(255,159,10,0.3);border-radius:8px;padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px;color:#ff9f0a;font-weight:700">⏳ ${bekleyenler.length} MNP onay bekliyor</span>
+        <span style="font-size:10px;color:var(--muted)">→ Takibe git</span>
+      </div>` : ''}
+    </div>`;
+}
+
 function switchPage(page){
   currentPage = page;
   ['dash','prim','finans','gelir','not','rapor','hedef','trend'].forEach(p=>{
@@ -4910,6 +4966,7 @@ function switchPage(page){
     if(el) el.classList.toggle('active', page===p.toLowerCase());
   });
   if(page==='dash') renderDash();
+  if(page==='hedef') renderHedefOzet();
   if(page==='finans') renderFinans();
   if(page==='gelir') renderGelir();
   if(page==='not') renderNotPage();
@@ -5498,7 +5555,7 @@ function renderDash(){
   const now = thisMonthKey();
   const prevYm = addMonths(now, -1);
   const today = todayStr();
-  const d = new Date();
+  const d = nowTR();
   const MONTHS=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 
   const sub = document.getElementById('dashSubtitle');
@@ -5615,33 +5672,7 @@ function renderDash(){
   el.innerHTML = `
     ${anomaliBar}
 
-    <!-- ── MOBİL WIDGET ── -->
-    <div id="dashWidget" style="display:none;background:linear-gradient(135deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">📊 Bugünkü Durum</div>
-        <div style="font-size:10px;color:var(--muted)">${d.getDate()} ${MONTHS[d.getMonth()]}</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
-        <div style="background:rgba(76,217,100,0.08);border:1px solid rgba(76,217,100,0.2);border-radius:10px;padding:8px 4px">
-          <div style="font-size:9px;color:var(--muted);margin-bottom:3px">Bu Ay Prim</div>
-          <div style="font-size:13px;font-weight:800;color:#4cd964">${fmtF(curKdv)}</div>
-        </div>
-        <div style="background:rgba(63,208,255,0.08);border:1px solid rgba(63,208,255,0.2);border-radius:10px;padding:8px 4px">
-          <div style="font-size:9px;color:var(--muted);margin-bottom:3px">Bugün</div>
-          <div style="font-size:13px;font-weight:800;color:#3fd0ff">${(()=>{const t=entries.filter(e=>e.date===today).reduce((a,e)=>a+e.count*(priceFor(today,e.cat)||0),0);return fmtF(t*(1+KDV_ORANI));})()}</div>
-        </div>
-        <div style="background:rgba(255,159,10,0.08);border:1px solid rgba(255,159,10,0.2);border-radius:10px;padding:8px 4px">
-          <div style="font-size:9px;color:var(--muted);margin-bottom:3px">Hedefe</div>
-          <div style="font-size:13px;font-weight:800;color:${hedefler[now]>0?(Math.round(curKdv/hedefler[now]*100)>=90?'#4cd964':'#ff9f0a'):'var(--muted)'}">${hedefler[now]>0?'%'+Math.round(curKdv/hedefler[now]*100):'—'}</div>
-        </div>
-      </div>
-      ${hedefler[now]>0?`
-      <div style="margin-top:8px">
-        <div style="height:5px;background:var(--line);border-radius:3px;overflow:hidden">
-          <div style="height:100%;width:${Math.min(Math.round(curKdv/hedefler[now]*100),100)}%;background:${Math.round(curKdv/hedefler[now]*100)>=100?'#4cd964':Math.round(curKdv/hedefler[now]*100)>=80?'#ff9f0a':'#3fd0ff'};border-radius:3px;transition:width .5s"></div>
-        </div>
-      </div>`:``}
-    </div>
+
 
     <!-- ── BÖLÜM 1: Prim Ana Kart ── -->
     <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📅 ${monthLabel(now)} — Prim Durumu</div>
@@ -7521,7 +7552,7 @@ function buildManagerReportHTML(){
 
 function printManagerReport(){
   const reportHtml = buildManagerReportHTML();
-  const now = new Date().toLocaleString('tr-TR');
+  const now = nowTR().toLocaleString('tr-TR');
 
   // Mobil uyumlu: uygulama içi modal kullan
   let modal = document.getElementById('managerReportModal');
@@ -8239,7 +8270,7 @@ function saveMusteriKayit(){
     aktivasyonTarihi: aktTarih, takipTarihi,
     durum: otomatikAktif ? 'aktif' : 'bekliyor',
     primDurum: otomatikAktif ? 'dahil' : 'bekliyor',
-    olusturma: new Date().toISOString(),
+    olusturma: nowTR().toISOString(),
     logId: null // _doChangeCount'tan sonra doldurulacak
   };
 
@@ -8629,7 +8660,7 @@ function checkMusteriTakip(){
 }
 
 function shareManagerReport(){
-  const now = new Date().toLocaleString('tr-TR');
+  const now = nowTR().toLocaleString('tr-TR');
   const text = `📊 Yönetici Raporu\nEr-Tech İletişim · ${now}\n\nRapor uygulamadan görüntülenebilir.`;
   if(navigator.share){
     navigator.share({title:'Yönetici Raporu', text}).catch(()=>{});
@@ -8751,7 +8782,7 @@ function saveNot() {
       tarih, baslik, metin, etiketler, renk: notModalRenk,
       entryKey: kayitKey,
       kategori: kayitKey ? kayitKey.split('_')[1] : '',
-      olusturma: new Date().toISOString()
+      olusturma: nowTR().toISOString()
     });
   }
   saveNotlarStore();
@@ -10111,7 +10142,7 @@ function exportRaporXls() {
 function exportRaporModal() {
   if (!window._raporXlsData) return;
   const { title, headers, data } = window._raporXlsData;
-  const now = new Date().toLocaleString('tr-TR');
+  const now = nowTR().toLocaleString('tr-TR');
   const stamp = xlsTimestamp();
   const modal = document.getElementById('exportFullModal');
 
@@ -10186,7 +10217,7 @@ function exportRaporModal() {
 function exportRaporPdf(){
   if(!window._raporXlsData) return;
   const { title, headers, data, bars } = window._raporXlsData;
-  const now = new Date().toLocaleString('tr-TR');
+  const now = nowTR().toLocaleString('tr-TR');
   // Her zaman landscape — grafik + tablo sığsın
   const orientation = 'landscape';
 
@@ -11484,7 +11515,7 @@ function exportModalPrint(){
   const thHtml = headRows.map(r=>'<tr>'+r.map(c=>`<th>${c}</th>`).join('')+'</tr>').join('');
   const tdHtml = bodyRows.map((r,i)=>`<tr class="${i%2===0?'even':'odd'}">`+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('');
 
-  const now = new Date().toLocaleString('tr-TR');
+  const now = nowTR().toLocaleString('tr-TR');
 
   const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${title}</title>
@@ -11569,7 +11600,7 @@ function exportModalShare(){
   const bodyRows = rows.filter(r=>!isHead(r)).map(readRow);
 
   // Metin olarak paylaş
-  const now = new Date().toLocaleString('tr-TR');
+  const now = nowTR().toLocaleString('tr-TR');
   let text = `📊 ${title}\n${sub} · ${now}\n\n`;
   if(headRows.length) text += headRows.map(r=>r.join(' | ')).join('\n') + '\n' + '─'.repeat(40) + '\n';
   text += bodyRows.map(r=>r.join(' | ')).join('\n');
@@ -11601,7 +11632,7 @@ function openExportPreview(tableId, fileLabel){
   if(modalTables.includes(tableId)){
     const table = document.getElementById(tableId);
     if(!table || !table.rows || table.rows.length === 0){ alert('Aktarılacak veri yok.'); return; }
-    const now = new Date().toLocaleString('tr-TR');
+    const now = nowTR().toLocaleString('tr-TR');
     const stamp = xlsTimestamp();
     const modal = document.getElementById('exportFullModal');
     const titles = {compareTable:'Ay Karşılaştırması',mainTable:'Aylık Kategori Dağılımı',financeTable:'Prim / Finans Özeti',priceHistTable:'Fiyat Geçmişi',gelirTable:'Gelir / Gider Tablosu',capitalTable:'Sermaye Gelişimi',marjTable:'Vodafone MIXY Kâr/Masraf',finansDetailTable:'Finans Detaylı Tablo'};
@@ -11644,7 +11675,7 @@ function openExportPreview(tableId, fileLabel){
       .filter(e => e.date>=rStart && e.date<=rEnd && e.count>0)
       .slice().sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat));
     if(!filtRows.length){ alert('Bu aralıkta aktarılacak işlem yok.'); return; }
-    const now = new Date().toLocaleString('tr-TR');
+    const now = nowTR().toLocaleString('tr-TR');
     const detayliRows = filtRows.map(e=>{
       const amt = e.count * priceFor(ymKey(e.date), e.cat);
       const dayLogs = (entryLog||[]).filter(l=>l.date===e.date && l.cat===e.cat);
