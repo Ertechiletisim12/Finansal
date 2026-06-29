@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v22 · 29.06.2026 07:57</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v23 · 29.06.2026 08:05</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v22 · Son güncelleme: 29.06.2026 07:57</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v23 · Son güncelleme: 29.06.2026 08:05</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v22';
-const BUILD_DATE = '29.06.2026 07:57';
+const APP_VERSION = 'v23';
+const BUILD_DATE = '29.06.2026 08:05';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -7432,7 +7432,40 @@ function renderIslemList(cat, date){
     </div>`;
 
   if(!logs.length){
-    list.innerHTML = ozet + '<div style="text-align:center;color:var(--muted);padding:24px;font-size:12px">Log kaydı bulunamadı.<br><small>Eski girişlerde log olmayabilir.</small></div>';
+    // Log yok ama entries'te kayıt var - direkt entries'ten sil butonu göster
+    let noLogHtml = '';
+    if(MNP_CATS.includes(cat)){
+      if(tesisCnt > 0){
+        noLogHtml += `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
+          <div style="flex:1">
+            <span style="font-size:13px;font-weight:700;color:var(--txt)">🆕 Yeni Tesis</span>
+            <span style="font-size:11px;color:var(--muted);margin-left:8px">${tesisCnt} adet · Log kaydı yok</span>
+          </div>
+          <button onclick="deleteEntryDirect('${cat}','${date}',false,this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer">1 Sil</button>
+        </div>`;
+      }
+      if(mnpCnt > 0){
+        noLogHtml += `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
+          <div style="flex:1">
+            <span style="font-size:13px;font-weight:700;color:#c084fc">🔄 MNP</span>
+            <span style="font-size:11px;color:var(--muted);margin-left:8px">${mnpCnt} adet · Log kaydı yok</span>
+          </div>
+          <button onclick="deleteEntryDirect('${cat}','${date}',true,this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer">1 Sil</button>
+        </div>`;
+      }
+    } else {
+      if(digerCnt > 0){
+        noLogHtml += `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
+          <div style="flex:1">
+            <span style="font-size:13px;font-weight:700;color:var(--txt)">${cat}</span>
+            <span style="font-size:11px;color:var(--muted);margin-left:8px">${digerCnt} adet · Log kaydı yok</span>
+          </div>
+          <button onclick="deleteEntryDirect('${cat}','${date}',false,this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer">1 Sil</button>
+        </div>`;
+      }
+    }
+    if(!noLogHtml) noLogHtml = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:12px">Bu tarihte işlem yok.</div>';
+    list.innerHTML = ozet + '<div style="padding:10px 16px;background:rgba(255,183,77,0.08);border-bottom:1px solid var(--line)"><span style="font-size:11px;color:#ffb74d">⚠️ Log kaydı bulunamadı — eski girişlerde log olmayabilir. Entries üzerinden silebilirsiniz.</span></div>' + noLogHtml;
     return;
   }
 
@@ -7449,9 +7482,16 @@ function renderIslemList(cat, date){
       m.entryTime && l.time && m.entryTime.slice(0,5) === l.time.slice(0,5)
     );
 
-    // Silme için: data attribute kullan (tırnak sorununu önler)
-    const deleteLogId = l.id || String(l._origIdx);
-    const deleteCall = `deleteIslemLog(this,'${cat}','${date}',${isMnp===true})`;
+    // Silme için: her log'a id yoksa şimdi ata
+    if(!l.id){
+      l.id = Date.now().toString(36) + Math.random().toString(36).slice(2,5) + l._origIdx;
+      // entryLog'daki orijinal kaydı da güncelle
+      if(l._origIdx >= 0 && l._origIdx < entryLog.length && !entryLog[l._origIdx].id){
+        entryLog[l._origIdx].id = l.id;
+      }
+    }
+    const deleteLogId = l.id;
+    const deleteCall = null; // data-attribute üzerinden çalışır
 
     return `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
       <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);flex-shrink:0">${logs.length - displayIdx}</div>
@@ -7474,6 +7514,50 @@ function renderIslemList(cat, date){
   list.innerHTML = ozet + satirlar;
 }
 
+
+// Log kaydı olmayan entries için direkt silme
+function deleteEntryDirect(cat, date, isMnp, btn){
+  const mnpFlag = isMnp === true || isMnp === 'true';
+  const tip = MNP_CATS.includes(cat) ? (mnpFlag ? ' (MNP)' : ' (Yeni Tesis)') : '';
+
+  // Kaç adet var?
+  let e;
+  if(MNP_CATS.includes(cat)){
+    e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
+  } else {
+    e = entries.find(x => x.date===date && x.cat===cat);
+  }
+  if(!e || e.count <= 0){ alert('Silinecek kayıt bulunamadı.'); return; }
+
+  if(!confirm(
+    cat + tip + ' — 1 adet silmek istiyor musunuz?' +
+    '\nTarih: ' + date +
+    '\nKalan: ' + e.count + ' adet'
+  )) return;
+
+  e.count--;
+  if(e.count === 0) entries.splice(entries.indexOf(e), 1);
+
+  // Müşteri kaydını da sil
+  const silinecekMusteri = musteriler.find(m =>
+    m.entryDate===date && m.cat===cat &&
+    (MNP_CATS.includes(cat) ? m.tip===(mnpFlag?'mnp':'tesis') : true)
+  );
+  if(silinecekMusteri){
+    musteriler = musteriler.filter(m => m.id !== silinecekMusteri.id);
+    saveMusteriStore();
+  }
+
+  saveEntries();
+  saveEntryLog();
+  render();
+
+  // Modalı güncelle
+  const modal = document.getElementById('islemListModal');
+  if(modal && modal.style.display !== 'none'){
+    renderIslemList(cat, date);
+  }
+}
 
 function confirmDeleteIslem(btn){
   const logId = btn.dataset.logid;
