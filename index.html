@@ -1410,7 +1410,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <!-- Mobil üst navbar - tüm sayfalarda görünür -->
 <div id="mobileTopBar" style="display:none;position:sticky;top:0;z-index:200;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px;align-items:center;justify-content:space-between;gap:8px">
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
-  <div style="font-size:14px;font-weight:800;flex:1;text-align:center" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
+  <div style="flex:1;text-align:center">
+    <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v18 · 29.06.2026</div>
+  </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
   <!-- Tema toggle -->
@@ -1430,6 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v18 · Son güncelleme: 29.06.2026</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -7459,17 +7463,13 @@ function renderIslemList(cat, date){
 
 
 function deleteIslemLog(logRef, cat, date, isMnp){
-  if(!confirm('Bu işlemi silmek istiyor musunuz?')) return;
-
   const mnpFlag = (isMnp === true || isMnp === 'true');
 
-  // Log kaydını bul ve sil: önce id ile dene, yoksa index ile
+  // Log kaydını bul ve sil - id bazlı önce dene
   let logIdx = -1;
-  if(typeof logRef === 'string' && isNaN(parseInt(logRef))){
-    // id bazlı arama
+  if(typeof logRef === 'string' && isNaN(Number(logRef)) && logRef.length > 4){
     logIdx = entryLog.findIndex(l => l.id === logRef);
   } else {
-    // index bazlı (eski kayıtlar için)
     logIdx = parseInt(logRef);
   }
 
@@ -7477,7 +7477,7 @@ function deleteIslemLog(logRef, cat, date, isMnp){
     entryLog.splice(logIdx, 1);
   }
 
-  // Entries'teki sayıyı 1 azalt
+  // Entries sayısını 1 azalt
   let e;
   if(MNP_CATS.includes(cat)){
     e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
@@ -7489,21 +7489,21 @@ function deleteIslemLog(logRef, cat, date, isMnp){
     if(e.count === 0) entries.splice(entries.indexOf(e), 1);
   }
 
-  // Müşteri kaydını bul - sil
+  // Müşteri kaydını otomatik sil (sormadan)
   const silinecekMusteri = musteriler.find(m =>
     m.entryDate===date && m.cat===cat &&
     (MNP_CATS.includes(cat) ? m.tip===(mnpFlag?'mnp':'tesis') : true)
   );
   if(silinecekMusteri){
-    if(confirm('Bu işleme ait müşteri kaydı da silinsin mi?')){
-      musteriler = musteriler.filter(m => m.id !== silinecekMusteri.id);
-      saveMusteriStore();
-    }
+    musteriler = musteriler.filter(m => m.id !== silinecekMusteri.id);
+    saveMusteriStore();
   }
 
+  // Kaydet ve anında güncelle
   saveEntries();
   renderPrimPage();
-  renderIslemList(cat, date);
+  // Modalı anında güncelle
+  setTimeout(()=>{ renderIslemList(cat, date); }, 50);
 }
 
 
@@ -10440,8 +10440,8 @@ function renderHedefGecmis(){
 
 <!-- TAM EKRAN DIŞA AKTAR MODAL -->
 <!-- ===== İŞLEM LİSTESİ / SİLME MODALI ===== -->
-<div id="islemListModal" style="display:none;position:fixed;inset:0;z-index:4200;background:rgba(0,0,0,0.8);align-items:flex-end;justify-content:center;padding:0">
-  <div style="background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+<div id="islemListModal" style="display:none;position:fixed;inset:0;z-index:4200;background:rgba(0,0,0,0.8);align-items:flex-start;justify-content:center;padding:0;padding-top:0">
+  <div style="background:var(--panel);border-radius:0 0 16px 16px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="display:flex;align-items:center;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
       <div style="flex:1">
         <div style="font-size:15px;font-weight:800;color:var(--txt)" id="ilmTitle">İşlem Listesi</div>
@@ -10515,8 +10515,8 @@ function renderHedefGecmis(){
 </div>
 
 <!-- ===== KAMPANYA YÖNETİM MODALI ===== -->
-<div id="kampanyaModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.7);align-items:flex-end;justify-content:center;padding:0">
-  <div style="background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:520px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
+<div id="kampanyaModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.7);align-items:flex-start;justify-content:center;padding:0;padding-top:0">
+  <div style="background:var(--panel);border-radius:0 0 16px 16px;width:100%;max-width:520px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="display:flex;align-items:center;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
       <div style="flex:1;font-size:15px;font-weight:800;color:var(--txt)">🎯 Kampanya Yönetimi</div>
       <button onclick="closeKampanyaModal()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
@@ -10581,8 +10581,8 @@ function renderHedefGecmis(){
 </div>
 
 <!-- ===== MÜŞTERİ KAYIT MODALI ===== -->
-<div id="musteriKayitModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.75);align-items:flex-end;justify-content:center;padding:0">
-  <div style="background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:520px;max-height:95vh;display:flex;flex-direction:column;overflow:hidden">
+<div id="musteriKayitModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.75);align-items:flex-start;justify-content:center;padding:0;padding-top:0">
+  <div style="background:var(--panel);border-radius:0 0 16px 16px;width:100%;max-width:520px;max-height:95vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="display:flex;align-items:center;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
       <div style="flex:1">
         <div style="font-size:15px;font-weight:800;color:var(--txt)" id="mkModalTitle">📋 Müşteri Kaydı</div>
@@ -10651,8 +10651,8 @@ function renderHedefGecmis(){
 </div>
 
 <!-- ===== MÜŞTERİ TAKİP RAPORU MODALI ===== -->
-<div id="musteriRaporModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.75);align-items:flex-end;justify-content:center;padding:0">
-  <div style="background:var(--panel);border-radius:16px 16px 0 0;width:100%;max-width:560px;max-height:95vh;display:flex;flex-direction:column;overflow:hidden">
+<div id="musteriRaporModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.75);align-items:flex-start;justify-content:center;padding:0;padding-top:0">
+  <div style="background:var(--panel);border-radius:0 0 16px 16px;width:100%;max-width:560px;max-height:95vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="display:flex;align-items:center;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
       <div style="flex:1;font-size:15px;font-weight:800;color:var(--txt)">📊 Müşteri Takip Raporu</div>
       <button onclick="closeMusteriRapor()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
