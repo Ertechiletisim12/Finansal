@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v33 · 29.06.2026 15:04</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v34 · 29.06.2026 15:30</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v33 · Son güncelleme: 29.06.2026 15:04</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v34 · Son güncelleme: 29.06.2026 15:30</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v33';
-const BUILD_DATE = '29.06.2026 15:04';
+const APP_VERSION = 'v34';
+const BUILD_DATE = '29.06.2026 15:30';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -7441,7 +7441,32 @@ function closeIslemListModal(){
   document.getElementById('islemListModal').style.display = 'none';
 }
 
+// İşlem listesi filtresi - Tesis / MNP / Tümü
+let _ilmFilter = 'tumu';
+let _ilmCat = null;
+let _ilmDate = null;
+
+function filterIslemList(tip){
+  _ilmFilter = tip;
+  // Buton stillerini guncelle
+  const tesis = document.getElementById('ilmFiltTesis');
+  const mnp   = document.getElementById('ilmFiltMnp');
+  const tumu  = document.getElementById('ilmFiltTumu');
+  if(tesis) tesis.style.outline = tip==='tesis' ? '2px solid #4cd964' : 'none';
+  if(mnp)   mnp.style.outline   = tip==='mnp'   ? '2px solid #c084fc' : 'none';
+  if(tumu)  tumu.style.outline  = tip==='tumu'  ? '2px solid var(--accent)' : 'none';
+  // Satirlari filtrele
+  const satirlar = document.querySelectorAll('#ilmList [data-logtype]');
+  satirlar.forEach(s=>{
+    if(tip==='tumu') s.style.display='';
+    else s.style.display = s.dataset.logtype===tip ? '' : 'none';
+  });
+}
+
 function renderIslemList(cat, date){
+  _ilmFilter = 'tumu';
+  _ilmCat = cat;
+  _ilmDate = date;
   const list = document.getElementById('ilmList');
 
   // entryLog'dan bu gün+kategori işlemlerini al - her biri ayrı satır
@@ -7476,17 +7501,17 @@ function renderIslemList(cat, date){
 
   // Özet kutuları (MNP kategorileri için)
   const ozet = MNP_CATS.includes(cat) ? `
-    <div style="display:flex;gap:10px;padding:10px 16px;background:var(--panel2);border-bottom:1px solid var(--line)">
-      <div style="flex:1;text-align:center;padding:8px;background:rgba(76,217,100,0.1);border-radius:8px;border:1px solid rgba(76,217,100,0.2)">
+    <div style="display:flex;gap:10px;padding:10px 16px;background:var(--panel2);border-bottom:1px solid var(--line)" id="ilmOzetBar">
+      <div onclick="filterIslemList('tesis')" style="flex:1;text-align:center;padding:8px;background:rgba(76,217,100,0.1);border-radius:8px;border:1px solid rgba(76,217,100,0.2);cursor:pointer" id="ilmFiltTesis">
         <div style="font-size:10px;color:var(--muted)">🆕 Yeni Tesis</div>
         <div style="font-size:20px;font-weight:800;color:#4cd964">${tesisCnt}</div>
       </div>
-      <div style="flex:1;text-align:center;padding:8px;background:rgba(155,89,182,0.1);border-radius:8px;border:1px solid rgba(155,89,182,0.2)">
+      <div onclick="filterIslemList('mnp')" style="flex:1;text-align:center;padding:8px;background:rgba(155,89,182,0.1);border-radius:8px;border:1px solid rgba(155,89,182,0.2);cursor:pointer" id="ilmFiltMnp">
         <div style="font-size:10px;color:var(--muted)">🔄 MNP</div>
         <div style="font-size:20px;font-weight:800;color:#c084fc">${mnpCnt}</div>
       </div>
-      <div style="flex:1;text-align:center;padding:8px;background:var(--panel2);border-radius:8px;border:1px solid var(--line)">
-        <div style="font-size:10px;color:var(--muted)">Toplam</div>
+      <div onclick="filterIslemList('tumu')" style="flex:1;text-align:center;padding:8px;background:var(--panel2);border-radius:8px;border:1px solid var(--line);cursor:pointer" id="ilmFiltTumu">
+        <div style="font-size:10px;color:var(--muted)">Tümü</div>
         <div style="font-size:20px;font-weight:800;color:var(--txt)">${toplam}</div>
       </div>
     </div>` : `
@@ -7553,7 +7578,7 @@ function renderIslemList(cat, date){
     }
     const deleteLogId = l.id;
 
-    return `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
+    return `<div data-logtype="${isMnp?'mnp':'tesis'}" style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
       <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);flex-shrink:0">${logs.length - displayIdx}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
@@ -8185,9 +8210,49 @@ function setMusteriDurum(durum){
   }
 }
 function deleteMusteriKayit(id){
-  if(!confirm('Bu müşteri kaydını silmek istiyor musunuz?')) return;
-  musteriler = musteriler.filter(m=>m.id!==id);
+  const m = musteriler.find(x=>x.id===id);
+  if(!m) return;
+  if(!confirm('Bu müşteri kaydını ve ilgili prim kaydını silmek istiyor musunuz?')) return;
+
+  // Müşteriyi sil
+  musteriler = musteriler.filter(x=>x.id!==id);
   saveMusteriStore();
+
+  // Entries'ten de sil
+  const isMnp = m.tip === 'mnp';
+  const date  = m.entryDate;
+  const cat   = m.cat;
+  if(date && cat){
+    const useSubtype = MNP_CATS.includes(cat);
+    let e;
+    if(useSubtype){
+      e = entries.find(x=>x.date===date&&x.cat===cat&&!!x.mnp===isMnp);
+    } else {
+      e = entries.find(x=>x.date===date&&x.cat===cat);
+    }
+    if(e && e.count > 0){
+      e.count--;
+      if(e.count === 0) entries = entries.filter(x=>x!==e);
+    }
+    // EntryLog'dan da sil - en yakın zaman damgalı kaydı sil
+    const saat = m.entryTime ? m.entryTime.slice(0,5) : null;
+    let logIdx = -1;
+    for(let i=entryLog.length-1; i>=0; i--){
+      const l = entryLog[i];
+      if(l.date===date && l.cat===cat){
+        if(!useSubtype || !!l.mnp===isMnp){
+          if(!saat || (l.time||'').slice(0,5)===saat){ logIdx=i; break; }
+          if(logIdx<0) logIdx=i; // saat eşleşmezse son kaydı al
+        }
+      }
+    }
+    if(logIdx>=0) entryLog.splice(logIdx,1);
+
+    saveEntries();
+    saveEntryLog();
+    render();
+  }
+
   renderMusteriRapor();
 }
 
