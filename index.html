@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v18 · 29.06.2026</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v19 · 29.06.2026</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v18 · Son güncelleme: 29.06.2026</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v19 · Son güncelleme: 29.06.2026</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -7436,9 +7436,9 @@ function renderIslemList(cat, date){
       m.entryTime && l.time && m.entryTime.slice(0,5) === l.time.slice(0,5)
     );
 
-    // Silme için: log id varsa id kullan, yoksa origIdx
-    const deleteRef = l.id ? `'${l.id}'` : `${l._origIdx}`;
-    const deleteCall = `deleteIslemLog(${deleteRef},'${cat}','${date}',${isMnp===true})`;
+    // Silme için: data attribute kullan (tırnak sorununu önler)
+    const deleteLogId = l.id || String(l._origIdx);
+    const deleteCall = `deleteIslemLog(this,'${cat}','${date}',${isMnp===true})`;
 
     return `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
       <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);flex-shrink:0">${logs.length - displayIdx}</div>
@@ -7454,7 +7454,7 @@ function renderIslemList(cat, date){
           <span style="margin-left:4px;font-size:9px;padding:1px 6px;border-radius:8px;background:${musteri.durum==='aktif'?'rgba(76,217,100,0.15)':'rgba(255,159,10,0.15)'};color:${musteri.durum==='aktif'?'#4cd964':'#ff9f0a'}">${musteri.durum}</span>
         </div>` : ''}
       </div>
-      <button onclick="${deleteCall}" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0">🗑</button>
+      <button data-logid="${deleteLogId}" data-cat="${cat}" data-date="${date}" data-mnp="${isMnp===true}" onclick="deleteIslemLog(this.dataset.logid, this.dataset.cat, this.dataset.date, this.dataset.mnp==='true')" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0">🗑</button>
     </div>`;
   }).join('');
 
@@ -7465,16 +7465,25 @@ function renderIslemList(cat, date){
 function deleteIslemLog(logRef, cat, date, isMnp){
   const mnpFlag = (isMnp === true || isMnp === 'true');
 
-  // Log kaydını bul ve sil - id bazlı önce dene
+  // ID veya index ile log bul
   let logIdx = -1;
-  if(typeof logRef === 'string' && isNaN(Number(logRef)) && logRef.length > 4){
-    logIdx = entryLog.findIndex(l => l.id === logRef);
-  } else {
-    logIdx = parseInt(logRef);
+  const refStr = String(logRef);
+  // Sayısal değilse id olarak ara
+  if(isNaN(Number(refStr)) || refStr.length > 10){
+    logIdx = entryLog.findIndex(l => l.id && l.id === refStr);
+  }
+  // Bulunamadıysa index olarak dene
+  if(logIdx < 0){
+    const numIdx = parseInt(refStr);
+    if(!isNaN(numIdx)) logIdx = numIdx;
   }
 
+  // Log sil
   if(logIdx >= 0 && logIdx < entryLog.length){
     entryLog.splice(logIdx, 1);
+  } else {
+    // Log bulunamadı - yine de entries'ten düş
+    console.warn('Log bulunamadı:', logRef);
   }
 
   // Entries sayısını 1 azalt
@@ -7489,7 +7498,7 @@ function deleteIslemLog(logRef, cat, date, isMnp){
     if(e.count === 0) entries.splice(entries.indexOf(e), 1);
   }
 
-  // Müşteri kaydını otomatik sil (sormadan)
+  // Müşteri kaydını otomatik sil
   const silinecekMusteri = musteriler.find(m =>
     m.entryDate===date && m.cat===cat &&
     (MNP_CATS.includes(cat) ? m.tip===(mnpFlag?'mnp':'tesis') : true)
@@ -7502,8 +7511,7 @@ function deleteIslemLog(logRef, cat, date, isMnp){
   // Kaydet ve anında güncelle
   saveEntries();
   renderPrimPage();
-  // Modalı anında güncelle
-  setTimeout(()=>{ renderIslemList(cat, date); }, 50);
+  renderIslemList(cat, date);
 }
 
 
