@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v25 · 29.06.2026 11:21</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v26 · 29.06.2026 11:28</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v25 · Son güncelleme: 29.06.2026 11:21</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v26 · Son güncelleme: 29.06.2026 11:28</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v25';
-const BUILD_DATE = '29.06.2026 11:21';
+const APP_VERSION = 'v26';
+const BUILD_DATE = '29.06.2026 11:28';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -7662,8 +7662,10 @@ function confirmMnpTesis(isMnp){
   const date = _mnpTesisDate;
   closeMnpTesisModal();
   if(!cat) return;
+  // isMnp'yi global değişkene KILITLI olarak sakla
+  window._confirmedIsMnp = !!isMnp;
   // Müşteri kayıt modalını aç
-  openMusteriKayit(cat, isMnp, date);
+  openMusteriKayit(cat, !!isMnp, date);
 }
 
 // ===== İNTERNET AKTİVASYON MODAL FONKSİYONLARI =====
@@ -7842,7 +7844,10 @@ function saveMusteriStore(){
 // Müşteri kayıt modalını aç (+ butonundan)
 function openMusteriKayit(cat, isMnp, date){
   _mkEditId = null;
-  _mkTip = isMnp ? 'mnp' : 'tesis';
+  // isMnp kesinlikle boolean olarak al
+  const isMnpBool = (isMnp === true || isMnp === 'true');
+  _mkTip = isMnpBool ? 'mnp' : 'tesis';
+  window._confirmedIsMnp = isMnpBool; // yedek olarak sakla
   const now = new Date();
   document.getElementById('mkModalTitle').textContent = '📋 Müşteri Kaydı — ' + cat;
   document.getElementById('mkModalSub').textContent = isMnp ? '🔄 MNP İşlemi' : '🆕 Yeni Tesis';
@@ -7854,6 +7859,7 @@ function openMusteriKayit(cat, isMnp, date){
   document.getElementById('mkTarih').value = date || todayStr();
   document.getElementById('mkSaat').value = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
   setMkTip(_mkTip);
+  window._confirmedIsMnp = isMnpBool; // modal açıldıktan sonra da koru
   document.getElementById('musteriKayitModal').style.display = 'flex';
 }
 
@@ -7904,7 +7910,11 @@ function saveMusteriKayit(){
   const saat   = document.getElementById('mkSaat').value;
   const not    = document.getElementById('mkNot').value.trim();
   // _mkTip: hem global değişken hem hidden input'tan kontrol et
-  const mkTipVal = document.getElementById('mkTipHidden')?.value || _mkTip || 'tesis';
+  // mkTipVal: 3 kaynaktan kontrol et - en güvenilirini kullan
+  const _hiddenVal = document.getElementById('mkTipHidden')?.value;
+  const mkTipVal = (window._confirmedIsMnp === true) ? 'mnp' 
+                 : (window._confirmedIsMnp === false) ? 'tesis'
+                 : (_hiddenVal || _mkTip || 'tesis');
   const aktTarih = mkTipVal==='mnp' ? document.getElementById('mkAktTarih').value : null;
 
   if(!tarih){ alert('Tarih zorunludur.'); return; }
