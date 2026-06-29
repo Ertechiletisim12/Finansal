@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v23 · 29.06.2026 08:05</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v24 · 29.06.2026 08:11</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v23 · Son güncelleme: 29.06.2026 08:05</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v24 · Son güncelleme: 29.06.2026 08:11</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2326,8 +2326,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v23';
-const BUILD_DATE = '29.06.2026 08:05';
+const APP_VERSION = 'v24';
+const BUILD_DATE = '29.06.2026 08:11';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -3044,31 +3044,7 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp){
   // count 0 olan entry'leri temizle
   entries = entries.filter(e=>e.count>0);
 
-  // entryLog'da bu date+cat için fazla kayıt varsa count kadar tut
-  // MNP ve Tesis AYRI sayılır - her birinin kendi count'u kadar log tutulur
-  const tesisCt = entries.find(e=>e.date===date&&e.cat===cat&&!e.mnp)?.count||0;
-  const mnpCt   = entries.find(e=>e.date===date&&e.cat===cat&&!!e.mnp)?.count||0;
-  const otherCt = MNP_CATS.includes(cat) ? 0 : (entries.find(e=>e.date===date&&e.cat===cat)?.count||0);
-  const logEntries = [];
-  let keptTesis=0, keptMnp=0, keptOther=0;
-  for(let i=entryLog.length-1;i>=0;i--){
-    const l = entryLog[i];
-    if(l.date===date && l.cat===cat){
-      if(MNP_CATS.includes(cat)){
-        if(!!l.mnp){
-          if(keptMnp < mnpCt){ logEntries.unshift(l); keptMnp++; }
-        } else {
-          if(keptTesis < tesisCt){ logEntries.unshift(l); keptTesis++; }
-        }
-      } else {
-        if(keptOther < otherCt){ logEntries.unshift(l); keptOther++; }
-      }
-    } else {
-      logEntries.unshift(l);
-    }
-  }
-  entryLog = logEntries;
-
+  // (Log temizleme kaldırıldı - her + için 1 log eklenir, silince log da silinir)
     saveEntries(); saveEntryLog(); render();
   vibrate(delta > 0 ? [30] : [10, 50, 10]); // artış: kısa titreşim, azalış: çift titreşim
 }
@@ -7551,12 +7527,7 @@ function deleteEntryDirect(cat, date, isMnp, btn){
   saveEntries();
   saveEntryLog();
   render();
-
-  // Modalı güncelle
-  const modal = document.getElementById('islemListModal');
-  if(modal && modal.style.display !== 'none'){
-    renderIslemList(cat, date);
-  }
+  setTimeout(() => { renderIslemList(cat, date); }, 50);
 }
 
 function confirmDeleteIslem(btn){
@@ -7638,11 +7609,8 @@ function deleteIslemLog(logRef, cat, date, isMnp){
   saveEntries();
   saveEntryLog();
   render();
-  // Modal hâlâ açıksa güncelle
-  const modal = document.getElementById('islemListModal');
-  if(modal && modal.style.display !== 'none'){
-    renderIslemList(cat, date);
-  }
+  // Modalı her zaman güncelle (setTimeout ile render'ın bitmesini bekle)
+  setTimeout(() => { renderIslemList(cat, date); }, 50);
 }
 
 
