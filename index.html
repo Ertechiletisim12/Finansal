@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v59 · 30.06.2026 09:52</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v60 · 30.06.2026 09:57</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v59 · Son güncelleme: 30.06.2026 09:52</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v60 · Son güncelleme: 30.06.2026 09:57</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2327,8 +2327,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v59';
-const BUILD_DATE = '30.06.2026 09:52';
+const APP_VERSION = 'v60';
+const BUILD_DATE = '30.06.2026 09:57';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4410,13 +4410,7 @@ function render(){
     return ymKey(m.entryDate);
   }
   // Onaylanan/Bekleyen: ENTRIES bazli hesapla (gercek prim adedi ile her zaman eslesir)
-  // Bekleyen MNP entries: musteri kaydi 'bekliyor' olanlarin sayisi kadar
-  const bekleyenMnpToplam = musteriler.filter(m=>{
-    if(m.tip!=='mnp' || m.durum!=='bekliyor' || !m.entryDate) return false;
-    return musteriEffectiveYm(m) === activeYm;
-  }).length;
-
-  // Bu aya effectiveYm dusen tum entries
+  // Bu aya effectiveYm dusen tum entries (TUM kategoriler: PrePaid, PostPaid, Red, P2P, Mccm, Internet, Diger)
   const buAyEntries = entries.filter(e => effectiveYm(e) === activeYm);
   const buAyToplamAdet = buAyEntries.reduce((a,e)=>a+e.count,0);
   const buAyToplamTutar = buAyEntries.reduce((a,e)=>{
@@ -4424,10 +4418,12 @@ function render(){
     return a + e.count*p;
   }, 0);
 
-  // Bekleyen tutar: bekleyen musteri kayitlarindan (entries icindeki MNP'lerin bir kismi)
+  // Bekleyen: SADECE MNP_CATS (PrePaid/PostPaid/Red) icindeki bekleyen MNP'ler
+  // P2P, Mccm, Internet, Diger her zaman aninda aktif (MNP suresi yok)
   let bekleyenAdet = 0, bekleyenTutar = 0;
   musteriler.filter(m=>{
     if(m.tip!=='mnp' || m.durum!=='bekliyor' || !m.entryDate) return false;
+    if(!MNP_CATS.includes(m.cat)) return false; // guvenlik: sadece MNP_CATS
     return musteriEffectiveYm(m) === activeYm;
   }).forEach(m=>{
     const p = kampanyaFiyatFor(m.entryDate, m.cat, priceFor(activeYm, m.cat)) || 0;
@@ -4437,7 +4433,7 @@ function render(){
   // Bekleyen, toplam entries adedini gecemesin (orphan koruma)
   bekleyenAdet = Math.min(bekleyenAdet, buAyToplamAdet);
 
-  // Onaylanan = toplam - bekleyen
+  // Onaylanan = toplam - bekleyen (P2P/Mccm/Internet/Diger her zaman onaylanan'a dahil)
   const onaylananAdet = Math.max(0, buAyToplamAdet - bekleyenAdet);
   const onaylananTutar = Math.max(0, buAyToplamTutar - bekleyenTutar);
 
@@ -8369,6 +8365,12 @@ function setRaporTarih(t){
   renderMusteriRapor();
 }
 
+let _musteriAramaTimer = null;
+function filtreliMusteriRender(){
+  clearTimeout(_musteriAramaTimer);
+  _musteriAramaTimer = setTimeout(()=>{ renderMusteriRapor(); }, 250);
+}
+
 function renderMusteriRapor(){
   const list = document.getElementById('musteriRaporList');
   if(!list) return;
@@ -8414,6 +8416,16 @@ function renderMusteriRapor(){
   if(_musteriRaporCat !== 'hepsi'){
     filtered = filtered.filter(m=>m.cat===_musteriRaporCat);
   }
+  // Arama filtresi - isim veya telefon
+  const aramaTerim = (document.getElementById('raporAramaInput')?.value || '').trim().toLowerCase();
+  if(aramaTerim){
+    filtered = filtered.filter(m=>{
+      const ad = (m.ad||'').toLowerCase();
+      const tel = (m.tel||'').replace(/\s/g,'');
+      return ad.includes(aramaTerim) || tel.includes(aramaTerim.replace(/\s/g,''));
+    });
+  }
+
   // Tarih filtresi - genişletilmiş
   let raporFiltreSayisi = filtered.length; // hepsi durumunda
   if(_musteriRaporTarih !== 'hepsi'){
@@ -11430,6 +11442,9 @@ function renderHedefGecmis(){
       <input type="date" id="raporOzelBaslangic" onchange="renderMusteriRapor()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:4px 8px;font-size:11px">
       <span style="color:var(--muted);font-size:11px">–</span>
       <input type="date" id="raporOzelBitis" onchange="renderMusteriRapor()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:4px 8px;font-size:11px">
+    </div>
+    <div style="padding:8px 14px;border-bottom:1px solid var(--line);flex-shrink:0">
+      <input type="text" id="raporAramaInput" oninput="filtreliMusteriRender()" placeholder="🔍 İsim veya telefon numarasıyla ara..." style="width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 12px;font-size:12px;box-sizing:border-box">
     </div>
     <div id="raporSonucSayisi" style="padding:6px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line);flex-shrink:0"></div>
     <div id="musteriTopluBar" style="display:none;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:rgba(76,217,100,0.06);flex-shrink:0"></div>
