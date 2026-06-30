@@ -1413,7 +1413,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v76 · 30.06.2026 22:04</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v77 · 30.06.2026 22:09</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1434,7 +1434,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v76 · Son güncelleme: 30.06.2026 22:04</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v77 · Son güncelleme: 30.06.2026 22:09</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2345,8 +2345,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v76';
-const BUILD_DATE = '30.06.2026 22:04';
+const APP_VERSION = 'v77';
+const BUILD_DATE = '30.06.2026 22:09';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4522,9 +4522,8 @@ function render(){
     cardsDiv.appendChild(div);
   });
 
-  // ---- TOPLAM kartı (bugünün ve seçili aralığın genel toplamı) — kategori kartlarının yanına eklenir ----
-  const totalCard = document.createElement('div');
-  totalCard.className='card total';
+  // ---- TOPLAM / Genel Hakediş Paneli (kartların ALTINDA gösterilir) ----
+  const totalCard = {innerHTML:''}; // artık kullanılmıyor, sadece uyumluluk için
   // Seçili aralık için gelir/gider özeti
   const rangeGelir = gelirData.filter(g=>g.tip==='gelir' && g.tarih>=rStart && g.tarih<=rEnd).reduce((a,g)=>a+g.tutar,0);
   const rangeGider = gelirData.filter(g=>g.tip==='gider' && g.tarih>=rStart && g.tarih<=rEnd).reduce((a,g)=>a+g.tutar,0);
@@ -4676,7 +4675,57 @@ function render(){
       <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px solid rgba(255,255,255,0.12);font-weight:700"><span>Net</span><span style="color:${netColor}">${fmt(rangeNet)}</span></div>
     </div>` : ''}
   `;
-  cardsDiv.appendChild(totalCard);
+  // totalCard artık cardsDiv'e eklenmiyor - hakedisPanel'e yazılıyor
+  const hPanel = document.getElementById('hakedisPanel');
+  const hDetaylar = document.getElementById('hakedisDetaylar');
+  const hToplamRakam = document.getElementById('hakedisToplamRakam');
+  const hAralikLabel = document.getElementById('hakedisAralikLabel');
+  const hAdetLabel = document.getElementById('hakedisAdetLabel');
+
+  if(hPanel && hToplamRakam){
+    hPanel.style.display = 'block';
+    hToplamRakam.textContent = fmt(genelHakedis);
+    hAralikLabel.textContent = rStart + ' – ' + rEnd;
+    hAdetLabel.textContent = rangeCount + ' adet';
+
+    let detayHTML = '';
+    detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px">
+      <span style="opacity:.75;font-weight:500">Prim</span>
+      <span style="font-weight:700;color:#fff">${fmt(rangeAmt)}</span>
+    </div>`;
+    if(tumBonusToplam > 0){
+      detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px">
+        <span style="opacity:.75;font-weight:500">🎁 Kampanya Bonusu</span>
+        <span style="font-weight:700;color:#a3f0b5">+${fmt(tumBonusToplam)}</span>
+      </div>`;
+      tumBonusDetay.forEach(b=>{
+        detayHTML += `<div style="display:flex;justify-content:space-between;font-size:9.5px;opacity:.55;padding-left:10px">
+          <span>↳ ${b.label}</span><span>+${fmt(b.tutar)}</span>
+        </div>`;
+      });
+    }
+    if(toplamMusteriAdet > 0){
+      detayHTML += `<div style="height:1px;background:rgba(255,255,255,0.1);margin:4px 0"></div>`;
+      detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11px">
+        <span style="opacity:.7">✅ Onaylanan (${onaylananAdet} müşteri)</span>
+        <span style="font-weight:600;color:#a3f0b5">${fmt(onaylananTutar)}</span>
+      </div>`;
+      if(bekleyenAdet > 0){
+        detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11px">
+          <span style="opacity:.7">⏳ Bekleyen (${bekleyenAdet} müşteri)</span>
+          <span style="font-weight:600;color:#ffd27a">${fmt(bekleyenTutar)}</span>
+        </div>`;
+      }
+    }
+    if(rangeGelir > 0 || rangeGider > 0){
+      detayHTML += `<div style="height:1px;background:rgba(255,255,255,0.1);margin:4px 0"></div>`;
+      detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11px">
+        <span style="opacity:.7">Net (Gelir-Gider)</span>
+        <span style="font-weight:700;color:${netColor}">${fmt(rangeNet)}</span>
+      </div>`;
+    }
+    if(hDetaylar) hDetaylar.innerHTML = detayHTML;
+  }
 
   // ---- price panel ----
   const monthSel = document.getElementById('priceMonthSel');
