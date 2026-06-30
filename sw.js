@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finansal-analiz-v55';
+const CACHE_NAME = 'finansal-analiz-v57';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -30,22 +30,36 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch: önce önbellekten, yoksa ağdan
+// Fetch: index.html için ağ-öncelikli (her zaman güncel), diğerleri için önbellek-öncelikli
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  const isHTML = event.request.mode === 'navigate' || url.pathname.endsWith('index.html') || url.pathname.endsWith('/');
+
+  if (isHTML) {
+    // Network-first: önce ağdan dene, başarısız olursa önbellekten
+    event.respondWith(
+      fetch(event.request).then(response => {
+        if (response && response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+        }
+        return response;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Diğer dosyalar: önbellek-öncelikli (eski davranış)
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
-        // Başarılı yanıtları önbellekle
         if (response && response.status === 200 && response.type === 'basic') {
           const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
-          });
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
         }
         return response;
       }).catch(() => {
-        // Ağ yoksa ve önbellekte de yoksa boş yanıt
         return new Response('Çevrimdışı mod - bu içerik önbellekte yok.', {
           status: 503,
           headers: { 'Content-Type': 'text/plain; charset=utf-8' }

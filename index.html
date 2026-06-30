@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v55 · 30.06.2026 00:37</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v57 · 30.06.2026 09:42</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v55 · Son güncelleme: 30.06.2026 00:37</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v57 · Son güncelleme: 30.06.2026 09:42</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2327,8 +2327,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v55';
-const BUILD_DATE = '30.06.2026 00:37';
+const APP_VERSION = 'v57';
+const BUILD_DATE = '30.06.2026 09:42';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -3295,7 +3295,7 @@ function yedekle(){
 function raporPaylasim(){
   const curYm = thisMonthKey();
   const hedef = hedefler[curYm] || 0;
-  const curEntries = entries.filter(e => e.date.startsWith(curYm));
+  const curEntries = entries.filter(e => effectiveYm(e)===curYm);
   let realized = 0;
   curEntries.forEach(e => { realized += e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(curYm,e.cat))||0); });
   const pct = hedef > 0 ? Math.round(realized / hedef * 100) : 0;
@@ -5589,7 +5589,7 @@ function renderDash(){
   const catHedefler = hedefKatData?.[now] ?? {};
   const catCounts = {};
   CATS.forEach(c=>{ catCounts[c]=0; });
-  entries.filter(e=>e.date.startsWith(now)).forEach(e=>{ catCounts[e.cat]=(catCounts[e.cat]||0)+e.count; });
+  entries.filter(e=>effectiveYm(e)===now).forEach(e=>{ catCounts[e.cat]=(catCounts[e.cat]||0)+e.count; });
   const catTotal = CATS.reduce((a,c)=>a+(catCounts[c]||0),0);
 
   // Bugün
@@ -5622,7 +5622,7 @@ function renderDash(){
   const trend6 = [];
   for(let i=5;i>=0;i--){
     const ym = addMonths(now,-i);
-    const adet = entries.filter(e=>e.date.startsWith(ym)).reduce((a,e)=>a+e.count,0);
+    const adet = entries.filter(e=>effectiveYm(e)===ym).reduce((a,e)=>a+e.count,0);
     trend6.push({ ym, v: financeFor(ym,mMap).genelToplamTutar, adet });
   }
   const maxTrend = Math.max(...trend6.map(t=>t.v),1);
@@ -9445,7 +9445,7 @@ function collectAlerts() {
   if (notifSettings.hedefEnabled) {
     const hedef = hedefler[curYm];
     if (hedef && hedef > 0) {
-      const curEntries = entries.filter(e => e.date.startsWith(curYm));
+      const curEntries = entries.filter(e => effectiveYm(e)===curYm);
       let realized = 0;
       curEntries.forEach(e => { realized += e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(curYm,e.cat))||0); });
       const pct = Math.round(realized / hedef * 100);
@@ -9487,8 +9487,8 @@ function collectAlerts() {
 
   // --- 4. PRİM DÜŞÜŞÜ UYARISI ---
   if (notifSettings.dususEnabled) {
-    const curEntries = entries.filter(e => e.date.startsWith(curYm));
-    const prevEntries = entries.filter(e => e.date.startsWith(prevYm));
+    const curEntries = entries.filter(e => effectiveYm(e)===curYm);
+    const prevEntries = entries.filter(e => effectiveYm(e)===prevYm);
     let curSum = 0, prevSum = 0;
     curEntries.forEach(e => { curSum += e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(curYm,e.cat))||0); });
     prevEntries.forEach(e => { prevSum += e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(prevYm,e.cat))||0); });
@@ -9952,7 +9952,7 @@ function renderRaporAylik(yil, monthNames) {
   const rows = fullMonthNames.map((ayAd, i) => {
     const ayNo = i + 1;
     const ym = `${yil}-${String(ayNo).padStart(2,'0')}`;
-    const ayEntries = entries.filter(e => e.date.startsWith(ym));
+    const ayEntries = entries.filter(e => effectiveYm(e)===ym);
     const count = ayEntries.reduce((a,e) => a + e.count, 0);
     const amount = ayEntries.reduce((a,e) => {
       return a + e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(ym,e.cat))||0) * (1+KDV_ORANI);
@@ -10468,7 +10468,7 @@ function renderHedefPage(){
   }
 
   function primForYm(ym){
-    return entries.filter(e=>e.date.startsWith(ym)).reduce((s,e)=>{
+    return entries.filter(e=>effectiveYm(e)===ym).reduce((s,e)=>{
       return s + e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(ym,e.cat))||0) * (1+KDV_ORANI);
     },0);
   }
@@ -10514,7 +10514,7 @@ function renderHedefPage(){
     const katHedefs = hedefKatData[progYm] || {};
     const katAdet = {}, katTutar = {};
     CATS.forEach(c=>{ katAdet[c]=0; katTutar[c]=0; });
-    entries.filter(e=>e.date.startsWith(progYm)).forEach(e=>{
+    entries.filter(e=>effectiveYm(e)===progYm).forEach(e=>{
       const p = priceFor(progYm,e.cat)||0;
       katAdet[e.cat]  = (katAdet[e.cat]||0) + e.count;
       katTutar[e.cat] = (katTutar[e.cat]||0) + e.count*p*(1+KDV_ORANI);
@@ -11018,7 +11018,7 @@ function renderHedefGecmis(){
   if(yilFiltre !== 'hepsi') ymList = ymList.filter(ym => ym.startsWith(yilFiltre));
 
   function primForYm(ym){
-    return entries.filter(e=>e.date.startsWith(ym)).reduce((s,e)=>{
+    return entries.filter(e=>effectiveYm(e)===ym).reduce((s,e)=>{
       return s + e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(ym,e.cat))||0) * (1+KDV_ORANI);
     },0);
   }
@@ -11026,7 +11026,7 @@ function renderHedefGecmis(){
   function gercekAdetForYm(ym){
     const adetMap = {};
     CATS.forEach(c => adetMap[c] = 0);
-    entries.filter(e=>e.date.startsWith(ym)).forEach(e=>{ adetMap[e.cat] = (adetMap[e.cat]||0) + e.count; });
+    entries.filter(e=>effectiveYm(e)===ym).forEach(e=>{ adetMap[e.cat] = (adetMap[e.cat]||0) + e.count; });
     return adetMap;
   }
 
