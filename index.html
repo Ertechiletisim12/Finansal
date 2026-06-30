@@ -14,7 +14,17 @@
   if('serviceWorker' in navigator){
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
-        .then(r => console.log('SW kayıtlı:', r.scope))
+        .then(r => {
+          console.log('SW kayıtlı:', r.scope);
+          r.update();
+          // Yeni SW devreye girdiğinde sayfayı otomatik yenile
+          let refreshed = false;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if(refreshed) return;
+            refreshed = true;
+            window.location.reload();
+          });
+        })
         .catch(e => console.warn('SW hatası:', e));
     });
   }
