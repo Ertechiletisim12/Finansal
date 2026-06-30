@@ -2425,6 +2425,23 @@ function kampanyaBonusFor(ym, cat, totalAdet){
 // Tekrarlayan bonuslari TUM ay icin bir kez hesaplar (coklu kategori + MNP/Tesis filtresi destekli)
 // adetMap: {cat: adet} - effectiveCountForYm(ym) sonucu
 // mnpAdetMap: {cat: {mnp:adet, tesis:adet}} - opsiyonel detay (yoksa hepsi 'hepsi' sayilir)
+// Kampanyanin kendi startDate/endDate araligina gore (varsa), ilgili kategoriler icin
+// gercek entries uzerinden adet hesaplar. Tarih araligi yoksa tum ay (ym) baz alinir.
+function kampanyaAraligindaAdet(k, cat, tipFiltre){
+  const ym = k.ym;
+  let toplam = 0;
+  entries.forEach(e=>{
+    if(e.cat !== cat) return;
+    if(effectiveYm(e) !== ym) return;
+    // Kampanyanin kendi tarih araligi varsa, islem tarihi bu araliga girmeli
+    if(k.startDate && e.date < k.startDate) return;
+    if(k.endDate   && e.date > k.endDate)   return;
+    if(tipFiltre === 'mnp'   && !e.mnp) return;
+    if(tipFiltre === 'tesis' &&  e.mnp) return;
+    toplam += e.count;
+  });
+  return toplam;
+}
 function kampanyaTekrarliBonusToplam(ym, adetMap, mnpDetay){
   if(!kampanyaData || !kampanyaData.length) return 0;
   let bonus = 0;
@@ -2434,13 +2451,7 @@ function kampanyaTekrarliBonusToplam(ym, adetMap, mnpDetay){
       const cats = (k.catList && k.catList.length) ? k.catList : [k.cat];
       let toplamAdet = 0;
       cats.forEach(c=>{
-        if(k.tipFiltre === 'mnp' && mnpDetay && mnpDetay[c]){
-          toplamAdet += mnpDetay[c].mnp || 0;
-        } else if(k.tipFiltre === 'tesis' && mnpDetay && mnpDetay[c]){
-          toplamAdet += mnpDetay[c].tesis || 0;
-        } else {
-          toplamAdet += adetMap[c] || 0;
-        }
+        toplamAdet += kampanyaAraligindaAdet(k, c, k.tipFiltre);
       });
       const kumeSayisi = Math.floor(toplamAdet / k.minAdet);
       bonus += kumeSayisi * k.deger;
@@ -4574,15 +4585,13 @@ function render(){
     const cats = (k.catList && k.catList.length) ? k.catList : [k.cat];
     let toplamAdet = 0;
     cats.forEach(c=>{
-      if(k.tipFiltre==='mnp' && mnpDetayBuAy[c]) toplamAdet += mnpDetayBuAy[c].mnp||0;
-      else if(k.tipFiltre==='tesis' && mnpDetayBuAy[c]) toplamAdet += mnpDetayBuAy[c].tesis||0;
-      else toplamAdet += adetMapBuAy[c]||0;
+      toplamAdet += kampanyaAraligindaAdet(k, c, k.tipFiltre);
     });
     const kume = Math.floor(toplamAdet / k.minAdet);
     if(kume > 0){
       const tutar = kume * k.deger;
       tekrarliBonusToplam += tutar;
-      tekrarliBonusDetay.push({label: cats.join('+') + ' (' + toplamAdet + ' adet, ' + kume + 'x' + k.minAdet + ')', tutar});
+      tekrarliBonusDetay.push({label: cats.join('+') + (k.startDate||k.endDate ? ' ['+(k.startDate||'?')+' – '+(k.endDate||'?')+']' : '') + ' (' + toplamAdet + ' adet, ' + kume + 'x' + k.minAdet + ')', tutar});
     }
   });
   const tumBonusToplam = esikBonusToplam + tekrarliBonusToplam;
