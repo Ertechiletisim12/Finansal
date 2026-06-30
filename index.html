@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v65 · 30.06.2026 10:39</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v66 · 30.06.2026 11:34</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v65 · Son güncelleme: 30.06.2026 10:39</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v66 · Son güncelleme: 30.06.2026 11:34</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2327,8 +2327,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v65';
-const BUILD_DATE = '30.06.2026 10:39';
+const APP_VERSION = 'v66';
+const BUILD_DATE = '30.06.2026 11:34';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -3228,6 +3228,7 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
     if(useSubtype) logEntry.mnp = mnpFlag;
     if(mnpFlag) logEntry.activationDate = mnpActivationDate(date);
     if(cat==='İnternet' && activationDate) logEntry.activationDate = activationDate;
+    if(tarife) logEntry.tarife = tarife;
     entryLog.push(logEntry);
 
   } else if(delta < 0){
@@ -3242,14 +3243,18 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
         }
       }
     }
+    // Silinen logun tarifesini al - dogru entry'den dussun
+    const silinenTarife = (logIdx >= 0) ? (entryLog[logIdx].tarife || '') : (tarife || '');
     if(logIdx >= 0) entryLog.splice(logIdx, 1);
 
-    // entries count'u azalt
+    // entries count'u azalt - TARIFE eslesmesiyle dogru entry'yi bul
     let e;
     if(useSubtype){
-      e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
+      e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag && (x.tarife||'')===silinenTarife)
+        || entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
     } else {
-      e = entries.find(x => x.date===date && x.cat===cat);
+      e = entries.find(x => x.date===date && x.cat===cat && (x.tarife||'')===silinenTarife)
+        || entries.find(x => x.date===date && x.cat===cat);
     }
     if(e && e.count > 0){
       e.count--;
@@ -7995,14 +8000,18 @@ function deleteIslemLog(logRef, cat, date, isMnp){
     }
   }
 
+  // Silinen logun tarifesini al - dogru entry'den dussun
+  const silinenTarife2 = (logIdx >= 0) ? (entryLog[logIdx].tarife || '') : '';
   if(logIdx >= 0) entryLog.splice(logIdx, 1);
 
-  // ── 2. ENTRIES SAYISINI AZALT ──
+  // ── 2. ENTRIES SAYISINI AZALT (TARIFE eslesmesiyle) ──
   let e;
   if(useSubtype){
-    e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
+    e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag && (x.tarife||'')===silinenTarife2)
+      || entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
   } else {
-    e = entries.find(x => x.date===date && x.cat===cat);
+    e = entries.find(x => x.date===date && x.cat===cat && (x.tarife||'')===silinenTarife2)
+      || entries.find(x => x.date===date && x.cat===cat);
   }
   if(e && e.count > 0){
     e.count--;
