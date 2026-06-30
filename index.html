@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v54 · 30.06.2026 00:13</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v55 · 30.06.2026 00:37</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v54 · Son güncelleme: 30.06.2026 00:13</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v55 · Son güncelleme: 30.06.2026 00:37</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2327,8 +2327,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v54';
-const BUILD_DATE = '30.06.2026 00:13';
+const APP_VERSION = 'v55';
+const BUILD_DATE = '30.06.2026 00:37';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -8397,11 +8397,11 @@ function renderMusteriRapor(){
     const buayStr  = bugunStr.slice(0,7);
     const buyilStr = bugunStr.slice(0,4);
     filtered = filtered.filter(m=>{
-      // MNP için aktivasyon tarihini, diğerleri için giriş tarihini kullan
-      const d = (m.tip==='mnp' && m.aktivasyonTarihi) ? m.aktivasyonTarihi : (m.entryDate || '');
-      if(_musteriRaporTarih==='bugun')   return d === bugunStr;
-      if(_musteriRaporTarih==='buay')    return d.startsWith(buayStr);
-      if(_musteriRaporTarih==='buyil')   return d.startsWith(buyilStr);
+      const entryD = m.entryDate || '';
+      const aktD   = m.aktivasyonTarihi || entryD;
+      if(_musteriRaporTarih==='bugun')   return entryD === bugunStr; // giriş günü
+      if(_musteriRaporTarih==='buay')    return entryD.startsWith(buayStr); // giriş ayı
+      if(_musteriRaporTarih==='buyil')   return entryD.startsWith(buyilStr); // giriş yılı
       if(_musteriRaporTarih==='gelecek') return m.takipTarihi > bugunStr;
       return true;
     });
