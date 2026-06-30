@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v63 · 30.06.2026 10:28</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v64 · 30.06.2026 10:32</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v63 · Son güncelleme: 30.06.2026 10:28</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v64 · Son güncelleme: 30.06.2026 10:32</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2327,8 +2327,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v63';
-const BUILD_DATE = '30.06.2026 10:28';
+const APP_VERSION = 'v64';
+const BUILD_DATE = '30.06.2026 10:32';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -10862,9 +10862,10 @@ function renderTrend(){
   const catMonthData = {}; // {cat: {ym: total}}
   CATS.forEach(c => { catMonthData[c] = {}; months.forEach(ym => { catMonthData[c][ym] = 0; }); });
   entries.forEach(e => {
-    const ym = e.date.slice(0,7);
+    const ym = effectiveYm(e); // MNP devir + tarife bazlı ay hesabı
     if(!months.includes(ym)) return;
-    const p = priceFor(ym, e.cat) || 0;
+    const tFiyat = tarifeFiyatFor(e, e.cat);
+    const p = tFiyat != null ? tFiyat : (kampanyaFiyatFor(e.date, e.cat, priceFor(ym, e.cat)) || 0);
     catMonthData[e.cat][ym] = (catMonthData[e.cat][ym]||0) + e.count * p * (1 + KDV_ORANI);
   });
 
