@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v64 · 30.06.2026 10:32</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v65 · 30.06.2026 10:39</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v64 · Son güncelleme: 30.06.2026 10:32</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v65 · Son güncelleme: 30.06.2026 10:39</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2327,8 +2327,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v64';
-const BUILD_DATE = '30.06.2026 10:32';
+const APP_VERSION = 'v65';
+const BUILD_DATE = '30.06.2026 10:39';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -2415,15 +2415,34 @@ function kampanyaFiyatFor(date, cat, normalFiyat){
 function kampanyaBonusFor(ym, cat, totalAdet){
   if(!kampanyaData || !kampanyaData.length) return 0;
   let bonus = 0;
-  // Eşik bazlı bonus (X adede ulaşınca tek seferlik bonus)
+  // Eşik bazlı bonus (X adede ulaşınca tek seferlik bonus) - sadece tek kategorili (eski tip)
   kampanyaData
-    .filter(k=> k.cat===cat && k.tip==='bonus' && k.ym===ym)
+    .filter(k=> k.cat===cat && k.tip==='bonus' && k.ym===ym && (!k.catList || k.catList.length<=1))
     .forEach(k=>{ if(totalAdet>=(k.minAdet||0)) bonus += k.deger; });
-  // Tekrarlayan bonus (her X adede bir Y₺, tam küme sayısı kadar)
+  return bonus;
+}
+
+// Tekrarlayan bonuslari TUM ay icin bir kez hesaplar (coklu kategori + MNP/Tesis filtresi destekli)
+// adetMap: {cat: adet} - effectiveCountForYm(ym) sonucu
+// mnpAdetMap: {cat: {mnp:adet, tesis:adet}} - opsiyonel detay (yoksa hepsi 'hepsi' sayilir)
+function kampanyaTekrarliBonusToplam(ym, adetMap, mnpDetay){
+  if(!kampanyaData || !kampanyaData.length) return 0;
+  let bonus = 0;
   kampanyaData
-    .filter(k=> k.cat===cat && k.tip==='tekrarli' && k.ym===ym && (k.minAdet||0)>0)
+    .filter(k => k.tip==='tekrarli' && k.ym===ym && (k.minAdet||0)>0)
     .forEach(k=>{
-      const kumeSayisi = Math.floor(totalAdet / k.minAdet);
+      const cats = (k.catList && k.catList.length) ? k.catList : [k.cat];
+      let toplamAdet = 0;
+      cats.forEach(c=>{
+        if(k.tipFiltre === 'mnp' && mnpDetay && mnpDetay[c]){
+          toplamAdet += mnpDetay[c].mnp || 0;
+        } else if(k.tipFiltre === 'tesis' && mnpDetay && mnpDetay[c]){
+          toplamAdet += mnpDetay[c].tesis || 0;
+        } else {
+          toplamAdet += adetMap[c] || 0;
+        }
+      });
+      const kumeSayisi = Math.floor(toplamAdet / k.minAdet);
       bonus += kumeSayisi * k.deger;
     });
   return bonus;
@@ -2510,9 +2529,17 @@ function calcPrimWithKampanya(ym){
     const fiyat = priceFor(ym, e.cat, e.date);
     total += e.count * fiyat;
   });
-  // Bonus kampanyaları
+  // Eşik bazlı bonus kampanyaları (tek kategori)
   const adetMap = effectiveCountForYm(ym);
   CATS.forEach(c=>{ total += kampanyaBonusFor(ym, c, adetMap[c]||0); });
+  // Tekrarlayan bonus kampanyaları (coklu kategori + MNP/Tesis filtreli)
+  const mnpDetay = {};
+  MNP_CATS.forEach(c=>{
+    const mnpAdet = entries.filter(e=>e.cat===c && !!e.mnp && effectiveYm(e)===ym).reduce((a,e)=>a+e.count,0);
+    const tesisAdet = entries.filter(e=>e.cat===c && !e.mnp && effectiveYm(e)===ym).reduce((a,e)=>a+e.count,0);
+    mnpDetay[c] = {mnp: mnpAdet, tesis: tesisAdet};
+  });
+  total += kampanyaTekrarliBonusToplam(ym, adetMap, mnpDetay);
   return total;
 }
 
@@ -3071,8 +3098,16 @@ function financeFor(ym, mMap){
     if(entriesYm.length === 0){
       primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0);
     }
-    // Bonus kampanyalar
+    // Bonus kampanyalar (esik bazli)
     CATS.forEach(c=>{ primTutar += kampanyaBonusFor(ym, c, m[c]||0); });
+    // Tekrarlayan bonuslar (coklu kategori)
+    const mnpDetay2 = {};
+    MNP_CATS.forEach(c=>{
+      const mnpAdet = entries.filter(e=>e.cat===c && !!e.mnp && effectiveYm(e)===ym).reduce((a,e)=>a+e.count,0);
+      const tesisAdet = entries.filter(e=>e.cat===c && !e.mnp && effectiveYm(e)===ym).reduce((a,e)=>a+e.count,0);
+      mnpDetay2[c] = {mnp: mnpAdet, tesis: tesisAdet};
+    });
+    primTutar += kampanyaTekrarliBonusToplam(ym, m, mnpDetay2);
   } else {
     primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0);
   }
@@ -8144,6 +8179,17 @@ function updateKampanyaForm(){
   document.getElementById('kMinAdetLabel').textContent = tip==='tekrarli' ? 'Her Kaç Adet' : 'Minimum Adet Eşiği';
   document.getElementById('kMinAdet').placeholder = tip==='tekrarli' ? 'Örn: 5 (her 5 adede bir bonus)' : 'Bu adede ulaşılınca bonus devreye girer';
   document.getElementById('kTekrarliHint').style.display = tip==='tekrarli' ? 'block' : 'none';
+
+  // Coklu kategori secimi sadece tekrarli icin gosterilsin
+  const multiDiv = document.getElementById('kMultiCatDiv');
+  const tekCatDiv = document.getElementById('kCatTekDiv');
+  if(tip === 'tekrarli'){
+    if(multiDiv) multiDiv.style.display = 'block';
+    if(tekCatDiv) tekCatDiv.style.display = 'none';
+  } else {
+    if(multiDiv) multiDiv.style.display = 'none';
+    if(tekCatDiv) tekCatDiv.style.display = 'block';
+  }
 }
 function editKampanya(id){
   const k = kampanyaData.find(x=>x.id===id);
@@ -8161,6 +8207,14 @@ function editKampanya(id){
   document.getElementById('kSaveBtn').textContent = '💾 Güncelle';
   document.getElementById('kIptalBtn').style.display = 'block';
   updateKampanyaForm();
+
+  // Coklu kategori checkbox'larini doldur
+  document.querySelectorAll('.kMultiCatBox').forEach(cb=>{
+    cb.checked = (k.catList||[]).includes(cb.value);
+  });
+  const tipFiltreEl = document.getElementById('kTipFiltre');
+  if(tipFiltreEl) tipFiltreEl.value = k.tipFiltre || 'hepsi';
+
   // Forma scroll
   document.getElementById('kFormTitle').scrollIntoView({behavior:'smooth'});
 }
@@ -8232,7 +8286,6 @@ function updateMkTarifeField(){
 function saveKampanya(){
   const editId = document.getElementById('kEditId').value;
   const ym = document.getElementById('kAy').value;
-  const cat = document.getElementById('kCat').value;
   const tip = document.getElementById('kTip').value;
   const deger = parseFloat(document.getElementById('kDeger').value);
   const startDate = document.getElementById('kStartDate').value || null;
@@ -8240,18 +8293,30 @@ function saveKampanya(){
   const minAdet = parseInt(document.getElementById('kMinAdet').value)||0;
   const aciklama = document.getElementById('kAciklama').value.trim();
 
+  // Tekrarli icin coklu kategori, digerleri icin tek kategori
+  let cat, catList;
+  if(tip === 'tekrarli'){
+    catList = [...document.querySelectorAll('.kMultiCatBox:checked')].map(cb=>cb.value);
+    if(!catList.length){ alert('En az bir kategori seçiniz.'); return; }
+    cat = catList[0]; // geriye donuk uyumluluk icin ilk kategori
+  } else {
+    cat = document.getElementById('kCat').value;
+    catList = [cat];
+  }
+
+  const tipFiltre = document.getElementById('kTipFiltre')?.value || 'hepsi';
+
   if(!ym){ alert('Ay seçiniz.'); return; }
   if(isNaN(deger)||deger<=0){ alert('Geçerli bir tutar giriniz.'); return; }
 
-  const k = { ym, cat, tip, deger, startDate, endDate, aciklama };
+  const k = { ym, cat, catList, tip, deger, startDate, endDate, aciklama };
   if(tip==='bonus' || tip==='tekrarli') k.minAdet = minAdet;
+  if(tip==='tekrarli') k.tipFiltre = tipFiltre;
 
   if(editId){
-    // Güncelle
     const idx = kampanyaData.findIndex(x=>x.id===editId);
     if(idx>=0){ k.id = editId; kampanyaData[idx] = k; }
   } else {
-    // Yeni
     k.id = Date.now().toString();
     kampanyaData.push(k);
   }
@@ -8285,16 +8350,17 @@ function renderKampanyaList(){
         const tarihInfo = (k.startDate||k.endDate)
           ? (k.startDate||'başlangıç')+' → '+(k.endDate||'ay sonu')
           : 'Tüm ay';
+        const tipFiltreEtiket = k.tipFiltre==='mnp' ? ' (Sadece MNP)' : k.tipFiltre==='tesis' ? ' (Sadece Yeni Tesis)' : '';
         const detay = k.tip==='fiyat'
           ? `Birim fiyat: <b style="color:#4cd964">${k.deger.toLocaleString('tr-TR')} ₺</b> · ${tarihInfo}`
           : k.tip==='tekrarli'
-          ? `Her <b>${k.minAdet||0}</b> adede <b style="color:#c084fc">${k.deger.toLocaleString('tr-TR')} ₺</b> (tekrarlı) · ${tarihInfo}`
+          ? `Her <b>${k.minAdet||0}</b> adede <b style="color:#c084fc">${k.deger.toLocaleString('tr-TR')} ₺</b>${tipFiltreEtiket} · ${tarihInfo}`
           : `Min <b>${k.minAdet||0}</b> adet → <b style="color:#ffb74d">${k.deger.toLocaleString('tr-TR')} ₺</b> bonus · ${tarihInfo}`;
         return `<div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:6px">
           <div style="display:flex;align-items:flex-start;gap:8px">
             <div style="flex:1;min-width:0">
               <div style="font-size:12px;font-weight:700;color:var(--txt);margin-bottom:3px">
-                ${k.cat} <span style="font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;${k.tip==='fiyat'?'background:rgba(76,217,100,0.15);color:#4cd964':k.tip==='tekrarli'?'background:rgba(192,132,252,0.15);color:#c084fc':'background:rgba(255,183,77,0.15);color:#ffb74d'}">${k.tip==='fiyat'?'💰 Fiyat':k.tip==='tekrarli'?'🔁 Tekrarlı':'🎁 Bonus'}</span>
+                ${(k.catList && k.catList.length>1) ? k.catList.join(' + ') : k.cat} <span style="font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;${k.tip==='fiyat'?'background:rgba(76,217,100,0.15);color:#4cd964':k.tip==='tekrarli'?'background:rgba(192,132,252,0.15);color:#c084fc':'background:rgba(255,183,77,0.15);color:#ffb74d'}">${k.tip==='fiyat'?'💰 Fiyat':k.tip==='tekrarli'?'🔁 Tekrarlı':'🎁 Bonus'}</span>
               </div>
               <div style="font-size:11px;color:var(--muted)">${detay}</div>
               ${k.aciklama?`<div style="font-size:10px;color:var(--muted);margin-top:3px;font-style:italic">${k.aciklama}</div>`:''}
@@ -11422,7 +11488,7 @@ function renderHedefGecmis(){
           <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Ay</div>
           <input type="month" id="kAy" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
         </div>
-        <div>
+        <div id="kCatTekDiv">
           <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Kategori</div>
           <select id="kCat" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
             <option>PrePaid</option><option>PostPaid</option><option>Red</option>
@@ -11458,6 +11524,34 @@ function renderHedefGecmis(){
         <div style="font-size:10px;color:var(--muted);margin-bottom:3px" id="kMinAdetLabel">Minimum Adet Eşiği</div>
         <input type="number" id="kMinAdet" placeholder="Bu adede ulaşılınca bonus devreye girer" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
         <div id="kTekrarliHint" style="display:none;font-size:10px;color:var(--accent);margin-top:4px">Örn: "her 5 adede 1000₺" için Adet=5, Tutar=1000. 23 işlemde 4 küme (20 adet) = 4×1000₺ kazanılır.</div>
+
+        <!-- Çoklu kategori secimi (sadece tekrarli/bonus icin) -->
+        <div id="kMultiCatDiv" style="margin-top:10px;display:none">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px">Kategoriler (birden fazla seçilebilir — örn: PostPaid + Red toplamı)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
+              <input type="checkbox" class="kMultiCatBox" value="PrePaid" style="width:14px;height:14px;cursor:pointer">PrePaid</label>
+            <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
+              <input type="checkbox" class="kMultiCatBox" value="PostPaid" style="width:14px;height:14px;cursor:pointer">PostPaid</label>
+            <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
+              <input type="checkbox" class="kMultiCatBox" value="Red" style="width:14px;height:14px;cursor:pointer">Red</label>
+            <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
+              <input type="checkbox" class="kMultiCatBox" value="P2P" style="width:14px;height:14px;cursor:pointer">P2P</label>
+            <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
+              <input type="checkbox" class="kMultiCatBox" value="Mccm" style="width:14px;height:14px;cursor:pointer">Mccm</label>
+            <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
+              <input type="checkbox" class="kMultiCatBox" value="İnternet" style="width:14px;height:14px;cursor:pointer">İnternet</label>
+            <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
+              <input type="checkbox" class="kMultiCatBox" value="Diğer" style="width:14px;height:14px;cursor:pointer">Diğer</label>
+          </div>
+
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px">İşlem Tipi (PrePaid/PostPaid/Red için)</div>
+          <select id="kTipFiltre" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
+            <option value="hepsi">🔀 MNP + Yeni Tesis (toplam)</option>
+            <option value="mnp">🔄 Sadece MNP</option>
+            <option value="tesis">🆕 Sadece Yeni Tesis</option>
+          </select>
+        </div>
       </div>
       <div style="margin-bottom:10px">
         <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Açıklama</div>
