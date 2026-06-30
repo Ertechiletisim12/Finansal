@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v61 · 30.06.2026 10:00</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v62 · 30.06.2026 10:14</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v61 · Son güncelleme: 30.06.2026 10:00</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v62 · Son güncelleme: 30.06.2026 10:14</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2327,8 +2327,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v61';
-const BUILD_DATE = '30.06.2026 10:00';
+const APP_VERSION = 'v62';
+const BUILD_DATE = '30.06.2026 10:14';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -3102,6 +3102,13 @@ function changeCount(cat, delta, activationDate, isMnp){
   // PrePaid/PostPaid/Red: MNP mi Yeni Tesis mi diye sor
   if(MNP_CATS.includes(cat) && delta>0 && isMnp===undefined){
     openMnpTesisModal(cat, date);
+    return;
+  }
+
+  // P2P/Mccm/Diğer: doğrudan müşteri kayıt modalı (MNP/Tesis ayrımı yok - her zaman Tesis tipi)
+  if(['P2P','Mccm','Diğer'].includes(cat) && delta>0){
+    window._confirmedIsMnp = false;
+    openMusteriKayit(cat, false, date);
     return;
   }
 
@@ -8047,6 +8054,9 @@ function confirmInternetActivation(){
   document.getElementById('mkTarih').value = _internetActDate || todayStr();
   setMkTip('tesis');
   _mkTip = 'tesis';
+  window._confirmedIsMnp = false;
+  const tipContainer = document.getElementById('mkTipContainer');
+  if(tipContainer) tipContainer.style.display = 'none'; // İnternet için MNP/Tesis ayrımı yok
   document.getElementById('mkModalTitle').textContent = '📋 Müşteri Kaydı — İnternet';
   document.getElementById('mkModalSub').textContent = 'Aktivasyon: ' + actDate;
   // Aktivasyon tarihini sakla
@@ -8205,7 +8215,14 @@ function openMusteriKayit(cat, isMnp, date){
   window._confirmedIsMnp = isMnpBool; // yedek olarak sakla
   const now = new Date();
   document.getElementById('mkModalTitle').textContent = '📋 Müşteri Kaydı — ' + cat;
-  document.getElementById('mkModalSub').textContent = isMnp ? '🔄 MNP İşlemi' : '🆕 Yeni Tesis';
+  const tipContainer = document.getElementById('mkTipContainer');
+  if(MNP_CATS.includes(cat)){
+    if(tipContainer) tipContainer.style.display = 'flex';
+    document.getElementById('mkModalSub').textContent = isMnp ? '🔄 MNP İşlemi' : '🆕 Yeni Tesis';
+  } else {
+    if(tipContainer) tipContainer.style.display = 'none';
+    document.getElementById('mkModalSub').textContent = '📝 Yeni Kayıt';
+  }
   document.getElementById('mkEntryId').value = '';
   document.getElementById('mkCat').value = cat;
   document.getElementById('mkAd').value = '';
@@ -11351,7 +11368,7 @@ function renderHedefGecmis(){
       <input type="hidden" id="mkTipHidden" value="tesis">
 
       <!-- İşlem Tipi -->
-      <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div id="mkTipContainer" style="display:flex;gap:8px;margin-bottom:14px">
         <div id="mkTipTesis" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--line);background:var(--panel2);color:var(--txt);font-size:12px;font-weight:700;text-align:center;user-select:none">🆕 Yeni Tesis</div>
         <div id="mkTipMnp" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--line);background:var(--panel2);color:var(--txt);font-size:12px;font-weight:700;text-align:center;user-select:none">🔄 MNP</div>
       </div>
