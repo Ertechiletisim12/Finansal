@@ -1413,7 +1413,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v77 · 30.06.2026 22:09</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v78 · 30.06.2026 22:13</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1434,7 +1434,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v77 · Son güncelleme: 30.06.2026 22:09</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v78 · Son güncelleme: 30.06.2026 22:13</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2345,8 +2345,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v77';
-const BUILD_DATE = '30.06.2026 22:09';
+const APP_VERSION = 'v78';
+const BUILD_DATE = '30.06.2026 22:13';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4617,64 +4617,7 @@ function render(){
     // Genel Hakediş: Prim (rangeAmt) + Kampanya Bonusu toplamı
   const genelHakedis = rangeAmt + tumBonusToplam;
 
-  totalCard.innerHTML = `
-    <div class="label" style="font-size:11.5px;letter-spacing:.04em;opacity:.85;margin-bottom:6px">TOPLAM — ${activeDate}</div>
 
-    <!-- Bugun -->
-    <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:10px">
-      <span class="cnt" style="font-size:26px;font-weight:800;letter-spacing:-.5px">${dayCount}</span>
-      <span style="font-size:13px;opacity:.85;font-weight:600">${fmt(dayTotal)}</span>
-    </div>
-
-    <!-- GENEL HAKEDIS - sade, kartin yesil temasiyla uyumlu -->
-    <div style="background:rgba(255,255,255,0.1);backdrop-filter:blur(2px);border-radius:10px;padding:10px 12px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
-        <span style="font-size:10px;font-weight:700;letter-spacing:.06em;opacity:.8;text-transform:uppercase">Genel Hakediş</span>
-        <span style="font-size:9px;opacity:.65;font-weight:500">${rStart} – ${rEnd}</span>
-      </div>
-      <div style="font-size:23px;font-weight:900;letter-spacing:-.6px;line-height:1;margin-bottom:8px">${fmt(genelHakedis)}</div>
-      <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:500">
-        <div style="display:flex;justify-content:space-between;opacity:.9">
-          <span>Prim &nbsp;<span style="opacity:.7;font-weight:400">(${rangeCount} adet)</span></span>
-          <span style="font-weight:700">${fmt(rangeAmt)}</span>
-        </div>
-        ${tumBonusToplam > 0 ? `<div style="display:flex;justify-content:space-between">
-          <span style="opacity:.9">🎁&nbsp; Kampanya Bonusu</span>
-          <span style="font-weight:700">+${fmt(tumBonusToplam)}</span>
-        </div>` : ''}
-      </div>
-      ${tumBonusDetay.length>0 ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.18);display:flex;flex-direction:column;gap:2px">
-        ${tumBonusDetay.map(b=>`<div style="display:flex;justify-content:space-between;font-size:9.5px;opacity:.7"><span>↳ ${b.label}</span><span style="font-weight:600">+${fmt(b.tutar)}</span></div>`).join('')}
-      </div>` : ''}
-    </div>
-
-    <!-- Musteri takip ozeti -->
-    ${toplamMusteriAdet > 0 ? `
-    <div style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Müşteri Takibi</div>
-    <div style="display:flex;flex-direction:column;gap:3px;font-size:11.5px;margin-bottom:6px">
-      <div style="display:flex;justify-content:space-between">
-        <span style="color:#4cd964">✅ Onaylanan</span>
-        <span style="color:#4cd964;font-weight:700">${onaylananAdet} · ${fmt(onaylananTutar)}</span>
-      </div>
-      ${bekleyenAdet > 0 ? `<div style="display:flex;justify-content:space-between">
-        <span style="color:#ff9f0a">⏳ Bekleyen</span>
-        <span style="color:#ff9f0a;font-weight:700">${bekleyenAdet} · ${fmt(bekleyenTutar)}</span>
-      </div>` : ''}
-      <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px solid rgba(255,255,255,0.12);font-weight:700">
-        <span>Toplam</span>
-        <span>${toplamMusteriAdet} · ${fmt(onaylananTutar+bekleyenTutar)}</span>
-      </div>
-    </div>` : ''}
-
-    <!-- Gelir/Gider -->
-    ${(rangeGelir>0||rangeGider>0) ? `
-    <div style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Gelir / Gider</div>
-    <div style="display:flex;flex-direction:column;gap:2px;font-size:11.5px">
-      <div style="display:flex;justify-content:space-between"><span style="opacity:.8">Gelir</span><span style="color:#4cd964;font-weight:700">${fmt(rangeGelir)}</span></div>
-      <div style="display:flex;justify-content:space-between"><span style="opacity:.8">Gider</span><span style="color:#ff5252;font-weight:700">${fmt(rangeGider)}</span></div>
-      <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px solid rgba(255,255,255,0.12);font-weight:700"><span>Net</span><span style="color:${netColor}">${fmt(rangeNet)}</span></div>
-    </div>` : ''}
-  `;
   // totalCard artık cardsDiv'e eklenmiyor - hakedisPanel'e yazılıyor
   const hPanel = document.getElementById('hakedisPanel');
   const hDetaylar = document.getElementById('hakedisDetaylar');
@@ -9018,19 +8961,23 @@ function openMusteriEdit(id){
   if(!m) return;
   _mkEditId = id;
   window._confirmedIsMnp = m.tip === 'mnp';
-  // Modalı aç ve doldur
   openMusteriKayit(m.cat, m.tip==='mnp', m.entryDate);
-  // Alanları doldur
   setTimeout(()=>{
     if(m.ad)  document.getElementById('mkAd').value  = m.ad;
     if(m.tel) document.getElementById('mkTel').value = m.tel;
     if(m.not) document.getElementById('mkNot').value = m.not;
     if(m.entryTime) document.getElementById('mkSaat').value = m.entryTime;
-    if(m.aktivasyonTarihi) {
+    if(m.aktivasyonTarihi){
       const aktEl = document.getElementById('mkAktTarih');
       if(aktEl) aktEl.value = m.aktivasyonTarihi;
     }
-  }, 50);
+    // Tarifeyi doldur
+    updateMkTarifeField();
+    if(m.tarife){
+      const tEl = document.getElementById('mkTarife');
+      if(tEl) tEl.value = m.tarife;
+    }
+  }, 80);
 }
 
 function deleteMusteriKayit(id){
@@ -9048,11 +8995,14 @@ function deleteMusteriKayit(id){
   const cat   = m.cat;
   if(date && cat){
     const useSubtype = MNP_CATS.includes(cat);
+    const mTarife = m.tarife || '';
     let e;
     if(useSubtype){
-      e = entries.find(x=>x.date===date&&x.cat===cat&&!!x.mnp===isMnp);
+      e = entries.find(x=>x.date===date&&x.cat===cat&&!!x.mnp===isMnp&&(x.tarife||'')===mTarife)
+        || entries.find(x=>x.date===date&&x.cat===cat&&!!x.mnp===isMnp);
     } else {
-      e = entries.find(x=>x.date===date&&x.cat===cat);
+      e = entries.find(x=>x.date===date&&x.cat===cat&&(x.tarife||'')===mTarife)
+        || entries.find(x=>x.date===date&&x.cat===cat);
     }
     if(e && e.count > 0){
       e.count--;
