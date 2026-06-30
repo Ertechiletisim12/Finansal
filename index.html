@@ -1413,7 +1413,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v75 · 30.06.2026 21:54</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v76 · 30.06.2026 22:04</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1434,7 +1434,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v75 · Son güncelleme: 30.06.2026 21:54</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v76 · Son güncelleme: 30.06.2026 22:04</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -1542,7 +1542,24 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
             </div>
             <div class="quick" id="quickRanges"></div>
           </div>
-          <div class="cards-row" id="catCards" style="margin-bottom:2px"></div>
+          <div class="cards-row" id="catCards" style="margin-bottom:10px"></div>
+
+        <!-- Genel Hakediş Özet Paneli -->
+        <div id="hakedisPanel" style="display:none;margin-bottom:12px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#1a3a2a,#1f4a35);border:1px solid rgba(76,217,100,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+          <!-- Üst: büyük hakediş rakamı -->
+          <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:4px" id="hakedisAralikLabel">Genel Hakediş</div>
+              <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:-.8px;line-height:1" id="hakedisToplamRakam">—</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:9.5px;color:rgba(255,255,255,0.45);margin-bottom:3px" id="hakedisAdetLabel">—</div>
+              <div style="font-size:13px;font-weight:700;color:rgba(76,217,100,0.9)" id="hakedisGunlukOrt">—</div>
+            </div>
+          </div>
+          <!-- Alt: satırlar -->
+          <div style="border-top:1px solid rgba(255,255,255,0.08);padding:10px 16px;display:flex;flex-direction:column;gap:5px" id="hakedisDetaylar"></div>
+        </div>
         </div>
 
         <!-- Scroll eden içerik -->
@@ -2328,8 +2345,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v75';
-const BUILD_DATE = '30.06.2026 21:54';
+const APP_VERSION = 'v76';
+const BUILD_DATE = '30.06.2026 22:04';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4403,24 +4420,14 @@ function render(){
     rangeAmt += e.count * fiyat;
   });
   const raCnt = c => rEntriesForCards.filter(e=>e.cat===c).reduce((a,e)=>a+e.count,0);
+  // raAmt: sadece ham prim (tarife dahil, bonus harici) - bonus Hakediş kartında ayrıca gösterilir
   const raAmt = c => {
     const catEntries = rEntriesForCards.filter(e=>e.cat===c);
-    let base = catEntries.reduce((a,e)=>{
+    return catEntries.reduce((a,e)=>{
       const tFiyat = tarifeFiyatFor(e, c);
       const p = tFiyat != null ? tFiyat : (kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c))||0);
       return a + e.count*p;
     }, 0);
-    // Bu kategoriye ait bonus kampanyalarini ekle (eslik + tekrarlayan, ay bazinda)
-    const catYms = [...new Set(catEntries.map(e=>effectiveYm(e)))];
-    catYms.forEach(ym=>{
-      const adet = catEntries.filter(e=>effectiveYm(e)===ym).reduce((a,e)=>a+e.count,0);
-      base += kampanyaBonusFor(ym, c, adet);
-      const adetMapTmp = {}; CATS.forEach(cc=>adetMapTmp[cc] = cc===c ? adet : (effectiveCountForYm(ym)[cc]||0));
-      // Tekrarlayan bonus - tek kategori orneklerinde
-      const tekrarli = kampanyaData.filter(k=>k.tip==='tekrarli' && k.ym===ym && (!k.catList || k.catList.length<=1) && k.cat===c);
-      tekrarli.forEach(k=>{ if(k.minAdet>0) base += Math.floor(adet/k.minAdet)*k.deger; });
-    });
-    return base;
   };
 
   // ---- category cards (adet +/- for active date) — her kartta hem bugünün hem seçili aralığın özeti ----
