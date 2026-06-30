@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v67 · 30.06.2026 12:08</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v68 · 30.06.2026 12:18</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v67 · Son güncelleme: 30.06.2026 12:08</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v68 · Son güncelleme: 30.06.2026 12:18</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2327,8 +2327,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v67';
-const BUILD_DATE = '30.06.2026 12:08';
+const APP_VERSION = 'v68';
+const BUILD_DATE = '30.06.2026 12:18';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4391,7 +4391,25 @@ function render(){
     rangeAmt += e.count * fiyat;
   });
   const raCnt = c => rEntriesForCards.filter(e=>e.cat===c).reduce((a,e)=>a+e.count,0);
-  const raAmt = c => rEntriesForCards.filter(e=>e.cat===c).reduce((a,e)=>a+e.count*(kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c))||0),0);
+  const raAmt = c => {
+    const catEntries = rEntriesForCards.filter(e=>e.cat===c);
+    let base = catEntries.reduce((a,e)=>{
+      const tFiyat = tarifeFiyatFor(e, c);
+      const p = tFiyat != null ? tFiyat : (kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c))||0);
+      return a + e.count*p;
+    }, 0);
+    // Bu kategoriye ait bonus kampanyalarini ekle (eslik + tekrarlayan, ay bazinda)
+    const catYms = [...new Set(catEntries.map(e=>effectiveYm(e)))];
+    catYms.forEach(ym=>{
+      const adet = catEntries.filter(e=>effectiveYm(e)===ym).reduce((a,e)=>a+e.count,0);
+      base += kampanyaBonusFor(ym, c, adet);
+      const adetMapTmp = {}; CATS.forEach(cc=>adetMapTmp[cc] = cc===c ? adet : (effectiveCountForYm(ym)[cc]||0));
+      // Tekrarlayan bonus - tek kategori orneklerinde
+      const tekrarli = kampanyaData.filter(k=>k.tip==='tekrarli' && k.ym===ym && (!k.catList || k.catList.length<=1) && k.cat===c);
+      tekrarli.forEach(k=>{ if(k.minAdet>0) base += Math.floor(adet/k.minAdet)*k.deger; });
+    });
+    return base;
+  };
 
   // ---- category cards (adet +/- for active date) — her kartta hem bugünün hem seçili aralığın özeti ----
   const cardsDiv = document.getElementById('catCards');
@@ -4534,6 +4552,42 @@ function render(){
   const primTutari = onaylananTutar;
   const toplamMusteriAdet = onaylananAdet + bekleyenAdet;
 
+  // Aktif aydaki tum kampanya bonuslarini detayli hesapla
+  const adetMapBuAy = effectiveCountForYm(activeYm);
+  const mnpDetayBuAy = {};
+  MNP_CATS.forEach(c=>{
+    const mnpA = entries.filter(e=>e.cat===c && !!e.mnp && effectiveYm(e)===activeYm).reduce((a,e)=>a+e.count,0);
+    const tesisA = entries.filter(e=>e.cat===c && !e.mnp && effectiveYm(e)===activeYm).reduce((a,e)=>a+e.count,0);
+    mnpDetayBuAy[c] = {mnp:mnpA, tesis:tesisA};
+  });
+  // Esik bazli bonuslar (tek kategori)
+  let esikBonusToplam = 0;
+  const esikBonusDetay = [];
+  CATS.forEach(c=>{
+    const b = kampanyaBonusFor(activeYm, c, adetMapBuAy[c]||0);
+    if(b > 0){ esikBonusToplam += b; esikBonusDetay.push({label:c, tutar:b}); }
+  });
+  // Tekrarlayan bonuslar (coklu kategori destekli)
+  let tekrarliBonusToplam = 0;
+  const tekrarliBonusDetay = [];
+  kampanyaData.filter(k=>k.tip==='tekrarli' && k.ym===activeYm && (k.minAdet||0)>0).forEach(k=>{
+    const cats = (k.catList && k.catList.length) ? k.catList : [k.cat];
+    let toplamAdet = 0;
+    cats.forEach(c=>{
+      if(k.tipFiltre==='mnp' && mnpDetayBuAy[c]) toplamAdet += mnpDetayBuAy[c].mnp||0;
+      else if(k.tipFiltre==='tesis' && mnpDetayBuAy[c]) toplamAdet += mnpDetayBuAy[c].tesis||0;
+      else toplamAdet += adetMapBuAy[c]||0;
+    });
+    const kume = Math.floor(toplamAdet / k.minAdet);
+    if(kume > 0){
+      const tutar = kume * k.deger;
+      tekrarliBonusToplam += tutar;
+      tekrarliBonusDetay.push({label: cats.join('+') + ' (' + toplamAdet + ' adet, ' + kume + 'x' + k.minAdet + ')', tutar});
+    }
+  });
+  const tumBonusToplam = esikBonusToplam + tekrarliBonusToplam;
+  const tumBonusDetay = [...esikBonusDetay, ...tekrarliBonusDetay];
+
   totalCard.innerHTML = `
     <div class="label" style="font-size:11px;opacity:.7;margin-bottom:2px">TOPLAM — ${activeDate}</div>
 
@@ -4547,6 +4601,16 @@ function render(){
     <div style="font-size:10px;opacity:.6;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.15)">
       ${rStart} – ${rEnd} &nbsp;·&nbsp; ${rangeCount} adet (${fmt(rangeAmt)})
     </div>
+
+    <!-- Kampanya Bonusu -->
+    ${tumBonusToplam > 0 ? `
+    <div style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">🎁 ${monthLabel(activeYm)} Kampanya Bonusu</div>
+    <div style="display:flex;flex-direction:column;gap:2px;font-size:11px;margin-bottom:6px;background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.25);border-radius:7px;padding:7px 9px">
+      ${tumBonusDetay.map(b=>`<div style="display:flex;justify-content:space-between"><span style="opacity:.85">${b.label}</span><span style="color:#c084fc;font-weight:700">+${fmt(b.tutar)}</span></div>`).join('')}
+      <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px solid rgba(192,132,252,0.2);font-weight:800">
+        <span>Toplam Bonus</span><span style="color:#c084fc">+${fmt(tumBonusToplam)}</span>
+      </div>
+    </div>` : ''}
 
     <!-- Musteri takip ozeti -->
     ${toplamMusteriAdet > 0 ? `
