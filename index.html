@@ -1412,7 +1412,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v68 · 30.06.2026 12:18</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v69 · 30.06.2026 12:39</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v68 · Son güncelleme: 30.06.2026 12:18</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v69 · Son güncelleme: 30.06.2026 12:39</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2327,8 +2327,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v68';
-const BUILD_DATE = '30.06.2026 12:18';
+const APP_VERSION = 'v69';
+const BUILD_DATE = '30.06.2026 12:39';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4602,14 +4602,11 @@ function render(){
       ${rStart} – ${rEnd} &nbsp;·&nbsp; ${rangeCount} adet (${fmt(rangeAmt)})
     </div>
 
-    <!-- Kampanya Bonusu -->
+    <!-- Kampanya Bonusu (kompakt) -->
     ${tumBonusToplam > 0 ? `
-    <div style="font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">🎁 ${monthLabel(activeYm)} Kampanya Bonusu</div>
-    <div style="display:flex;flex-direction:column;gap:2px;font-size:11px;margin-bottom:6px;background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.25);border-radius:7px;padding:7px 9px">
-      ${tumBonusDetay.map(b=>`<div style="display:flex;justify-content:space-between"><span style="opacity:.85">${b.label}</span><span style="color:#c084fc;font-weight:700">+${fmt(b.tutar)}</span></div>`).join('')}
-      <div style="display:flex;justify-content:space-between;padding-top:3px;border-top:1px solid rgba(192,132,252,0.2);font-weight:800">
-        <span>Toplam Bonus</span><span style="color:#c084fc">+${fmt(tumBonusToplam)}</span>
-      </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;margin-bottom:6px;background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.25);border-radius:6px;padding:5px 8px" title="${tumBonusDetay.map(b=>b.label+': +'+fmt(b.tutar)).join(' · ')}">
+      <span style="color:#c084fc">🎁 Kampanya Bonusu</span>
+      <span style="color:#c084fc;font-weight:800">+${fmt(tumBonusToplam)}</span>
     </div>` : ''}
 
     <!-- Musteri takip ozeti -->
