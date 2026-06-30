@@ -1413,7 +1413,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v74 · 30.06.2026 21:23</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v75 · 30.06.2026 21:54</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1434,7 +1434,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v74 · Son güncelleme: 30.06.2026 21:23</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v75 · Son güncelleme: 30.06.2026 21:54</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2328,8 +2328,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v74';
-const BUILD_DATE = '30.06.2026 21:23';
+const APP_VERSION = 'v75';
+const BUILD_DATE = '30.06.2026 21:54';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4612,30 +4612,33 @@ function render(){
   const genelHakedis = rangeAmt + tumBonusToplam;
 
   totalCard.innerHTML = `
-    <div class="label" style="font-size:11px;opacity:.7;margin-bottom:2px">TOPLAM — ${activeDate}</div>
+    <div class="label" style="font-size:11.5px;letter-spacing:.04em;opacity:.85;margin-bottom:6px">TOPLAM — ${activeDate}</div>
 
     <!-- Bugun -->
-    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
-      <span class="cnt" style="font-size:24px">${dayCount}</span>
-      <span style="font-size:12px;opacity:.7">${fmt(dayTotal)}</span>
+    <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:10px">
+      <span class="cnt" style="font-size:26px;font-weight:800;letter-spacing:-.5px">${dayCount}</span>
+      <span style="font-size:13px;opacity:.85;font-weight:600">${fmt(dayTotal)}</span>
     </div>
 
-    <!-- GENEL HAKEDIS - Prim + Bonus birlesik -->
-    <div style="background:linear-gradient(135deg, rgba(76,217,100,0.12), rgba(192,132,252,0.08));border:1px solid rgba(76,217,100,0.3);border-radius:8px;padding:9px 10px;margin-bottom:8px">
-      <div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">💰 Genel Hakediş — ${rStart} – ${rEnd}</div>
-      <div style="font-size:20px;font-weight:900;color:#4cd964;line-height:1;margin-bottom:5px">${fmt(genelHakedis)}</div>
-      <div style="display:flex;flex-direction:column;gap:2px;font-size:10.5px">
-        <div style="display:flex;justify-content:space-between">
-          <span style="opacity:.75">Prim (${rangeCount} adet)</span>
+    <!-- GENEL HAKEDIS - sade, kartin yesil temasiyla uyumlu -->
+    <div style="background:rgba(255,255,255,0.1);backdrop-filter:blur(2px);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+        <span style="font-size:10px;font-weight:700;letter-spacing:.06em;opacity:.8;text-transform:uppercase">Genel Hakediş</span>
+        <span style="font-size:9px;opacity:.65;font-weight:500">${rStart} – ${rEnd}</span>
+      </div>
+      <div style="font-size:23px;font-weight:900;letter-spacing:-.6px;line-height:1;margin-bottom:8px">${fmt(genelHakedis)}</div>
+      <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:500">
+        <div style="display:flex;justify-content:space-between;opacity:.9">
+          <span>Prim &nbsp;<span style="opacity:.7;font-weight:400">(${rangeCount} adet)</span></span>
           <span style="font-weight:700">${fmt(rangeAmt)}</span>
         </div>
         ${tumBonusToplam > 0 ? `<div style="display:flex;justify-content:space-between">
-          <span style="color:#c084fc;opacity:.9">🎁 Kampanya Bonusu</span>
-          <span style="color:#c084fc;font-weight:700">+${fmt(tumBonusToplam)}</span>
+          <span style="opacity:.9">🎁&nbsp; Kampanya Bonusu</span>
+          <span style="font-weight:700">+${fmt(tumBonusToplam)}</span>
         </div>` : ''}
       </div>
-      ${tumBonusDetay.length>0 ? `<div style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.1)">
-        ${tumBonusDetay.map(b=>`<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted)"><span>↳ ${b.label}</span><span>+${fmt(b.tutar)}</span></div>`).join('')}
+      ${tumBonusDetay.length>0 ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.18);display:flex;flex-direction:column;gap:2px">
+        ${tumBonusDetay.map(b=>`<div style="display:flex;justify-content:space-between;font-size:9.5px;opacity:.7"><span>↳ ${b.label}</span><span style="font-weight:600">+${fmt(b.tutar)}</span></div>`).join('')}
       </div>` : ''}
     </div>
 
