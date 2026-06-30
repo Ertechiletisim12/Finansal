@@ -1345,26 +1345,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     </div>
 
     <!-- Oturum Bilgisi - Kompakt (masaüstünde görünür, mobilde gizli) -->
-    <div id="sidebarOturumBox" style="display:none;margin:0 10px 10px;background:rgba(226,35,26,0.08);border:1px solid rgba(226,35,26,0.2);border-radius:8px;padding:7px 10px" class="desktop-only-oturum">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;gap:10px;align-items:center">
-            <div>
-              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Kilitlenme</div>
-              <div id="sidebarKalanSure" style="font-size:14px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums">10:00</div>
-            </div>
-            <div style="width:1px;height:28px;background:var(--line)"></div>
-            <div>
-              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Açık</div>
-              <div id="sidebarAcikSure" style="font-size:14px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums">0:00</div>
-            </div>
-          </div>
-          <div id="sidebarUyari" style="font-size:10px;color:#ff9f0a;margin-top:2px;min-height:14px"></div>
-        </div>
-        <button onclick="oturumKapat()" title="Kilitle" style="background:rgba(226,35,26,0.2);border:1px solid rgba(226,35,26,0.4);color:#ff7070;border-radius:6px;width:34px;height:34px;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">🔒</button>
-      </div>
-    </div>
-
+    
     <div class="nav-item active" id="navDash" onclick="switchPage('dash')" style="cursor:pointer">🏠 Anasayfa</div>
     <div class="nav-item" id="navPrim" onclick="switchPage('prim')" style="cursor:pointer">📊 Prim Sayfası</div>
     <div class="nav-item" id="navHedef" onclick="switchPage('hedef')" style="cursor:pointer">🎯 Hedef Yönetimi</div>
@@ -1397,6 +1378,26 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div class="si-warn" id="storageWarn">⚠ Depolama doluyor — yedek alın!</div>
       </div>
 
+      <!-- Oturum Sayacı (şık tasarım, sidebar altı) -->
+      <div id="sidebarOturumBox" style="display:none;margin-top:12px;background:linear-gradient(135deg, rgba(226,35,26,0.08), rgba(226,35,26,0.03));border:1px solid rgba(226,35,26,0.18);border-radius:12px;padding:10px 12px" class="desktop-only-oturum">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:13px">⏱️</span>
+          <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Oturum</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div style="flex:1;text-align:center;background:var(--panel);border-radius:8px;padding:6px 4px">
+            <div style="font-size:8.5px;color:var(--muted);margin-bottom:2px">Kilitlenme</div>
+            <div id="sidebarKalanSure" style="font-size:15px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums">10:00</div>
+          </div>
+          <div style="flex:1;text-align:center;background:var(--panel);border-radius:8px;padding:6px 4px">
+            <div style="font-size:8.5px;color:var(--muted);margin-bottom:2px">Açık Süre</div>
+            <div id="sidebarAcikSure" style="font-size:15px;font-weight:800;color:#4cd964;font-variant-numeric:tabular-nums">0:00</div>
+          </div>
+        </div>
+        <div id="sidebarUyari" style="font-size:10px;color:#ff9f0a;margin-top:6px;min-height:14px;text-align:center"></div>
+        <button onclick="oturumKapat()" style="width:100%;margin-top:8px;background:rgba(226,35,26,0.15);border:1px solid rgba(226,35,26,0.35);color:#ff7070;border-radius:8px;padding:7px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">🔒 Şimdi Kilitle</button>
+      </div>
+
       <button class="tool-btn" onclick="printManagerReport()" title="Güncel verilerle özet bir rapor oluşturur; açılan yazdırma penceresinden 'PDF olarak kaydet' seçilebilir">📄 Yönetici Raporu (PDF)</button>
       <button class="tool-btn" id="notifPanelBtn" onclick="toggleNotifPanel()" title="Bildirim ayarları ve aktif uyarılar">🔔 Bildirimler <span id="notifBadge" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
       <button class="tool-btn" onclick="openPinModal()">🔐 Kilit / PIN Ayarı</button>
@@ -1412,7 +1413,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v69 · 30.06.2026 12:39</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v70 · 30.06.2026 16:28</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1433,7 +1434,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v69 · Son güncelleme: 30.06.2026 12:39</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">v70 · Son güncelleme: 30.06.2026 16:28</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2327,8 +2328,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v69';
-const BUILD_DATE = '30.06.2026 12:39';
+const APP_VERSION = 'v70';
+const BUILD_DATE = '30.06.2026 16:28';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
