@@ -2433,7 +2433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v136';
+const APP_VERSION = 'v137';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -13135,7 +13135,10 @@ function toggleChangelog(){
   modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
   document.body.appendChild(modal);
 }
-// Versiyon bilgisini güncelle
+</script>
+
+<script>
+// Versiyon bilgisi — ayrı blok, hata yakalanmaz
 (function(){
   try {
     const v = (typeof APP_VERSION!=='undefined') ? APP_VERSION : '?';
@@ -13143,10 +13146,10 @@ function toggleChangelog(){
     const txt = v + (d ? ' · Son güncelleme: ' + d : '');
     const mv = document.getElementById('mobileVersionInfo');
     if(mv) mv.textContent = txt;
-    document.querySelectorAll('#versionInfoBtn').forEach(btn=>{
-      btn.innerHTML = txt + ' <span style="font-size:9px;opacity:.6">▼</span>';
+    document.querySelectorAll('#versionInfoBtn').forEach(function(btn){
+      btn.innerHTML = txt + ' <span style="font-size:9px;opacity:.6">&#9660;</span>';
     });
-  } catch(e){}
+  } catch(e){ console.warn('Versiyon hatası:',e); }
 })();
 </script>
 </body>
