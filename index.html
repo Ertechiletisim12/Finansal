@@ -1344,8 +1344,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
     </div>
 
-    <!-- Oturum Bilgisi - Kompakt (masaüstünde görünür, mobilde gizli) -->
-    
     <div class="nav-item active" id="navDash" onclick="switchPage('dash')" style="cursor:pointer">🏠 Anasayfa</div>
     <div class="nav-item" id="navPrim" onclick="switchPage('prim')" style="cursor:pointer">📊 Prim Sayfası</div>
     <div class="nav-item" id="navHedef" onclick="switchPage('hedef')" style="cursor:pointer">🎯 Hedef Yönetimi</div>
@@ -1354,6 +1352,25 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="nav-item" id="navFinans" onclick="switchPage('finans')" style="cursor:pointer">💹 Finansal Analiz</div>
     <div class="nav-item" id="navGelir" onclick="switchPage('gelir')" style="cursor:pointer">💰 Gelir Takibi</div>
     <div class="nav-item" id="navNot" onclick="switchPage('not')" style="cursor:pointer">🏷️ Not & Etiket</div>
+
+    <!-- Oturum Bilgisi - Nav altı kompakt (masaüstünde görünür) -->
+    <div id="sidebarOturumBox" style="display:none;margin:8px 14px;background:linear-gradient(135deg,rgba(226,35,26,0.1),rgba(226,35,26,0.04));border:1px solid rgba(226,35,26,0.2);border-radius:10px;padding:8px 12px" class="desktop-only-oturum">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <div style="text-align:center">
+            <div style="font-size:8px;color:var(--muted);font-weight:600;letter-spacing:.05em;margin-bottom:1px">KİLİTLENME</div>
+            <div id="sidebarKalanSure" style="font-size:16px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;line-height:1">10:00</div>
+          </div>
+          <div style="width:1px;height:28px;background:var(--line)"></div>
+          <div style="text-align:center">
+            <div style="font-size:8px;color:var(--muted);font-weight:600;letter-spacing:.05em;margin-bottom:1px">AÇIK SÜRE</div>
+            <div id="sidebarAcikSure" style="font-size:16px;font-weight:800;color:#4cd964;font-variant-numeric:tabular-nums;line-height:1">0:00</div>
+          </div>
+        </div>
+        <button onclick="oturumKapat()" style="background:rgba(226,35,26,0.18);border:1px solid rgba(226,35,26,0.4);color:#ff7070;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">🔒 Kilitle</button>
+      </div>
+      <div id="sidebarUyari" style="font-size:9.5px;color:#ff9f0a;margin-top:5px;min-height:12px;text-align:center"></div>
+    </div>
 
     <div class="sidebar-tools">
       <button id="pwaInstallBtn" class="tool-btn" onclick="installPWA()" style="display:none;background:linear-gradient(90deg,#e2231a,#b81b14);color:#fff;border:none;font-weight:700;justify-content:center">📲 Uygulamayı Kur</button>
@@ -1378,26 +1395,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div class="si-warn" id="storageWarn">⚠ Depolama doluyor — yedek alın!</div>
       </div>
 
-      <!-- Oturum Sayacı (şık tasarım, sidebar altı) -->
-      <div id="sidebarOturumBox" style="display:none;margin-top:12px;background:linear-gradient(135deg, rgba(226,35,26,0.08), rgba(226,35,26,0.03));border:1px solid rgba(226,35,26,0.18);border-radius:12px;padding:10px 12px" class="desktop-only-oturum">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-          <span style="font-size:13px">⏱️</span>
-          <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Oturum</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-          <div style="flex:1;text-align:center;background:var(--panel);border-radius:8px;padding:6px 4px">
-            <div style="font-size:8.5px;color:var(--muted);margin-bottom:2px">Kilitlenme</div>
-            <div id="sidebarKalanSure" style="font-size:15px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums">10:00</div>
-          </div>
-          <div style="flex:1;text-align:center;background:var(--panel);border-radius:8px;padding:6px 4px">
-            <div style="font-size:8.5px;color:var(--muted);margin-bottom:2px">Açık Süre</div>
-            <div id="sidebarAcikSure" style="font-size:15px;font-weight:800;color:#4cd964;font-variant-numeric:tabular-nums">0:00</div>
-          </div>
-        </div>
-        <div id="sidebarUyari" style="font-size:10px;color:#ff9f0a;margin-top:6px;min-height:14px;text-align:center"></div>
-        <button onclick="oturumKapat()" style="width:100%;margin-top:8px;background:rgba(226,35,26,0.15);border:1px solid rgba(226,35,26,0.35);color:#ff7070;border-radius:8px;padding:7px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">🔒 Şimdi Kilitle</button>
-      </div>
-
       <button class="tool-btn" onclick="printManagerReport()" title="Güncel verilerle özet bir rapor oluşturur; açılan yazdırma penceresinden 'PDF olarak kaydet' seçilebilir">📄 Yönetici Raporu (PDF)</button>
       <button class="tool-btn" id="notifPanelBtn" onclick="toggleNotifPanel()" title="Bildirim ayarları ve aktif uyarılar">🔔 Bildirimler <span id="notifBadge" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
       <button class="tool-btn" onclick="openPinModal()">🔐 Kilit / PIN Ayarı</button>
@@ -1413,7 +1410,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v81 · 01.07.2026 07:30</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v82 · 01.07.2026 09:15</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1548,7 +1545,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
-        <div id="hakedisPanel" style="display:none;flex:0 0 auto;width:310px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#1a3a2a,#1f4a35);border:1px solid rgba(76,217,100,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+        <div id="hakedisPanel" style="display:none;flex:0 0 auto;width:500px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#1a3a2a,#1f4a35);border:1px solid rgba(76,217,100,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.3)">
           <!-- Üst: büyük hakediş rakamı -->
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -2350,8 +2347,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v81';
-const BUILD_DATE = '01.07.2026 07:30';
+const APP_VERSION = 'v82';
+const BUILD_DATE = '01.07.2026 09:15';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -5541,9 +5538,27 @@ function renderDash(){
   const CAT_COLORS = {PostPaid:'#3fd0ff',PrePaid:'#4cd964','Red Tarife':'#ff5252',P2P:'#ffb74d',Mccm:'#c084fc',İnternet:'#fb923c'};
 
   el.innerHTML = `
-    ${anomaliBar}
-
-
+    <!-- ── Anomali + MNP yan yana ── -->
+    <div style="display:flex;gap:8px;margin-bottom:8px;align-items:stretch;flex-wrap:wrap">
+      ${anomaliler.length ? `
+      <div onclick="openAnomaliPopup()" style="flex:1;min-width:260px;display:flex;align-items:center;gap:10px;background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.35);border-radius:10px;padding:10px 14px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(226,35,26,0.17)'" onmouseout="this.style.background='rgba(226,35,26,0.1)'">
+        <span style="font-size:20px">🚨</span>
+        <div style="flex:1">
+          <div style="font-size:12.5px;font-weight:700;color:#ff5252">${anomaliler.length} Masraf Anomalisi Tespit Edildi</div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:1px">${anomaliler.map(a=>monthLabel(a.ym)).join(', ')} · Detaylar için tıkla</div>
+        </div>
+        <span style="color:var(--accent);font-size:18px">›</span>
+      </div>` : ''}
+      ${mnpBuAyBekleyen.length>0 ? `
+      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="flex:0 0 auto;min-width:220px;background:rgba(255,159,10,0.07);border:1px solid rgba(255,159,10,0.3);border-radius:10px;padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div>
+          <div style="font-size:10px;color:#ff9f0a;font-weight:700;margin-bottom:2px">⏳ MNP Onay Bekliyor</div>
+          <div style="font-size:15px;font-weight:800;color:#ffd27a">${mnpBuAyBekleyen.length} müşteri</div>
+          <div style="font-size:9.5px;color:var(--muted);margin-top:2px">${mnpBuAyBekleyen.map(m=>`${m.ad||'?'} (${m.cat})`).slice(0,3).join(', ')}${mnpBuAyBekleyen.length>3?` +${mnpBuAyBekleyen.length-3} daha`:''}</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);flex-shrink:0">→ Takibe git</div>
+      </div>` : ''}
+    </div>
 
     <!-- ── BÖLÜM 1: Prim Ana Kart ── -->
     <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📅 ${monthLabel(now)} — Prim Durumu</div>
@@ -5686,24 +5701,12 @@ function renderDash(){
         </div>
       </div>
 
-      <!-- ── MNP Bekleyen Kartı (varsa göster) ── -->
-      ${mnpBuAyBekleyen.length>0 ? `
-      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="grid-column:1/-1;background:rgba(255,159,10,0.07);border:1px solid rgba(255,159,10,0.3);border-radius:11px;padding:11px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-size:10px;color:#ff9f0a;font-weight:700;margin-bottom:2px">⏳ MNP Onay Bekliyor</div>
-          <div style="font-size:15px;font-weight:800;color:#ffd27a">${mnpBuAyBekleyen.length} müşteri</div>
-          <div style="font-size:9.5px;color:var(--muted);margin-top:2px">${mnpBuAyBekleyen.map(m=>`${m.ad||'?'} (${m.cat})`).slice(0,3).join(', ')}${mnpBuAyBekleyen.length>3?` +${mnpBuAyBekleyen.length-3} daha`:''}</div>
-        </div>
-        <div style="font-size:11px;color:var(--muted)">→ Takibe git</div>
-      </div>` : ''}
-
       <!-- ── BÖLÜM 3: Kategori Tablosu sağ sütunda ── -->
       <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <div style="font-size:10.5px;color:var(--muted);font-weight:600">📦 Kategori Dağılımı — ${monthLabel(now)}</div>
           ${Object.keys(catHedefler).length ? '<div style="font-size:9px;color:var(--muted);white-space:nowrap;margin-left:auto">🎯 Hedef karşılaştırması aktif</div>' : ''}
         </div>
-      </div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:11.5px">
             <thead>
@@ -11897,6 +11900,16 @@ function exportModalToExcel(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v82',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui',    text: 'Oturum bilgisi (Kilitlenme/Açık Süre) sidebar\'da nav menüsünün hemen altına, kompakt yatay tasarımla taşındı' },
+      { type: 'ui',    text: 'Masraf Anomalisi + MNP Onay Bekliyor kartları yan yana, sayfanın en üstüne alındı — daha derli toplu' },
+      { type: 'fix',   text: '"Kategori Dağılımı" başlığının altındaki boş alan giderildi — tablo artık doğru div içinde' },
+      { type: 'ui',    text: 'Prim sayfası Hakediş kartı 310px → 500px genişletildi' },
+    ]
+  },
   {
     version: 'v81',
     date: '01.07.2026',
