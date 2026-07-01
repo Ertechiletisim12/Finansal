@@ -2360,7 +2360,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v93';
+const APP_VERSION = 'v94';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -5608,9 +5608,12 @@ function renderDash(){
         <div style="font-size:18px;font-weight:900;color:#ff5252;line-height:1;margin-bottom:4px">${mnpGecikmus.length}</div>
         ${mnpGecikmus.slice(0,2).map(m=>{
           const gec=Math.round((new Date(today)-new Date(m.aktivasyonTarihi))/(1000*60*60*24));
-          return `<div style="display:flex;justify-content:space-between;font-size:9px;padding:2px 0;border-top:1px solid rgba(226,35,26,0.12)">
-            <span style="color:var(--txt);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px">${m.ad||'?'} ${(m.soyad||'').charAt(0)}.</span>
-            <span style="color:#ff5252;font-weight:700;flex-shrink:0">${gec}g</span>
+          return `<div style="padding:3px 0;border-top:1px solid rgba(226,35,26,0.12)">
+            <div style="display:flex;justify-content:space-between;font-size:9px">
+              <span style="color:var(--txt);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px">${m.ad||'?'} ${(m.soyad||'').charAt(0)}.</span>
+              <span style="color:#ff5252;font-weight:700;flex-shrink:0">${gec}g</span>
+            </div>
+            ${m.tarife||m.tel?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
           </div>`;
         }).join('')}
         ${mnpGecikmus.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:2px">+${mnpGecikmus.length-2} daha</div>`:''}
@@ -5621,7 +5624,10 @@ function renderDash(){
         <div style="font-size:9px;font-weight:700;color:#ffb74d;margin-bottom:4px">🟡 BUGÜN ONAYLANMALI</div>
         <div style="font-size:18px;font-weight:900;color:#ffb74d;line-height:1;margin-bottom:4px">${mnpBugun.length}</div>
         ${mnpBugun.slice(0,2).map(m=>`
-          <div style="font-size:9px;padding:2px 0;border-top:1px solid rgba(255,183,77,0.12);color:var(--txt);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.ad||'?'} ${(m.soyad||'').charAt(0)}.</div>
+          <div style="padding:3px 0;border-top:1px solid rgba(255,183,77,0.12)">
+            <div style="font-size:9px;color:var(--txt);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.ad||'?'} ${(m.soyad||'').charAt(0)}.</div>
+            ${m.tarife||m.tel?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
+          </div>
         `).join('')}
         ${mnpBugun.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:2px">+${mnpBugun.length-2} daha</div>`:''}
       </div>` : ''}
@@ -5632,9 +5638,12 @@ function renderDash(){
         <div style="font-size:18px;font-weight:900;color:#4cd964;line-height:1;margin-bottom:4px">${mnpYakinda.length}</div>
         ${mnpYakinda.slice(0,2).map(m=>{
           const kalan=Math.round((new Date(m.aktivasyonTarihi)-new Date(today))/(1000*60*60*24));
-          return `<div style="display:flex;justify-content:space-between;font-size:9px;padding:2px 0;border-top:1px solid rgba(76,217,100,0.1)">
-            <span style="color:var(--txt);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px">${m.ad||'?'} ${(m.soyad||'').charAt(0)}.</span>
-            <span style="color:#4cd964;font-weight:700;flex-shrink:0">${kalan===1?'Yarın':kalan+'g'}</span>
+          return `<div style="padding:3px 0;border-top:1px solid rgba(76,217,100,0.1)">
+            <div style="display:flex;justify-content:space-between;font-size:9px">
+              <span style="color:var(--txt);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px">${m.ad||'?'} ${(m.soyad||'').charAt(0)}.</span>
+              <span style="color:#4cd964;font-weight:700;flex-shrink:0">${kalan===1?'Yarın':kalan+'g'}</span>
+            </div>
+            ${m.tarife||m.tel?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
           </div>`;
         }).join('')}
         ${mnpYakinda.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:2px">+${mnpYakinda.length-2} daha</div>`:''}
@@ -12249,6 +12258,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v94',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui', text: 'MNP kartlarında müşteri isimlerinin altına tarife ve telefon numarası eklendi' },
+    ]
+  },
   {
     version: 'v93',
     date: '01.07.2026',
