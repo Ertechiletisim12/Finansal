@@ -1429,7 +1429,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v90 · 01.07.2026 15:00</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v91</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1450,7 +1450,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v90 · Son güncelleme: 01.07.2026 15:00 <span style="font-size:9px;opacity:.6">▼</span></div>
+            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v91 · Son güncelleme: <span id="deployDateSpan">...</span> <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2366,8 +2366,17 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v90';
-const BUILD_DATE = '01.07.2026 15:00';
+const APP_VERSION = 'v91';
+const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
+
+// Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
+(function(){
+  const key = 'vf_deploy_' + APP_VERSION;
+  if(!localStorage.getItem(key)){
+    localStorage.setItem(key, new Date().toLocaleString('tr-TR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}));
+  }
+})();
+function getDeployDate(){ return localStorage.getItem('vf_deploy_'+APP_VERSION) || BUILD_DATE; }
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -12245,6 +12254,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v91',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'Versiyon tarih/saati artık dosyanın hazırlandığı saati değil, gerçek yükleme anını gösteriyor' },
+      { type: 'ui',  text: 'Oturum kutusundaki kırmızı kilit butonu kaldırıldı, progress bar altına küçük kilitle linki eklendi' },
+    ]
+  },
+  {
     version: 'v90',
     date: '01.07.2026',
     items: [
@@ -12402,7 +12419,9 @@ function toggleChangelog(){
 // Mobil versiyon yazısını da tıklanabilir yap
 document.addEventListener('DOMContentLoaded', ()=>{
   const mv = document.getElementById('mobileVersionInfo');
-  if(mv){ mv.style.cursor='pointer'; mv.onclick = toggleChangelog; }
+  if(mv){ mv.style.cursor='pointer'; mv.onclick = toggleChangelog; mv.textContent = APP_VERSION + ' · ' + getDeployDate(); }
+  const ds = document.getElementById('deployDateSpan');
+  if(ds) ds.textContent = getDeployDate();
 });
 </script>
 </body>
