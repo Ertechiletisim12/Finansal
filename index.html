@@ -13,15 +13,14 @@
 <script>
   if('serviceWorker' in navigator){
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
+      // updateViaCache:'none' → tarayıcı sw.js'i HİÇBİR ZAMAN cache'lemez, hep ağdan alır
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
         .then(r => {
           console.log('SW kayıtlı:', r.scope);
-          r.update(); // Her yüklemede SW güncellemesini zorla
+          r.update();
         })
         .catch(e => console.warn('SW hatası:', e));
-      // Yeni SW aktif olduğunda sayfayı otomatik yenile
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('Yeni SW devreye girdi, sayfa yenileniyor...');
         window.location.reload();
       });
     });
@@ -2416,7 +2415,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v112';
+const APP_VERSION = 'v113';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12490,6 +12489,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v113',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'SW güncelleme sorunu kalıcı çözüm: updateViaCache:none eklendi — tarayıcı sw.js\' hiç cache\' lemiyor, her zaman ağdan alıyor' },
+    ]
+  },
   {
     version: 'v112',
     date: '01.07.2026',
