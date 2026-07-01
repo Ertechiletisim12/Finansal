@@ -11,28 +11,24 @@
 <meta name="theme-color" content="#e2231a">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script>
-  // Eski SW ve cache'leri temizle — her açılışta çalışır
-  (async()=>{try{
-    if('serviceWorker' in navigator){
-      const regs=await navigator.serviceWorker.getRegistrations();
-      for(const r of regs) await r.unregister();
-    }
-    if('caches' in window){
-      const keys=await caches.keys();
-      for(const k of keys) await caches.delete(k);
-    }
-  }catch(e){}})();
-
+  // SW — offline destek, hızlı yükleme, PWA
   if('serviceWorker' in navigator){
-    // SW kodu index.html içinde — ayrı sw.js yok, cache sorunu yok
+    // Eski SW'leri temizle
+    navigator.serviceWorker.getRegistrations().then(regs=>{
+      regs.forEach(r=>r.unregister());
+    });
+    // Yeni SW'yi blob olarak kaydet (skipWaiting yok — sayfa yenilemez)
     const swKod = `
-const CACHE_NAME = 'finansal-v130';
-self.addEventListener('install', e => { self.skipWaiting(); });
+const CACHE_NAME = 'finansal-v133';
+self.addEventListener('install', e => {
+  // skipWaiting YOK — sayfa kendiliğinden yenilenmez
+  e.waitUntil(caches.open(CACHE_NAME));
+});
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
+    caches.keys().then(keys=>
       Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))
-    )
+    ).then(()=>self.clients.claim())
   );
 });
 self.addEventListener('fetch', e => {
@@ -42,10 +38,9 @@ self.addEventListener('fetch', e => {
   }
   e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request)));
 });`;
-    const blob = new Blob([swKod], {type:'application/javascript'});
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl)
-      .then(r=>{ console.log('SW hazır'); })
+    const blob = new Blob([swKod],{type:'application/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(blob))
+      .then(()=>console.log('SW hazır'))
       .catch(e=>console.warn('SW hatası:',e));
   }
   // PWA kurulum butonu
@@ -2438,7 +2433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v132';
+const APP_VERSION = 'v134';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12618,6 +12613,21 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v134',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'SW geri getirildi — skipWaiting kaldırıldı, sayfa kendiliğinden yenilenmez, veri silinmez. Offline çalışma ve PWA korundu.' },
+    ]
+  },
+  {
+    version: 'v133',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'SW tamamen kaldırıldı — veri silme sorunu kesin çözüm. Sayfa her zaman GitHub'dan direkt yükleniyor.' },
+      { type: 'fix', text: 'Versiyon bilgisi: null kontrolü eklendi, her durumda yazan sağlam kod.' },
+    ]
+  },
+  {
     version: 'v132',
     date: '02.07.2026',
     items: [
@@ -13098,19 +13108,18 @@ function toggleChangelog(){
   modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
   document.body.appendChild(modal);
 }
-// Versiyon bilgisini güncelle — script body sonunda çalışır, DOM hazır
-(function updateVersionDisplay(){
+// Versiyon bilgisini güncelle
+(function(){
   try {
-    const deployDate = getDeployDate();
-    const verTxt = APP_VERSION + ' · Son güncelleme: ' + deployDate;
-    // Mobil
+    const v = (typeof APP_VERSION!=='undefined') ? APP_VERSION : '?';
+    const d = (typeof getDeployDate==='function') ? getDeployDate() : '';
+    const txt = v + (d ? ' · Son güncelleme: ' + d : '');
     const mv = document.getElementById('mobileVersionInfo');
-    if(mv){ mv.textContent = verTxt; mv.style.cursor='pointer'; try{ mv.onclick=toggleChangelog; }catch(e){} }
-    // Masaüstü
-    document.querySelectorAll('#versionInfoBtn').forEach(btn => {
-      btn.innerHTML = verTxt + ' <span style="font-size:9px;opacity:.6">▼</span>';
+    if(mv) mv.textContent = txt;
+    document.querySelectorAll('#versionInfoBtn').forEach(btn=>{
+      btn.innerHTML = txt + ' <span style="font-size:9px;opacity:.6">▼</span>';
     });
-  } catch(e){ console.warn('Versiyon güncelleme hatası:', e); }
+  } catch(e){}
 })();
 </script>
 </body>
