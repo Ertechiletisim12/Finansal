@@ -2439,7 +2439,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v118';
+const APP_VERSION = 'v116';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12235,6 +12235,7 @@ function exportModalToExcel(){
 // Ben sana her versiyonda bunu güncel olarak vereceğim
 const GH_DOSYA_LISTESI = [
   { dosya: 'index.html',    etiket: '📄 index.html',    aciklama: 'Ana uygulama',       degisti: true  },
+  { dosya: 'sw.js',         etiket: '⚙️ sw.js',          aciklama: 'Önbellek yöneticisi', degisti: true  },
   { dosya: 'manifest.json', etiket: '📋 manifest.json',  aciklama: 'PWA ayarları',        degisti: false },
   { dosya: 'icon-192.png',  etiket: '🖼️ icon-192.png',   aciklama: 'Küçük ikon',          degisti: false },
   { dosya: 'icon-512.png',  etiket: '🖼️ icon-512.png',   aciklama: 'Büyük ikon',          degisti: false },
@@ -12512,20 +12513,6 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
-  {
-    version: "v118",
-    date: "01.07.2026",
-    items: [
-      { type: "ui", text: "sw.js güncelleme listesinden tamamen kaldırıldı" },
-    ]
-  },
-  {
-    version: "v117",
-    date: "01.07.2026",
-    items: [
-      { type: "fix", text: "sw.js artık listeden kaldırıldı — zip'te yok, bekleme sorunu çözüldü" },
-    ]
-  },
   {
     version: 'v116',
     date: '01.07.2026',
