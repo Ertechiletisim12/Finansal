@@ -11,6 +11,18 @@
 <meta name="theme-color" content="#e2231a">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script>
+  // Eski SW ve cache'leri temizle — her açılışta çalışır
+  (async()=>{try{
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      for(const r of regs) await r.unregister();
+    }
+    if('caches' in window){
+      const keys=await caches.keys();
+      for(const k of keys) await caches.delete(k);
+    }
+  }catch(e){}})();
+
   if('serviceWorker' in navigator){
     // SW kodu index.html içinde — ayrı sw.js yok, cache sorunu yok
     const swKod = `
@@ -2427,7 +2439,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v114';
+const APP_VERSION = 'v115';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12501,6 +12513,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v115',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'Her açılışta eski tüm SW ve cache otomatik temizleniyor — bir daha manuel temizlik gerekmeyecek' },
+    ]
+  },
   {
     version: 'v114',
     date: '01.07.2026',
