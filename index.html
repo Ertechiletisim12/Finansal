@@ -2439,7 +2439,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v122';
+const APP_VERSION = 'v123';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -4929,14 +4929,22 @@ function render(){
       const dayTot = items.reduce((a,e)=>a+e.count*kampanyaFiyatFor(e.date,e.cat,priceFor(ymKey(e.date),e.cat)),0);
       const tblRows = items.map(e => {
         const amt = e.count * kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat));
-        const color = CAT_COLORS[e.cat]||'var(--accent)';
+        const color = (typeof CAT_COLORS !== 'undefined' && CAT_COLORS[e.cat]) || 'var(--accent)';
         const entryNot = notlarData.find(n => n.entryKey === e.date+'_'+e.cat);
         const notDot = entryNot
           ? `<span class="note-dot" style="background:${RENK_MAP[entryNot.renk]||'#3fd0ff'}" onclick="event.stopPropagation();openNotDetailById('${entryNot.id}')" title="${(entryNot.metin||entryNot.baslik||'Not var').replace(/"/g,'')}"></span>`
           : `<span class="note-dot" style="background:var(--line);opacity:.35" onclick="event.stopPropagation();openNotModalForEntry('${e.date}','${e.cat}')" title="Not ekle"></span>`;
         // Müşteri bilgisi
-        const musteri = musteriler.find(m=>m.logId && (entryLog||[]).some(l=>l.date===e.date&&l.cat===e.cat&&l.id===m.logId));
-        const musteriSat = musteri ? `<div style="font-size:9px;color:var(--muted);margin-top:1px">${musteri.ad||''} ${musteri.soyad||''} ${musteri.tel?'· '+musteri.tel:''} ${musteri.tarife?'· '+musteri.tarife:''}</div>` : '';
+        let musteriSat = '';
+        try {
+          const dayLogs2 = (entryLog||[]).filter(l=>l.date===e.date&&l.cat===e.cat);
+          const m2 = (musteriler||[]).find(m=>m.logId && dayLogs2.some(l=>l.id===m.logId));
+          if(m2){
+            const adSoyad = `${m2.ad||''} ${m2.soyad||''}`.trim();
+            const bilgi = [adSoyad, m2.tel, m2.tarife].filter(Boolean).join(' · ');
+            musteriSat = bilgi ? `<div style="font-size:9px;color:var(--muted);margin-top:1px">${bilgi}</div>` : '';
+          }
+        } catch(err){}
         return `<tr>
           <td style="padding:4px 0">
             <div style="display:flex;align-items:center;gap:5px">
@@ -12550,6 +12558,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v123',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'İşlem Listesi boş kalma sorunu düzeltildi — güvenli erişim eklendi, hata olunca liste görünür kalıyor' },
+    ]
+  },
   {
     version: 'v122',
     date: '01.07.2026',
