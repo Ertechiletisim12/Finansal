@@ -2439,7 +2439,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v129';
+const APP_VERSION = 'v130';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -11900,26 +11900,39 @@ function showCatDetail(cat, rStart, rEnd){
     .filter(e=>e.cat===cat && e.date>=rStart && e.date<=rEnd && e.count>0)
     .sort((a,b)=>b.date.localeCompare(a.date));
 
-  const rows = catEntries.map(e=>{
-    const amt = e.count * kampanyaFiyatFor(e.date, cat, priceFor(ymKey(e.date), cat));
-    const logs = (entryLog||[]).filter(l=>l.date===e.date && l.cat===cat).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-    const ilgiliM = (musteriler||[]).filter(m=>m.logId && logs.some(l=>l.id===m.logId));
-    const musteriListesi = ilgiliM.length > 0
-      ? ilgiliM.map(m=>{
-          const logE = logs.find(l=>l.id===m.logId);
-          const tarife = m.tarife||(logE&&logE.tarife)||'';
-          const parts = [`${m.ad||''} ${m.soyad||''}`.trim(), m.tel, tarife].filter(Boolean);
-          return `<div style="font-size:10.5px;color:#c8cacc;padding:1px 0">${parts.join(' · ')}</div>`;
-        }).join('')
-      : `<div style="font-size:10px;color:#4a5060;font-style:italic">Müşteri kaydı yok</div>`;
+  // Her müşteri ayrı satır
+  const musteriSatirlari = [];
+  catEntries.forEach(e => {
+    const amt1 = kampanyaFiyatFor(e.date, cat, priceFor(ymKey(e.date), cat));
+    const logs = (entryLog||[]).filter(l=>l.date===e.date&&l.cat===cat).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    const ilgiliM = (musteriler||[]).filter(m=>m.logId&&logs.some(l=>l.id===m.logId));
+    if(ilgiliM.length>0){
+      ilgiliM.forEach((m,i)=>{
+        const logE=logs.find(l=>l.id===m.logId);
+        const tarife=m.tarife||(logE&&logE.tarife)||'—';
+        musteriSatirlari.push({
+          date: i===0?e.date:'',
+          ad:`${m.ad||''} ${m.soyad||''}`.trim()||'—',
+          tel:m.tel||'—',
+          tarife,
+          count:i===0?e.count:'',
+          amt:i===0?fmt(amt1*e.count):''
+        });
+      });
+    } else {
+      musteriSatirlari.push({date:e.date,ad:'—',tel:'—',tarife:'—',count:e.count,amt:fmt(amt1*e.count)});
+    }
+  });
 
-    return `<div style="display:grid;grid-template-columns:90px 1fr 30px 80px;gap:4px;align-items:start;padding:10px 16px;border-bottom:1px solid #2a2d33;background:#26282b">
-      <div style="font-size:11.5px;font-weight:700;color:#e8eaec;padding-top:1px">${e.date}</div>
-      <div>${musteriListesi}</div>
-      <div style="font-size:13px;font-weight:800;color:#fff;text-align:center;padding-top:1px">${e.count}</div>
-      <div style="font-size:12px;color:#4cd964;text-align:right;font-weight:700;padding-top:1px">${fmt(amt)}</div>
-    </div>`;
-  }).join('');
+  const rows = musteriSatirlari.map((r,i)=>`
+    <tr style="border-bottom:1px solid #2e3136;background:${i%2===0?'#26282b':'#2c2f33'}">
+      <td style="padding:9px 10px;font-size:11px;color:#aaa;white-space:nowrap">${r.date}</td>
+      <td style="padding:9px 10px;font-size:11.5px;color:#e8eaec;font-weight:${r.date?'700':'400'}">${r.ad}</td>
+      <td style="padding:9px 10px;font-size:11px;color:#8896a0">${r.tel}</td>
+      <td style="padding:9px 10px;font-size:11px;color:#7ee8ff">${r.tarife}</td>
+      <td style="padding:9px 10px;font-size:12px;color:#fff;font-weight:700;text-align:center">${r.count}</td>
+      <td style="padding:9px 10px;font-size:12px;color:#4cd964;font-weight:700;text-align:right;white-space:nowrap">${r.amt}</td>
+    </tr>`).join('');
 
   const totalCount = catEntries.reduce((a,e)=>a+e.count,0);
   const totalAmt = catEntries.reduce((a,e)=>a+e.count*kampanyaFiyatFor(e.date,cat,priceFor(ymKey(e.date),cat)),0);
@@ -11939,13 +11952,23 @@ function showCatDetail(cat, rStart, rEnd){
         </div>
         <button onclick="document.getElementById('dayDetailPopup').remove()" style="background:#3a3d42;border:none;color:#c8cacc;width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:16px;line-height:1">✕</button>
       </div>
-      <div style="display:grid;grid-template-columns:90px 1fr 30px 80px;gap:4px;padding:8px 16px;border-bottom:1px solid #3a3d42;background:#1a1d21">
-        <span style="font-size:9.5px;color:#6a7080;font-weight:700;letter-spacing:.05em">TARİH</span>
-        <span style="font-size:9.5px;color:#6a7080;font-weight:700;letter-spacing:.05em">MÜŞTERİ · TELEFON · TARİFE</span>
-        <span style="font-size:9.5px;color:#6a7080;font-weight:700;text-align:center">ADET</span>
-        <span style="font-size:9.5px;color:#6a7080;font-weight:700;text-align:right">TUTAR</span>
+      <div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 30px 80px;gap:4px;padding:8px 10px;border-bottom:1px solid #3a3d42;background:#1a1d21">
+        <span style="font-size:9px;color:#6a7080;font-weight:700">TARİH</span>
+        <span style="font-size:9px;color:#6a7080;font-weight:700">MÜŞTERİ</span>
+        <span style="font-size:9px;color:#6a7080;font-weight:700">TELEFON</span>
+        <span style="font-size:9px;color:#6a7080;font-weight:700">TARİFE</span>
+        <span style="font-size:9px;color:#6a7080;font-weight:700;text-align:center">AD</span>
+        <span style="font-size:9px;color:#6a7080;font-weight:700;text-align:right">TUTAR</span>
       </div>
-      <div style="overflow-y:auto;flex:1">${rows}</div>
+      <div style="overflow-y:auto;flex:1">
+        <table style="width:100%;border-collapse:collapse">${rows}
+          <tr style="border-top:2px solid #e2231a;background:#1e2124">
+            <td colspan="4" style="padding:10px;font-size:12px;color:#fff;font-weight:800">TOPLAM</td>
+            <td style="padding:10px;font-size:13px;color:#fff;font-weight:800;text-align:center">${totalCount}</td>
+            <td style="padding:10px;font-size:13px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(totalAmt)}</td>
+          </tr>
+        </table>
+      </div>
     </div>`;
   document.body.appendChild(popup);
 }
@@ -12594,6 +12617,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v130',
+    date: '02.07.2026',
+    items: [
+      { type: 'ui', text: 'Özet popup: her müşteri kendi satırında, 6 sütunlu temiz tablo' },
+    ]
+  },
   {
     version: 'v129',
     date: '01.07.2026',
