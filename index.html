@@ -925,24 +925,24 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 .sidebar h1{font-size:13px;letter-spacing:.06em;margin:0 0 18px;padding:0 18px;color:var(--muted);font-weight:700}
 .nav-item{
   padding:9px 16px;display:flex;gap:9px;align-items:center;
-  color:#7a7f85;font-size:12.5px;cursor:pointer;border-radius:7px;
+  color:#a0a5ac;font-size:13px;cursor:pointer;border-radius:7px;
   margin:1px 8px;transition:background .12s,color .12s;
 }
-.nav-item:hover{background:rgba(255,255,255,0.05);color:#c8cacc}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:#d8dce0}
 .nav-item.active{background:linear-gradient(90deg,var(--red),var(--red-d));color:#fff;font-weight:700}
 
 /* Sidebar araçlar bölümü - margin-top:auto KALDIRILDI */
 .sidebar-tools{padding:0 8px 16px;display:flex;flex-direction:column;gap:5px}
 .sidebar-section-title{
-  font-size:9.5px;letter-spacing:.1em;color:#4a4f55;font-weight:700;
+  font-size:9.5px;letter-spacing:.1em;color:#6a7080;font-weight:700;
   padding:10px 8px 4px;text-transform:uppercase;cursor:pointer;
   display:flex;align-items:center;justify-content:space-between;
   user-select:none;
 }
-.sidebar-section-title:hover{color:#6a6f75}
+.sidebar-section-title:hover{color:#9aa0a8}
 .sidebar-tools .tool-btn{width:100%;justify-content:flex-start;box-sizing:border-box;font-size:11.5px}
 .sidebar-tools .autobackup-status{font-size:10px;padding:0 6px;line-height:1.4}
-.sidebar-divider{height:1px;background:#242628;margin:6px 0}
+.sidebar-divider{height:1px;background:#2e3136;margin:6px 0}
 
 .main{flex:1;padding:0;min-width:0;height:100vh;overflow:hidden;box-sizing:border-box;display:flex;flex-direction:column}
 .sticky-header{position:sticky;top:0;background:var(--bg);z-index:20;padding:8px 0 6px;margin:0}
@@ -1170,7 +1170,7 @@ input:focus,select:focus{outline:1px solid var(--accent)}
 
 /* panel üst araçlar */
 .activity-tools{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
-.tool-btn{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:#7a7f86;border-radius:7px;padding:6px 10px;font-size:11px;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:5px;transition:all .15s}
+.tool-btn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:#b0b5bc;border-radius:7px;padding:7px 11px;font-size:11.5px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:6px;transition:all .15s}
 .xls-btn{background:rgba(47,174,78,0.15);border:1px solid rgba(47,174,78,0.45);color:#2fae4e;border-radius:6px;padding:4px 9px;font-size:10.5px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap}
 .xls-btn:hover{background:rgba(47,174,78,0.28)}
 .pdf-btn{background:rgba(226,35,26,0.13);border:1px solid rgba(226,35,26,0.4);color:#e2231a;border-radius:6px;padding:4px 9px;font-size:10.5px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap}
@@ -1179,7 +1179,7 @@ input:focus,select:focus{outline:1px solid var(--accent)}
 .preview-btn:hover{background:rgba(63,208,255,0.25)}
 .section-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:18px 0 8px}
 .section-title-row .section-title{margin:0}
-.tool-btn:hover{border-color:rgba(255,255,255,0.2);color:#c8cacc;background:rgba(255,255,255,0.07)}
+.tool-btn:hover{border-color:rgba(255,255,255,0.25);color:#e0e3e7;background:rgba(255,255,255,0.09)}
 .tool-btn.active-theme{background:var(--accent);border-color:var(--accent);color:#000}
 .tool-btn.notif-has-alert{border-color:var(--red);color:var(--red);animation:notifPulse 2s infinite}
 @keyframes notifPulse{0%,100%{box-shadow:0 0 0 0 rgba(226,35,26,0)}50%{box-shadow:0 0 0 3px rgba(226,35,26,0.3)}}
@@ -1448,8 +1448,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
       <!-- Hızlı Erişim -->
       <div style="font-size:9.5px;letter-spacing:.1em;color:#3e4347;font-weight:700;padding:8px 6px 5px;text-transform:uppercase">Hızlı Erişim</div>
-      <button class="tool-btn" onclick="openKampanyaModal()" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:#8a8f96;font-weight:600">🎯 Kampanyalar</button>
-      <button class="tool-btn" onclick="openMusteriRapor()" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:#8a8f96;font-weight:600">👥 Müşteri Takibi <span id="musteriTakipBadge" style="display:inline-block;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px"></span></button>
+      <button class="tool-btn" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.08);border-color:rgba(255,183,77,0.2);color:#c8963a;font-weight:600">🎯 Kampanyalar</button>
+      <button class="tool-btn" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.07);border-color:rgba(63,208,255,0.18);color:#4a9bb5;font-weight:600">👥 Müşteri Takibi <span id="musteriTakipBadge" style="display:inline-block;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px"></span></button>
 
       <!-- Görünüm (katlanabilir) -->
       <div class="sidebar-divider"></div>
@@ -1468,7 +1468,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
       <div id="sbVeri" style="display:flex;flex-direction:column;gap:6px;overflow:hidden;transition:all .2s">
         <button class="tool-btn" onclick="backupData()">💾 Yedekle</button>
-        <button class="tool-btn" onclick="openGithubGuncelleModal()" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:#8a8f96;font-weight:600">🔄 Güncelle</button>
+        <button class="tool-btn" onclick="openGithubGuncelleModal()" style="background:rgba(63,208,255,0.07);border-color:rgba(63,208,255,0.18);color:#4a9bb5;font-weight:600">🔄 Güncelle</button>
         <label class="tool-btn" style="cursor:pointer">📂 Geri Yükle<input type="file" accept=".json" onchange="restoreData(event)" style="display:none"></label>
         <button class="tool-btn" onclick="chooseBackupFolder()">📁 Oto. Yedek Klasörü</button>
         <span id="autoBackupStatus" class="autobackup-status"></span>
@@ -2439,7 +2439,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v115';
+const APP_VERSION = 'v117';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12235,7 +12235,7 @@ function exportModalToExcel(){
 // Ben sana her versiyonda bunu güncel olarak vereceğim
 const GH_DOSYA_LISTESI = [
   { dosya: 'index.html',    etiket: '📄 index.html',    aciklama: 'Ana uygulama',       degisti: true  },
-  { dosya: 'sw.js',         etiket: '⚙️ sw.js',          aciklama: 'Önbellek yöneticisi', degisti: true  },
+  { dosya: 'sw.js',         etiket: '⚙️ sw.js',          aciklama: 'Önbellek yöneticisi', degisti: false },
   { dosya: 'manifest.json', etiket: '📋 manifest.json',  aciklama: 'PWA ayarları',        degisti: false },
   { dosya: 'icon-192.png',  etiket: '🖼️ icon-192.png',   aciklama: 'Küçük ikon',          degisti: false },
   { dosya: 'icon-512.png',  etiket: '🖼️ icon-512.png',   aciklama: 'Büyük ikon',          degisti: false },
@@ -12513,6 +12513,20 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: "v117",
+    date: "01.07.2026",
+    items: [
+      { type: "fix", text: "sw.js artık listeden kaldırıldı — zip'te yok, bekleme sorunu çözüldü" },
+    ]
+  },
+  {
+    version: 'v116',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui', text: 'Sidebar yazı renkleri daha okunaklı hale getirildi — nav itemlar, butonlar, bölüm başlıkları daha açık ton' },
+    ]
+  },
   {
     version: 'v115',
     date: '01.07.2026',
