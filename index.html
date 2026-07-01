@@ -11,37 +11,36 @@
 <meta name="theme-color" content="#e2231a">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script>
-  // SW — offline destek, hızlı yükleme, PWA
+  // SW — offline destek, PWA
   if('serviceWorker' in navigator){
-    // Eski SW'leri temizle
-    navigator.serviceWorker.getRegistrations().then(regs=>{
-      regs.forEach(r=>r.unregister());
-    });
-    // Yeni SW'yi blob olarak kaydet (skipWaiting yok — sayfa yenilemez)
     const swKod = `
-const CACHE_NAME = 'finansal-v133';
+const CACHE_VER = 'finansal-v137';
 self.addEventListener('install', e => {
-  // skipWaiting YOK — sayfa kendiliğinden yenilenmez
-  e.waitUntil(caches.open(CACHE_NAME));
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys=>
-      Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))
-    ).then(()=>self.clients.claim())
+    caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE_VER).map(k=>caches.delete(k))))
+    // clients.claim YOK — mevcut sayfayı rahatsız etmez
   );
 });
 self.addEventListener('fetch', e => {
   if(e.request.mode==='navigate'){
-    e.respondWith(fetch(e.request,{cache:'no-store'}).catch(()=>caches.match(e.request)));
+    e.respondWith(fetch(e.request,{cache:'no-store'}).catch(()=>caches.match('./index.html')));
     return;
   }
-  e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request)));
+  e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{
+    if(r&&r.status===200&&r.type==='basic'){
+      caches.open(CACHE_VER).then(c=>c.put(e.request,r.clone()));
+    }
+    return r;
+  })));
 });`;
     const blob = new Blob([swKod],{type:'application/javascript'});
     navigator.serviceWorker.register(URL.createObjectURL(blob))
-      .then(()=>console.log('SW hazır'))
-      .catch(e=>console.warn('SW hatası:',e));
+      .catch(e=>console.warn('SW:',e));
+    // controllerchange reload YOK — veri silinmesini önler
   }
   // PWA kurulum butonu
   let deferredPrompt;
@@ -2433,7 +2432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v137';
+const APP_VERSION = 'v138';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -2966,20 +2965,18 @@ async function pushToCloud(){
     if(!userChangedData) return;
     if(isPushingToCloud) return;
     isPushingToCloud = true;
-    userChangedData = false;
+    // userChangedData'yı BURADA false yapmıyoruz — sadece başarılı push sonrası
     updateCloudIndicator('saving');
     await new Promise(r=>setTimeout(r, Math.random()*300));
     // Push öncesi lokal orphan'ları temizle
     entryLog = entryLog.filter(l => logHasEntry(l));
     localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
-    // Cloud'u çek - SADECE entries merge et, entryLog'u ALMA (lokali bozmasın)
+    // Cloud'u çek - SADECE entries merge et
     const res0 = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if(res0.ok){
       const cloudData = await res0.json();
       if(cloudData && cloudData.data !== 'init'){
         entries = mergeEntries(entries, cloudData.entries||[]);
-        // entryLog: cloud'dan ALMA - lokal her zaman doğru kaynak
-        // (pull sırasında zaten merge ediliyor)
         localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries));
         lastSyncedEntries = JSON.parse(JSON.stringify(entries));
       }
@@ -2992,20 +2989,27 @@ async function pushToCloud(){
       body: JSON.stringify(payload)
     });
     if(res.ok){
+      userChangedData = false; // Sadece başarılı push'ta false yap
       lastCloudHash = hash;
       lastSyncedEntries = JSON.parse(JSON.stringify(entries));
       updateCloudIndicator('saved', getPlatformName() + ' · ' + nowTR().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
-    } else { updateCloudIndicator('error'); }
-  } catch(e){ updateCloudIndicator('error'); }
+    } else {
+      // Push başarısız: userChangedData true kalıyor, pull engellenecek
+      updateCloudIndicator('error');
+    }
+  } catch(e){
+    // Hata: userChangedData true kalıyor, 10sn sonra tekrar denenecek
+    scheduleCloudSync();
+    updateCloudIndicator('error');
+  }
   isPushingToCloud = false;
   lastPushTime = Date.now();
 }
 
 async function pullFromCloud(){
-  // Push devam ediyorsa veya son degisiklikten 5sn gecmemisse pull yapma
   if(isPushingToCloud) return false;
   if(userChangedData) return false;
-  if(Date.now() - lastPushTime < 5000) return false;
+  if(Date.now() - lastPushTime < 8000) return false; // Push sonrası 8sn bekle
   try{
     const res = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if(!res.ok){ updateCloudIndicator('error'); return false; }
@@ -12624,6 +12628,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v138',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'KRİTİK: Cloud push basarisiz olunca userChangedData yanlis false yapiliyordu — 10sn sonra eski cloud verisi yerel yeni veriyi eziyordu. Artik sadece basarili push sonrasi false yapiliyor.' },
+      { type: 'fix', text: 'pullFromCloud bekleme suresi 5sn den 8sn ye cikarildi, ek guvenlik.' },
+      { type: 'fix', text: 'SW: clients.claim kaldirildi, unregister dongusu kaldirildi, sayfa yenilenmiyor.' },
+    ]
+  },
   {
     version: 'v136',
     date: '02.07.2026',
