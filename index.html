@@ -1411,7 +1411,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v84 · 01.07.2026 10:45</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v85 · 01.07.2026 11:30</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1432,7 +1432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v84 · Son güncelleme: 01.07.2026 10:45 <span style="font-size:9px;opacity:.6">▼</span></div>
+            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v85 · Son güncelleme: 01.07.2026 11:30 <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2348,8 +2348,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v84';
-const BUILD_DATE = '01.07.2026 10:45';
+const APP_VERSION = 'v85';
+const BUILD_DATE = '01.07.2026 11:30';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -11951,7 +11951,227 @@ function exportModalToExcel(){
 
 <script>
 // ===================== GITHUB OTOMATİK GÜNCELLEME =====================
+
+// Her versiyonda hangi dosyaların değiştiğini buraya yaz
+// Ben sana her versiyonda bunu güncel olarak vereceğim
+const GH_DOSYA_LISTESI = [
+  { dosya: 'index.html',    etiket: '📄 index.html',    aciklama: 'Ana uygulama',       degisti: true  },
+  { dosya: 'sw.js',         etiket: '⚙️ sw.js',          aciklama: 'Önbellek yöneticisi', degisti: false },
+  { dosya: 'manifest.json', etiket: '📋 manifest.json',  aciklama: 'PWA ayarları',        degisti: false },
+  { dosya: 'icon-192.png',  etiket: '🖼️ icon-192.png',   aciklama: 'Küçük ikon',          degisti: false },
+  { dosya: 'icon-512.png',  etiket: '🖼️ icon-512.png',   aciklama: 'Büyük ikon',          degisti: false },
+];
+
+let _ghDosyaIcerikleri = {}; // { 'index.html': 'içerik...' }
+
 function openGithubGuncelleModal(){
+  const cfg = getGithubConfig();
+  const degistiSayisi = GH_DOSYA_LISTESI.filter(d=>d.degisti).length;
+
+  const dosyaSatirlari = GH_DOSYA_LISTESI.map(d=>`
+    <div id="ghRow_${d.dosya.replace('.','_')}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:${d.degisti?'rgba(76,217,100,0.06)':'rgba(255,255,255,0.02)'};border:1px solid ${d.degisti?'rgba(76,217,100,0.2)':'rgba(255,255,255,0.06)'};margin-bottom:5px">
+      <div style="font-size:16px;width:20px;text-align:center">${d.degisti?'🟢':'⬜'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11.5px;font-weight:${d.degisti?'700':'400'};color:${d.degisti?'var(--txt)':'var(--muted)'}">${d.etiket}</div>
+        <div style="font-size:9.5px;color:var(--muted)">${d.aciklama} ${d.degisti?'<span style="color:#4cd964;font-weight:700">— DEĞİŞTİ</span>':'— değişmedi'}</div>
+      </div>
+      ${d.degisti ? `
+      <label style="flex-shrink:0;background:rgba(63,208,255,0.12);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">
+        ${_ghDosyaIcerikleri[d.dosya] ? '✅ Seçildi' : '📂 Seç'}
+        <input type="file" accept="${d.dosya.endsWith('.png')?'image/png':d.dosya.endsWith('.json')?'application/json':'.'+d.dosya.split('.').pop()}" style="display:none" onchange="ghDosyaSec(this,'${d.dosya}')">
+      </label>` : `<div style="font-size:10px;color:var(--muted);flex-shrink:0;padding:4px 10px">atla</div>`}
+    </div>
+  `).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'githubGuncelleModal';
+  modal.style.cssText = 'position:fixed;z-index:9999;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+  modal.innerHTML = `
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;width:100%;max-width:500px;box-shadow:0 8px 40px rgba(0,0,0,0.5);margin:auto">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:14px;font-weight:800">🔄 Uygulama Güncelle — ${APP_VERSION}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">${degistiSayisi} dosya değişti · seç ve GitHub'a yükle</div>
+        </div>
+        <button onclick="document.getElementById('githubGuncelleModal').remove()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;flex-shrink:0">×</button>
+      </div>
+      <div style="padding:18px;display:flex;flex-direction:column;gap:12px">
+
+        <!-- Dosya Listesi -->
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">📁 Bu Versiyonda Değişen Dosyalar</div>
+          ${dosyaSatirlari}
+        </div>
+
+        <!-- GitHub Ayarları (katlanabilir) -->
+        <details style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden">
+          <summary style="padding:10px 14px;cursor:pointer;font-size:11px;font-weight:700;color:var(--muted);list-style:none;display:flex;align-items:center;justify-content:space-between">
+            <span>⚙️ GitHub Ayarları ${cfg.user?'<span style="color:#4cd964;font-weight:400">(kayıtlı)</span>':'<span style="color:#ff9f0a">(girilmedi!)</span>'}</span>
+            <span style="font-size:10px">▼</span>
+          </summary>
+          <div style="padding:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px">
+            <div>
+              <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Kullanıcı Adı</label>
+              <input id="ghUser" value="${cfg.user||''}" placeholder="örn: Ertechiletisim12" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;box-sizing:border-box">
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Repo Adı</label>
+              <input id="ghRepo" value="${cfg.repo||''}" placeholder="örn: Finansal" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;box-sizing:border-box">
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Personal Access Token <span style="color:#ff9f0a">(gizli tut)</span></label>
+              <input id="ghToken" type="password" value="${cfg.token||''}" placeholder="github_pat_..." style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;box-sizing:border-box">
+            </div>
+            <button onclick="saveGithubConfig()" style="background:rgba(76,217,100,0.15);border:1px solid rgba(76,217,100,0.3);color:#4cd964;border-radius:7px;padding:7px;font-size:11px;font-weight:700;cursor:pointer">💾 Ayarları Kaydet</button>
+          </div>
+        </details>
+
+        <button id="ghGuncelleBtn" onclick="githubGuncelle()" disabled style="background:rgba(76,217,100,0.08);border:1px solid rgba(76,217,100,0.2);color:rgba(76,217,100,0.4);border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:not-allowed">
+          🚀 GitHub'a Yükle & Güncelle
+        </button>
+        <div id="ghDurum" style="font-size:11px;color:var(--muted);text-align:center;min-height:16px"></div>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+  ghGuncelleKontrol();
+}
+
+function ghDosyaSec(input, dosyaAdi){
+  const file = input.files[0];
+  if(!file) return;
+  const isBinary = dosyaAdi.endsWith('.png');
+  const reader = new FileReader();
+  reader.onload = e => {
+    if(isBinary){
+      // PNG için ArrayBuffer → base64
+      const bytes = new Uint8Array(e.target.result);
+      let bin = '';
+      bytes.forEach(b=>bin+=String.fromCharCode(b));
+      _ghDosyaIcerikleri[dosyaAdi] = { base64: btoa(bin), isBinary: true };
+    } else {
+      _ghDosyaIcerikleri[dosyaAdi] = { text: e.target.result, isBinary: false };
+    }
+    // Etiketi güncelle
+    const row = document.getElementById('ghRow_'+dosyaAdi.replace('.','_'));
+    if(row){
+      const lbl = row.querySelector('label');
+      if(lbl) lbl.innerHTML = `✅ Seçildi (${(file.size/1024).toFixed(0)} KB)<input type="file" accept="${input.accept}" style="display:none" onchange="ghDosyaSec(this,'${dosyaAdi}')">`;
+    }
+    ghGuncelleKontrol();
+  };
+  if(isBinary) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+}
+
+function ghGuncelleKontrol(){
+  // Tüm "değişti" dosyaları seçildi mi?
+  const hepsiSecildi = GH_DOSYA_LISTESI.filter(d=>d.degisti).every(d=>_ghDosyaIcerikleri[d.dosya]);
+  const cfg = getGithubConfig();
+  const btn = document.getElementById('ghGuncelleBtn');
+  if(!btn) return;
+  const hazir = hepsiSecildi && cfg.user && cfg.repo && cfg.token;
+  btn.disabled = !hazir;
+  btn.style.background = hazir?'rgba(76,217,100,0.2)':'rgba(76,217,100,0.08)';
+  btn.style.borderColor = hazir?'rgba(76,217,100,0.5)':'rgba(76,217,100,0.2)';
+  btn.style.color = hazir?'#4cd964':'rgba(76,217,100,0.4)';
+  btn.style.cursor = hazir?'pointer':'not-allowed';
+}
+
+function getGithubConfig(){
+  try { return JSON.parse(localStorage.getItem('vf_github_cfg')||'{}'); } catch(e){ return {}; }
+}
+function saveGithubConfig(){
+  const cfg = {
+    user: document.getElementById('ghUser').value.trim(),
+    repo: document.getElementById('ghRepo').value.trim(),
+    token: document.getElementById('ghToken').value.trim()
+  };
+  localStorage.setItem('vf_github_cfg', JSON.stringify(cfg));
+  const btn = event.target;
+  btn.textContent = '✅ Kaydedildi';
+  setTimeout(()=>{ btn.textContent = '💾 Ayarları Kaydet'; ghGuncelleKontrol(); }, 1500);
+}
+
+async function githubGuncelle(){
+  const cfg = getGithubConfig();
+  if(!cfg.user||!cfg.repo||!cfg.token){ alert('Önce GitHub ayarlarını kaydet.'); return; }
+
+  const durum = document.getElementById('ghDurum');
+  const btn = document.getElementById('ghGuncelleBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Yükleniyor...';
+
+  const headers = {
+    'Authorization': `token ${cfg.token}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/vnd.github.v3+json'
+  };
+
+  const degisecek = GH_DOSYA_LISTESI.filter(d=>d.degisti && _ghDosyaIcerikleri[d.dosya]);
+
+  try {
+    for(let i=0; i<degisecek.length; i++){
+      const d = degisecek[i];
+      const icerik = _ghDosyaIcerikleri[d.dosya];
+      durum.style.color = 'var(--muted)';
+      durum.textContent = `[${i+1}/${degisecek.length}] ${d.dosya} GitHub'a yükleniyor...`;
+
+      const apiUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${d.dosya}`;
+
+      // SHA al
+      const getResp = await fetch(apiUrl, { headers });
+      if(!getResp.ok) throw new Error(`${d.dosya}: SHA alınamadı (${getResp.status}) — Token veya repo adı hatalı olabilir`);
+      const getJson = await getResp.json();
+      const sha = getJson.sha;
+
+      // Base64'e çevir
+      const b64 = icerik.isBinary ? icerik.base64 : btoa(unescape(encodeURIComponent(icerik.text)));
+
+      // Yükle
+      const putResp = await fetch(apiUrl, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          message: `🔄 ${APP_VERSION} → ${d.dosya} güncellendi - ${new Date().toLocaleString('tr-TR')}`,
+          content: b64,
+          sha,
+          branch: 'main'
+        })
+      });
+      if(!putResp.ok){
+        const err = await putResp.json();
+        throw new Error(`${d.dosya} yüklenemedi: ${err.message||putResp.status}`);
+      }
+    }
+
+    durum.textContent = `✅ ${degisecek.length} dosya GitHub'a yüklendi! (~1-2 dk içinde aktif olacak)`;
+    durum.style.color = '#4cd964';
+    btn.textContent = '✅ Tamamlandı';
+
+    // Önbelleği temizle
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs) await reg.unregister();
+    }
+    if('caches' in window){
+      const keys = await caches.keys();
+      for(const k of keys) await caches.delete(k);
+    }
+
+    setTimeout(()=>{
+      durum.textContent = '🔃 Sayfa yenileniyor...';
+      setTimeout(()=> window.location.reload(true), 1000);
+    }, 2500);
+
+  } catch(e){
+    durum.textContent = '❌ Hata: ' + e.message;
+    durum.style.color = '#ff5252';
+    btn.disabled = false;
+    btn.textContent = '🚀 GitHub\'a Yükle & Güncelle';
+  }
+}
+</script>
   const cfg = getGithubConfig();
   const modal = document.createElement('div');
   modal.id = 'githubGuncelleModal';
@@ -12122,6 +12342,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v85',
+    date: '01.07.2026',
+    items: [
+      { type: 'new',  text: 'Güncelleme modalı yenilendi — hangi dosyaların değiştiği yeşil/gri listede gösteriliyor, değişmeyen dosyalar otomatik atlanıyor' },
+      { type: 'new',  text: 'Çoklu dosya desteği — sw.js, manifest.json, ikonlar da gerektiğinde tek seferde yüklenebilir' },
+      { type: 'ui',   text: 'GitHub ayarları katlanabilir (details) bölüme alındı, kaydedilmişse küçük gösteriyor' },
+    ]
+  },
   {
     version: 'v84',
     date: '01.07.2026',
