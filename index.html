@@ -2432,7 +2432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v138';
+const APP_VERSION = 'v139';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -8528,8 +8528,7 @@ function saveMusteriStore(){
 
 // Müşteri kayıt modalını aç (+ butonundan)
 function openMusteriKayit(cat, isMnp, date){
-  // Düzenleme modunda çağrıldıysa (_mkEditId zaten set) sıfırlama
-  if(!_mkEditId) _mkEditId = null;
+  _mkEditId = null; // Her zaman sıfırla — edit ID ayrıca set edilir
   // isMnp kesinlikle boolean olarak al
   const isMnpBool = (isMnp === true || isMnp === 'true');
   _mkTip = isMnpBool ? 'mnp' : 'tesis';
@@ -9012,9 +9011,9 @@ function topluOnaylaGecmis(tarihEsigi){
 function openMusteriEdit(id){
   const m = musteriler.find(x=>x.id===id);
   if(!m) return;
-  _mkEditId = id;
   window._confirmedIsMnp = m.tip === 'mnp';
-  openMusteriKayit(m.cat, m.tip==='mnp', m.entryDate);
+  openMusteriKayit(m.cat, m.tip==='mnp', m.entryDate); // önce aç (_mkEditId = null)
+  _mkEditId = id; // sonra edit ID set et (openMusteriKayit'in sıfırlamasından sonra)
   setTimeout(()=>{
     if(m.ad)  document.getElementById('mkAd').value  = m.ad;
     if(m.tel) document.getElementById('mkTel').value = m.tel;
@@ -12628,6 +12627,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v139',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Musteri duzenleme: _mkEditId openMusteriKayit sonrasi set ediliyor, yeni kayit olarak yanlis islenmiyordu.' },
+      { type: 'fix', text: 'openMusteriKayit her zaman _mkEditId sifirlıyor, edit ID ayrica set ediliyor.' },
+    ]
+  },
   {
     version: 'v138',
     date: '02.07.2026',
