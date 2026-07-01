@@ -239,22 +239,20 @@ body.light{
 
 html{scrollbar-gutter:stable}
 
-/* Yatay scrollbar'ları gizle - anasayfa ve prim sayfası */
-#dashContent, #dashContent *,
-.content-col, .content-col *,
-#page-prim .layout, #page-prim .layout * {
-  scrollbar-width:none;
+/* Yatay scrollbar'ları tamamen gizle */
+* { scrollbar-width:thin; }
+.content-col, #dashContent, #page-prim .layout,
+.content-col *, #dashContent *{
+  scrollbar-width:none !important;
 }
-#dashContent::-webkit-scrollbar,
-#dashContent *::-webkit-scrollbar,
 .content-col::-webkit-scrollbar,
+#dashContent::-webkit-scrollbar,
 .content-col *::-webkit-scrollbar,
-#page-prim .layout::-webkit-scrollbar,
-#page-prim .layout *::-webkit-scrollbar { display:none; }
+#dashContent *::-webkit-scrollbar{ display:none !important; }
 
-/* Trend bar scroll — sadece dikey ince scrollbar izin ver */
-.trend-bars-wrap { overflow-x:auto!important; }
-.trend-bars-wrap::-webkit-scrollbar { display:none!important; }
+/* Trend bar sarmalayıcı - scroll ama görünmez */
+.trend-bars-wrap{ overflow-x:auto !important; scrollbar-width:none !important; }
+.trend-bars-wrap::-webkit-scrollbar{ display:none !important; }
 
 /* Müşteri Takibi checkbox hizalama */
 .mkSelectBox { vertical-align:middle; }
@@ -2380,7 +2378,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v101';
+const APP_VERSION = 'v102';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -5800,11 +5798,26 @@ function renderDash(){
             </div>
           </div>
         </div>` : ''}
-        <div style="margin-top:10px">
-          <div style="font-size:9.5px;color:rgba(255,255,255,0.5);margin-bottom:5px">Son 6 ay trendi <span style="font-size:8px">(adet · tutar)</span></div>
-          <div style="overflow-x:auto;overflow-y:hidden;margin:0 -13px;padding:0 13px 12px">
-            <div class="trend-bars-wrap" style="display:flex;align-items:flex-end;gap:4px;height:320px;padding-top:8px;min-width:320px">${trendBars}</div>
+
+        <!-- 🎯 Hedef (sol karta entegre) -->
+        <div style="margin-top:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:9px 10px">
+          ${hedef ? `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-size:9.5px;color:rgba(255,255,255,0.5);font-weight:600">🎯 ${monthLabel(now)} Hedefi</div>
+            <div style="display:flex;align-items:baseline;gap:5px">
+              <span style="font-size:18px;font-weight:900;color:${hedefRenk};line-height:1">%${hedefPct}</span>
+              <span style="font-size:9px;color:${hedefPct>=100?'#4cd964':'var(--muted)'}">${hedefPct>=100?'✓ Aşıldı!':hedefKalan>0?fmtF(hedefKalan)+' kaldı':''}</span>
+            </div>
           </div>
+          <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.08);overflow:hidden;margin-bottom:5px">
+            <div style="height:100%;width:${Math.min(hedefPct,100)}%;background:linear-gradient(90deg,${hedefRenk}88,${hedefRenk});border-radius:3px;transition:width .5s"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.4)">
+            <span>Gerçekleşen: <b style="color:#8fe3a8">${fmtF(curKdv)}</b>${dashBonusToplam>0?` <span style="color:#ffd27a">(+${fmtF(dashBonusToplam)} bonus)</span>`:''}</span>
+            <span>Hedef: ${fmtF(hedef)}</span>
+          </div>
+          ${gundeGereken ? `<div style="font-size:9px;color:#ffb74d;margin-top:3px">⚡ Günde <b>${fmtF(gundeGereken)}</b> gerekiyor</div>` : ''}
+          ` : `<div style="font-size:9.5px;color:rgba(255,255,255,0.3);text-align:center;padding:4px 0">🎯 Hedef girilmedi</div>`}
         </div>
       </div>
 
@@ -5856,38 +5869,18 @@ function renderDash(){
           </div>
         </div>
 
-        <!-- Hedef kartı -->
-        <div style="background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px;flex:1">
-          ${hedef ? `
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px">
-              <div>
-                <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:1px">🎯 ${monthLabel(now)} Hedefi</div>
-                <div style="font-size:11.5px;font-weight:700">${fmtF(hedef)}</div>
-              </div>
-              <div style="text-align:right">
-                <div style="font-size:22px;font-weight:900;color:${hedefRenk};line-height:1">%${hedefPct}</div>
-                <div style="font-size:10px;color:${hedefPct>=100?'#4cd964':'var(--muted)'};margin-top:1px">${hedefPct>=100?'✓ Aşıldı!':hedefKalan>0?fmtF(hedefKalan)+' kaldı':''}</div>
-              </div>
-            </div>
-            <div style="height:7px;border-radius:4px;background:var(--line);overflow:hidden;margin-bottom:5px">
-              <div style="height:100%;width:${Math.min(hedefPct,100)}%;background:linear-gradient(90deg,${hedefRenk}99,${hedefRenk});border-radius:4px;transition:width .5s"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted)">
-              <span>Gerçekleşen: <b style="color:var(--txt)">${fmtF(curKdv)}</b>${dashBonusToplam>0?` <span style="color:#ffd27a">(🎁 ${fmtF(dashBonusToplam)} bonus)</span>`:''}</span>
-              <span>Hedef: <b style="color:var(--txt)">${fmtF(hedef)}</b></span>
-            </div>
-            ${gundeGereken ? `<div style="font-size:10px;color:#ffb74d;margin-top:4px">⚡ Günde <b>${fmtF(gundeGereken)}</b> gerekiyor</div>` : ''}
-          ` : `
-            <div style="display:flex;justify-content:space-between;align-items:center;height:100%">
-              <div>
-                <div style="font-size:10px;color:var(--muted);margin-bottom:3px">🎯 Bu Ay Hedef</div>
-                <div style="font-size:11.5px;color:var(--muted)">Henüz girilmedi</div>
-              </div>
-              <button onclick="switchPage('hedef')" style="background:rgba(63,208,255,0.12);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:7px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer">+ Hedef Ekle</button>
-            </div>
-          `}
-        </div>
+        <!-- Hedef kartı sol karta taşındı -->
       </div>
+
+    </div><!-- /flex row -->
+
+    <!-- ── Grafik: Tam genişlikte ── -->
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px">
+      <div style="font-size:9.5px;color:var(--muted);margin-bottom:8px;font-weight:600">📊 Son 6 Ay Trendi <span style="font-size:8px;opacity:.6">(adet · tutar)</span></div>
+      <div style="overflow:hidden">
+        <div class="trend-bars-wrap" style="display:flex;align-items:flex-end;gap:4px;height:160px;padding-top:8px;min-width:320px">${trendBars}</div>
+      </div>
+    </div>
 
       <!-- ── BÖLÜM 3: Kategori Tablosu sağ sütunda ── -->
       <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px">
@@ -12371,10 +12364,20 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v102',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'Versiyon bilgisi kalıcı düzeltme — innerHTML ile direkt set, artık \'Yükleniyor...\' kalmıyor' },
+      { type: 'ui',  text: 'Grafik sol karttan çıkarıldı, altta tam genişlikte ayrı kart olarak yerleştirildi (160px yükseklik)' },
+      { type: 'ui',  text: '🎯 Hedef kartı sol yeşil karta entegre edildi — sağ sütun sadece Bugün + Ay Sonu taşıyor' },
+      { type: 'fix', text: 'Scrollbar gizleme daha agresif CSS ile güçlendirildi' },
+    ]
+  },
+  {
     version: 'v101',
     date: '01.07.2026',
     items: [
-      { type: 'fix', text: 'Anasayfa ve Prim sayfasındaki yatay scrollbar'lar tamamen gizlendi (CSS scrollbar-width:none + webkit)' },
+      { type: 'fix', text: 'Anasayfa ve Prim sayfasındaki yatay scrollbar\'lar tamamen gizlendi (CSS scrollbar-width:none + webkit)' },
       { type: 'ui',  text: 'Müşteri Takibi checkbox hizalaması düzeltildi — tüm satırlar 32px sabit yükseklikte, checkbox yok ise boşluk placeholder' },
     ]
   },
@@ -12614,15 +12617,11 @@ function toggleChangelog(){
 // Versiyon bilgisini güncelle — script body sonunda çalışır, DOM hazır
 (function updateVersionDisplay(){
   try {
+    const deployDate = getDeployDate();
     const mv = document.getElementById('mobileVersionInfo');
-    if(mv){ mv.style.cursor='pointer'; mv.onclick = toggleChangelog; mv.textContent = APP_VERSION + ' · ' + getDeployDate(); }
-    const ds = document.getElementById('deployDateSpan');
-    if(ds) ds.textContent = getDeployDate();
+    if(mv){ mv.style.cursor='pointer'; mv.onclick = toggleChangelog; mv.textContent = APP_VERSION + ' · ' + deployDate; }
     const btn = document.getElementById('versionInfoBtn');
-    if(btn){
-      const txt = btn.childNodes[0];
-      if(txt && txt.nodeType===3) txt.textContent = APP_VERSION + ' · Son güncelleme: ';
-    }
+    if(btn) btn.innerHTML = APP_VERSION + ' · Son güncelleme: ' + deployDate + ' <span style="font-size:9px;opacity:.6">▼</span>';
   } catch(e){ console.warn('Versiyon güncelleme hatası:', e); }
 })();
 </script>
