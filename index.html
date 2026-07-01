@@ -1353,23 +1353,45 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="nav-item" id="navGelir" onclick="switchPage('gelir')" style="cursor:pointer">💰 Gelir Takibi</div>
     <div class="nav-item" id="navNot" onclick="switchPage('not')" style="cursor:pointer">🏷️ Not & Etiket</div>
 
-    <!-- Oturum Bilgisi - Nav altı kompakt (masaüstünde görünür) -->
-    <div id="sidebarOturumBox" style="display:none;margin:8px 14px;background:linear-gradient(135deg,rgba(226,35,26,0.1),rgba(226,35,26,0.04));border:1px solid rgba(226,35,26,0.2);border-radius:10px;padding:8px 12px" class="desktop-only-oturum">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div style="display:flex;align-items:center;gap:10px;flex:1">
-          <div style="text-align:center">
-            <div style="font-size:8px;color:var(--muted);font-weight:600;letter-spacing:.05em;margin-bottom:1px">KİLİTLENME</div>
-            <div id="sidebarKalanSure" style="font-size:16px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;line-height:1">10:00</div>
+    <!-- Oturum Bilgisi - Nav altı şık tasarım (masaüstünde görünür) -->
+    <div id="sidebarOturumBox" style="display:none;margin:8px 14px" class="desktop-only-oturum">
+      <div style="background:linear-gradient(135deg,rgba(226,35,26,0.12),rgba(226,35,26,0.04));border:1px solid rgba(226,35,26,0.22);border-radius:12px;padding:12px 14px;position:relative;overflow:hidden">
+        <!-- Arkaplan dekorasyon -->
+        <div style="position:absolute;right:-10px;top:-10px;width:60px;height:60px;border-radius:50%;background:rgba(226,35,26,0.06);pointer-events:none"></div>
+
+        <!-- Üst satır: başlık + kilitle -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:12px">🔐</span>
+            <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:.06em;text-transform:uppercase">Oturum</span>
           </div>
-          <div style="width:1px;height:28px;background:var(--line)"></div>
-          <div style="text-align:center">
-            <div style="font-size:8px;color:var(--muted);font-weight:600;letter-spacing:.05em;margin-bottom:1px">AÇIK SÜRE</div>
-            <div id="sidebarAcikSure" style="font-size:16px;font-weight:800;color:#4cd964;font-variant-numeric:tabular-nums;line-height:1">0:00</div>
+          <button onclick="oturumKapat()" style="background:rgba(226,35,26,0.2);border:1px solid rgba(226,35,26,0.35);color:#ff8080;border-radius:7px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer">🔒 Kilitle</button>
+        </div>
+
+        <!-- İki sayaç yan yana -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <!-- Kilitlenme sayacı -->
+          <div style="background:rgba(0,0,0,0.2);border-radius:9px;padding:8px 10px;text-align:center;border:1px solid rgba(255,255,255,0.05)">
+            <div style="font-size:8.5px;color:rgba(255,255,255,0.4);font-weight:600;letter-spacing:.05em;margin-bottom:3px">KİLİTLENME</div>
+            <div id="sidebarKalanSure" style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-.5px">10:00</div>
+            <div style="font-size:8px;color:rgba(226,35,26,0.7);margin-top:2px">hareketsizlik</div>
+          </div>
+          <!-- Açık kalma süresi -->
+          <div style="background:rgba(0,0,0,0.2);border-radius:9px;padding:8px 10px;text-align:center;border:1px solid rgba(255,255,255,0.05)">
+            <div style="font-size:8.5px;color:rgba(255,255,255,0.4);font-weight:600;letter-spacing:.05em;margin-bottom:3px">AÇIK SÜRE</div>
+            <div id="sidebarAcikSure" style="font-size:20px;font-weight:900;color:#4cd964;font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-.5px">0:00</div>
+            <div style="font-size:8px;color:rgba(76,217,100,0.5);margin-top:2px">oturum</div>
           </div>
         </div>
-        <button onclick="oturumKapat()" style="background:rgba(226,35,26,0.18);border:1px solid rgba(226,35,26,0.4);color:#ff7070;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">🔒 Kilitle</button>
+
+        <!-- Uyarı -->
+        <div id="sidebarUyari" style="font-size:9.5px;color:#ff9f0a;margin-top:8px;min-height:12px;text-align:center;font-weight:600"></div>
+
+        <!-- Progress bar (kalan süre yüzdesi) -->
+        <div id="sidebarProgress" style="height:3px;border-radius:2px;background:rgba(255,255,255,0.08);margin-top:8px;overflow:hidden">
+          <div id="sidebarProgressBar" style="height:100%;width:100%;background:linear-gradient(90deg,#4cd964,#a3f0b5);border-radius:2px;transition:width .5s,background .5s"></div>
+        </div>
       </div>
-      <div id="sidebarUyari" style="font-size:9.5px;color:#ff9f0a;margin-top:5px;min-height:12px;text-align:center"></div>
     </div>
 
     <div class="sidebar-tools">
@@ -1411,7 +1433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v85 · 01.07.2026 11:30</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v87 · 01.07.2026 13:00</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1432,7 +1454,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v85 · Son güncelleme: 01.07.2026 11:30 <span style="font-size:9px;opacity:.6">▼</span></div>
+            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v87 · Son güncelleme: 01.07.2026 13:00 <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2348,8 +2370,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v85';
-const BUILD_DATE = '01.07.2026 11:30';
+const APP_VERSION = 'v87';
+const BUILD_DATE = '01.07.2026 13:00';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -3541,10 +3563,17 @@ function startOturumTimer(){
     const sbEl = document.getElementById('sidebarKalanSure');
     if(sbEl) sbEl.textContent = kalanStr;
     const sbAcik = document.getElementById('sidebarAcikSure');
-    if(sbAcik) sbAcik.textContent = `${acikStr} açık`;
+    if(sbAcik) sbAcik.textContent = acikStr;
     // 2dk uyarısı
     const sbUyari = document.getElementById('sidebarUyari');
     if(sbUyari) sbUyari.textContent = kalanSn <= 120 ? '⚠ Yakında kilitlenecek' : '';
+    // Progress bar
+    const pct = Math.max(0, Math.min(100, (kalanSn / (OTO_KILIT_DK*60)) * 100));
+    const pbEl = document.getElementById('sidebarProgressBar');
+    if(pbEl){
+      pbEl.style.width = pct + '%';
+      pbEl.style.background = pct > 50 ? 'linear-gradient(90deg,#4cd964,#a3f0b5)' : pct > 20 ? 'linear-gradient(90deg,#ffb74d,#ffd27a)' : 'linear-gradient(90deg,#ff5252,#ff8080)';
+    }
   }, 1000);
 }
 
@@ -11962,26 +11991,12 @@ const GH_DOSYA_LISTESI = [
   { dosya: 'icon-512.png',  etiket: '🖼️ icon-512.png',   aciklama: 'Büyük ikon',          degisti: false },
 ];
 
-let _ghDosyaIcerikleri = {}; // { 'index.html': 'içerik...' }
+let _ghDosyaIcerikleri = {};
 
 function openGithubGuncelleModal(){
+  _ghDosyaIcerikleri = {};
   const cfg = getGithubConfig();
   const degistiSayisi = GH_DOSYA_LISTESI.filter(d=>d.degisti).length;
-
-  const dosyaSatirlari = GH_DOSYA_LISTESI.map(d=>`
-    <div id="ghRow_${d.dosya.replace('.','_')}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:${d.degisti?'rgba(76,217,100,0.06)':'rgba(255,255,255,0.02)'};border:1px solid ${d.degisti?'rgba(76,217,100,0.2)':'rgba(255,255,255,0.06)'};margin-bottom:5px">
-      <div style="font-size:16px;width:20px;text-align:center">${d.degisti?'🟢':'⬜'}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:11.5px;font-weight:${d.degisti?'700':'400'};color:${d.degisti?'var(--txt)':'var(--muted)'}">${d.etiket}</div>
-        <div style="font-size:9.5px;color:var(--muted)">${d.aciklama} ${d.degisti?'<span style="color:#4cd964;font-weight:700">— DEĞİŞTİ</span>':'— değişmedi'}</div>
-      </div>
-      ${d.degisti ? `
-      <label style="flex-shrink:0;background:rgba(63,208,255,0.12);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">
-        ${_ghDosyaIcerikleri[d.dosya] ? '✅ Seçildi' : '📂 Seç'}
-        <input type="file" accept="${d.dosya.endsWith('.png')?'image/png':d.dosya.endsWith('.json')?'application/json':'.'+d.dosya.split('.').pop()}" style="display:none" onchange="ghDosyaSec(this,'${d.dosya}')">
-      </label>` : `<div style="font-size:10px;color:var(--muted);flex-shrink:0;padding:4px 10px">atla</div>`}
-    </div>
-  `).join('');
 
   const modal = document.createElement('div');
   modal.id = 'githubGuncelleModal';
@@ -11991,22 +12006,38 @@ function openGithubGuncelleModal(){
       <div style="padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-size:14px;font-weight:800">🔄 Uygulama Güncelle — ${APP_VERSION}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:2px">${degistiSayisi} dosya değişti · seç ve GitHub'a yükle</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">${degistiSayisi} dosya değişti · zip içindeki tüm dosyaları sürükle-bırak</div>
         </div>
         <button onclick="document.getElementById('githubGuncelleModal').remove()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;flex-shrink:0">×</button>
       </div>
       <div style="padding:18px;display:flex;flex-direction:column;gap:12px">
 
-        <!-- Dosya Listesi -->
-        <div>
-          <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">📁 Bu Versiyonda Değişen Dosyalar</div>
-          ${dosyaSatirlari}
+        <!-- Sürükle-Bırak Alanı -->
+        <div id="ghDropZone" ondragover="ghDragOver(event)" ondragleave="ghDragLeave(event)" ondrop="ghDrop(event)"
+          style="border:2px dashed rgba(63,208,255,0.35);border-radius:12px;padding:20px;text-align:center;transition:all .2s;cursor:pointer;position:relative"
+          onclick="document.getElementById('ghMultiInput').click()">
+          <input type="file" id="ghMultiInput" multiple accept=".html,.js,.json,.png" style="display:none" onchange="ghMultiSec(this.files)">
+          <div style="font-size:28px;margin-bottom:8px">📂</div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px">Dosyaları buraya sürükle-bırak</div>
+          <div style="font-size:10px;color:var(--muted)">veya tıkla → zip'ten çıkardığın tüm dosyaları seç (Ctrl+A)</div>
+        </div>
+
+        <!-- Dosya Durumu Listesi -->
+        <div id="ghDosyaListesi">
+          ${GH_DOSYA_LISTESI.map(d=>`
+          <div id="ghRow_${d.dosya.replace(/\./g,'_')}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:${d.degisti?'rgba(76,217,100,0.04)':'rgba(255,255,255,0.02)'};border:1px solid ${d.degisti?'rgba(76,217,100,0.15)':'rgba(255,255,255,0.05)'};margin-bottom:4px">
+            <div id="ghRowIkon_${d.dosya.replace(/\./g,'_')}" style="font-size:14px;width:18px;text-align:center">${d.degisti?'🟡':'⬜'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;font-weight:${d.degisti?'700':'400'};color:${d.degisti?'var(--txt)':'var(--muted)'}">${d.etiket}</div>
+              <div id="ghRowAlt_${d.dosya.replace(/\./g,'_')}" style="font-size:9px;color:var(--muted)">${d.degisti?'⏳ Dosya bekleniyor...':'değişmedi — atlanacak'}</div>
+            </div>
+          </div>`).join('')}
         </div>
 
         <!-- GitHub Ayarları (katlanabilir) -->
         <details style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden">
           <summary style="padding:10px 14px;cursor:pointer;font-size:11px;font-weight:700;color:var(--muted);list-style:none;display:flex;align-items:center;justify-content:space-between">
-            <span>⚙️ GitHub Ayarları ${cfg.user?'<span style="color:#4cd964;font-weight:400">(kayıtlı)</span>':'<span style="color:#ff9f0a">(girilmedi!)</span>'}</span>
+            <span>⚙️ GitHub Ayarları ${cfg.user?'<span style="color:#4cd964;font-weight:400">(✓ kayıtlı)</span>':'<span style="color:#ff9f0a">— girilmedi!</span>'}</span>
             <span style="font-size:10px">▼</span>
           </summary>
           <div style="padding:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px">
@@ -12019,7 +12050,7 @@ function openGithubGuncelleModal(){
               <input id="ghRepo" value="${cfg.repo||''}" placeholder="örn: Finansal" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;box-sizing:border-box">
             </div>
             <div>
-              <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Personal Access Token <span style="color:#ff9f0a">(gizli tut)</span></label>
+              <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Personal Access Token</label>
               <input id="ghToken" type="password" value="${cfg.token||''}" placeholder="github_pat_..." style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;box-sizing:border-box">
             </div>
             <button onclick="saveGithubConfig()" style="background:rgba(76,217,100,0.15);border:1px solid rgba(76,217,100,0.3);color:#4cd964;border-radius:7px;padding:7px;font-size:11px;font-weight:700;cursor:pointer">💾 Ayarları Kaydet</button>
@@ -12034,34 +12065,65 @@ function openGithubGuncelleModal(){
     </div>`;
   modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
   document.body.appendChild(modal);
-  ghGuncelleKontrol();
 }
 
-function ghDosyaSec(input, dosyaAdi){
-  const file = input.files[0];
-  if(!file) return;
-  const isBinary = dosyaAdi.endsWith('.png');
-  const reader = new FileReader();
-  reader.onload = e => {
-    if(isBinary){
-      // PNG için ArrayBuffer → base64
-      const bytes = new Uint8Array(e.target.result);
-      let bin = '';
-      bytes.forEach(b=>bin+=String.fromCharCode(b));
-      _ghDosyaIcerikleri[dosyaAdi] = { base64: btoa(bin), isBinary: true };
-    } else {
-      _ghDosyaIcerikleri[dosyaAdi] = { text: e.target.result, isBinary: false };
-    }
-    // Etiketi güncelle
-    const row = document.getElementById('ghRow_'+dosyaAdi.replace('.','_'));
-    if(row){
-      const lbl = row.querySelector('label');
-      if(lbl) lbl.innerHTML = `✅ Seçildi (${(file.size/1024).toFixed(0)} KB)<input type="file" accept="${input.accept}" style="display:none" onchange="ghDosyaSec(this,'${dosyaAdi}')">`;
-    }
-    ghGuncelleKontrol();
-  };
-  if(isBinary) reader.readAsArrayBuffer(file);
-  else reader.readAsText(file);
+function ghDragOver(e){
+  e.preventDefault();
+  const z = document.getElementById('ghDropZone');
+  if(z){ z.style.borderColor='rgba(63,208,255,0.8)'; z.style.background='rgba(63,208,255,0.08)'; }
+}
+function ghDragLeave(e){
+  const z = document.getElementById('ghDropZone');
+  if(z){ z.style.borderColor='rgba(63,208,255,0.35)'; z.style.background=''; }
+}
+function ghDrop(e){
+  e.preventDefault();
+  ghDragLeave(e);
+  ghMultiSec(e.dataTransfer.files);
+}
+
+function ghMultiSec(files){
+  const fileArr = Array.from(files);
+  const dropZone = document.getElementById('ghDropZone');
+  if(dropZone){
+    dropZone.style.borderColor='rgba(76,217,100,0.5)';
+    dropZone.style.background='rgba(76,217,100,0.05)';
+    dropZone.innerHTML = `<div style="font-size:22px;margin-bottom:6px">✅</div><div style="font-size:12px;font-weight:700;color:#4cd964">${fileArr.length} dosya alındı — eşleştiriliyor...</div>`;
+  }
+
+  let okunanSayisi = 0;
+  const toplam = fileArr.filter(f=> GH_DOSYA_LISTESI.some(d=>d.dosya===f.name)).length;
+
+  fileArr.forEach(file=>{
+    const eslesen = GH_DOSYA_LISTESI.find(d=>d.dosya===file.name);
+    if(!eslesen) return; // Listede olmayan dosyayı atla
+
+    const isBinary = file.name.endsWith('.png');
+    const reader = new FileReader();
+    reader.onload = e => {
+      if(isBinary){
+        const bytes = new Uint8Array(e.target.result);
+        let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b));
+        _ghDosyaIcerikleri[file.name] = { base64: btoa(bin), isBinary: true };
+      } else {
+        _ghDosyaIcerikleri[file.name] = { text: e.target.result, isBinary: false };
+      }
+      // Satır ikonunu güncelle
+      const rowId = file.name.replace(/\./g,'_');
+      const ikon = document.getElementById('ghRowIkon_'+rowId);
+      const alt  = document.getElementById('ghRowAlt_'+rowId);
+      if(ikon) ikon.textContent = eslesen.degisti ? '🟢' : '✅';
+      if(alt)  alt.textContent  = eslesen.degisti ? `✅ Seçildi — ${(file.size/1024).toFixed(0)} KB` : `alındı ama değişmedi — atlanacak`;
+
+      okunanSayisi++;
+      if(okunanSayisi >= toplam){
+        if(dropZone) dropZone.innerHTML = `<div style="font-size:22px;margin-bottom:6px">✅</div><div style="font-size:12px;font-weight:700;color:#4cd964">${fileArr.length} dosya eşleştirildi</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Başka dosya eklemek için tekrar tıkla/sürükle</div><input type="file" id="ghMultiInput" multiple accept=".html,.js,.json,.png" style="display:none" onchange="ghMultiSec(this.files)">`;
+        ghGuncelleKontrol();
+      }
+    };
+    if(isBinary) reader.readAsArrayBuffer(file);
+    else reader.readAsText(file);
+  });
 }
 
 function ghGuncelleKontrol(){
@@ -12342,6 +12404,22 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v87',
+    date: '01.07.2026',
+    items: [
+      { type: 'new', text: 'Güncelleme modalına sürükle-bırak desteği eklendi — zip'i aç, tüm dosyaları seç veya sürükle, uygulama otomatik eşleştiriyor' },
+      { type: 'new', text: 'Toplu seçim — Ctrl+A ile tüm dosyaları bir anda seçebilirsin, hangisinin değiştiğini uygulama kendisi biliyor' },
+      { type: 'ui',  text: 'Her dosya satırı 🟡 bekliyor → 🟢 seçildi → atlanacak durumunu anlık gösteriyor' },
+    ]
+  },
+  {
+    version: 'v86',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui', text: 'Sidebar oturum kutusu yeniden tasarlandı — iki sayaç yan yana grid, progress bar (süreye göre yeşil→sarı→kırmızı renk geçişi), arkaplan dekorasyon' },
+    ]
+  },
   {
     version: 'v85',
     date: '01.07.2026',
