@@ -2374,7 +2374,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v103';
+const APP_VERSION = 'v104';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -5879,19 +5879,20 @@ function renderDash(){
 
     </div><!-- /flex row -->
 
-    <!-- ── Grafik: Tam genişlikte ── -->
-    <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px">
-      <div style="font-size:9.5px;color:var(--muted);margin-bottom:8px;font-weight:600">📊 Son 6 Ay Trendi <span style="font-size:8px;opacity:.6">(adet · tutar)</span></div>
-      <div style="overflow:hidden">
-        <div class="trend-bars-wrap" style="display:flex;align-items:flex-end;gap:4px;height:160px;padding-top:8px;min-width:320px">${trendBars}</div>
-      </div>
-    </div>
+    <!-- ── Grafik + Kategori yan yana ── -->
+    <div style="display:flex;gap:10px;margin-bottom:8px;align-items:stretch">
 
-      <!-- ── BÖLÜM 3: Kategori Tablosu sağ sütunda ── -->
-      <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px">
+      <!-- Sol: Grafik -->
+      <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;flex:1;min-width:0">
+        <div style="font-size:9.5px;color:var(--muted);margin-bottom:8px;font-weight:600">📊 Son 6 Ay Trendi <span style="font-size:8px;opacity:.6">(adet · tutar)</span></div>
+        <div class="trend-bars-wrap" style="display:flex;align-items:flex-end;gap:4px;height:180px;padding-top:8px;min-width:280px">${trendBars}</div>
+      </div>
+
+      <!-- Sağ: Kategori Dağılımı -->
+      <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px;flex:1;min-width:0">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <div style="font-size:10.5px;color:var(--muted);font-weight:600">📦 Kategori Dağılımı — ${monthLabel(now)}</div>
-          ${Object.keys(catHedefler).length ? '<div style="font-size:9px;color:var(--muted);white-space:nowrap;margin-left:auto">🎯 Hedef karşılaştırması aktif</div>' : ''}
+          ${Object.keys(catHedefler).length ? '<div style="font-size:9px;color:var(--muted);white-space:nowrap;margin-left:8px">🎯 Hedef aktif</div>' : ''}
         </div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:11.5px">
@@ -5953,6 +5954,7 @@ function renderDash(){
         </table>
         </div>
       </div>
+
     </div>
 
     <!-- ── BÖLÜM 4: Finansal + Gelir yan yana ── -->
@@ -12368,6 +12370,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v104',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui', text: 'Son 6 Ay Trendi grafiği ve Kategori Dağılımı yan yana, eşit genişlikte flex row içine alındı' },
+    ]
+  },
   {
     version: 'v103',
     date: '01.07.2026',
