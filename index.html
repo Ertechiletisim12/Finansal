@@ -1423,7 +1423,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v91</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v96</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1444,7 +1444,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v92 · Son güncelleme: <span id="deployDateSpan">...</span> <span style="font-size:9px;opacity:.6">▼</span></div>
+            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v96 · Son güncelleme: <span id="deployDateSpan">...</span> <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2360,7 +2360,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v96';
+const APP_VERSION = 'v97';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -5680,16 +5680,27 @@ function renderDash(){
 
     <!-- ── BÖLÜM 1: Prim Ana Kart ── -->
     <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📅 ${monthLabel(now)} — Prim Durumu</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;align-items:stretch">
 
       <!-- Sol: Ana Prim Kartı -->
       <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;grid-row:span 3;overflow:hidden">
         <div style="font-size:10px;color:#8fe3a8;margin-bottom:4px;font-weight:600">Toplam Prim (KDV Dahil)</div>
         <div style="font-size:22px;font-weight:900;color:#4cd964;letter-spacing:-.5px;line-height:1">${fmtF(curKdv)}</div>
         ${dashBonusToplam>0 ? `
-        <div style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <span style="font-size:9.5px;color:#8fe3a8;opacity:.85">Prim: ${fmtF(curKdv-dashBonusToplam)}</span>
-          <span style="font-size:9.5px;color:#ffd27a;font-weight:700">+ 🎁 Bonus: ${fmtF(dashBonusToplam)}</span>
+        <div style="margin-top:6px;background:rgba(255,211,122,0.07);border:1px solid rgba(255,211,122,0.15);border-radius:8px;padding:7px 9px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <span style="font-size:9.5px;color:#ffd27a;font-weight:700">🎁 Bonus Toplamı</span>
+            <span style="font-size:11px;font-weight:800;color:#ffd27a">+${fmtF(dashBonusToplam)}</span>
+          </div>
+          ${dashBonusDetay.map(b=>`
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:3px 0;border-top:1px solid rgba(255,211,122,0.1)">
+            <span style="font-size:8.5px;color:rgba(255,255,255,0.5);flex:1;padding-right:6px">${b.tip==='fiyat'?'💰':b.tip==='tekrarli'?'🔁':'⭐'} ${b.label}</span>
+            <span style="font-size:9px;font-weight:700;color:#a3f0b5;flex-shrink:0">+${fmtF(b.tutar)}</span>
+          </div>`).join('')}
+          <div style="display:flex;justify-content:space-between;margin-top:5px;padding-top:4px;border-top:1px solid rgba(255,211,122,0.2)">
+            <span style="font-size:8.5px;color:rgba(255,255,255,0.4)">Prim (kampanyasız)</span>
+            <span style="font-size:8.5px;color:rgba(255,255,255,0.4)">${fmtF(curKdv-dashBonusToplam)}</span>
+          </div>
         </div>` : ''}
         <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
           <span style="background:${pctChange>=0?'rgba(76,217,100,0.15)':'rgba(226,35,26,0.15)'};border-radius:20px;padding:2px 9px;font-size:10.5px;font-weight:700;color:${pctColor}">${pctArrow} %${Math.abs(pctChange).toFixed(1)}</span>
@@ -8640,10 +8651,12 @@ function renderMusteriRapor(){
           ${m.not?`<div style="font-size:10px;color:var(--muted);margin-top:4px;font-style:italic">💬 ${m.not}</div>`:''}
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:flex-end">
-          ${m.durum==='bekliyor' ? `<input type="checkbox" class="mkSelectBox" data-id="${m.id}" style="width:18px;height:18px;cursor:pointer;accent-color:#4cd964;margin-bottom:2px">` : ''}
-          <button onclick="openMusteriDurum('${m.id}')" style="display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">
-            📋 <span>Durum Güncelle</span>
-          </button>
+          <div style="display:flex;align-items:center;gap:6px">
+            ${m.durum==='bekliyor' ? `<input type="checkbox" class="mkSelectBox" data-id="${m.id}" style="width:18px;height:18px;cursor:pointer;accent-color:#4cd964">` : ''}
+            <button onclick="openMusteriDurum('${m.id}')" style="display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">
+              📋 <span>Durum Güncelle</span>
+            </button>
+          </div>
           <div style="display:flex;gap:5px">
             <button onclick="openMusteriEdit('${m.id}')" style="display:flex;align-items:center;gap:4px;padding:5px 9px;background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.25);color:var(--accent);border-radius:7px;font-size:10px;font-weight:600;cursor:pointer">
               ✏️ <span>Düzenle</span>
@@ -12293,6 +12306,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v97',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'Versiyon metni HTML'de v92/v91 kalıyordu — hepsi v97 olarak düzeltildi' },
+      { type: 'ui',  text: 'Onay checkbox'ı "Durum Güncelle" butonunun yanına alındı, üstte tekil satırda' },
+      { type: 'ui',  text: 'Bonus detayı: her kampanya ayrı satırda, fiyat kampanyası 💰, tekrarlı 🔁, eşik ⭐ simgesiyle' },
+      { type: 'ui',  text: 'Prim Durumu grid kartları eşit yükseklikte hizalandı (align-items:stretch)' },
+    ]
+  },
   {
     version: 'v96',
     date: '01.07.2026',
