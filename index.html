@@ -26,13 +26,13 @@
   if('serviceWorker' in navigator){
     // SW kodu index.html içinde — ayrı sw.js yok, cache sorunu yok
     const swKod = `
-const CACHE_NAME = 'finansal-v113';
+const CACHE_NAME = 'finansal-v130';
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))
-    ).then(()=>self.clients.claim())
+    )
   );
 });
 self.addEventListener('fetch', e => {
@@ -45,9 +45,8 @@ self.addEventListener('fetch', e => {
     const blob = new Blob([swKod], {type:'application/javascript'});
     const swUrl = URL.createObjectURL(blob);
     navigator.serviceWorker.register(swUrl)
-      .then(r=>{ r.update(); console.log('SW hazır'); })
+      .then(r=>{ console.log('SW hazır'); })
       .catch(e=>console.warn('SW hatası:',e));
-    navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
   }
   // PWA kurulum butonu
   let deferredPrompt;
@@ -2439,7 +2438,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v130';
+const APP_VERSION = 'v131';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12617,6 +12616,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v131',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'KRİTİK: SW controllerchange olayında sayfa yenileniyordu — veri girişi 1-2 saniye sonra siliniyor gibiydi. controllerchange+reload kaldırıldı.' },
+    ]
+  },
   {
     version: 'v130',
     date: '02.07.2026',
