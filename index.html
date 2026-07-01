@@ -934,7 +934,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 /* Sidebar araçlar bölümü - margin-top:auto KALDIRILDI */
 .sidebar-tools{padding:0 8px 16px;display:flex;flex-direction:column;gap:5px}
 .sidebar-section-title{
-  font-size:9.5px;letter-spacing:.1em;color:#6a7080;font-weight:700;
+  font-size:9.5px;letter-spacing:.1em;color:#8896a0;font-weight:700;
   padding:10px 8px 4px;text-transform:uppercase;cursor:pointer;
   display:flex;align-items:center;justify-content:space-between;
   user-select:none;
@@ -1447,14 +1447,14 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button id="pwaInstallBtn" class="tool-btn" onclick="installPWA()" style="display:none;background:linear-gradient(90deg,#e2231a,#b81b14);color:#fff;border:none;font-weight:700;justify-content:center">📲 Uygulamayı Kur</button>
 
       <!-- Hızlı Erişim -->
-      <div style="font-size:9.5px;letter-spacing:.1em;color:#3e4347;font-weight:700;padding:8px 6px 5px;text-transform:uppercase">Hızlı Erişim</div>
+      <div style="font-size:9.5px;letter-spacing:.1em;color:#8896a0;font-weight:700;padding:8px 6px 5px;text-transform:uppercase">Hızlı Erişim</div>
       <button class="tool-btn" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.08);border-color:rgba(255,183,77,0.2);color:#c8963a;font-weight:600">🎯 Kampanyalar</button>
       <button class="tool-btn" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.07);border-color:rgba(63,208,255,0.18);color:#4a9bb5;font-weight:600">👥 Müşteri Takibi <span id="musteriTakipBadge" style="display:inline-block;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px"></span></button>
 
       <!-- Görünüm (katlanabilir) -->
       <div class="sidebar-divider"></div>
       <div onclick="sbToggle('sbGorunum')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:8px 6px 5px;user-select:none">
-        <span style="font-size:9.5px;letter-spacing:.1em;color:#3e4347;font-weight:700;text-transform:uppercase">Görünüm</span><span id="sbGorunumArrow" style="font-size:9px;opacity:.5;transition:transform .2s">▼</span>
+        <span style="font-size:9.5px;letter-spacing:.1em;color:#8896a0;font-weight:700;text-transform:uppercase">Görünüm</span><span id="sbGorunumArrow" style="font-size:9px;opacity:.5;transition:transform .2s">▼</span>
       </div>
       <div id="sbGorunum" style="display:flex;flex-direction:column;gap:6px;overflow:hidden;transition:all .2s">
         <button class="tool-btn" id="themeBtn" onclick="toggleTheme()">🌙 Koyu Mod</button>
@@ -1464,7 +1464,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- Veri Yönetimi (katlanabilir) -->
       <div class="sidebar-divider"></div>
       <div onclick="sbToggle('sbVeri')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:8px 6px 5px;user-select:none">
-        <span style="font-size:9.5px;letter-spacing:.1em;color:#3e4347;font-weight:700;text-transform:uppercase">Veri Yönetimi</span><span id="sbVeriArrow" style="font-size:9px;opacity:.5;transition:transform .2s">▼</span>
+        <span style="font-size:9.5px;letter-spacing:.1em;color:#8896a0;font-weight:700;text-transform:uppercase">Veri Yönetimi</span><span id="sbVeriArrow" style="font-size:9px;opacity:.5;transition:transform .2s">▼</span>
       </div>
       <div id="sbVeri" style="display:flex;flex-direction:column;gap:6px;overflow:hidden;transition:all .2s">
         <button class="tool-btn" onclick="backupData()">💾 Yedekle</button>
@@ -1482,7 +1482,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- Sistem (katlanabilir, varsayılan kapalı) -->
       <div class="sidebar-divider"></div>
       <div onclick="sbToggle('sbSistem')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:8px 6px 5px;user-select:none">
-        <span style="font-size:9.5px;letter-spacing:.1em;color:#3e4347;font-weight:700;text-transform:uppercase">Sistem</span><span id="sbSistemArrow" style="font-size:9px;opacity:.5;transform:rotate(-90deg);transition:transform .2s">▼</span>
+        <span style="font-size:9.5px;letter-spacing:.1em;color:#8896a0;font-weight:700;text-transform:uppercase">Sistem</span><span id="sbSistemArrow" style="font-size:9px;opacity:.5;transform:rotate(-90deg);transition:transform .2s">▼</span>
       </div>
       <div id="sbSistem" style="display:none;flex-direction:column;gap:6px;overflow:hidden">
         <button class="tool-btn" onclick="printManagerReport()">📄 Yönetici Raporu</button>
@@ -2439,7 +2439,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v119';
+const APP_VERSION = 'v121';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12403,7 +12403,7 @@ function ghGuncelleKontrol(){
 const GH_VARSAYILAN = {
   user:  'Ertechiletisim12',
   repo:  'Finansal',
-  token: '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'
+  token: ''
 };
 
 function getGithubConfig(){
@@ -12512,6 +12512,21 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v121',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'Token koddan kaldırıldı — localStorage\'da saklanıyor, daha güvenli' },
+      { type: 'ui',  text: 'Sidebar bölüm başlıkları okunabilir renkte' },
+    ]
+  },
+  {
+    version: 'v120',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui', text: 'Sidebar bölüm başlıkları (Hızlı Erişim, Görünüm, Veri Yönetimi, Sistem) daha açık, okunabilir renge getirildi' },
+    ]
+  },
   {
     version: "v119",
     date: "01.07.2026",
