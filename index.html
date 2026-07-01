@@ -2439,7 +2439,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v121';
+const APP_VERSION = 'v122';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -4929,26 +4929,44 @@ function render(){
       const dayTot = items.reduce((a,e)=>a+e.count*kampanyaFiyatFor(e.date,e.cat,priceFor(ymKey(e.date),e.cat)),0);
       const tblRows = items.map(e => {
         const amt = e.count * kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat));
+        const color = CAT_COLORS[e.cat]||'var(--accent)';
         const entryNot = notlarData.find(n => n.entryKey === e.date+'_'+e.cat);
         const notDot = entryNot
           ? `<span class="note-dot" style="background:${RENK_MAP[entryNot.renk]||'#3fd0ff'}" onclick="event.stopPropagation();openNotDetailById('${entryNot.id}')" title="${(entryNot.metin||entryNot.baslik||'Not var').replace(/"/g,'')}"></span>`
           : `<span class="note-dot" style="background:var(--line);opacity:.35" onclick="event.stopPropagation();openNotModalForEntry('${e.date}','${e.cat}')" title="Not ekle"></span>`;
-        return `<tr><td style="display:flex;align-items:center;gap:5px">${notDot}${e.cat}</td><td style="text-align:right;color:var(--accent)">${e.count}</td><td style="text-align:right">${fmt(amt)}</td></tr>`;
+        // Müşteri bilgisi
+        const musteri = musteriler.find(m=>m.logId && (entryLog||[]).some(l=>l.date===e.date&&l.cat===e.cat&&l.id===m.logId));
+        const musteriSat = musteri ? `<div style="font-size:9px;color:var(--muted);margin-top:1px">${musteri.ad||''} ${musteri.soyad||''} ${musteri.tel?'· '+musteri.tel:''} ${musteri.tarife?'· '+musteri.tarife:''}</div>` : '';
+        return `<tr>
+          <td style="padding:4px 0">
+            <div style="display:flex;align-items:center;gap:5px">
+              ${notDot}
+              <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${color};flex-shrink:0"></span>
+              <span style="font-size:11.5px;font-weight:600;color:var(--txt)">${e.cat}</span>
+            </div>
+            ${musteriSat}
+          </td>
+          <td style="text-align:right;padding:4px 0;font-size:11.5px;font-weight:700;color:var(--accent)">${e.count}</td>
+          <td style="text-align:right;padding:4px 0;font-size:11.5px;color:var(--txt)">${fmt(amt)}</td>
+        </tr>`;
       }).join('');
-      return `<div class="activity-item">
-        <div class="ai-date">📅 <b>${date}</b></div>
-        <table style="width:100%;table-layout:fixed;border-collapse:collapse;margin-top:4px;font-size:11.5px">
-          <colgroup><col style="width:48%"><col style="width:22%"><col style="width:30%"></colgroup>
-          <thead><tr>
-            <th style="text-align:left;color:var(--muted);font-weight:600;font-size:10.5px;padding:2px 0;border-bottom:1px solid var(--line)">Kategori</th>
-            <th style="text-align:right;color:var(--muted);font-weight:600;font-size:10.5px;padding:2px 0;border-bottom:1px solid var(--line)">Adet</th>
-            <th style="text-align:right;color:var(--muted);font-weight:600;font-size:10.5px;padding:2px 0;border-bottom:1px solid var(--line)">Tutar</th>
+      return `<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:10.5px;font-weight:700;color:var(--accent)">📅 ${date}</div>
+          <div style="font-size:10px;font-weight:700;color:var(--green)">${fmt(dayTot)}</div>
+        </div>
+        <table style="width:100%;table-layout:fixed;border-collapse:collapse">
+          <colgroup><col style="width:50%"><col style="width:18%"><col style="width:32%"></colgroup>
+          <thead><tr style="border-bottom:1px solid var(--line)">
+            <th style="text-align:left;color:var(--muted);font-weight:600;font-size:9.5px;padding:0 0 4px;letter-spacing:.04em">KATEGORİ</th>
+            <th style="text-align:right;color:var(--muted);font-weight:600;font-size:9.5px;padding:0 0 4px">ADET</th>
+            <th style="text-align:right;color:var(--muted);font-weight:600;font-size:9.5px;padding:0 0 4px">TUTAR</th>
           </tr></thead>
           <tbody>${tblRows}</tbody>
-          <tfoot><tr>
-            <td style="font-weight:700;padding-top:4px;border-top:1px solid var(--line)">Toplam</td>
-            <td style="text-align:right;font-weight:700;padding-top:4px;border-top:1px solid var(--line)">${items.reduce((a,e)=>a+e.count,0)}</td>
-            <td style="text-align:right;font-weight:700;padding-top:4px;border-top:1px solid var(--line);color:var(--green)">${fmt(dayTot)}</td>
+          <tfoot><tr style="border-top:1px solid var(--line)">
+            <td style="font-size:10px;font-weight:700;color:var(--muted);padding:4px 0 0">Toplam</td>
+            <td style="text-align:right;font-size:10.5px;font-weight:800;padding:4px 0 0;color:var(--txt)">${items.reduce((a,e)=>a+e.count,0)}</td>
+            <td style="text-align:right;font-size:10.5px;font-weight:800;padding:4px 0 0;color:var(--green)">${fmt(dayTot)}</td>
           </tr></tfoot>
         </table>
       </div>`;
@@ -12171,10 +12189,30 @@ function openExportPreview(tableId, fileLabel){
       <thead><tr style="background:#e2231a">
         <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Tarih</th>
         <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Kategori</th>
+        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Müşteri</th>
+        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Telefon</th>
+        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Tarife</th>
         <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:center">Adet</th>
         <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:right">Tutar</th>
       </tr></thead>
-      <tbody>${detayliRows}</tbody></table>`;
+      <tbody>${filtRows.map(e=>{
+        const amt = e.count * kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat));
+        const dayLogs = (entryLog||[]).filter(l=>l.date===e.date && l.cat===e.cat);
+        const hasLog = dayLogs.length > 0;
+        const musteri = musteriler.find(m=>m.logId && dayLogs.some(l=>l.id===m.logId));
+        const musteriAd = musteri ? `${musteri.ad||''} ${musteri.soyad||''}`.trim() : '—';
+        const musteriTel = musteri?.tel || '—';
+        const musteriTarife = musteri?.tarife || '—';
+        return `<tr style="border-bottom:1px solid #2a2d33">
+          <td style="padding:8px 6px;font-size:12px;color:#eee;font-weight:600">${e.date}${hasLog?' <span style="color:#3fd0ff;font-size:9px">●</span>':''}</td>
+          <td style="padding:8px 6px;font-size:12px;color:#ccc">${e.cat}</td>
+          <td style="padding:8px 6px;font-size:12px;color:#ccc">${musteriAd}</td>
+          <td style="padding:8px 6px;font-size:12px;color:#ccc">${musteriTel}</td>
+          <td style="padding:8px 6px;font-size:12px;color:#ccc">${musteriTarife}</td>
+          <td style="padding:8px 6px;font-size:12px;color:#ccc;text-align:center">${e.count}</td>
+          <td style="padding:8px 6px;font-size:12px;color:#4cd964;text-align:right">${fmt(amt)}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
     const ozetHtml = `<table style="width:100%;border-collapse:collapse">
       <thead><tr style="background:#e2231a">
         <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:left">Kategori</th>
@@ -12512,6 +12550,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v122',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui',  text: 'İşlem Listesi yeni tasarım — kart bazlı, kategori renk noktası, müşteri bilgisi satır altında' },
+      { type: 'new', text: 'Dışa Aktar detaylı tabloya Müşteri Adı / Telefon / Tarife sütunları eklendi' },
+    ]
+  },
   {
     version: 'v121',
     date: '01.07.2026',
