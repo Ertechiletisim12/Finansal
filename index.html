@@ -2360,7 +2360,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v95';
+const APP_VERSION = 'v96';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -8639,11 +8639,19 @@ function renderMusteriRapor(){
           </div>
           ${m.not?`<div style="font-size:10px;color:var(--muted);margin-top:4px;font-style:italic">💬 ${m.not}</div>`:''}
         </div>
-        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:center">
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:flex-end">
           ${m.durum==='bekliyor' ? `<input type="checkbox" class="mkSelectBox" data-id="${m.id}" style="width:18px;height:18px;cursor:pointer;accent-color:#4cd964;margin-bottom:2px">` : ''}
-          <button onclick="openMusteriDurum('${m.id}')" style="padding:6px 10px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Durum ▼</button>
-          <button onclick="openMusteriEdit('${m.id}')" style="padding:5px 8px;background:var(--panel2);border:1px solid var(--line);color:var(--accent);border-radius:6px;font-size:10px;cursor:pointer">✏️</button>
-          <button onclick="deleteMusteriKayit('${m.id}')" style="padding:5px 8px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:6px;font-size:10px;cursor:pointer">🗑</button>
+          <button onclick="openMusteriDurum('${m.id}')" style="display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">
+            📋 <span>Durum Güncelle</span>
+          </button>
+          <div style="display:flex;gap:5px">
+            <button onclick="openMusteriEdit('${m.id}')" style="display:flex;align-items:center;gap:4px;padding:5px 9px;background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.25);color:var(--accent);border-radius:7px;font-size:10px;font-weight:600;cursor:pointer">
+              ✏️ <span>Düzenle</span>
+            </button>
+            <button onclick="deleteMusteriKayit('${m.id}')" style="display:flex;align-items:center;gap:4px;padding:5px 9px;background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.2);color:#ff5252;border-radius:7px;font-size:10px;font-weight:600;cursor:pointer">
+              🗑 <span>Sil</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>`;
@@ -12285,6 +12293,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v96',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui', text: 'Müşteri Takibi butonları düzenlendi — "Durum ▼" → "📋 Durum Güncelle", ✏️ → "✏️ Düzenle", 🗑 → "🗑 Sil" etiketleriyle yan yana' },
+    ]
+  },
   {
     version: 'v95',
     date: '01.07.2026',
