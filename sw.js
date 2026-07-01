@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finansal-analiz-v79';
+const CACHE_NAME = 'finansal-analiz-v89';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -8,40 +8,39 @@ const ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
 ];
 
-// Kurulum: tüm varlıkları önbellekle
 self.addEventListener('install', event => {
+  self.skipWaiting(); // Hemen aktif ol, bekleme
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS).catch(err => {
-        console.warn('Bazı varlıklar önbelleklenemedi:', err);
-      });
-    })
+    caches.open(CACHE_NAME).then(cache =>
+      cache.addAll(ASSETS).catch(err => console.warn('Önbellekleme hatası:', err))
+    )
   );
-  self.skipWaiting();
 });
 
-// Aktivasyon: eski önbellekleri temizle
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => {
+        console.log('Eski önbellek siliniyor:', k);
+        return caches.delete(k);
+      }))
+    ).then(() => self.clients.claim()) // Tüm sekmeleri hemen devral
   );
-  self.clients.claim();
 });
 
-// Fetch: index.html için ağ-öncelikli (her zaman güncel), diğerleri için önbellek-öncelikli
+// index.html için HER ZAMAN ağdan al (önbelleğe BAKMA)
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  const isHTML = event.request.mode === 'navigate' || url.pathname.endsWith('index.html') || url.pathname.endsWith('/');
+  const isHTML = event.request.mode === 'navigate'
+    || url.pathname.endsWith('index.html')
+    || url.pathname.endsWith('/');
 
   if (isHTML) {
-    // Network-first: önce ağdan dene, başarısız olursa önbellekten
     event.respondWith(
-      fetch(event.request).then(response => {
+      fetch(event.request, { cache: 'no-store' }).then(response => {
         if (response && response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
         }
         return response;
       }).catch(() => caches.match(event.request))
@@ -49,22 +48,14 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Diğer dosyalar: önbellek-öncelikli (eski davranış)
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
+    caches.match(event.request).then(cached => cached ||
+      fetch(event.request).then(response => {
         if (response && response.status === 200 && response.type === 'basic') {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+          caches.open(CACHE_NAME).then(c => c.put(event.request, response.clone()));
         }
         return response;
-      }).catch(() => {
-        return new Response('Çevrimdışı mod - bu içerik önbellekte yok.', {
-          status: 503,
-          headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-        });
-      });
-    })
+      })
+    )
   );
 });
