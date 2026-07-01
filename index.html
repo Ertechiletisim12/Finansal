@@ -2432,7 +2432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v144';
+const APP_VERSION = 'v145';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -8633,10 +8633,14 @@ function saveMusteriKayit(){
 
   if(_mkEditId){
     const idx = musteriler.findIndex(m=>m.id===_mkEditId);
-    if(idx>=0) musteriler[idx] = {...musteriler[idx], ...kayit, id:_mkEditId};
+    if(idx>=0){
+      const mevcutLogId = musteriler[idx].logId; // Mevcut bağlantıyı koru
+      musteriler[idx] = {...musteriler[idx], ...kayit, id:_mkEditId, logId:mevcutLogId};
+    }
     saveMusteriStore();
     closeMusteriKayit();
-    renderMusteriRapor(); // Düzenleme sonrası listeyi anında güncelle
+    renderMusteriRapor();
+    setTimeout(()=>{ try{ render(); }catch(e){} }, 100);
     window._confirmedIsMnp = null;
     return;
   }
@@ -12627,6 +12631,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v145',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Musteri duzenleme: logId null yapiliyordu, entry baglamasi kopuyordu. Artik mevcut logId korunuyor.' },
+      { type: 'fix', text: 'Duzenleme sonrasi render() cagrilıyor, Islem Listesi aninda guncelleniyor.' },
+    ]
+  },
   {
     version: 'v144',
     date: '02.07.2026',
