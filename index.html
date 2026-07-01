@@ -1376,18 +1376,11 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div class="app">
   <div class="sidebar" id="mainSidebar">
 
-    <!-- Başlık -->
-    <div style="padding:16px 14px 12px;border-bottom:1px solid #242628">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div>
-          <div style="font-size:13px;font-weight:800;letter-spacing:.04em;color:#e8eaec">ER-TECH</div>
-          <div style="font-size:9px;color:#3e4347;font-weight:700;letter-spacing:.08em;margin-top:1px">İLETİŞİM</div>
-        </div>
-        <button onclick="toggleNotifPanel()" style="background:rgba(255,255,255,0.05);border:1px solid #2a2d30;color:#5a6068;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;position:relative;flex-shrink:0" title="Bildirimler">
-          🔔<span id="floatNotifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e2231a;color:#fff;border-radius:10px;padding:1px 4px;font-size:8px;font-weight:700;min-width:14px;text-align:center"></span>
-        </button>
-      </div>
-      <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:9px;color:#3a3f45;cursor:pointer;user-select:none;line-height:1.4">⏳</div>
+    <!-- Başlık - sadece bildirim zili -->
+    <div style="padding:12px 14px 10px;border-bottom:1px solid #242628;display:flex;align-items:center;justify-content:flex-end">
+      <button onclick="toggleNotifPanel()" style="background:rgba(255,255,255,0.05);border:1px solid #2a2d30;color:#5a6068;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;position:relative;flex-shrink:0" title="Bildirimler">
+        🔔<span id="floatNotifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e2231a;color:#fff;border-radius:10px;padding:1px 4px;font-size:8px;font-weight:700;min-width:14px;text-align:center"></span>
+      </button>
     </div>
 
     <!-- Navigasyon -->
@@ -2423,7 +2416,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v109';
+const APP_VERSION = 'v110';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12483,6 +12476,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v110',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'Sidebar başlığından ER-TECH yazısı ve versiyon bilgisi kaldırıldı — sadece bildirim zili kaldı' },
+      { type: 'fix', text: 'Versiyon gösterimi kalıcı düzeltme: duplicate ID sorunu çözüldü, querySelectorAll ile tüm elementler güncelleniyor' },
+    ]
+  },
+  {
     version: 'v109',
     date: '01.07.2026',
     items: [
@@ -12792,10 +12793,13 @@ function toggleChangelog(){
 (function updateVersionDisplay(){
   try {
     const deployDate = getDeployDate();
+    // Mobil versiyon
     const mv = document.getElementById('mobileVersionInfo');
     if(mv){ mv.style.cursor='pointer'; mv.onclick = toggleChangelog; mv.textContent = APP_VERSION + ' · ' + deployDate; }
-    const btn = document.getElementById('versionInfoBtn');
-    if(btn) btn.innerHTML = APP_VERSION + ' · Son güncelleme: ' + deployDate + ' <span style="font-size:9px;opacity:.6">▼</span>';
+    // Ana başlık (masaüstü) - tüm eşleşenleri güncelle (duplicate ID varsa hepsini düzelt)
+    document.querySelectorAll('#versionInfoBtn').forEach(btn => {
+      btn.innerHTML = APP_VERSION + ' · Son güncelleme: ' + deployDate + ' <span style="font-size:9px;opacity:.6">▼</span>';
+    });
   } catch(e){ console.warn('Versiyon güncelleme hatası:', e); }
 })();
 </script>
