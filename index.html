@@ -2360,7 +2360,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v98';
+const APP_VERSION = 'v99';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -4289,7 +4289,28 @@ function render(){
   const tumBonusToplam = esikBonusToplam + tekrarliBonusToplam;
   const tumBonusDetay = [...esikBonusDetay, ...tekrarliBonusDetay];
 
-    // Genel Hakediş: Prim (rangeAmt) + Kampanya Bonusu toplamı
+  // Fiyat kampanyası etkisi (rangeAmt içinde zaten var ama ayrıca göstermek için hesapla)
+  const fiyatKampDetay = [];
+  let fiyatKampToplam = 0;
+  CATS.forEach(c=>{
+    bonusMonths.forEach(bAy=>{
+      const normalFiyat = priceFor(bAy, c);
+      if(!normalFiyat) return;
+      const ayEntries = rEntriesForCards.filter(e=>e.cat===c && effectiveYm(e)===bAy);
+      let fark = 0;
+      ayEntries.forEach(e=>{
+        const kFiyat = kampanyaFiyatFor(e.date, c, normalFiyat);
+        if(kFiyat > normalFiyat) fark += (kFiyat - normalFiyat) * e.count;
+      });
+      if(fark > 0){
+        const ornekFiyat = kampanyaFiyatFor(ayEntries[0]?.date||bAy+'-15', c, normalFiyat);
+        fiyatKampToplam += fark;
+        fiyatKampDetay.push({label:`${c} fiyat kampanyası (${fmt(normalFiyat)}→${fmt(ornekFiyat)}/ad)`, tutar:fark});
+      }
+    });
+  });
+
+  // Genel Hakediş: Prim (rangeAmt) + Kampanya Bonusu toplamı
   const genelHakedis = rangeAmt + tumBonusToplam;
 
 
@@ -4310,38 +4331,56 @@ function render(){
     hAdetLabel.textContent = rangeCount + ' adet' + (bonusMonths.length > 1 ? ' · ' + bonusMonths.map(m=>monthLabel(m)).join('+') + ' kampanyaları' : '');
 
     let detayHTML = '';
-    detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px">
-      <span style="opacity:.75;font-weight:500">Prim</span>
-      <span style="font-weight:700;color:#fff">${fmt(rangeAmt)}</span>
+
+    // Prim (kampanyasız baz)
+    const primBaz = rangeAmt - fiyatKampToplam;
+    detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px">
+      <span style="opacity:.75;font-weight:500">Prim (baz)</span>
+      <span style="font-weight:700;color:#fff">${fmt(primBaz)}</span>
     </div>`;
-    if(tumBonusToplam > 0){
-      detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px">
-        <span style="opacity:.75;font-weight:600">🎁 Kampanya Bonusu</span>
-        <span style="font-weight:800;color:#a3f0b5">+${fmt(tumBonusToplam)}</span>
+
+    // Fiyat kampanyası etkisi
+    if(fiyatKampToplam > 0){
+      detayHTML += `<div style="background:rgba(255,211,122,0.07);border:1px solid rgba(255,211,122,0.15);border-radius:8px;padding:7px 9px;margin-bottom:5px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:10px;color:#ffd27a;font-weight:700">💰 Fiyat Kampanyası Etkisi</span>
+          <span style="font-size:11px;font-weight:800;color:#ffd27a">+${fmt(fiyatKampToplam)}</span>
+        </div>
+        ${fiyatKampDetay.map(b=>`
+        <div style="display:flex;justify-content:space-between;font-size:9px;padding:2px 0;border-top:1px solid rgba(255,211,122,0.1)">
+          <span style="color:rgba(255,255,255,0.5)">↳ ${b.label}</span>
+          <span style="color:#a3f0b5;font-weight:700">+${fmt(b.tutar)}</span>
+        </div>`).join('')}
       </div>`;
-      tumBonusDetay.forEach(b=>{
-        // Kampanya detayından kaynak kampanyayı bul
-        const srcKamp = kampanyaData.find(k=>{
-          if(k.tip==='tekrarli'){
-            const cats=(k.catList&&k.catList.length)?k.catList:[k.cat];
-            return b.label.startsWith(cats.join('+'));
-          }
-          return k.cat===b.label && (k.tip==='bonus'||k.tip==='fiyat');
-        });
-        const aciklama = srcKamp?.aciklama || '';
-        const tipLabel = srcKamp ? (srcKamp.tip==='tekrarli'?'Tekrarlı Bonus':srcKamp.tip==='bonus'?'Eşik Bonusu':'Fiyat Kampanyası') : 'Bonus';
-        detayHTML += `
-        <div style="background:rgba(255,255,255,0.05);border-radius:7px;padding:7px 10px;margin-bottom:5px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div style="flex:1">
-              <div style="font-size:10.5px;font-weight:700;color:#ffd27a;margin-bottom:2px">↳ ${b.label}</div>
-              ${aciklama?`<div style="font-size:9px;color:rgba(255,255,255,0.45);margin-bottom:2px">${aciklama}</div>`:''}
-              <div style="font-size:9px;color:rgba(255,255,255,0.4)">${tipLabel}${srcKamp?.minAdet?' · Min. '+srcKamp.minAdet+' adet':''}${srcKamp?.startDate?' · '+srcKamp.startDate+(srcKamp.endDate?' → '+srcKamp.endDate:''):''}</div>
+    }
+
+    // Ekstra bonus (tekrarlı / eşik)
+    if(tumBonusToplam > 0){
+      detayHTML += `<div style="background:rgba(163,240,181,0.06);border:1px solid rgba(163,240,181,0.15);border-radius:8px;padding:7px 9px;margin-bottom:5px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:10px;color:#a3f0b5;font-weight:700">🎁 Ekstra Bonus</span>
+          <span style="font-size:11px;font-weight:800;color:#a3f0b5">+${fmt(tumBonusToplam)}</span>
+        </div>
+        ${tumBonusDetay.map(b=>{
+          const srcKamp = kampanyaData.find(k=>{
+            if(k.tip==='tekrarli'){
+              const cats=(k.catList&&k.catList.length)?k.catList:[k.cat];
+              return b.label.startsWith(cats.join('+'));
+            }
+            return k.cat===b.label && (k.tip==='bonus'||k.tip==='fiyat');
+          });
+          const tipIcon = srcKamp?.tip==='tekrarli'?'🔁':srcKamp?.tip==='bonus'?'⭐':'💰';
+          const aciklama = srcKamp?.aciklama||'';
+          const tarihStr = srcKamp?.startDate ? ' · '+srcKamp.startDate+(srcKamp.endDate?' → '+srcKamp.endDate:'') : '';
+          return `<div style="padding:4px 0;border-top:1px solid rgba(163,240,181,0.1)">
+            <div style="display:flex;justify-content:space-between;font-size:9.5px">
+              <span style="color:rgba(255,255,255,0.55)">${tipIcon} ${b.label}${tarihStr}</span>
+              <span style="color:#a3f0b5;font-weight:700;flex-shrink:0;margin-left:6px">+${fmt(b.tutar)}</span>
             </div>
-            <span style="font-size:12px;font-weight:800;color:#a3f0b5;margin-left:8px;flex-shrink:0">+${fmt(b.tutar)}</span>
-          </div>
-        </div>`;
-      });
+            ${aciklama?`<div style="font-size:8.5px;color:rgba(255,255,255,0.3);margin-top:1px">${aciklama}</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>`;
     }
     if(toplamMusteriAdet > 0){
       detayHTML += `<div style="height:1px;background:rgba(255,255,255,0.1);margin:4px 0"></div>`;
@@ -12307,6 +12346,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v99',
+    date: '01.07.2026',
+    items: [
+      { type: 'new', text: 'Prim sayfası Hakediş kartına bonus breakdown eklendi — Prim (baz), 💰 Fiyat Kampanyası Etkisi ve 🎁 Ekstra Bonus ayrı kutucuklarda gösteriliyor' },
+    ]
+  },
+  {
     version: 'v98',
     date: '01.07.2026',
     items: [
@@ -12318,8 +12364,8 @@ const CHANGELOG_DATA = [
     version: 'v97',
     date: '01.07.2026',
     items: [
-      { type: 'fix', text: 'Versiyon metni HTML'de v92/v91 kalıyordu — hepsi v97 olarak düzeltildi' },
-      { type: 'ui',  text: 'Onay checkbox'ı "Durum Güncelle" butonunun yanına alındı, üstte tekil satırda' },
+      { type: 'fix', text: 'Versiyon metni HTML\'de v92/v91 kalıyordu — hepsi v98 olarak düzeltildi' },
+      { type: 'ui',  text: 'Onay checkbox\'ı Durum Güncelle butonunun yanına alındı, üstte tek satırda' },
       { type: 'ui',  text: 'Bonus detayı: her kampanya ayrı satırda, fiyat kampanyası 💰, tekrarlı 🔁, eşik ⭐ simgesiyle' },
       { type: 'ui',  text: 'Prim Durumu grid kartları eşit yükseklikte hizalandı (align-items:stretch)' },
     ]
