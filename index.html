@@ -2432,7 +2432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v145';
+const APP_VERSION = 'v146';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -3109,7 +3109,36 @@ function load(){
   loadHedefExtra();
   recomputeAllFinans();
 
-  // TEK SEFERLİK: 28 Haz öncesi migration (daha önce yapıldıysa atla)
+  // Migration: null logId olan müşterileri entryLog ile eşleştir (v144 bug'ı onarımı)
+  (function repairLogIds(){
+    let fixed = 0;
+    // Kullanılmış logId'leri bul
+    const usedLogIds = new Set(musteriler.filter(m=>m.logId).map(m=>m.logId));
+    // null logId olan müşteriler için eşleştirme dene
+    musteriler.forEach(m=>{
+      if(m.logId) return; // zaten var
+      // Aynı tarih ve kategori için kullanılmamış log entries bul
+      const candidates = (entryLog||[]).filter(l=>
+        l.date===m.entryDate &&
+        l.cat===m.cat &&
+        !usedLogIds.has(l.id)
+      );
+      if(candidates.length===0) return;
+      // Saate göre en yakını seç (veya ilkini)
+      const match = m.entryTime
+        ? candidates.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).find(l=>l.time===m.entryTime) || candidates[0]
+        : candidates[0];
+      if(match){
+        m.logId = match.id;
+        usedLogIds.add(match.id);
+        fixed++;
+      }
+    });
+    if(fixed>0){
+      try{ localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler)); }catch(e){}
+      console.log('[Migration] '+fixed+' müşterinin logId onarıldı');
+    }
+  })();
   if(!localStorage.getItem('legacy_migration_v2')){
     const ESIK = '2026-06-29'; // 29 Haziran dahil oncesi
     let changed = false;
@@ -12631,6 +12660,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v146',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Migration: v144 ile duzenlenip logId null olan musteriler otomatik onariliyor. Uygulama acilisinda entryLog ile eslestirilip baglaniyor.' },
+    ]
+  },
   {
     version: 'v145',
     date: '02.07.2026',
