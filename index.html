@@ -2439,7 +2439,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v123';
+const APP_VERSION = 'v124';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12161,17 +12161,21 @@ function openExportPreview(tableId, fileLabel){
       .slice().sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat));
     if(!filtRows.length){ alert('Bu aralıkta aktarılacak işlem yok.'); return; }
     const now = nowTR().toLocaleString('tr-TR');
-    const detayliRows = filtRows.map(e=>{
-      const amt = e.count * kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat));
+    // Müşteri bazlı satırlar
+    const musteriRows = [];
+    filtRows.forEach(e => {
+      const birimAmt = kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat));
       const dayLogs = (entryLog||[]).filter(l=>l.date===e.date && l.cat===e.cat);
-      const hasLog = dayLogs.length > 0;
-      return `<tr style="border-bottom:1px solid #2a2d33" ${hasLog?`onclick="showDayDetail('${e.date}','${e.cat}')" style="border-bottom:1px solid #2a2d33;cursor:pointer" onmouseover="this.style.background='#2a2d33'" onmouseout="this.style.background=''"`:''}>
-        <td style="padding:8px 6px;font-size:12px;color:#eee;font-weight:600">${e.date}${hasLog?' <span style="color:#3fd0ff;font-size:9px">●</span>':''}</td>
-        <td style="padding:8px 6px;font-size:12px;color:#ccc">${e.cat}</td>
-        <td style="padding:8px 6px;font-size:12px;color:#ccc;text-align:center">${e.count}</td>
-        <td style="padding:8px 6px;font-size:12px;color:#4cd964;text-align:right">${fmt(amt)}</td>
-      </tr>`;
-    }).join('');
+      const ilgiliM = (musteriler||[]).filter(m=>m.logId && dayLogs.some(l=>l.id===m.logId));
+      if(ilgiliM.length > 0){
+        ilgiliM.forEach(m=>{ musteriRows.push({date:e.date,cat:e.cat,count:1,amt:birimAmt,
+          ad:(m.ad||'')+' '+(m.soyad||''),tel:m.tel||'-',tarife:m.tarife||'-'}); });
+        const kalan=e.count-ilgiliM.length;
+        if(kalan>0) musteriRows.push({date:e.date,cat:e.cat,count:kalan,amt:birimAmt*kalan,ad:'-',tel:'-',tarife:'-'});
+      } else {
+        musteriRows.push({date:e.date,cat:e.cat,count:e.count,amt:birimAmt*e.count,ad:'-',tel:'-',tarife:'-'});
+      }
+    });
     const catSummary = CATS.map(c=>{
       const catEntries = filtRows.filter(e=>e.cat===c);
       const totalCount = catEntries.reduce((a,e)=>a+e.count,0);
@@ -12191,36 +12195,33 @@ function openExportPreview(tableId, fileLabel){
     document.getElementById('exportModalTitle').textContent = '📋 İşlem Listesi';
     document.getElementById('exportModalSub').textContent = `${rStart} – ${rEnd} · ${now}`;
     document.getElementById('exportModalTabs').innerHTML = `
-      <button id="tabDetayli" onclick="switchExportTab('detayli')" style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">📋 Detaylı (${filtRows.length})</button>
+      <button id="tabDetayli" onclick="switchExportTab('detayli')" style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">📋 Detaylı (${musteriRows.length})</button>
       <button id="tabOzet" onclick="switchExportTab('ozet')" style="flex:1;padding:10px;background:#111;color:#888;border:none;font-size:12px;cursor:pointer">📊 Özet</button>`;
     const detayliHtml = `<table style="width:100%;border-collapse:collapse">
       <thead><tr style="background:#e2231a">
-        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Tarih</th>
-        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Kategori</th>
-        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Müşteri</th>
-        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Telefon</th>
-        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:left">Tarife</th>
-        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:center">Adet</th>
-        <th style="padding:8px 6px;font-size:11px;color:#fff;text-align:right">Tutar</th>
+        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Tarih</th>
+        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Kategori</th>
+        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Müşteri</th>
+        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Telefon</th>
+        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Tarife</th>
+        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:center">Adet</th>
+        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:right">Tutar</th>
       </tr></thead>
-      <tbody>${filtRows.map(e=>{
-        const amt = e.count * kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat));
-        const dayLogs = (entryLog||[]).filter(l=>l.date===e.date && l.cat===e.cat);
-        const hasLog = dayLogs.length > 0;
-        const musteri = musteriler.find(m=>m.logId && dayLogs.some(l=>l.id===m.logId));
-        const musteriAd = musteri ? `${musteri.ad||''} ${musteri.soyad||''}`.trim() : '—';
-        const musteriTel = musteri?.tel || '—';
-        const musteriTarife = musteri?.tarife || '—';
-        return `<tr style="border-bottom:1px solid #2a2d33">
-          <td style="padding:8px 6px;font-size:12px;color:#eee;font-weight:600">${e.date}${hasLog?' <span style="color:#3fd0ff;font-size:9px">●</span>':''}</td>
-          <td style="padding:8px 6px;font-size:12px;color:#ccc">${e.cat}</td>
-          <td style="padding:8px 6px;font-size:12px;color:#ccc">${musteriAd}</td>
-          <td style="padding:8px 6px;font-size:12px;color:#ccc">${musteriTel}</td>
-          <td style="padding:8px 6px;font-size:12px;color:#ccc">${musteriTarife}</td>
-          <td style="padding:8px 6px;font-size:12px;color:#ccc;text-align:center">${e.count}</td>
-          <td style="padding:8px 6px;font-size:12px;color:#4cd964;text-align:right">${fmt(amt)}</td>
-        </tr>`;
-      }).join('')}</tbody></table>`;
+      <tbody>${musteriRows.map((r,i)=>`<tr style="background:${i%2===0?'#26282b':'#2c2f33'};border-bottom:1px solid #2a2d33">
+        <td style="padding:8px 10px;font-size:12px;color:#eee;font-weight:600">${r.date}</td>
+        <td style="padding:8px 10px;font-size:12px;color:#ccc">${r.cat}</td>
+        <td style="padding:8px 10px;font-size:12px;color:#fff;font-weight:600">${r.ad.trim()||'—'}</td>
+        <td style="padding:8px 10px;font-size:12px;color:#aaa">${r.tel}</td>
+        <td style="padding:8px 10px;font-size:12px;color:#aaa">${r.tarife}</td>
+        <td style="padding:8px 10px;font-size:12px;color:#fff;font-weight:700;text-align:center">${r.count}</td>
+        <td style="padding:8px 10px;font-size:12px;color:#4cd964;font-weight:700;text-align:right">${fmt(r.amt)}</td>
+      </tr>`).join('')}
+      </tbody>
+      <tfoot><tr style="background:#1a1c20;border-top:2px solid #e2231a">
+        <td colspan="5" style="padding:10px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
+        <td style="padding:10px;font-size:13px;color:#fff;font-weight:800;text-align:center">${musteriRows.reduce((a,r)=>a+r.count,0)}</td>
+        <td style="padding:10px;font-size:13px;color:#4cd964;font-weight:800;text-align:right">${fmt(musteriRows.reduce((a,r)=>a+r.amt,0))}</td>
+      </tr></tfoot></table>`;
     const ozetHtml = `<table style="width:100%;border-collapse:collapse">
       <thead><tr style="background:#e2231a">
         <th style="padding:9px 8px;font-size:11px;color:#fff;text-align:left">Kategori</th>
@@ -12558,6 +12559,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v124',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'Dışa Aktar: her müşteri ayrı satırda gösteriliyor — 1 entry 4 adet ise 4 ayrı müşteri satırı çıkıyor' },
+      { type: 'fix', text: 'İşlem Listesi boş kalma sorunu düzeltildi' },
+    ]
+  },
   {
     version: 'v123',
     date: '01.07.2026',
