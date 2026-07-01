@@ -2416,7 +2416,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v110';
+const APP_VERSION = 'v111';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12377,8 +12377,23 @@ function ghGuncelleKontrol(){
   btn.style.cursor = hazir?'pointer':'not-allowed';
 }
 
+// Gömülü GitHub ayarları - önbellek temizlense de kaybolmaz
+const GH_VARSAYILAN = {
+  user:  'Ertechiletisim12',
+  repo:  'Finansal',
+  token: 'github_pat_11CG3HNQI03eol6ex2hBsJ_pMxAMtPcayzfvC5hj3Y0FneoA4CG1JEIp7bI6wW2we9CXLX5UB'
+};
+
 function getGithubConfig(){
-  try { return JSON.parse(localStorage.getItem('vf_github_cfg')||'{}'); } catch(e){ return {}; }
+  try {
+    const ls = JSON.parse(localStorage.getItem('vf_github_cfg')||'{}');
+    // localStorage'da varsa kullan, yoksa gömülü değerlere dön
+    return {
+      user:  ls.user  || GH_VARSAYILAN.user,
+      repo:  ls.repo  || GH_VARSAYILAN.repo,
+      token: ls.token || GH_VARSAYILAN.token
+    };
+  } catch(e){ return GH_VARSAYILAN; }
 }
 function saveGithubConfig(){
   const cfg = {
@@ -12475,6 +12490,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v111',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'GitHub token ve ayarları koda gömüldü — önbellek temizlense bile kaybolmuyor' },
+    ]
+  },
   {
     version: 'v110',
     date: '01.07.2026',
