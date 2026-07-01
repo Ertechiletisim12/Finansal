@@ -1380,6 +1380,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div id="cloudSyncIndicator" style="font-size:11px;padding:4px 6px;color:var(--muted)">☁️ Bağlanıyor...</div>
       <button class="tool-btn" id="themeBtn" onclick="toggleTheme()">🌙 Koyu Mod</button>
       <button class="tool-btn" onclick="backupData()">💾 Yedekle</button>
+      <button class="tool-btn" onclick="openGithubGuncelleModal()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent);font-weight:700">🔄 Güncelle</button>
       <label class="tool-btn" style="cursor:pointer">📂 Geri Yükle<input type="file" accept=".json" onchange="restoreData(event)" style="display:none"></label>
       <button class="tool-btn" onclick="chooseBackupFolder()" title="Bir klasör seçin, her kayıtta otomatik yedeklensin">📁 Otomatik Yedek Klasörü Seç</button>
       <span id="autoBackupStatus" class="autobackup-status"></span>
@@ -1410,7 +1411,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v82 · 01.07.2026 09:15</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v83 · 01.07.2026 10:00</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1431,7 +1432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v81 · Son güncelleme: 01.07.2026 07:30 <span style="font-size:9px;opacity:.6">▼</span></div>
+            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v83 · Son güncelleme: 01.07.2026 10:00 <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2347,8 +2348,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v82';
-const BUILD_DATE = '01.07.2026 09:15';
+const APP_VERSION = 'v83';
+const BUILD_DATE = '01.07.2026 10:00';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4286,13 +4287,31 @@ function render(){
       <span style="font-weight:700;color:#fff">${fmt(rangeAmt)}</span>
     </div>`;
     if(tumBonusToplam > 0){
-      detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px">
-        <span style="opacity:.75;font-weight:500">🎁 Kampanya Bonusu</span>
-        <span style="font-weight:700;color:#a3f0b5">+${fmt(tumBonusToplam)}</span>
+      detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px">
+        <span style="opacity:.75;font-weight:600">🎁 Kampanya Bonusu</span>
+        <span style="font-weight:800;color:#a3f0b5">+${fmt(tumBonusToplam)}</span>
       </div>`;
       tumBonusDetay.forEach(b=>{
-        detayHTML += `<div style="display:flex;justify-content:space-between;font-size:9.5px;opacity:.55;padding-left:10px">
-          <span>↳ ${b.label}</span><span>+${fmt(b.tutar)}</span>
+        // Kampanya detayından kaynak kampanyayı bul
+        const srcKamp = kampanyaData.find(k=>{
+          if(k.tip==='tekrarli'){
+            const cats=(k.catList&&k.catList.length)?k.catList:[k.cat];
+            return b.label.startsWith(cats.join('+'));
+          }
+          return k.cat===b.label && (k.tip==='bonus'||k.tip==='fiyat');
+        });
+        const aciklama = srcKamp?.aciklama || '';
+        const tipLabel = srcKamp ? (srcKamp.tip==='tekrarli'?'Tekrarlı Bonus':srcKamp.tip==='bonus'?'Eşik Bonusu':'Fiyat Kampanyası') : 'Bonus';
+        detayHTML += `
+        <div style="background:rgba(255,255,255,0.05);border-radius:7px;padding:7px 10px;margin-bottom:5px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="flex:1">
+              <div style="font-size:10.5px;font-weight:700;color:#ffd27a;margin-bottom:2px">↳ ${b.label}</div>
+              ${aciklama?`<div style="font-size:9px;color:rgba(255,255,255,0.45);margin-bottom:2px">${aciklama}</div>`:''}
+              <div style="font-size:9px;color:rgba(255,255,255,0.4)">${tipLabel}${srcKamp?.minAdet?' · Min. '+srcKamp.minAdet+' adet':''}${srcKamp?.startDate?' · '+srcKamp.startDate+(srcKamp.endDate?' → '+srcKamp.endDate:''):''}</div>
+            </div>
+            <span style="font-size:12px;font-weight:800;color:#a3f0b5;margin-left:8px;flex-shrink:0">+${fmt(b.tutar)}</span>
+          </div>
         </div>`;
       });
     }
@@ -11898,8 +11917,187 @@ function exportModalToExcel(){
 </script>
 
 <script>
+// ===================== GITHUB OTOMATİK GÜNCELLEME =====================
+function openGithubGuncelleModal(){
+  const cfg = getGithubConfig();
+  const modal = document.createElement('div');
+  modal.id = 'githubGuncelleModal';
+  modal.style.cssText = 'position:fixed;z-index:9999;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML = `
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.5)">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:14px;font-weight:800">🔄 Uygulama Güncelle</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Yeni index.html dosyasını seç — GitHub ve önbellek birlikte güncellenir</div>
+        </div>
+        <button onclick="document.getElementById('githubGuncelleModal').remove()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">×</button>
+      </div>
+      <div style="padding:18px;display:flex;flex-direction:column;gap:12px">
+        <!-- GitHub Ayarları -->
+        <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">⚙️ GitHub Ayarları (bir kez gir)</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div>
+              <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Kullanıcı Adı</label>
+              <input id="ghUser" value="${cfg.user||''}" placeholder="örn: ertechiletisim12" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;box-sizing:border-box">
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Repo Adı</label>
+              <input id="ghRepo" value="${cfg.repo||''}" placeholder="örn: Finansal" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;box-sizing:border-box">
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:3px">Personal Access Token <span style="color:#ff9f0a">(gizli tut)</span></label>
+              <input id="ghToken" type="password" value="${cfg.token||''}" placeholder="ghp_xxxxxxxxxxxx" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:12px;box-sizing:border-box">
+              <div style="font-size:9px;color:var(--muted);margin-top:3px">GitHub → Settings → Developer settings → Personal access tokens → Fine-grained → repo:contents write</div>
+            </div>
+            <button onclick="saveGithubConfig()" style="background:rgba(76,217,100,0.15);border:1px solid rgba(76,217,100,0.3);color:#4cd964;border-radius:7px;padding:7px;font-size:11px;font-weight:700;cursor:pointer">💾 Ayarları Kaydet</button>
+          </div>
+        </div>
+
+        <!-- Dosya Seçimi -->
+        <div style="background:rgba(63,208,255,0.07);border:1px solid rgba(63,208,255,0.25);border-radius:10px;padding:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">📁 Yeni Versiyon Dosyası</div>
+          <label style="display:block;background:rgba(63,208,255,0.1);border:2px dashed rgba(63,208,255,0.3);border-radius:8px;padding:16px;text-align:center;cursor:pointer">
+            <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px">Dosya Seç</div>
+            <div style="font-size:10px;color:var(--muted)">index.html dosyasını seç</div>
+            <input type="file" id="ghFileInput" accept=".html" style="display:none" onchange="githubGuncelleFileSelected(this)">
+          </label>
+          <div id="ghFileInfo" style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center"></div>
+        </div>
+
+        <button id="ghGuncelleBtn" onclick="githubGuncelle()" disabled style="background:rgba(76,217,100,0.08);border:1px solid rgba(76,217,100,0.2);color:rgba(76,217,100,0.4);border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:not-allowed">
+          🚀 GitHub'a Yükle & Güncelle
+        </button>
+        <div id="ghDurum" style="font-size:11px;color:var(--muted);text-align:center;min-height:16px"></div>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function getGithubConfig(){
+  try { return JSON.parse(localStorage.getItem('vf_github_cfg')||'{}'); } catch(e){ return {}; }
+}
+function saveGithubConfig(){
+  const cfg = {
+    user: document.getElementById('ghUser').value.trim(),
+    repo: document.getElementById('ghRepo').value.trim(),
+    token: document.getElementById('ghToken').value.trim()
+  };
+  localStorage.setItem('vf_github_cfg', JSON.stringify(cfg));
+  const btn = event.target;
+  btn.textContent = '✅ Kaydedildi';
+  setTimeout(()=>{ btn.textContent = '💾 Ayarları Kaydet'; }, 1500);
+}
+
+let _ghFileContent = null;
+function githubGuncelleFileSelected(input){
+  const file = input.files[0];
+  if(!file) return;
+  const info = document.getElementById('ghFileInfo');
+  info.textContent = `📄 ${file.name} (${(file.size/1024).toFixed(0)} KB) seçildi`;
+  info.style.color = '#4cd964';
+  const reader = new FileReader();
+  reader.onload = e => {
+    _ghFileContent = e.target.result;
+    const btn = document.getElementById('ghGuncelleBtn');
+    btn.disabled = false;
+    btn.style.background = 'rgba(76,217,100,0.2)';
+    btn.style.borderColor = 'rgba(76,217,100,0.5)';
+    btn.style.color = '#4cd964';
+    btn.style.cursor = 'pointer';
+  };
+  reader.readAsText(file);
+}
+
+async function githubGuncelle(){
+  const cfg = getGithubConfig();
+  if(!cfg.user||!cfg.repo||!cfg.token){ alert('Önce GitHub ayarlarını kaydet.'); return; }
+  if(!_ghFileContent){ alert('Dosya seçilmedi.'); return; }
+
+  const durum = document.getElementById('ghDurum');
+  const btn = document.getElementById('ghGuncelleBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Yükleniyor...';
+
+  const filePath = 'index.html';
+  const apiBase = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${filePath}`;
+  const headers = {
+    'Authorization': `token ${cfg.token}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/vnd.github.v3+json'
+  };
+
+  try {
+    // 1. Mevcut dosyanın SHA değerini al
+    durum.textContent = '📡 GitHub\'dan mevcut dosya bilgisi alınıyor...';
+    durum.style.color = 'var(--muted)';
+    const getResp = await fetch(apiBase, { headers });
+    if(!getResp.ok) throw new Error('Dosya bilgisi alınamadı: ' + getResp.status + ' (Token veya repo adı hatalı olabilir)');
+    const getJson = await getResp.json();
+    const sha = getJson.sha;
+
+    // 2. Yeni içeriği base64'e çevir
+    durum.textContent = '🔄 Dosya hazırlanıyor...';
+    const b64 = btoa(unescape(encodeURIComponent(_ghFileContent)));
+
+    // 3. GitHub API ile güncelle
+    durum.textContent = '🚀 GitHub\'a yükleniyor...';
+    const putResp = await fetch(apiBase, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({
+        message: `🔄 Uygulama içi güncelleme - ${new Date().toLocaleString('tr-TR')}`,
+        content: b64,
+        sha: sha,
+        branch: 'main'
+      })
+    });
+    if(!putResp.ok){
+      const err = await putResp.json();
+      throw new Error('Yükleme başarısız: ' + (err.message||putResp.status));
+    }
+
+    durum.textContent = '✅ GitHub\'a yüklendi! GitHub Pages deploy edilecek (~1-2 dk)...';
+    durum.style.color = '#4cd964';
+    btn.textContent = '✅ Tamamlandı';
+
+    // 4. Önbelleği temizle
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs) await reg.unregister();
+    }
+    if('caches' in window){
+      const keys = await caches.keys();
+      for(const k of keys) await caches.delete(k);
+    }
+
+    setTimeout(()=>{
+      durum.textContent = '🔃 Sayfa yenileniyor...';
+      setTimeout(()=> window.location.reload(true), 1000);
+    }, 2000);
+
+  } catch(e){
+    durum.textContent = '❌ Hata: ' + e.message;
+    durum.style.color = '#ff5252';
+    btn.disabled = false;
+    btn.textContent = '🚀 GitHub\'a Yükle & Güncelle';
+  }
+}
+</script>
+
+<script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v83',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix',   text: 'Versiyon metni her yerde v82 olarak doğru güncellendi (versionInfoBtn atlanıyordu)' },
+      { type: 'new',   text: '🔄 Güncelle butonu eklendi — yeni index.html seçince GitHub'a otomatik yükler, önbelleği temizler, sayfayı yeniler' },
+      { type: 'ui',    text: 'Hakediş panelindeki kampanya bonus detayı zenginleştirildi — kampanya adı, türü, koşulu ve tarih aralığı ayrı kartçık olarak gösteriliyor' },
+    ]
+  },
   {
     version: 'v82',
     date: '01.07.2026',
