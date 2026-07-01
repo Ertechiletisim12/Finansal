@@ -1413,7 +1413,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v80 · 01.07.2026 06:46</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v81 · 01.07.2026 07:30</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1434,7 +1434,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v80 · Son güncelleme: 01.07.2026 06:46 <span style="font-size:9px;opacity:.6">▼</span></div>
+            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v81 · Son güncelleme: 01.07.2026 07:30 <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -1548,7 +1548,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
-        <div id="hakedisPanel" style="display:none;flex:0 0 auto;width:260px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#1a3a2a,#1f4a35);border:1px solid rgba(76,217,100,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+        <div id="hakedisPanel" style="display:none;flex:0 0 auto;width:310px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#1a3a2a,#1f4a35);border:1px solid rgba(76,217,100,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.3)">
           <!-- Üst: büyük hakediş rakamı -->
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -2350,8 +2350,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v80';
-const BUILD_DATE = '01.07.2026 06:46';
+const APP_VERSION = 'v81';
+const BUILD_DATE = '01.07.2026 07:30';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4760,46 +4760,13 @@ function renderHedefOzet(){
   const div = document.getElementById('hedefOzetDiv');
   if(!div) return;
   const now = thisMonthKey();
-  const MONTHS=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-  const ayAdi = MONTHS[parseInt(now.slice(5,7))-1] + ' ' + now.slice(0,4);
-
-  // Bu ayın entry'leri - devir ayrımı
-  let buAyAdet=0, buAyTutar=0, devirAdet=0, devirTutar=0;
-  entries.forEach(e=>{
-    const eym = effectiveYm(e);
-    const fiyat = e.count * (kampanyaFiyatFor(e.date, e.cat, priceFor(eym, e.cat))||0);
-    if(eym === now){
-      buAyAdet += e.count; buAyTutar += fiyat;
-    } else if(ymKey(e.date) === now){
-      // Bu ay girildi ama başka aya sayılıyor (devir)
-      devirAdet += e.count; devirTutar += fiyat;
-    }
-  });
-
-  // Bekleyen MNP
+  // Bekleyen MNP — sadece kompakt badge, büyük PRİM ÖZETİ paneli kaldırıldı
   const bekleyenler = musteriler.filter(m=>m.durum==='bekliyor' && m.aktivasyonTarihi && m.aktivasyonTarihi.startsWith(now));
-
-  div.innerHTML = `
-    <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">${ayAdi} — Prim Özeti</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
-        <div style="background:rgba(76,217,100,0.1);border-radius:8px;padding:8px">
-          <div style="color:var(--muted);font-size:10px;margin-bottom:2px">✅ Bu Aya Dahil</div>
-          <div style="font-weight:800;color:#4cd964">${buAyAdet} adet</div>
-          <div style="color:#4cd964;font-size:11px">${fmt(buAyTutar)}</div>
-        </div>
-        ${devirAdet > 0 ? `<div style="background:rgba(255,159,10,0.1);border-radius:8px;padding:8px">
-          <div style="color:var(--muted);font-size:10px;margin-bottom:2px">↩️ Sonraki Aya Devir</div>
-          <div style="font-weight:800;color:#ff9f0a">${devirAdet} adet</div>
-          <div style="color:#ff9f0a;font-size:11px">${fmt(devirTutar)}</div>
-        </div>` : '<div></div>'}
-      </div>
-      ${bekleyenler.length > 0 ? `
-      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="margin-top:8px;background:rgba(255,159,10,0.08);border:1px solid rgba(255,159,10,0.3);border-radius:8px;padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:11px;color:#ff9f0a;font-weight:700">⏳ ${bekleyenler.length} MNP onay bekliyor</span>
-        <span style="font-size:10px;color:var(--muted)">→ Takibe git</span>
-      </div>` : ''}
-    </div>`;
+  div.innerHTML = bekleyenler.length > 0 ? `
+    <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="background:rgba(255,159,10,0.08);border:1px solid rgba(255,159,10,0.3);border-radius:10px;padding:9px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:12px;color:#ff9f0a;font-weight:700">⏳ ${bekleyenler.length} MNP onay bekliyor</span>
+      <span style="font-size:11px;color:var(--muted)">→ Takibe git</span>
+    </div>` : '';
 }
 
 function switchPage(page){
@@ -5474,6 +5441,54 @@ function renderDash(){
   const hedefKalan   = hedef ? Math.max(hedef-curKdv,0) : null;
   const gundeGereken = (hedefKalan>0 && daysLeft>0) ? hedefKalan/daysLeft : null;
 
+  // Bu ayki kampanya bonuslarını hesapla (anasayfa kartları için)
+  const adetMapNow = {};
+  CATS.forEach(c=>{ adetMapNow[c]=0; });
+  entries.filter(e=>effectiveYm(e)===now).forEach(e=>{ adetMapNow[e.cat]=(adetMapNow[e.cat]||0)+e.count; });
+  let dashBonusToplam = 0;
+  const dashBonusDetay = [];
+  CATS.forEach(c=>{
+    const b = kampanyaBonusFor(now, c, adetMapNow[c]||0);
+    if(b>0){ dashBonusToplam+=b; dashBonusDetay.push({label:c, tutar:b}); }
+  });
+  kampanyaData.filter(k=>k.tip==='tekrarli' && k.ym===now && (k.minAdet||0)>0).forEach(k=>{
+    const cats=(k.catList&&k.catList.length)?k.catList:[k.cat];
+    let tot=0;
+    cats.forEach(c=>{
+      const es=entries.filter(e=>e.cat===c&&effectiveYm(e)===now&&(!k.startDate||e.date>=k.startDate)&&(!k.endDate||e.date<=k.endDate));
+      tot+=es.reduce((a,e)=>a+e.count,0);
+    });
+    const kume=Math.floor(tot/k.minAdet);
+    if(kume>0){ const t=kume*k.deger; dashBonusToplam+=t; dashBonusDetay.push({label:cats.join('+')+' x'+kume, tutar:t}); }
+  });
+  // Bir sonraki tekrarlı bonus eşiğine ne kadar kaldı (bugün kartı için)
+  const dashBonusYaklas = [];
+  kampanyaData.filter(k=>k.tip==='tekrarli' && k.ym===now && (k.minAdet||0)>0).forEach(k=>{
+    const cats=(k.catList&&k.catList.length)?k.catList:[k.cat];
+    let tot=0;
+    cats.forEach(c=>{
+      const es=entries.filter(e=>e.cat===c&&effectiveYm(e)===now&&(!k.startDate||e.date>=k.startDate)&&(!k.endDate||e.date<=k.endDate));
+      tot+=es.reduce((a,e)=>a+e.count,0);
+    });
+    const kume=Math.floor(tot/k.minAdet);
+    const kalan=k.minAdet-(tot%k.minAdet);
+    if(kalan<k.minAdet){ // tam değilse (0 ise zaten dolu kümede)
+      dashBonusYaklas.push({cats:cats.join('+'), kalan, bonus:k.deger, mevcut:tot, hedef:k.minAdet*(kume+1)});
+    }
+  });
+  // Eşik bazlı bonus yaklaşma
+  CATS.forEach(c=>{
+    const mevAdet=adetMapNow[c]||0;
+    kampanyaData.filter(k=>k.tip==='bonus'&&k.ym===now&&k.cat===c&&(k.minAdet||0)>0).forEach(k=>{
+      if(mevAdet<k.minAdet){ dashBonusYaklas.push({cats:c, kalan:k.minAdet-mevAdet, bonus:k.deger, mevcut:mevAdet, hedef:k.minAdet}); }
+    });
+  });
+  dashBonusYaklas.sort((a,b)=>a.kalan-b.kalan);
+
+  // MNP bekleyen (anasayfa kartı için)
+  const mnpBekleyenler = musteriler.filter(m=>m.durum==='bekliyor' && MNP_CATS.includes(m.cat));
+  const mnpBuAyBekleyen = mnpBekleyenler.filter(m=>m.aktivasyonTarihi && m.aktivasyonTarihi.startsWith(now));
+
   // Son 6 ay mini trend — adet ve tutar dahil
   const trend6 = [];
   for(let i=5;i>=0;i--){
@@ -5538,6 +5553,11 @@ function renderDash(){
       <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;grid-row:span 3;overflow:hidden">
         <div style="font-size:10px;color:#8fe3a8;margin-bottom:4px;font-weight:600">Toplam Prim (KDV Dahil)</div>
         <div style="font-size:22px;font-weight:900;color:#4cd964;letter-spacing:-.5px;line-height:1">${fmtF(curKdv)}</div>
+        ${dashBonusToplam>0 ? `
+        <div style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:9.5px;color:#8fe3a8;opacity:.85">Prim: ${fmtF(curKdv-dashBonusToplam)}</span>
+          <span style="font-size:9.5px;color:#ffd27a;font-weight:700">+ 🎁 Bonus: ${fmtF(dashBonusToplam)}</span>
+        </div>` : ''}
         <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
           <span style="background:${pctChange>=0?'rgba(76,217,100,0.15)':'rgba(226,35,26,0.15)'};border-radius:20px;padding:2px 9px;font-size:10.5px;font-weight:700;color:${pctColor}">${pctArrow} %${Math.abs(pctChange).toFixed(1)}</span>
           <span style="font-size:10.5px;color:rgba(255,255,255,0.5)">geçen aya göre</span>
@@ -5606,6 +5626,21 @@ function renderDash(){
               <div style="font-size:9px;color:var(--muted);margin-bottom:1px">Günlük Ort.</div>
               <div style="font-size:12px;font-weight:700">${fmtF(dailyAvg)}</div>
             </div>
+            ${dashBonusYaklas.length>0 ? `
+            <div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--line)">
+              <div style="font-size:9px;color:#ffb74d;margin-bottom:3px;font-weight:600">🎁 Bonus Yaklaşma</div>
+              ${dashBonusYaklas.slice(0,2).map(b=>`
+                <div style="font-size:9.5px;margin-bottom:2px">
+                  <span style="color:var(--muted)">${b.cats}:</span>
+                  <span style="color:#ffd27a;font-weight:700"> ${b.kalan} adet</span>
+                  <span style="color:var(--muted)"> → +${fmtF(b.bonus)}</span>
+                </div>
+                <div style="height:3px;border-radius:2px;background:var(--line);overflow:hidden;margin-bottom:3px">
+                  <div style="height:100%;width:${Math.min(100,Math.round(b.mevcut/b.hedef*100))}%;background:#ffb74d;border-radius:2px"></div>
+                </div>
+              `).join('')}
+            </div>` : dashBonusToplam>0 ? `
+            <div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--line);font-size:9.5px;color:#ffd27a;font-weight:700">🎁 ${fmtF(dashBonusToplam)} bonus kazanıldı</div>` : ''}
           </div>
           <div style="background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px">
             <div style="font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:600">Ay Sonu Tahmini</div>
@@ -5635,7 +5670,7 @@ function renderDash(){
               <div style="height:100%;width:${Math.min(hedefPct,100)}%;background:linear-gradient(90deg,${hedefRenk}99,${hedefRenk});border-radius:4px;transition:width .5s"></div>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted)">
-              <span>Gerçekleşen: <b style="color:var(--txt)">${fmtF(curKdv)}</b></span>
+              <span>Gerçekleşen: <b style="color:var(--txt)">${fmtF(curKdv)}</b>${dashBonusToplam>0?` <span style="color:#ffd27a">(🎁 ${fmtF(dashBonusToplam)} bonus)</span>`:''}</span>
               <span>Hedef: <b style="color:var(--txt)">${fmtF(hedef)}</b></span>
             </div>
             ${gundeGereken ? `<div style="font-size:10px;color:#ffb74d;margin-top:4px">⚡ Günde <b>${fmtF(gundeGereken)}</b> gerekiyor</div>` : ''}
@@ -5650,6 +5685,17 @@ function renderDash(){
           `}
         </div>
       </div>
+
+      <!-- ── MNP Bekleyen Kartı (varsa göster) ── -->
+      ${mnpBuAyBekleyen.length>0 ? `
+      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="grid-column:1/-1;background:rgba(255,159,10,0.07);border:1px solid rgba(255,159,10,0.3);border-radius:11px;padding:11px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:10px;color:#ff9f0a;font-weight:700;margin-bottom:2px">⏳ MNP Onay Bekliyor</div>
+          <div style="font-size:15px;font-weight:800;color:#ffd27a">${mnpBuAyBekleyen.length} müşteri</div>
+          <div style="font-size:9.5px;color:var(--muted);margin-top:2px">${mnpBuAyBekleyen.map(m=>`${m.ad||'?'} (${m.cat})`).slice(0,3).join(', ')}${mnpBuAyBekleyen.length>3?` +${mnpBuAyBekleyen.length-3} daha`:''}</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted)">→ Takibe git</div>
+      </div>` : ''}
 
       <!-- ── BÖLÜM 3: Kategori Tablosu sağ sütunda ── -->
       <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px">
@@ -11851,6 +11897,18 @@ function exportModalToExcel(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v81',
+    date: '01.07.2026',
+    items: [
+      { type: 'new',   text: 'Anasayfa Toplam Prim kartına bonus/prim ayrımı eklendi (Prim: X + 🎁 Bonus: Y)' },
+      { type: 'new',   text: 'Bugün kartına "Bonus Yaklaşma" bölümü eklendi — hangi bonusa kaç adet kaldığı ve ilerleme çubuğu gösteriliyor' },
+      { type: 'new',   text: 'Hedef kartına bonus katkısı eklendi — Gerçekleşen tutarın içinde ne kadarı bonustan geldiği görünüyor' },
+      { type: 'new',   text: 'MNP Onay Bekliyor kartı anasayfaya eklendi — müşteri listesiyle birlikte, tıklayınca takip ekranına gidiyor' },
+      { type: 'ui',    text: 'Hedef Yönetimi sayfasındaki gereksiz "PRİM ÖZETİ" paneli kaldırıldı, MNP bekleyen kompakt badge olarak bırakıldı' },
+      { type: 'ui',    text: 'Hakediş (bonus) kartı 260px → 310px genişletildi' },
+    ]
+  },
   {
     version: 'v80',
     date: '01.07.2026',
