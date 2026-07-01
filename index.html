@@ -1413,7 +1413,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v79 · 30.06.2026 23:58</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v80 · 01.07.2026 06:46</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1434,7 +1434,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v79 · Son güncelleme: 30.06.2026 23:58 <span style="font-size:9px;opacity:.6">▼</span></div>
+            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v80 · Son güncelleme: 01.07.2026 06:46 <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -1565,7 +1565,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- Sağ: Günlük Ortalama & Ay Sonu Tahmini (hakedis ile yan yana) -->
-        <div id="statsRowTop" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px"></div>
+        <div id="statsRowTop" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;justify-content:stretch"></div>
 
         </div><!-- /hakedisStatsRow -->
         </div>
@@ -2350,8 +2350,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v79';
-const BUILD_DATE = '30.06.2026 23:58';
+const APP_VERSION = 'v80';
+const BUILD_DATE = '01.07.2026 06:46';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4174,10 +4174,11 @@ function render(){
   const rangeNet = rangeGelir - rangeGider;
   const netColor = rangeNet >= 0 ? '#4cd964' : '#ff5252';
 
-  // Bonus/müşteri hesabı için AY bilgisi: range başlangıcından türet
-  // "Bu Ay" → rStart="2026-07-01" → bonusAy="2026-07"
-  // "Geçen Ay" → rStart="2026-06-01" → bonusAy="2026-06"  (FIX: artık activeYm=bugün ayı kullanılmıyor)
-  const bonusAy = rStart.slice(0,7);
+  // Bonus/müşteri hesabı için AY bilgisi: range içindeki TÜM ayları kapsıyoruz
+  // "Bu Hafta" = 29.06-01.07 → bonusMonths = ["2026-06","2026-07"] → her ay ayrı hesaplanır
+  const bonusMonths = [...new Set(rEntriesForCards.map(e => effectiveYm(e)))].sort();
+  if(bonusMonths.length === 0) bonusMonths.push(rStart.slice(0,7)); // veri yoksa yine de göster
+  const bonusAy = bonusMonths[bonusMonths.length-1]; // Onaylanan/Bekleyen için son (en güncel) ay
 
     // Onaylanan / Bekleyen hesapla - range bazlı, MNP için aktivasyon tarihi
   function musteriEffectiveYm(m){
@@ -4186,26 +4187,31 @@ function render(){
     }
     return ymKey(m.entryDate);
   }
-  // Onaylanan/Bekleyen: ENTRIES bazli hesapla (gercek prim adedi ile her zaman eslesir)
-  // bonusAy'a effectiveYm dusen tum entries (TUM kategoriler)
-  const buAyEntries = entries.filter(e => effectiveYm(e) === bonusAy);
-  const buAyToplamAdet = buAyEntries.reduce((a,e)=>a+e.count,0);
-  const buAyToplamTutar = buAyEntries.reduce((a,e)=>{
-    const tFiyat = tarifeFiyatFor(e, e.cat);
-    const p = tFiyat != null ? tFiyat : (kampanyaFiyatFor(e.date, e.cat, priceFor(bonusAy, e.cat)) || 0);
-    return a + e.count*p;
-  }, 0);
 
-  // Bekleyen: SADECE MNP_CATS icindeki bekleyen MNP'ler
+  // Onaylanan/Bekleyen: range içindeki TÜM aylar için topla
+  let buAyToplamAdet = 0, buAyToplamTutar = 0;
+  bonusMonths.forEach(bAy=>{
+    const ayEntries = entries.filter(e => effectiveYm(e) === bAy);
+    buAyToplamAdet += ayEntries.reduce((a,e)=>a+e.count,0);
+    buAyToplamTutar += ayEntries.reduce((a,e)=>{
+      const tFiyat = tarifeFiyatFor(e, e.cat);
+      const p = tFiyat != null ? tFiyat : (kampanyaFiyatFor(e.date, e.cat, priceFor(bAy, e.cat)) || 0);
+      return a + e.count*p;
+    }, 0);
+  });
+
+  // Bekleyen: tüm range aylarındaki bekleyen MNP'ler
   let bekleyenAdet = 0, bekleyenTutar = 0;
-  musteriler.filter(m=>{
-    if(m.tip!=='mnp' || m.durum!=='bekliyor' || !m.entryDate) return false;
-    if(!MNP_CATS.includes(m.cat)) return false;
-    return musteriEffectiveYm(m) === bonusAy;
-  }).forEach(m=>{
-    const p = kampanyaFiyatFor(m.entryDate, m.cat, priceFor(bonusAy, m.cat)) || 0;
-    bekleyenAdet++;
-    bekleyenTutar += p;
+  bonusMonths.forEach(bAy=>{
+    musteriler.filter(m=>{
+      if(m.tip!=='mnp' || m.durum!=='bekliyor' || !m.entryDate) return false;
+      if(!MNP_CATS.includes(m.cat)) return false;
+      return musteriEffectiveYm(m) === bAy;
+    }).forEach(m=>{
+      const p = kampanyaFiyatFor(m.entryDate, m.cat, priceFor(bAy, m.cat)) || 0;
+      bekleyenAdet++;
+      bekleyenTutar += p;
+    });
   });
   bekleyenAdet = Math.min(bekleyenAdet, buAyToplamAdet);
 
@@ -4216,46 +4222,43 @@ function render(){
   const primTutari = onaylananTutar;
   const toplamMusteriAdet = onaylananAdet + bekleyenAdet;
 
-  // Aktif aydaki tum kampanya bonuslarini detayli hesapla (bonusAy bazlı)
-  const adetMapBuAy = effectiveCountForYm(bonusAy);
-  const mnpDetayBuAy = {};
-  MNP_CATS.forEach(c=>{
-    const mnpA = entries.filter(e=>e.cat===c && !!e.mnp && effectiveYm(e)===bonusAy).reduce((a,e)=>a+e.count,0);
-    const tesisA = entries.filter(e=>e.cat===c && !e.mnp && effectiveYm(e)===bonusAy).reduce((a,e)=>a+e.count,0);
-    mnpDetayBuAy[c] = {mnp:mnpA, tesis:tesisA};
-  });
-  // Esik bazli bonuslar (tek kategori)
+  // Kampanya bonuslarini TÜM range ayları için ayrı ayrı hesapla, topla
   let esikBonusToplam = 0;
   const esikBonusDetay = [];
-  CATS.forEach(c=>{
-    const b = kampanyaBonusFor(bonusAy, c, adetMapBuAy[c]||0);
-    if(b > 0){ esikBonusToplam += b; esikBonusDetay.push({label:c, tutar:b}); }
-  });
-  // Tekrarlayan bonuslar (bonusAy bazlı)
   let tekrarliBonusToplam = 0;
   const tekrarliBonusDetay = [];
-  kampanyaData.filter(k=>k.tip==='tekrarli' && k.ym===bonusAy && (k.minAdet||0)>0).forEach(k=>{
-    const cats = (k.catList && k.catList.length) ? k.catList : [k.cat];
-    let toplamAdet = 0;
-    cats.forEach(c=>{
-      const catEntries = entries.filter(e=>{
-        if(e.cat !== c) return false;
-        if(effectiveYm(e) !== bonusAy) return false;
-        if(k.startDate && e.date < k.startDate) return false;
-        if(k.endDate && e.date > k.endDate) return false;
-        return true;
-      });
-      if(k.tipFiltre==='mnp') toplamAdet += catEntries.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
-      else if(k.tipFiltre==='tesis') toplamAdet += catEntries.filter(e=>!e.mnp).reduce((a,e)=>a+e.count,0);
-      else toplamAdet += catEntries.reduce((a,e)=>a+e.count,0);
+
+  bonusMonths.forEach(bAy=>{
+    const adetMapBuAy = effectiveCountForYm(bAy);
+    // Eşik bazlı bonuslar
+    CATS.forEach(c=>{
+      const b = kampanyaBonusFor(bAy, c, adetMapBuAy[c]||0);
+      if(b > 0){ esikBonusToplam += b; esikBonusDetay.push({label:c+(bonusMonths.length>1?' ('+bAy+')':''), tutar:b}); }
     });
-    const kume = Math.floor(toplamAdet / k.minAdet);
-    if(kume > 0){
-      const tutar = kume * k.deger;
-      tekrarliBonusToplam += tutar;
-      const tarihEtiket = (k.startDate||k.endDate) ? ' [' + (k.startDate||'?') + ' \u2192 ' + (k.endDate||'?') + ']' : '';
-      tekrarliBonusDetay.push({label: cats.join('+') + ' (' + toplamAdet + ' adet, ' + kume + 'x' + k.minAdet + ')' + tarihEtiket, tutar});
-    }
+    // Tekrarlayan bonuslar
+    kampanyaData.filter(k=>k.tip==='tekrarli' && k.ym===bAy && (k.minAdet||0)>0).forEach(k=>{
+      const cats = (k.catList && k.catList.length) ? k.catList : [k.cat];
+      let toplamAdet = 0;
+      cats.forEach(c=>{
+        const catEntries = entries.filter(e=>{
+          if(e.cat !== c) return false;
+          if(effectiveYm(e) !== bAy) return false;
+          if(k.startDate && e.date < k.startDate) return false;
+          if(k.endDate && e.date > k.endDate) return false;
+          return true;
+        });
+        if(k.tipFiltre==='mnp') toplamAdet += catEntries.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
+        else if(k.tipFiltre==='tesis') toplamAdet += catEntries.filter(e=>!e.mnp).reduce((a,e)=>a+e.count,0);
+        else toplamAdet += catEntries.reduce((a,e)=>a+e.count,0);
+      });
+      const kume = Math.floor(toplamAdet / k.minAdet);
+      if(kume > 0){
+        const tutar = kume * k.deger;
+        tekrarliBonusToplam += tutar;
+        const tarihEtiket = (k.startDate||k.endDate) ? ' [' + (k.startDate||'?') + ' \u2192 ' + (k.endDate||'?') + ']' : '';
+        tekrarliBonusDetay.push({label: cats.join('+') + ' (' + toplamAdet + ' adet, ' + kume + 'x' + k.minAdet + ')' + tarihEtiket, tutar});
+      }
+    });
   });
   const tumBonusToplam = esikBonusToplam + tekrarliBonusToplam;
   const tumBonusDetay = [...esikBonusDetay, ...tekrarliBonusDetay];
@@ -4278,7 +4281,7 @@ function render(){
     if(hWrapper) hWrapper.style.display = 'flex';
     hToplamRakam.textContent = fmt(genelHakedis);
     hAralikLabel.textContent = rStart + ' – ' + rEnd;
-    hAdetLabel.textContent = rangeCount + ' adet' + (bonusAy !== activeYm ? ' · Kampanya/Müşteri: ' + monthLabel(bonusAy) : '');
+    hAdetLabel.textContent = rangeCount + ' adet' + (bonusMonths.length > 1 ? ' · ' + bonusMonths.map(m=>monthLabel(m)).join('+') + ' kampanyaları' : '');
 
     let detayHTML = '';
     detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px">
@@ -4552,27 +4555,33 @@ function render(){
   const gundeGereken = (hedefKalan!=null && daysInCurMonth-todayNum>0) ? hedefKalan/(daysInCurMonth-todayNum) : null;
 
   statsTopDiv.innerHTML = `
-    <div class="stat" style="flex:1;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
-      <div class="t" style="font-size:10px">Günlük Ort. (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
-      <div class="v" style="font-size:18px;margin-top:4px">${fmt(dailyAvgCurMonth)}</div>
-      <div class="sub" style="font-size:9.5px">${todayNum} gün · toplam ${fmt(curMonthSumSoFar)}</div>
+    <div style="display:flex;gap:8px;flex:1">
+      <div class="stat" style="flex:1;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
+        <div class="t" style="font-size:10px">Günlük Ort. (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
+        <div class="v" style="font-size:18px;margin-top:4px">${fmt(dailyAvgCurMonth)}</div>
+        <div class="sub" style="font-size:9.5px">${todayNum} gün · toplam ${fmt(curMonthSumSoFar)}</div>
+      </div>
+      <div class="stat" style="flex:1;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
+        <div class="t" style="font-size:10px">Ay Sonu Tahmini (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
+        <div class="v" style="font-size:18px;margin-top:4px;color:var(--gold)">${fmt(projectedMonthEnd)}</div>
+        <div class="sub" style="font-size:9.5px">${daysInCurMonth} gün üzerinden projeksiyon</div>
+      </div>
     </div>
-    <div class="stat" style="flex:1;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
-      <div class="t" style="font-size:10px">Ay Sonu Tahmini (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
-      <div class="v" style="font-size:18px;margin-top:4px;color:var(--gold)">${fmt(projectedMonthEnd)}</div>
-      <div class="sub" style="font-size:9.5px">${daysInCurMonth} gün üzerinden projeksiyon</div>
-    </div>
-    <div class="stat" style="flex:1;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+    <div class="stat" style="padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
       <div class="t" style="font-size:10px">🎯 ${monthLabel(realCurMonth)} Hedefi <span style="opacity:.65">KDV Dahil</span></div>
       ${curHedef ? `
-        <div class="v" style="font-size:18px;margin-top:4px;color:${hedefRenk}">${hedefPctTop!=null?`%${hedefPctTop}`:''}</div>
-        <div style="height:5px;border-radius:3px;background:var(--line);margin:5px 0;overflow:hidden">
-          <div style="height:100%;width:${Math.min(hedefPctTop??0,100)}%;background:${hedefRenk};border-radius:3px;transition:width .4s"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+          <div class="v" style="font-size:18px;color:${hedefRenk};margin:0">${hedefPctTop!=null?`%${hedefPctTop}`:''}</div>
+          <div style="flex:1">
+            <div style="height:5px;border-radius:3px;background:var(--line);margin-bottom:4px;overflow:hidden">
+              <div style="height:100%;width:${Math.min(hedefPctTop??0,100)}%;background:${hedefRenk};border-radius:3px;transition:width .4s"></div>
+            </div>
+            <div class="sub" style="font-size:9.5px">Hedef: ${fmt(curHedef)} · Gerçekleşen: ${fmt(curMonthSumSoFar)}${hedefKalan!=null&&hedefKalan>0?` · Kalan: ${fmt(hedefKalan)}`:''}${gundeGereken!=null&&hedefKalan>0?' · Günde '+fmt(gundeGereken):''}</div>
+            ${hedefPctTop!=null&&hedefPctTop>=100?`<div class="sub" style="color:#4cd964;font-weight:700;font-size:9.5px">✓ Hedef aşıldı!</div>`:''}
+          </div>
         </div>
-        <div class="sub" style="font-size:9.5px">Hedef: ${fmt(curHedef)} · Gerçekleşen: ${fmt(curMonthSumSoFar)}</div>
-        ${hedefKalan!=null && hedefKalan>0 ? `<div class="sub" style="font-size:9.5px;color:#ffb74d">Kalan: ${fmt(hedefKalan)}${gundeGereken!=null?' · Günde '+fmt(gundeGereken):''}</div>` : hedefPctTop!=null&&hedefPctTop>=100 ? `<div class="sub" style="color:#4cd964;font-weight:700;font-size:9.5px">✓ Hedef aşıldı!</div>` : ''}
       ` : `
-        <div style="color:var(--muted);font-size:11px;margin-top:8px">Henüz hedef girilmedi</div>
+        <div style="color:var(--muted);font-size:11px;margin-top:6px">Henüz hedef girilmedi</div>
       `}
     </div>
   `;
@@ -11843,15 +11852,23 @@ function exportModalToExcel(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v80',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix',   text: 'Kampanya Bonusu / Onaylanan / Bekleyen — "Bu Ay" / "Geçen Ay" filtresi değiştiğinde güncellenmiyordu, düzeltildi' },
+      { type: 'fix',   text: '"Bu Hafta" gibi birden fazla ayı kapsayan aralıklarda ikinci ayın kampanya bonusları görünmüyordu — tüm aylar ayrı ayrı hesaplanıp toplanıyor' },
+      { type: 'ui',    text: 'Hakediş kartı ile Günlük Ortalama / Ay Sonu / Hedef kartları yan yana kompakt düzene alındı' },
+      { type: 'ui',    text: 'Günlük Ortalama + Ay Sonu Tahmini yan yana üstte, Hedef kartı altlarına yerleştirildi' },
+      { type: 'new',   text: 'Versiyon yazısına tıklayınca sürüm notları popup\'ı açılıyor' },
+    ]
+  },
+  {
     version: 'v79',
     date: '30.06.2026',
     items: [
-      { type: 'fix', text: 'Kampanya fiyatları; Prim günlük liste, Excel dışa aktarım, kategori/gün detay popup, yıllık rapor, hedef ilerleme ve istatistik kartlarında uygulanmıyordu — düzeltildi' },
-      { type: 'fix', text: 'Kampanya Bonusu / Onaylanan / Bekleyen müşteri sayıları filtre (Bu Ay / Geçen Ay) değiştiğinde güncellenmiyordu — düzeltildi' },
-      { type: 'fix', text: 'Tekrarlanan HTML id\'leri (xlsBtn, finansAyModalExistWarn) düzeltildi' },
-      { type: 'clean', text: 'Ölü kod temizliği: çift tanımlı fonksiyonlar ve var olmayan elementlere bakan fonksiyonlar kaldırıldı (~400 satır azaldı)' },
-      { type: 'ui', text: 'Hakediş kartı + Günlük Ortalama / Ay Sonu / Hedef kartları yan yana kompakt görünüme alındı' },
-      { type: 'ui', text: 'Versiyon yazısına tıklayınca sürüm notları popup\'ı açılıyor (bu ekran)' },
+      { type: 'fix',   text: 'Kampanya fiyatları; Prim günlük liste, Excel dışa aktarım, kategori/gün detay popup, yıllık rapor ve hedef ilerleme ekranlarında uygulanmıyordu' },
+      { type: 'fix',   text: 'Tekrarlanan HTML id\'leri (xlsBtn, finansAyModalExistWarn) düzeltildi' },
+      { type: 'clean', text: 'Ölü kod temizliği: çift tanımlı fonksiyonlar ve var olmayan elementlere bakan fonksiyonlar kaldırıldı (~400 satır)' },
     ]
   }
 ];
