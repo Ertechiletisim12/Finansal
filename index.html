@@ -2360,7 +2360,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v99';
+const APP_VERSION = 'v100';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -5719,10 +5719,10 @@ function renderDash(){
 
     <!-- ── BÖLÜM 1: Prim Ana Kart ── -->
     <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📅 ${monthLabel(now)} — Prim Durumu</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;align-items:stretch">
+    <div style="display:flex;gap:10px;margin-bottom:8px;align-items:stretch">
 
       <!-- Sol: Ana Prim Kartı -->
-      <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;grid-row:span 3;overflow:hidden">
+      <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;flex:1;min-width:0;overflow:hidden">
         <div style="font-size:10px;color:#8fe3a8;margin-bottom:4px;font-weight:600">Toplam Prim (KDV Dahil)</div>
         <div style="font-size:22px;font-weight:900;color:#4cd964;letter-spacing:-.5px;line-height:1">${fmtF(curKdv)}</div>
         ${dashBonusToplam>0 ? `
@@ -5789,7 +5789,7 @@ function renderDash(){
       </div>
 
       <!-- Sağ sütun: Bugün + Ay Sonu yan yana, altında Hedef -->
-      <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:0">
 
         <!-- Bugün + Ay Sonu yan yana -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -8691,7 +8691,11 @@ function renderMusteriRapor(){
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:flex-end">
           <div style="display:flex;align-items:center;gap:6px">
-            ${m.durum==='bekliyor' ? `<input type="checkbox" class="mkSelectBox" data-id="${m.id}" style="width:18px;height:18px;cursor:pointer;accent-color:#4cd964">` : ''}
+            ${m.durum==='aktif' || m.durum==='onaylandi' ?
+              `<input type="checkbox" checked disabled style="width:18px;height:18px;cursor:default;accent-color:#4cd964;opacity:0.5" title="Onaylandı">` :
+              m.durum==='bekliyor' ?
+              `<input type="checkbox" class="mkSelectBox" data-id="${m.id}" style="width:18px;height:18px;cursor:pointer;accent-color:#4cd964">` : ''
+            }
             <button onclick="openMusteriDurum('${m.id}')" style="display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">
               📋 <span>Durum Güncelle</span>
             </button>
@@ -12345,6 +12349,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v100',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'Anasayfa prim kartı grid→flex geçişi — bonus detayı büyüdüğünde sağ kartlar kayma sorunu çözüldü' },
+      { type: 'ui',  text: 'Müşteri Takibi: tüm kayıtlarda checkbox var — onaylılar ☑ işaretli/gri, bekleyenler boş/tıklanabilir' },
+    ]
+  },
   {
     version: 'v99',
     date: '01.07.2026',
