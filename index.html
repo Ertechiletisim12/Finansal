@@ -2432,7 +2432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v143';
+const APP_VERSION = 'v144';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -8634,30 +8634,28 @@ function saveMusteriKayit(){
   if(_mkEditId){
     const idx = musteriler.findIndex(m=>m.id===_mkEditId);
     if(idx>=0) musteriler[idx] = {...musteriler[idx], ...kayit, id:_mkEditId};
-  } else {
-    musteriler.push(kayit);
+    saveMusteriStore();
+    closeMusteriKayit();
+    renderMusteriRapor(); // Düzenleme sonrası listeyi anında güncelle
+    window._confirmedIsMnp = null;
+    return;
   }
-  saveMusteriStore();
 
-  // Modal kapat
+  // Yeni kayıt
+  musteriler.push(kayit);
+  saveMusteriStore();
   closeMusteriKayit();
 
-  // Prim sayısını güncelle (sadece yeni kayıt, edit değil)
-  if(!_mkEditId){
-    window._lastEntryId = null;
-    _doChangeCount(tarih, cat, 1, aktTarih, isMnp, tarife);
-    // _doChangeCount'un yazdığı logId'yi müşteri kaydına bağla
-    if(window._lastEntryId){
-      const m = musteriler[musteriler.length-1];
-      if(m && !m.logId) m.logId = window._lastEntryId;
-      saveMusteriStore();
-    }
+  // Prim sayısını güncelle
+  window._lastEntryId = null;
+  _doChangeCount(tarih, cat, 1, aktTarih, isMnp, tarife);
+  if(window._lastEntryId){
+    const m = musteriler[musteriler.length-1];
+    if(m && !m.logId) m.logId = window._lastEntryId;
+    saveMusteriStore();
   }
 
-  // _confirmedIsMnp'yi temizle - bir sonraki kayıt için taze başlasın
   window._confirmedIsMnp = null;
-
-  // Activity list'i güncelle (müşteri ismi hemen görünsün, sayfa yenilemesi gerekmesin)
   setTimeout(()=>{ try{ render(); }catch(e){} }, 100);
 }
 
@@ -12629,6 +12627,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v144',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Musteri duzenle: kayit sonrasi Musteri Takip listesi aninda guncelleniyor, filtre veya sayfa yenilemesi gerekmiyor.' },
+    ]
+  },
   {
     version: 'v143',
     date: '02.07.2026',
