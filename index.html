@@ -2432,7 +2432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v140';
+const APP_VERSION = 'v141';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -11746,7 +11746,7 @@ function renderHedefGecmis(){
 </div>
 
 <!-- ===== MÜŞTERİ KAYIT MODALI ===== -->
-<div id="musteriKayitModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.75);align-items:flex-start;justify-content:center;padding:0;padding-top:0">
+<div id="musteriKayitModal" style="display:none;position:fixed;inset:0;z-index:4500;background:rgba(0,0,0,0.75);align-items:flex-start;justify-content:center;padding:0;padding-top:0">
   <div style="background:var(--panel);border-radius:0 0 16px 16px;width:100%;max-width:520px;max-height:95vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="display:flex;align-items:center;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
       <div style="flex:1">
@@ -12628,6 +12628,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v141',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Musteri Takip penceresi acikken Duzenle basilinca edit formu arkaplan da kaliyordu. musteriKayitModal z-index 4000 den 4500 e yukseltildi.' },
+    ]
+  },
   {
     version: 'v140',
     date: '02.07.2026',
