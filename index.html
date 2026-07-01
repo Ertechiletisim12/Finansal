@@ -1147,7 +1147,7 @@ input:focus,select:focus{outline:1px solid var(--accent)}
 
 /* panel üst araçlar */
 .activity-tools{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
-.tool-btn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s}
+.tool-btn{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:#7a7f86;border-radius:7px;padding:6px 10px;font-size:11px;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:5px;transition:all .15s}
 .xls-btn{background:rgba(47,174,78,0.15);border:1px solid rgba(47,174,78,0.45);color:#2fae4e;border-radius:6px;padding:4px 9px;font-size:10.5px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap}
 .xls-btn:hover{background:rgba(47,174,78,0.28)}
 .pdf-btn{background:rgba(226,35,26,0.13);border:1px solid rgba(226,35,26,0.4);color:#e2231a;border-radius:6px;padding:4px 9px;font-size:10.5px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap}
@@ -1156,7 +1156,7 @@ input:focus,select:focus{outline:1px solid var(--accent)}
 .preview-btn:hover{background:rgba(63,208,255,0.25)}
 .section-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:18px 0 8px}
 .section-title-row .section-title{margin:0}
-.tool-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tool-btn:hover{border-color:rgba(255,255,255,0.2);color:#c8cacc;background:rgba(255,255,255,0.07)}
 .tool-btn.active-theme{background:var(--accent);border-color:var(--accent);color:#000}
 .tool-btn.notif-has-alert{border-color:var(--red);color:var(--red);animation:notifPulse 2s infinite}
 @keyframes notifPulse{0%,100%{box-shadow:0 0 0 0 rgba(226,35,26,0)}50%{box-shadow:0 0 0 3px rgba(226,35,26,0.3)}}
@@ -1425,8 +1425,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
       <!-- Hızlı Erişim -->
       <div style="font-size:9.5px;letter-spacing:.1em;color:#3e4347;font-weight:700;padding:8px 6px 5px;text-transform:uppercase">Hızlı Erişim</div>
-      <button class="tool-btn" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:#ffb74d;font-weight:700">🎯 Kampanyalar</button>
-      <button class="tool-btn" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.08);border-color:rgba(63,208,255,0.25);color:var(--accent);font-weight:700">👥 Müşteri Takibi <span id="musteriTakipBadge" style="display:inline-block;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px"></span></button>
+      <button class="tool-btn" onclick="openKampanyaModal()" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:#8a8f96;font-weight:600">🎯 Kampanyalar</button>
+      <button class="tool-btn" onclick="openMusteriRapor()" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:#8a8f96;font-weight:600">👥 Müşteri Takibi <span id="musteriTakipBadge" style="display:inline-block;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px"></span></button>
 
       <!-- Görünüm (katlanabilir) -->
       <div class="sidebar-divider"></div>
@@ -1445,7 +1445,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
       <div id="sbVeri" style="display:flex;flex-direction:column;gap:6px;overflow:hidden;transition:all .2s">
         <button class="tool-btn" onclick="backupData()">💾 Yedekle</button>
-        <button class="tool-btn" onclick="openGithubGuncelleModal()" style="background:rgba(63,208,255,0.08);border-color:rgba(63,208,255,0.25);color:var(--accent);font-weight:700">🔄 Güncelle</button>
+        <button class="tool-btn" onclick="openGithubGuncelleModal()" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:#8a8f96;font-weight:600">🔄 Güncelle</button>
         <label class="tool-btn" style="cursor:pointer">📂 Geri Yükle<input type="file" accept=".json" onchange="restoreData(event)" style="display:none"></label>
         <button class="tool-btn" onclick="chooseBackupFolder()">📁 Oto. Yedek Klasörü</button>
         <span id="autoBackupStatus" class="autobackup-status"></span>
@@ -2416,7 +2416,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v111';
+const APP_VERSION = 'v112';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12490,6 +12490,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v112',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui', text: 'Sidebar buton renkleri sakinleştirildi — göz yormayan muted gri tonlar, hover\'da hafif aydınlanma' },
+    ]
+  },
   {
     version: 'v111',
     date: '01.07.2026',
