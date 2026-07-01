@@ -2432,7 +2432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v141';
+const APP_VERSION = 'v143';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -11936,12 +11936,15 @@ function showCatDetail(cat, rStart, rEnd){
 
   const rows = musteriSatirlari.map((r,i)=>`
     <tr style="border-bottom:1px solid #2e3136;background:${i%2===0?'#26282b':'#2c2f33'}">
-      <td style="padding:9px 10px;font-size:11px;color:#aaa;white-space:nowrap">${r.date}</td>
-      <td style="padding:9px 10px;font-size:11.5px;color:#e8eaec;font-weight:${r.date?'700':'400'}">${r.ad}</td>
-      <td style="padding:9px 10px;font-size:11px;color:#8896a0">${r.tel}</td>
-      <td style="padding:9px 10px;font-size:11px;color:#7ee8ff">${r.tarife}</td>
-      <td style="padding:9px 10px;font-size:12px;color:#fff;font-weight:700;text-align:center">${r.count}</td>
-      <td style="padding:9px 10px;font-size:12px;color:#4cd964;font-weight:700;text-align:right;white-space:nowrap">${r.amt}</td>
+      <td style="padding:8px 10px;font-size:11px;color:#8896a0;white-space:nowrap;vertical-align:top">${r.date}</td>
+      <td style="padding:8px 10px;vertical-align:top">
+        ${r.ad && r.ad!=='—' ? `<div style="font-size:11.5px;color:#e8eaec;font-weight:600">${r.ad}</div>` : ''}
+        ${r.tel && r.tel!=='—' ? `<div style="font-size:10.5px;color:#7a8090;margin-top:1px">${r.tel}</div>` : ''}
+        ${r.tarife && r.tarife!=='—' ? `<div style="font-size:10px;color:#7ee8ff;margin-top:1px">${r.tarife}</div>` : ''}
+        ${!r.ad || r.ad==='—' ? `<div style="font-size:10.5px;color:#3e4347">Müşteri kaydı yok</div>` : ''}
+      </td>
+      <td style="padding:8px 10px;font-size:13px;color:#fff;font-weight:800;text-align:center;vertical-align:top">${r.count>0?r.count:''}</td>
+      <td style="padding:8px 10px;font-size:12px;color:#4cd964;font-weight:700;text-align:right;white-space:nowrap;vertical-align:top">${r.count>0?r.amt:''}</td>
     </tr>`).join('');
 
   const totalCount = catEntries.reduce((a,e)=>a+e.count,0);
@@ -11966,15 +11969,13 @@ function showCatDetail(cat, rStart, rEnd){
         <table style="width:100%;border-collapse:collapse">
           <thead><tr style="background:#1a1d21;position:sticky;top:0">
             <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:left;white-space:nowrap">TARİH</th>
-            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:left">MÜŞTERİ</th>
-            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:left;white-space:nowrap">TELEFON</th>
-            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:left">TARİFE</th>
-            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:center">AD</th>
-            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:right">TUTAR</th>
+            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:left">MÜŞTERİ · TELEFON · TARİFE</th>
+            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:center;white-space:nowrap">ADET</th>
+            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:right;white-space:nowrap">TUTAR</th>
           </tr></thead>
           <tbody>${rows}</tbody>
           <tfoot><tr style="border-top:2px solid #e2231a;background:#1e2124">
-            <td colspan="4" style="padding:10px;font-size:12px;color:#fff;font-weight:800">TOPLAM</td>
+            <td colspan="2" style="padding:10px;font-size:12px;color:#fff;font-weight:800">TOPLAM</td>
             <td style="padding:10px;font-size:13px;color:#fff;font-weight:800;text-align:center">${totalCount}</td>
             <td style="padding:10px;font-size:13px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(totalAmt)}</td>
           </tfoot>
@@ -12264,8 +12265,8 @@ function openExportPreview(tableId, fileLabel){
         <td style="padding:8px 10px;font-size:12px;color:#fff;font-weight:600">${r.ad.trim()||'—'}</td>
         <td style="padding:8px 10px;font-size:12px;color:#aaa">${r.tel}</td>
         <td style="padding:8px 10px;font-size:12px;color:#aaa">${r.tarife}</td>
-        <td style="padding:8px 10px;font-size:12px;color:#fff;font-weight:700;text-align:center">${r.count}</td>
-        <td style="padding:8px 10px;font-size:12px;color:#4cd964;font-weight:700;text-align:right">${fmt(r.amt)}</td>
+        <td style="padding:8px 10px;font-size:12px;color:#fff;font-weight:700;text-align:center">${r.count>0?r.count:''}</td>
+        <td style="padding:8px 10px;font-size:12px;color:#4cd964;font-weight:700;text-align:right">${r.count>0?fmt(r.amt):''}</td>
       </tr>`).join('')}
       </tbody>
       <tfoot><tr style="background:#1a1c20;border-top:2px solid #e2231a">
@@ -12628,6 +12629,20 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v143',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Ozet popup ve Detayli tabloda ADET sutunu: r.count>0 kontrolu eklendi, 0 veya bos satirlarda yanlis 0 gostermiyordu.' },
+    ]
+  },
+  {
+    version: 'v142',
+    date: '02.07.2026',
+    items: [
+      { type: 'ui', text: 'Ozet popup tablosu 4 sutuna indirildi: Tarih | Musteri+Tel+Tarife (alt alta) | Adet | Tutar. AD hatasi ADET olarak duzeltildi.' },
+    ]
+  },
   {
     version: 'v141',
     date: '02.07.2026',
