@@ -2433,7 +2433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v135';
+const APP_VERSION = 'v136';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -4920,18 +4920,26 @@ function render(){
     });
     actList.innerHTML = Object.keys(byDate).sort((a,b)=>b.localeCompare(a)).map(date => {
       const items = byDate[date];
-      const dayTot = items.reduce((a,e)=>a+e.count*kampanyaFiyatFor(e.date,e.cat,priceFor(ymKey(e.date),e.cat)),0);
-      const tblRows = items.map(e => {
-        const amt = e.count * kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat));
+      // Aynı gün+kategori kayıtlarını birleştir
+      const catMap = {};
+      items.forEach(e => {
+        if(!catMap[e.cat]) catMap[e.cat] = {cat:e.cat, date:e.date, count:0, amt:0};
+        catMap[e.cat].count += e.count;
+        catMap[e.cat].amt += e.count * kampanyaFiyatFor(e.date,e.cat,priceFor(ymKey(e.date),e.cat));
+      });
+      const mergedItems = Object.values(catMap);
+      const dayTot = mergedItems.reduce((a,e)=>a+e.amt,0);
+      const tblRows = mergedItems.map(e => {
         const color = (typeof CAT_COLORS !== 'undefined' && CAT_COLORS[e.cat]) || 'var(--accent)';
-        const entryNot = notlarData.find(n => n.entryKey === e.date+'_'+e.cat);
+        const allDayLogs = (entryLog||[]).filter(l=>l.date===date&&l.cat===e.cat);
+        const entryNot = notlarData.find(n => n.entryKey === date+'_'+e.cat);
         const notDot = entryNot
           ? `<span class="note-dot" style="background:${RENK_MAP[entryNot.renk]||'#3fd0ff'}" onclick="event.stopPropagation();openNotDetailById('${entryNot.id}')" title="${(entryNot.metin||entryNot.baslik||'Not var').replace(/"/g,'')}"></span>`
           : `<span class="note-dot" style="background:var(--line);opacity:.35" onclick="event.stopPropagation();openNotModalForEntry('${e.date}','${e.cat}')" title="Not ekle"></span>`;
         // Müşteri bilgileri - hepsini göster
         let musteriSat = '';
         try {
-          const dayLogs2 = (entryLog||[]).filter(l=>l.date===e.date&&l.cat===e.cat);
+          const dayLogs2 = allDayLogs;
           const ilgiliMusteriler2 = (musteriler||[]).filter(m=>m.logId && dayLogs2.some(l=>l.id===m.logId));
           if(ilgiliMusteriler2.length > 0){
             musteriSat = ilgiliMusteriler2.map(m=>{
@@ -4957,7 +4965,7 @@ function render(){
             ${musteriSat}
           </td>
           <td style="text-align:right;padding:4px 0;font-size:11.5px;font-weight:700;color:var(--accent)">${e.count}</td>
-          <td style="text-align:right;padding:4px 0;font-size:11.5px;color:var(--txt)">${fmt(amt)}</td>
+          <td style="text-align:right;padding:4px 0;font-size:11.5px;color:var(--txt)">${fmt(e.amt)}</td>
         </tr>`;
       }).join('');
       return `<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px">
@@ -8516,7 +8524,8 @@ function saveMusteriStore(){
 
 // Müşteri kayıt modalını aç (+ butonundan)
 function openMusteriKayit(cat, isMnp, date){
-  _mkEditId = null;
+  // Düzenleme modunda çağrıldıysa (_mkEditId zaten set) sıfırlama
+  if(!_mkEditId) _mkEditId = null;
   // isMnp kesinlikle boolean olarak al
   const isMnpBool = (isMnp === true || isMnp === 'true');
   _mkTip = isMnpBool ? 'mnp' : 'tesis';
@@ -12616,6 +12625,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v136',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Musteri Duzenle: yeni kayit eklemek yerine artik gercekten duzenleme yapiyor' },
+      { type: 'fix', text: 'Islem Listesi: ayni gun + kategori tekrar etmiyordu, birlestirildi' },
+    ]
+  },
+  {
     version: 'v135',
     date: '02.07.2026',
     items: [
@@ -12633,7 +12650,7 @@ const CHANGELOG_DATA = [
     version: 'v133',
     date: '02.07.2026',
     items: [
-      { type: 'fix', text: 'SW tamamen kaldırıldı — veri silme sorunu kesin çözüm. Sayfa her zaman GitHub'dan direkt yükleniyor.' },
+      { type: 'fix', text: 'SW tamamen kaldırıldı — veri silme sorunu kesin çözüm. Sayfa her zaman GitHub\' dan direkt yukleniyor.' },
       { type: 'fix', text: 'Versiyon bilgisi: null kontrolü eklendi, her durumda yazan sağlam kod.' },
     ]
   },
@@ -12691,7 +12708,7 @@ const CHANGELOG_DATA = [
     version: 'v126',
     date: '01.07.2026',
     items: [
-      { type: 'fix', text: 'İşlem Listesi: tüm müşteriler gösteriliyor (find→filter), tarife de entryLog'dan alınıyor' },
+      { type: 'fix', text: 'İşlem Listesi: tüm müşteriler gösteriliyor (find→filter), tarife de entryLog dan alınıyor' },
       { type: 'ui',  text: 'Özet popup daha okunaklı — koyu gri arka plan, belirgin sütun başlıkları' },
     ]
   },
@@ -12699,7 +12716,7 @@ const CHANGELOG_DATA = [
     version: 'v125',
     date: '01.07.2026',
     items: [
-      { type: 'fix', text: 'Dışa Aktar: Tarife entryLog'dan alınıyor, artık doğru gösteriliyor' },
+      { type: 'fix', text: 'Dışa Aktar: Tarife entryLog dan alınıyor, artık doğru gösteriliyor' },
       { type: 'ui',  text: 'Özet sekmesi yeniden tasarlandı — koyu gri arka plan, renkli kategori noktaları, okunaklı sütunlar' },
     ]
   },
