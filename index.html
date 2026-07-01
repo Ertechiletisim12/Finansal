@@ -2432,7 +2432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v139';
+const APP_VERSION = 'v140';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -2978,7 +2978,8 @@ async function pushToCloud(){
       if(cloudData && cloudData.data !== 'init'){
         entries = mergeEntries(entries, cloudData.entries||[]);
         localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries));
-        lastSyncedEntries = JSON.parse(JSON.stringify(entries));
+        // lastSyncedEntries burda GÜNCELLENMİYOR — sadece başarılı push sonrası güncellenir
+        // Aksi hâlde push başarısız olunca lastSyncedEntries yanlış base ile retry'da veri siliniyor
       }
     }
     const payload = getBackupData();
@@ -12627,6 +12628,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v140',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'KRİTİK: PostPaid sonrasi P2P silme sorunu. pushToCloud pre-fetch merge lastSyncedEntries guncelliyordu, push basarisiz olunca retry P2P sifıra dusuruyordu. Artik lastSyncedEntries sadece basarili push sonrasi guncelleniyor.' },
+    ]
+  },
   {
     version: 'v139',
     date: '02.07.2026',
