@@ -239,20 +239,16 @@ body.light{
 
 html{scrollbar-gutter:stable}
 
-/* Yatay scrollbar'ları tamamen gizle */
-* { scrollbar-width:thin; }
-.content-col, #dashContent, #page-prim .layout,
-.content-col *, #dashContent *{
-  scrollbar-width:none !important;
-}
-.content-col::-webkit-scrollbar,
-#dashContent::-webkit-scrollbar,
-.content-col *::-webkit-scrollbar,
-#dashContent *::-webkit-scrollbar{ display:none !important; }
+/* TÜM scrollbar'ları gizle */
+*::-webkit-scrollbar { display:none !important; }
+* { scrollbar-width:none !important; }
 
-/* Trend bar sarmalayıcı - scroll ama görünmez */
-.trend-bars-wrap{ overflow-x:auto !important; scrollbar-width:none !important; }
-.trend-bars-wrap::-webkit-scrollbar{ display:none !important; }
+/* Scroll gereken yerlerde scrollbar gizli ama scroll aktif */
+.content-col, #dashContent, .table-wrap,
+.trend-bars-wrap, .filterbar, .quick { overflow:auto; }
+
+/* Trend bar */
+.trend-bars-wrap{ overflow-x:auto !important; }
 
 /* Müşteri Takibi checkbox hizalama */
 .mkSelectBox { vertical-align:middle; }
@@ -2378,7 +2374,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v102';
+const APP_VERSION = 'v103';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -5798,27 +5794,6 @@ function renderDash(){
             </div>
           </div>
         </div>` : ''}
-
-        <!-- 🎯 Hedef (sol karta entegre) -->
-        <div style="margin-top:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:9px 10px">
-          ${hedef ? `
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <div style="font-size:9.5px;color:rgba(255,255,255,0.5);font-weight:600">🎯 ${monthLabel(now)} Hedefi</div>
-            <div style="display:flex;align-items:baseline;gap:5px">
-              <span style="font-size:18px;font-weight:900;color:${hedefRenk};line-height:1">%${hedefPct}</span>
-              <span style="font-size:9px;color:${hedefPct>=100?'#4cd964':'var(--muted)'}">${hedefPct>=100?'✓ Aşıldı!':hedefKalan>0?fmtF(hedefKalan)+' kaldı':''}</span>
-            </div>
-          </div>
-          <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.08);overflow:hidden;margin-bottom:5px">
-            <div style="height:100%;width:${Math.min(hedefPct,100)}%;background:linear-gradient(90deg,${hedefRenk}88,${hedefRenk});border-radius:3px;transition:width .5s"></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.4)">
-            <span>Gerçekleşen: <b style="color:#8fe3a8">${fmtF(curKdv)}</b>${dashBonusToplam>0?` <span style="color:#ffd27a">(+${fmtF(dashBonusToplam)} bonus)</span>`:''}</span>
-            <span>Hedef: ${fmtF(hedef)}</span>
-          </div>
-          ${gundeGereken ? `<div style="font-size:9px;color:#ffb74d;margin-top:3px">⚡ Günde <b>${fmtF(gundeGereken)}</b> gerekiyor</div>` : ''}
-          ` : `<div style="font-size:9.5px;color:rgba(255,255,255,0.3);text-align:center;padding:4px 0">🎯 Hedef girilmedi</div>`}
-        </div>
       </div>
 
       <!-- Sağ sütun: Bugün + Ay Sonu yan yana, altında Hedef -->
@@ -5869,7 +5844,37 @@ function renderDash(){
           </div>
         </div>
 
-        <!-- Hedef kartı sol karta taşındı -->
+        <!-- Hedef kartı -->
+        <div style="background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px;flex:1">
+          ${hedef ? `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px">
+              <div>
+                <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:1px">🎯 ${monthLabel(now)} Hedefi</div>
+                <div style="font-size:11.5px;font-weight:700">${fmtF(hedef)}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:22px;font-weight:900;color:${hedefRenk};line-height:1">%${hedefPct}</div>
+                <div style="font-size:10px;color:${hedefPct>=100?'#4cd964':'var(--muted)'};margin-top:1px">${hedefPct>=100?'✓ Aşıldı!':hedefKalan>0?fmtF(hedefKalan)+' kaldı':''}</div>
+              </div>
+            </div>
+            <div style="height:7px;border-radius:4px;background:var(--line);overflow:hidden;margin-bottom:5px">
+              <div style="height:100%;width:${Math.min(hedefPct,100)}%;background:linear-gradient(90deg,${hedefRenk}99,${hedefRenk});border-radius:4px;transition:width .5s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted)">
+              <span>Gerçekleşen: <b style="color:var(--txt)">${fmtF(curKdv)}</b>${dashBonusToplam>0?` <span style="color:#ffd27a">(🎁 ${fmtF(dashBonusToplam)} bonus)</span>`:''}</span>
+              <span>Hedef: <b style="color:var(--txt)">${fmtF(hedef)}</b></span>
+            </div>
+            ${gundeGereken ? `<div style="font-size:10px;color:#ffb74d;margin-top:4px">⚡ Günde <b>${fmtF(gundeGereken)}</b> gerekiyor</div>` : ''}
+          ` : `
+            <div style="display:flex;justify-content:space-between;align-items:center;height:100%">
+              <div>
+                <div style="font-size:10px;color:var(--muted);margin-bottom:3px">🎯 Bu Ay Hedef</div>
+                <div style="font-size:11.5px;color:var(--muted)">Henüz girilmedi</div>
+              </div>
+              <button onclick="switchPage('hedef')" style="background:rgba(63,208,255,0.12);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:7px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer">+ Hedef Ekle</button>
+            </div>
+          `}
+        </div>
       </div>
 
     </div><!-- /flex row -->
@@ -12363,6 +12368,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v103',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'Layout düzeltmesi: Hedef kartı sağ sütuna geri döndü, sol kart temiz ve kompakt' },
+      { type: 'fix', text: 'Tüm scrollbar\'lar (yatay ve dikey) CSS ile kalıcı gizlendi (*::-webkit-scrollbar + scrollbar-width:none)' },
+      { type: 'fix', text: 'Versiyon innerHTML ile direkt yazılıyor — Yükleniyor artık kalmıyor' },
+    ]
+  },
   {
     version: 'v102',
     date: '01.07.2026',
