@@ -1359,23 +1359,31 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 <div class="app">
   <div class="sidebar" id="mainSidebar">
-    <div style="padding:0 18px;margin-bottom:10px">
-      <h1 style="margin:0 0 6px;font-size:13px;letter-spacing:.06em;color:var(--muted);font-weight:700">ER-TECH İLETİŞİM</h1>
-      <div id="floatNotifBtn" onclick="toggleNotifPanel()" title="Bildirimler" style="width:28px;height:28px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;transition:background .15s;position:relative" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='var(--panel2)'">
-        🔔<span id="floatNotifBadge" style="display:none;position:absolute;top:-3px;right:-3px;background:#e2231a;color:#fff;border-radius:10px;padding:1px 5px;font-size:9px;font-weight:700;min-width:14px;text-align:center"></span>
+
+    <!-- Başlık -->
+    <div style="padding:14px 18px 10px;border-bottom:1px solid #2a2d30">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin-bottom:2px">ER-TECH İLETİŞİM</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:9px;color:rgba(255,255,255,0.3);cursor:pointer;user-select:none">⏳</div>
+        <button id="floatNotifBtn" onclick="toggleNotifPanel()" style="background:none;border:none;cursor:pointer;font-size:14px;position:relative;padding:2px" title="Bildirimler">
+          🔔<span id="floatNotifBadge" style="display:none;position:absolute;top:-2px;right:-2px;background:#e2231a;color:#fff;border-radius:10px;padding:1px 4px;font-size:8px;font-weight:700"></span>
+        </button>
       </div>
     </div>
 
-    <div class="nav-item active" id="navDash" onclick="switchPage('dash')" style="cursor:pointer">🏠 Anasayfa</div>
-    <div class="nav-item" id="navPrim" onclick="switchPage('prim')" style="cursor:pointer">📊 Prim Sayfası</div>
-    <div class="nav-item" id="navHedef" onclick="switchPage('hedef')" style="cursor:pointer">🎯 Hedef Yönetimi</div>
-    <div class="nav-item" id="navRapor" onclick="switchPage('rapor')" style="cursor:pointer">📅 Haftalık / Yıllık</div>
-    <div class="nav-item" id="navTrend" onclick="switchPage('trend')" style="cursor:pointer">📈 Trend Analizi</div>
-    <div class="nav-item" id="navFinans" onclick="switchPage('finans')" style="cursor:pointer">💹 Finansal Analiz</div>
-    <div class="nav-item" id="navGelir" onclick="switchPage('gelir')" style="cursor:pointer">💰 Gelir Takibi</div>
-    <div class="nav-item" id="navNot" onclick="switchPage('not')" style="cursor:pointer">🏷️ Not & Etiket</div>
+    <!-- Navigasyon -->
+    <div style="padding:8px 0">
+      <div class="nav-item active" id="navDash" onclick="switchPage('dash')" style="cursor:pointer">🏠 Anasayfa</div>
+      <div class="nav-item" id="navPrim" onclick="switchPage('prim')" style="cursor:pointer">📊 Prim Sayfası</div>
+      <div class="nav-item" id="navHedef" onclick="switchPage('hedef')" style="cursor:pointer">🎯 Hedef Yönetimi</div>
+      <div class="nav-item" id="navRapor" onclick="switchPage('rapor')" style="cursor:pointer">📅 Haftalık / Yıllık</div>
+      <div class="nav-item" id="navTrend" onclick="switchPage('trend')" style="cursor:pointer">📈 Trend Analizi</div>
+      <div class="nav-item" id="navFinans" onclick="switchPage('finans')" style="cursor:pointer">💹 Finansal Analiz</div>
+      <div class="nav-item" id="navGelir" onclick="switchPage('gelir')" style="cursor:pointer">💰 Gelir Takibi</div>
+      <div class="nav-item" id="navNot" onclick="switchPage('not')" style="cursor:pointer">🏷️ Not & Etiket</div>
+    </div>
 
-    <!-- Oturum Bilgisi - Nav altı kompakt (masaüstünde görünür) -->
+    <!-- Oturum Bilgisi -->
     <div id="sidebarOturumBox" style="display:none;margin:2px 14px 4px" class="desktop-only-oturum">
       <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.07)">
         <span style="font-size:10px;opacity:.5">🔐</span>
@@ -1399,18 +1407,27 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     </div>
 
     <div class="sidebar-tools">
+
+      <!-- PWA Install (gizli, gerektiğinde gösterilir) -->
       <button id="pwaInstallBtn" class="tool-btn" onclick="installPWA()" style="display:none;background:linear-gradient(90deg,#e2231a,#b81b14);color:#fff;border:none;font-weight:700;justify-content:center">📲 Uygulamayı Kur</button>
-      <button class="tool-btn" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.15);border-color:rgba(255,183,77,0.4);color:#ffb74d;font-weight:700">🎯 Kampanyalar</button>
-      <button class="tool-btn" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent);font-weight:700">👥 Müşteri Takibi <span id="musteriTakipBadge" style="display:inline-block;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px"></span></button>
-      <div class="sidebar-tools-title">Görünüm &amp; Yedekleme</div>
-      <div id="cloudSyncIndicator" style="font-size:11px;padding:4px 6px;color:var(--muted)">☁️ Bağlanıyor...</div>
+
+      <!-- Hızlı Erişim -->
+      <div class="sidebar-tools-title">Hızlı Erişim</div>
+      <button class="tool-btn" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:#ffb74d;font-weight:700">🎯 Kampanyalar</button>
+      <button class="tool-btn" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.08);border-color:rgba(63,208,255,0.25);color:var(--accent);font-weight:700">👥 Müşteri Takibi <span id="musteriTakipBadge" style="display:inline-block;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px"></span></button>
+
+      <!-- Görünüm -->
+      <div class="sidebar-tools-title" style="margin-top:4px">Görünüm</div>
       <button class="tool-btn" id="themeBtn" onclick="toggleTheme()">🌙 Koyu Mod</button>
+      <div id="cloudSyncIndicator" style="font-size:10px;padding:2px 6px;color:var(--muted)">☁️ Bağlanıyor...</div>
+
+      <!-- Veri Yönetimi -->
+      <div class="sidebar-tools-title" style="margin-top:4px">Veri Yönetimi</div>
       <button class="tool-btn" onclick="backupData()">💾 Yedekle</button>
-      <button class="tool-btn" onclick="openGithubGuncelleModal()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent);font-weight:700">🔄 Güncelle</button>
+      <button class="tool-btn" onclick="openGithubGuncelleModal()" style="background:rgba(63,208,255,0.08);border-color:rgba(63,208,255,0.25);color:var(--accent);font-weight:700">🔄 Güncelle</button>
       <label class="tool-btn" style="cursor:pointer">📂 Geri Yükle<input type="file" accept=".json" onchange="restoreData(event)" style="display:none"></label>
-      <button class="tool-btn" onclick="chooseBackupFolder()" title="Bir klasör seçin, her kayıtta otomatik yedeklensin">📁 Otomatik Yedek Klasörü Seç</button>
+      <button class="tool-btn" onclick="chooseBackupFolder()">📁 Oto. Yedek Klasörü</button>
       <span id="autoBackupStatus" class="autobackup-status"></span>
-      <!-- LocalStorage Boyut Göstergesi -->
       <div class="storage-indicator" id="storageIndicator">
         <div class="si-label">
           <span>💾 Depolama</span>
@@ -1419,16 +1436,21 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div class="si-bar-track">
           <div class="si-bar-fill" id="storageBarFill" style="width:0%;background:#4cd964"></div>
         </div>
-        <div class="si-warn" id="storageWarn">⚠ Depolama doluyor — yedek alın!</div>
+        <div class="si-warn" id="storageWarn">⚠ Depolama doluyor!</div>
       </div>
 
-      <button class="tool-btn" onclick="printManagerReport()" title="Güncel verilerle özet bir rapor oluşturur; açılan yazdırma penceresinden 'PDF olarak kaydet' seçilebilir">📄 Yönetici Raporu (PDF)</button>
-      <button class="tool-btn" id="notifPanelBtn" onclick="toggleNotifPanel()" title="Bildirim ayarları ve aktif uyarılar">🔔 Bildirimler <span id="notifBadge" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
+      <!-- Sistem -->
+      <div class="sidebar-tools-title" style="margin-top:4px">Sistem</div>
+      <button class="tool-btn" onclick="printManagerReport()">📄 Yönetici Raporu</button>
+      <button class="tool-btn" id="notifPanelBtn" onclick="toggleNotifPanel()">🔔 Bildirimler <span id="notifBadge" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
       <button class="tool-btn" onclick="openPinModal()">🔐 Kilit / PIN Ayarı</button>
       <button class="tool-btn" onclick="openGirisLogModal()">📋 Giriş Logları</button>
-      <div style="border-top:1px solid #34373b;margin-top:6px;padding-top:8px">
-        <button class="tool-btn" style="color:#ff5252;border-color:rgba(226,35,26,0.4);font-size:10.5px" onclick="clearAllData()" title="Tüm kayıtları siler — geri alınamaz!">⚠ Tüm Verileri Sıfırla</button>
+
+      <!-- Tehlikeli -->
+      <div style="border-top:1px solid #2a2d30;margin-top:6px;padding-top:6px">
+        <button class="tool-btn" style="color:#ff5252;border-color:rgba(226,35,26,0.3);font-size:10.5px;width:100%;justify-content:center" onclick="clearAllData()">⚠ Tüm Verileri Sıfırla</button>
       </div>
+
     </div>
   </div>
   <div id="managerReportPrintArea"></div>
@@ -2374,7 +2396,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v106';
+const APP_VERSION = 'v107';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12379,6 +12401,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v107',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui', text: 'Sidebar yeniden düzenlendi — 4 net bölüm: Hızlı Erişim / Görünüm / Veri Yönetimi / Sistem. Başlık+versiyon+bildirim toparlandı.' },
+    ]
+  },
   {
     version: 'v106',
     date: '01.07.2026',
