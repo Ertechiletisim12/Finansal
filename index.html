@@ -2374,7 +2374,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v105';
+const APP_VERSION = 'v106';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -3222,7 +3222,15 @@ function lastEntryTime(date, cat){
   }
   return null;
 }
+let _changeCountLock = false;
 function changeCount(cat, delta, activationDate, isMnp){
+  // Debounce: peş peşe tıklamada çift kayıt önle
+  if(delta > 0){
+    if(_changeCountLock) return;
+    _changeCountLock = true;
+    setTimeout(()=>{ _changeCountLock = false; }, 600);
+  }
+
   const date = activeDateVal();
 
   // İnternet: aktivasyon tarihi zorunlu
@@ -4197,7 +4205,7 @@ function render(){
       <div class="ctrl">
         <button onclick="openIslemListModal('${cat}','${activeDate}')" style="background:rgba(226,35,26,0.15);border-color:rgba(226,35,26,0.4);color:#ff7070;font-size:14px" title="İşlem listesi / sil">📋</button>
         <span class="cnt">${cnt}</span>
-        <button onclick="changeCount('${cat}',1)">+</button>
+        <button onclick="changeCount('${cat}',1)" style="user-select:none" ondblclick="event.preventDefault()">+</button>
       </div>
       ${lastTime ? `<div style="font-size:10.5px;color:var(--muted);margin-top:4px">🕒 ${lastTime.time}${lastTime.platform ? ` <span style="opacity:.7">${lastTime.platform}</span>` : ''}</div>` : ''}
       ${mnpInfo}${intInfo}
@@ -8453,7 +8461,7 @@ function saveMusteriKayit(){
 
   const otomatikAktif = !isMnp;
   const kayit = {
-    id: _mkEditId || Date.now().toString(),
+    id: _mkEditId || ('m_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7)),
     entryDate: tarih, entryTime: saat,
     cat, tip: mkTipVal, ad, tel, not, tarife,
     aktivasyonTarihi: aktTarih, takipTarihi,
@@ -12371,6 +12379,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v106',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'Peş peşe + tuşuna basınca silme sorunu düzeltildi: 600ms debounce eklendi, çift tıklamada ikinci kayıt önleniyor' },
+      { type: 'fix', text: 'Müşteri ID çakışması düzeltildi: Date.now() yerine timestamp+random ID, aynı ms\'de iki kayıt yapılsa bile farklı ID alıyor' },
+    ]
+  },
   {
     version: 'v105',
     date: '01.07.2026',
