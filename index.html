@@ -1353,44 +1353,30 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="nav-item" id="navGelir" onclick="switchPage('gelir')" style="cursor:pointer">💰 Gelir Takibi</div>
     <div class="nav-item" id="navNot" onclick="switchPage('not')" style="cursor:pointer">🏷️ Not & Etiket</div>
 
-    <!-- Oturum Bilgisi - Nav altı şık tasarım (masaüstünde görünür) -->
-    <div id="sidebarOturumBox" style="display:none;margin:8px 14px" class="desktop-only-oturum">
-      <div style="background:linear-gradient(135deg,rgba(226,35,26,0.12),rgba(226,35,26,0.04));border:1px solid rgba(226,35,26,0.22);border-radius:12px;padding:12px 14px;position:relative;overflow:hidden">
-        <!-- Arkaplan dekorasyon -->
-        <div style="position:absolute;right:-10px;top:-10px;width:60px;height:60px;border-radius:50%;background:rgba(226,35,26,0.06);pointer-events:none"></div>
-
-        <!-- Üst satır: başlık + kilitle -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="display:flex;align-items:center;gap:5px">
-            <span style="font-size:12px">🔐</span>
-            <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:.06em;text-transform:uppercase">Oturum</span>
+    <!-- Oturum Bilgisi - Nav altı kompakt (masaüstünde görünür) -->
+    <div id="sidebarOturumBox" style="display:none;margin:4px 14px 6px" class="desktop-only-oturum">
+      <div style="background:rgba(226,35,26,0.08);border:1px solid rgba(226,35,26,0.18);border-radius:9px;padding:7px 10px">
+        <!-- Tek satır: ikon + sayaçlar + kilitle -->
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;opacity:.6">🔐</span>
+          <div style="display:flex;align-items:center;gap:6px;flex:1">
+            <div style="text-align:center">
+              <div style="font-size:7.5px;color:rgba(255,255,255,0.35);font-weight:600;letter-spacing:.04em">KİLİT</div>
+              <div id="sidebarKalanSure" style="font-size:13px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;line-height:1">10:00</div>
+            </div>
+            <div style="width:1px;height:22px;background:rgba(255,255,255,0.1)"></div>
+            <div style="text-align:center">
+              <div style="font-size:7.5px;color:rgba(255,255,255,0.35);font-weight:600;letter-spacing:.04em">AÇIK</div>
+              <div id="sidebarAcikSure" style="font-size:13px;font-weight:800;color:#4cd964;font-variant-numeric:tabular-nums;line-height:1">0:00</div>
+            </div>
           </div>
-          <button onclick="oturumKapat()" style="background:rgba(226,35,26,0.2);border:1px solid rgba(226,35,26,0.35);color:#ff8080;border-radius:7px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer">🔒 Kilitle</button>
+          <button onclick="oturumKapat()" style="background:rgba(226,35,26,0.2);border:1px solid rgba(226,35,26,0.3);color:#ff8080;border-radius:6px;padding:3px 7px;font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0">🔒</button>
         </div>
-
-        <!-- İki sayaç yan yana -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <!-- Kilitlenme sayacı -->
-          <div style="background:rgba(0,0,0,0.2);border-radius:9px;padding:8px 10px;text-align:center;border:1px solid rgba(255,255,255,0.05)">
-            <div style="font-size:8.5px;color:rgba(255,255,255,0.4);font-weight:600;letter-spacing:.05em;margin-bottom:3px">KİLİTLENME</div>
-            <div id="sidebarKalanSure" style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-.5px">10:00</div>
-            <div style="font-size:8px;color:rgba(226,35,26,0.7);margin-top:2px">hareketsizlik</div>
-          </div>
-          <!-- Açık kalma süresi -->
-          <div style="background:rgba(0,0,0,0.2);border-radius:9px;padding:8px 10px;text-align:center;border:1px solid rgba(255,255,255,0.05)">
-            <div style="font-size:8.5px;color:rgba(255,255,255,0.4);font-weight:600;letter-spacing:.05em;margin-bottom:3px">AÇIK SÜRE</div>
-            <div id="sidebarAcikSure" style="font-size:20px;font-weight:900;color:#4cd964;font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-.5px">0:00</div>
-            <div style="font-size:8px;color:rgba(76,217,100,0.5);margin-top:2px">oturum</div>
-          </div>
+        <!-- Progress bar -->
+        <div id="sidebarProgress" style="height:2px;border-radius:1px;background:rgba(255,255,255,0.06);margin-top:6px;overflow:hidden">
+          <div id="sidebarProgressBar" style="height:100%;width:100%;background:#4cd964;border-radius:1px;transition:width .5s,background .5s"></div>
         </div>
-
-        <!-- Uyarı -->
-        <div id="sidebarUyari" style="font-size:9.5px;color:#ff9f0a;margin-top:8px;min-height:12px;text-align:center;font-weight:600"></div>
-
-        <!-- Progress bar (kalan süre yüzdesi) -->
-        <div id="sidebarProgress" style="height:3px;border-radius:2px;background:rgba(255,255,255,0.08);margin-top:8px;overflow:hidden">
-          <div id="sidebarProgressBar" style="height:100%;width:100%;background:linear-gradient(90deg,#4cd964,#a3f0b5);border-radius:2px;transition:width .5s,background .5s"></div>
-        </div>
+        <div id="sidebarUyari" style="font-size:8.5px;color:#ff9f0a;margin-top:4px;min-height:10px;text-align:center;font-weight:600"></div>
       </div>
     </div>
 
@@ -1433,7 +1419,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v87 · 01.07.2026 13:00</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v88 · 01.07.2026 13:30</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1454,7 +1440,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v87 · Son güncelleme: 01.07.2026 13:00 <span style="font-size:9px;opacity:.6">▼</span></div>
+            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v88 · Son güncelleme: 01.07.2026 13:30 <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2370,8 +2356,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v87';
-const BUILD_DATE = '01.07.2026 13:00';
+const APP_VERSION = 'v88';
+const BUILD_DATE = '01.07.2026 13:30';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -12404,6 +12390,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v88',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui', text: 'Oturum kutusu küçültüldü — tek satır, 13px sayaçlar, ince progress bar' },
+    ]
+  },
   {
     version: 'v87',
     date: '01.07.2026',
