@@ -1411,7 +1411,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v83 · 01.07.2026 10:00</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v84 · 01.07.2026 10:45</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1432,7 +1432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v83 · Son güncelleme: 01.07.2026 10:00 <span style="font-size:9px;opacity:.6">▼</span></div>
+            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v84 · Son güncelleme: 01.07.2026 10:45 <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2348,8 +2348,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v83';
-const BUILD_DATE = '01.07.2026 10:00';
+const APP_VERSION = 'v84';
+const BUILD_DATE = '01.07.2026 10:45';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -5503,6 +5503,10 @@ function renderDash(){
 
   // MNP bekleyen (anasayfa kartı için)
   const mnpBekleyenler = musteriler.filter(m=>m.durum==='bekliyor' && MNP_CATS.includes(m.cat));
+  // Tarih bazlı gruplama
+  const mnpGecikmus   = mnpBekleyenler.filter(m=>m.aktivasyonTarihi && m.aktivasyonTarihi < today);
+  const mnpBugun      = mnpBekleyenler.filter(m=>m.aktivasyonTarihi && m.aktivasyonTarihi === today);
+  const mnpYakinda    = mnpBekleyenler.filter(m=>m.aktivasyonTarihi && m.aktivasyonTarihi > today);
   const mnpBuAyBekleyen = mnpBekleyenler.filter(m=>m.aktivasyonTarihi && m.aktivasyonTarihi.startsWith(now));
 
   // Son 6 ay mini trend — adet ve tutar dahil
@@ -5568,14 +5572,43 @@ function renderDash(){
         </div>
         <span style="color:var(--accent);font-size:18px">›</span>
       </div>` : ''}
-      ${mnpBuAyBekleyen.length>0 ? `
-      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="flex:0 0 auto;min-width:220px;background:rgba(255,159,10,0.07);border:1px solid rgba(255,159,10,0.3);border-radius:10px;padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px">
-        <div>
-          <div style="font-size:10px;color:#ff9f0a;font-weight:700;margin-bottom:2px">⏳ MNP Onay Bekliyor</div>
-          <div style="font-size:15px;font-weight:800;color:#ffd27a">${mnpBuAyBekleyen.length} müşteri</div>
-          <div style="font-size:9.5px;color:var(--muted);margin-top:2px">${mnpBuAyBekleyen.map(m=>`${m.ad||'?'} (${m.cat})`).slice(0,3).join(', ')}${mnpBuAyBekleyen.length>3?` +${mnpBuAyBekleyen.length-3} daha`:''}</div>
+      ${mnpBekleyenler.length>0 ? `
+      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="flex:0 0 auto;min-width:260px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;cursor:pointer;gap:0" onmouseover="this.style.borderColor='rgba(255,159,10,0.5)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:11px;font-weight:800;color:var(--txt)">⏳ MNP Onay Bekliyor</span>
+          <span style="font-size:10px;color:var(--muted)">${mnpBekleyenler.length} toplam → Takibe git</span>
         </div>
-        <div style="font-size:11px;color:var(--muted);flex-shrink:0">→ Takibe git</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          ${mnpGecikmus.length>0 ? `
+          <div style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);border-radius:7px;padding:7px 10px">
+            <div style="font-size:9.5px;font-weight:700;color:#ff5252;margin-bottom:4px">🔴 GECİKMİŞ — ${mnpGecikmus.length} müşteri</div>
+            ${mnpGecikmus.map(m=>{
+              const gec = Math.round((new Date(today)-new Date(m.aktivasyonTarihi))/(1000*60*60*24));
+              return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;padding:2px 0;border-bottom:1px solid rgba(255,82,82,0.15)">
+                <span style="color:var(--txt);font-weight:600">${m.ad||'?'} ${m.soyad||''}</span>
+                <span style="color:#ff5252;font-size:9px;font-weight:700">${gec} gün geçti</span>
+              </div>`;
+            }).join('')}
+          </div>` : ''}
+          ${mnpBugun.length>0 ? `
+          <div style="background:rgba(255,183,77,0.1);border:1px solid rgba(255,183,77,0.35);border-radius:7px;padding:7px 10px">
+            <div style="font-size:9.5px;font-weight:700;color:#ffb74d;margin-bottom:4px">🟡 BUGÜN ONAYLANMALI — ${mnpBugun.length} müşteri</div>
+            ${mnpBugun.map(m=>`
+              <div style="font-size:10.5px;color:var(--txt);font-weight:600;padding:2px 0;border-bottom:1px solid rgba(255,183,77,0.15)">${m.ad||'?'} ${m.soyad||''} <span style="color:var(--muted);font-weight:400">(${m.cat})</span></div>
+            `).join('')}
+          </div>` : ''}
+          ${mnpYakinda.length>0 ? `
+          <div style="background:rgba(76,217,100,0.07);border:1px solid rgba(76,217,100,0.2);border-radius:7px;padding:7px 10px">
+            <div style="font-size:9.5px;font-weight:700;color:#4cd964;margin-bottom:4px">🟢 YAKINDA — ${mnpYakinda.length} müşteri</div>
+            ${mnpYakinda.map(m=>{
+              const kalan = Math.round((new Date(m.aktivasyonTarihi)-new Date(today))/(1000*60*60*24));
+              return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;padding:2px 0;border-bottom:1px solid rgba(76,217,100,0.1)">
+                <span style="color:var(--txt);font-weight:600">${m.ad||'?'} ${m.soyad||''}</span>
+                <span style="color:#4cd964;font-size:9px">${kalan===1?'Yarın':kalan+' gün sonra'}</span>
+              </div>`;
+            }).join('')}
+          </div>` : ''}
+        </div>
       </div>` : ''}
     </div>
 
@@ -12090,11 +12123,19 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v84',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui',  text: 'MNP Onay Bekliyor kartı 3 renkli bölüme ayrıldı: 🔴 Gecikmiş (kaç gün geçtiğiyle), 🟡 Bugün Onaylanmalı, 🟢 Yakında (kaç gün kaldığıyla)' },
+      { type: 'fix', text: 'versionInfoBtn versiyon metni bu sefer Python ile doğru güncellendi' },
+    ]
+  },
+  {
     version: 'v83',
     date: '01.07.2026',
     items: [
       { type: 'fix',   text: 'Versiyon metni her yerde v82 olarak doğru güncellendi (versionInfoBtn atlanıyordu)' },
-      { type: 'new',   text: '🔄 Güncelle butonu eklendi — yeni index.html seçince GitHub'a otomatik yükler, önbelleği temizler, sayfayı yeniler' },
+      { type: 'new',   text: '🔄 Güncelle butonu eklendi — yeni index.html seçince GitHub\'a otomatik yükler, önbelleği temizler, sayfayı yeniler' },
       { type: 'ui',    text: 'Hakediş panelindeki kampanya bonus detayı zenginleştirildi — kampanya adı, türü, koşulu ve tarih aralığı ayrı kartçık olarak gösteriliyor' },
     ]
   },
