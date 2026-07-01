@@ -1413,7 +1413,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v78 · 30.06.2026 22:13</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v79 · 30.06.2026 23:58</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1434,7 +1434,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">v78 · Son güncelleme: 30.06.2026 22:13</div>
+            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v79 · Son güncelleme: 30.06.2026 23:58 <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -1544,8 +1544,11 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           </div>
           <div class="cards-row" id="catCards" style="margin-bottom:10px"></div>
 
-        <!-- Genel Hakediş Özet Paneli -->
-        <div id="hakedisPanel" style="display:none;margin-bottom:12px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#1a3a2a,#1f4a35);border:1px solid rgba(76,217,100,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+        <!-- Genel Hakediş + Günlük Ortalama yan yana -->
+        <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch">
+
+        <!-- Sol: Genel Hakediş Özet Paneli -->
+        <div id="hakedisPanel" style="display:none;flex:0 0 auto;width:260px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#1a3a2a,#1f4a35);border:1px solid rgba(76,217,100,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.3)">
           <!-- Üst: büyük hakediş rakamı -->
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -1560,15 +1563,17 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <!-- Alt: satırlar -->
           <div style="border-top:1px solid rgba(255,255,255,0.08);padding:10px 16px;display:flex;flex-direction:column;gap:5px" id="hakedisDetaylar"></div>
         </div>
+
+        <!-- Sağ: Günlük Ortalama & Ay Sonu Tahmini (hakedis ile yan yana) -->
+        <div id="statsRowTop" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px"></div>
+
+        </div><!-- /hakedisStatsRow -->
         </div>
 
         <!-- Scroll eden içerik -->
         <div class="content-col" style="overflow-y:auto;flex:1;padding-top:0">
 
-    <div class="section-title">Günlük Ortalama &amp; Ay Sonu Tahmini</div>
-    <div class="stats-row" id="statsRowTop"></div>
-
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin:18px 0 8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin:8px 0 8px">
       <div class="section-title" id="compareTitle" style="margin:0">Bu Ay / Geçen Ay Karşılaştırması</div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin-left:auto">
         <select id="cmpMonthSel" onchange="render()"></select>
@@ -2345,8 +2350,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v78';
-const BUILD_DATE = '30.06.2026 22:13';
+const APP_VERSION = 'v79';
+const BUILD_DATE = '30.06.2026 23:58';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -4169,6 +4174,11 @@ function render(){
   const rangeNet = rangeGelir - rangeGider;
   const netColor = rangeNet >= 0 ? '#4cd964' : '#ff5252';
 
+  // Bonus/müşteri hesabı için AY bilgisi: range başlangıcından türet
+  // "Bu Ay" → rStart="2026-07-01" → bonusAy="2026-07"
+  // "Geçen Ay" → rStart="2026-06-01" → bonusAy="2026-06"  (FIX: artık activeYm=bugün ayı kullanılmıyor)
+  const bonusAy = rStart.slice(0,7);
+
     // Onaylanan / Bekleyen hesapla - range bazlı, MNP için aktivasyon tarihi
   function musteriEffectiveYm(m){
     if(m.tip==='mnp'){
@@ -4177,63 +4187,60 @@ function render(){
     return ymKey(m.entryDate);
   }
   // Onaylanan/Bekleyen: ENTRIES bazli hesapla (gercek prim adedi ile her zaman eslesir)
-  // Bu aya effectiveYm dusen tum entries (TUM kategoriler: PrePaid, PostPaid, Red, P2P, Mccm, Internet, Diger)
-  const buAyEntries = entries.filter(e => effectiveYm(e) === activeYm);
+  // bonusAy'a effectiveYm dusen tum entries (TUM kategoriler)
+  const buAyEntries = entries.filter(e => effectiveYm(e) === bonusAy);
   const buAyToplamAdet = buAyEntries.reduce((a,e)=>a+e.count,0);
   const buAyToplamTutar = buAyEntries.reduce((a,e)=>{
     const tFiyat = tarifeFiyatFor(e, e.cat);
-    const p = tFiyat != null ? tFiyat : (kampanyaFiyatFor(e.date, e.cat, priceFor(activeYm, e.cat)) || 0);
+    const p = tFiyat != null ? tFiyat : (kampanyaFiyatFor(e.date, e.cat, priceFor(bonusAy, e.cat)) || 0);
     return a + e.count*p;
   }, 0);
 
-  // Bekleyen: SADECE MNP_CATS (PrePaid/PostPaid/Red) icindeki bekleyen MNP'ler
-  // P2P, Mccm, Internet, Diger her zaman aninda aktif (MNP suresi yok)
+  // Bekleyen: SADECE MNP_CATS icindeki bekleyen MNP'ler
   let bekleyenAdet = 0, bekleyenTutar = 0;
   musteriler.filter(m=>{
     if(m.tip!=='mnp' || m.durum!=='bekliyor' || !m.entryDate) return false;
-    if(!MNP_CATS.includes(m.cat)) return false; // guvenlik: sadece MNP_CATS
-    return musteriEffectiveYm(m) === activeYm;
+    if(!MNP_CATS.includes(m.cat)) return false;
+    return musteriEffectiveYm(m) === bonusAy;
   }).forEach(m=>{
-    const p = kampanyaFiyatFor(m.entryDate, m.cat, priceFor(activeYm, m.cat)) || 0;
+    const p = kampanyaFiyatFor(m.entryDate, m.cat, priceFor(bonusAy, m.cat)) || 0;
     bekleyenAdet++;
     bekleyenTutar += p;
   });
-  // Bekleyen, toplam entries adedini gecemesin (orphan koruma)
   bekleyenAdet = Math.min(bekleyenAdet, buAyToplamAdet);
 
-  // Onaylanan = toplam - bekleyen (P2P/Mccm/Internet/Diger her zaman onaylanan'a dahil)
+  // Onaylanan = toplam - bekleyen
   const onaylananAdet = Math.max(0, buAyToplamAdet - bekleyenAdet);
   const onaylananTutar = Math.max(0, buAyToplamTutar - bekleyenTutar);
 
-    // Prim tutari: sadece onaylananlar (aktif musteriler)
   const primTutari = onaylananTutar;
   const toplamMusteriAdet = onaylananAdet + bekleyenAdet;
 
-  // Aktif aydaki tum kampanya bonuslarini detayli hesapla
-  const adetMapBuAy = effectiveCountForYm(activeYm);
+  // Aktif aydaki tum kampanya bonuslarini detayli hesapla (bonusAy bazlı)
+  const adetMapBuAy = effectiveCountForYm(bonusAy);
   const mnpDetayBuAy = {};
   MNP_CATS.forEach(c=>{
-    const mnpA = entries.filter(e=>e.cat===c && !!e.mnp && effectiveYm(e)===activeYm).reduce((a,e)=>a+e.count,0);
-    const tesisA = entries.filter(e=>e.cat===c && !e.mnp && effectiveYm(e)===activeYm).reduce((a,e)=>a+e.count,0);
+    const mnpA = entries.filter(e=>e.cat===c && !!e.mnp && effectiveYm(e)===bonusAy).reduce((a,e)=>a+e.count,0);
+    const tesisA = entries.filter(e=>e.cat===c && !e.mnp && effectiveYm(e)===bonusAy).reduce((a,e)=>a+e.count,0);
     mnpDetayBuAy[c] = {mnp:mnpA, tesis:tesisA};
   });
   // Esik bazli bonuslar (tek kategori)
   let esikBonusToplam = 0;
   const esikBonusDetay = [];
   CATS.forEach(c=>{
-    const b = kampanyaBonusFor(activeYm, c, adetMapBuAy[c]||0);
+    const b = kampanyaBonusFor(bonusAy, c, adetMapBuAy[c]||0);
     if(b > 0){ esikBonusToplam += b; esikBonusDetay.push({label:c, tutar:b}); }
   });
-  // Tekrarlayan bonuslar (coklu kategori + TARIH ARALIGI destekli)
+  // Tekrarlayan bonuslar (bonusAy bazlı)
   let tekrarliBonusToplam = 0;
   const tekrarliBonusDetay = [];
-  kampanyaData.filter(k=>k.tip==='tekrarli' && k.ym===activeYm && (k.minAdet||0)>0).forEach(k=>{
+  kampanyaData.filter(k=>k.tip==='tekrarli' && k.ym===bonusAy && (k.minAdet||0)>0).forEach(k=>{
     const cats = (k.catList && k.catList.length) ? k.catList : [k.cat];
     let toplamAdet = 0;
     cats.forEach(c=>{
       const catEntries = entries.filter(e=>{
         if(e.cat !== c) return false;
-        if(effectiveYm(e) !== activeYm) return false;
+        if(effectiveYm(e) !== bonusAy) return false;
         if(k.startDate && e.date < k.startDate) return false;
         if(k.endDate && e.date > k.endDate) return false;
         return true;
@@ -4265,10 +4272,13 @@ function render(){
   const hAdetLabel = document.getElementById('hakedisAdetLabel');
 
   if(hPanel && hToplamRakam){
-    hPanel.style.display = 'block';
+    hPanel.style.display = 'flex';
+    hPanel.style.flexDirection = 'column';
+    const hWrapper = document.getElementById('hakedisStatsRow');
+    if(hWrapper) hWrapper.style.display = 'flex';
     hToplamRakam.textContent = fmt(genelHakedis);
     hAralikLabel.textContent = rStart + ' – ' + rEnd;
-    hAdetLabel.textContent = rangeCount + ' adet';
+    hAdetLabel.textContent = rangeCount + ' adet' + (bonusAy !== activeYm ? ' · Kampanya/Müşteri: ' + monthLabel(bonusAy) : '');
 
     let detayHTML = '';
     detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px">
@@ -4542,28 +4552,27 @@ function render(){
   const gundeGereken = (hedefKalan!=null && daysInCurMonth-todayNum>0) ? hedefKalan/(daysInCurMonth-todayNum) : null;
 
   statsTopDiv.innerHTML = `
-    <div class="stat">
-      <div class="t">Günlük Ortalama (${monthLabel(realCurMonth)}) <span style="font-size:9.5px;opacity:.7">KDV Dahil</span></div>
-      <div class="v">${fmt(dailyAvgCurMonth)}</div>
-      <div class="sub">${todayNum} günün ortalaması · şu ana kadar ${fmt(curMonthSumSoFar)}</div>
+    <div class="stat" style="flex:1;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+      <div class="t" style="font-size:10px">Günlük Ort. (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
+      <div class="v" style="font-size:18px;margin-top:4px">${fmt(dailyAvgCurMonth)}</div>
+      <div class="sub" style="font-size:9.5px">${todayNum} gün · toplam ${fmt(curMonthSumSoFar)}</div>
     </div>
-    <div class="stat">
-      <div class="t">Ay Sonu Tahmini (${monthLabel(realCurMonth)}) <span style="font-size:9.5px;opacity:.7">KDV Dahil</span></div>
-      <div class="v" style="color:var(--gold)">${fmt(projectedMonthEnd)}</div>
-      <div class="sub">${daysInCurMonth} gün üzerinden projeksiyon</div>
+    <div class="stat" style="flex:1;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+      <div class="t" style="font-size:10px">Ay Sonu Tahmini (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
+      <div class="v" style="font-size:18px;margin-top:4px;color:var(--gold)">${fmt(projectedMonthEnd)}</div>
+      <div class="sub" style="font-size:9.5px">${daysInCurMonth} gün üzerinden projeksiyon</div>
     </div>
-    <div class="stat" style="min-width:220px">
-      <div class="t">🎯 ${monthLabel(realCurMonth)} Hedefi <span style="font-size:9.5px;opacity:.7">KDV Dahil</span></div>
+    <div class="stat" style="flex:1;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+      <div class="t" style="font-size:10px">🎯 ${monthLabel(realCurMonth)} Hedefi <span style="opacity:.65">KDV Dahil</span></div>
       ${curHedef ? `
-        <div class="v" style="color:${hedefRenk}">${hedefPctTop!=null?`%${hedefPctTop}`:''}</div>
-        <div style="height:6px;border-radius:3px;background:var(--line);margin:6px 0;overflow:hidden">
+        <div class="v" style="font-size:18px;margin-top:4px;color:${hedefRenk}">${hedefPctTop!=null?`%${hedefPctTop}`:''}</div>
+        <div style="height:5px;border-radius:3px;background:var(--line);margin:5px 0;overflow:hidden">
           <div style="height:100%;width:${Math.min(hedefPctTop??0,100)}%;background:${hedefRenk};border-radius:3px;transition:width .4s"></div>
         </div>
-        <div class="sub">Hedef: ${fmt(curHedef)} · Gerçekleşen: ${fmt(curMonthSumSoFar)}</div>
-        ${hedefKalan!=null && hedefKalan>0 ? `<div class="sub" style="color:#ffb74d">Kalan: ${fmt(hedefKalan)}${gundeGereken!=null?' · Günde '+fmt(gundeGereken)+' gerekiyor':''}</div>` : hedefPctTop!=null&&hedefPctTop>=100 ? `<div class="sub" style="color:#4cd964;font-weight:700">✓ Hedef aşıldı!</div>` : ''}
+        <div class="sub" style="font-size:9.5px">Hedef: ${fmt(curHedef)} · Gerçekleşen: ${fmt(curMonthSumSoFar)}</div>
+        ${hedefKalan!=null && hedefKalan>0 ? `<div class="sub" style="font-size:9.5px;color:#ffb74d">Kalan: ${fmt(hedefKalan)}${gundeGereken!=null?' · Günde '+fmt(gundeGereken):''}</div>` : hedefPctTop!=null&&hedefPctTop>=100 ? `<div class="sub" style="color:#4cd964;font-weight:700;font-size:9.5px">✓ Hedef aşıldı!</div>` : ''}
       ` : `
         <div style="color:var(--muted);font-size:11px;margin-top:8px">Henüz hedef girilmedi</div>
-        <div class="sub">Prim Finans Özeti tablosundaki 🎯 Aylık Hedef sütununa girin</div>
       `}
     </div>
   `;
@@ -11828,6 +11837,76 @@ function exportModalToExcel(){
   XLSX.utils.book_append_sheet(wb, ws, 'Islemler');
   XLSX.writeFile(wb, (window._exportFileLabel||'export') + '.xlsx');
 }
+</script>
+
+<script>
+// ===================== SÜRÜM GEÇMİŞİ =====================
+const CHANGELOG_DATA = [
+  {
+    version: 'v79',
+    date: '30.06.2026',
+    items: [
+      { type: 'fix', text: 'Kampanya fiyatları; Prim günlük liste, Excel dışa aktarım, kategori/gün detay popup, yıllık rapor, hedef ilerleme ve istatistik kartlarında uygulanmıyordu — düzeltildi' },
+      { type: 'fix', text: 'Kampanya Bonusu / Onaylanan / Bekleyen müşteri sayıları filtre (Bu Ay / Geçen Ay) değiştiğinde güncellenmiyordu — düzeltildi' },
+      { type: 'fix', text: 'Tekrarlanan HTML id\'leri (xlsBtn, finansAyModalExistWarn) düzeltildi' },
+      { type: 'clean', text: 'Ölü kod temizliği: çift tanımlı fonksiyonlar ve var olmayan elementlere bakan fonksiyonlar kaldırıldı (~400 satır azaldı)' },
+      { type: 'ui', text: 'Hakediş kartı + Günlük Ortalama / Ay Sonu / Hedef kartları yan yana kompakt görünüme alındı' },
+      { type: 'ui', text: 'Versiyon yazısına tıklayınca sürüm notları popup\'ı açılıyor (bu ekran)' },
+    ]
+  }
+];
+
+function toggleChangelog(){
+  let modal = document.getElementById('changelogModal');
+  if(modal){
+    modal.remove();
+    return;
+  }
+  const typeIcon = { fix:'🐛', clean:'🗑️', ui:'🎨', new:'✨', perf:'⚡' };
+  const typeColor = { fix:'#ff7a7a', clean:'#aaa', ui:'#3fd0ff', new:'#4cd964', perf:'#ffb74d' };
+
+  const rows = CHANGELOG_DATA.map(v => `
+    <div style="margin-bottom:18px">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">
+        <span style="font-size:15px;font-weight:800;color:#fff">${v.version}</span>
+        <span style="font-size:11px;color:var(--muted)">${v.date}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${v.items.map(i=>`
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="flex-shrink:0;font-size:12px">${typeIcon[i.type]||'•'}</span>
+            <span style="font-size:12px;color:var(--txt);line-height:1.5">${i.text}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('<div style="height:1px;background:var(--line);margin-bottom:18px"></div>');
+
+  modal = document.createElement('div');
+  modal.id = 'changelogModal';
+  modal.style.cssText = 'position:fixed;z-index:9999;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-start;justify-content:center;padding:60px 16px 16px';
+  modal.innerHTML = `
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;width:100%;max-width:520px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.5)">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div>
+          <div style="font-size:14px;font-weight:800;color:var(--txt)">📋 Sürüm Notları</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Er-Tech İletişim · ${APP_VERSION}</div>
+        </div>
+        <button onclick="document.getElementById('changelogModal').remove()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;line-height:1">×</button>
+      </div>
+      <div style="padding:18px;overflow-y:auto;flex:1">
+        ${rows}
+      </div>
+    </div>
+  `;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+// Mobil versiyon yazısını da tıklanabilir yap
+document.addEventListener('DOMContentLoaded', ()=>{
+  const mv = document.getElementById('mobileVersionInfo');
+  if(mv){ mv.style.cursor='pointer'; mv.onclick = toggleChangelog; }
+});
 </script>
 </body>
 </html>
