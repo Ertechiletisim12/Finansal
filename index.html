@@ -12,18 +12,30 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <script>
   if('serviceWorker' in navigator){
-    window.addEventListener('load', () => {
-      // updateViaCache:'none' → tarayıcı sw.js'i HİÇBİR ZAMAN cache'lemez, hep ağdan alır
-      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
-        .then(r => {
-          console.log('SW kayıtlı:', r.scope);
-          r.update();
-        })
-        .catch(e => console.warn('SW hatası:', e));
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
-      });
-    });
+    // SW kodu index.html içinde — ayrı sw.js yok, cache sorunu yok
+    const swKod = `
+const CACHE_NAME = 'finansal-v113';
+self.addEventListener('install', e => { self.skipWaiting(); });
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))
+    ).then(()=>self.clients.claim())
+  );
+});
+self.addEventListener('fetch', e => {
+  if(e.request.mode==='navigate'){
+    e.respondWith(fetch(e.request,{cache:'no-store'}).catch(()=>caches.match(e.request)));
+    return;
+  }
+  e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request)));
+});`;
+    const blob = new Blob([swKod], {type:'application/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl)
+      .then(r=>{ r.update(); console.log('SW hazır'); })
+      .catch(e=>console.warn('SW hatası:',e));
+    navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
   }
   // PWA kurulum butonu
   let deferredPrompt;
@@ -2415,7 +2427,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v113';
+const APP_VERSION = 'v114';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -12489,6 +12501,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v114',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'SW artık ayrı dosya değil — index.html içine gömüldü. index.html güncellenince SW de otomatik güncellenir, cache sorunu kalıcı olarak bitti.' },
+    ]
+  },
   {
     version: 'v113',
     date: '01.07.2026',
