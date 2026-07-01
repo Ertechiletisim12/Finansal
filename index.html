@@ -2438,7 +2438,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v131';
+const APP_VERSION = 'v132';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -11951,21 +11951,22 @@ function showCatDetail(cat, rStart, rEnd){
         </div>
         <button onclick="document.getElementById('dayDetailPopup').remove()" style="background:#3a3d42;border:none;color:#c8cacc;width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:16px;line-height:1">✕</button>
       </div>
-      <div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 30px 80px;gap:4px;padding:8px 10px;border-bottom:1px solid #3a3d42;background:#1a1d21">
-        <span style="font-size:9px;color:#6a7080;font-weight:700">TARİH</span>
-        <span style="font-size:9px;color:#6a7080;font-weight:700">MÜŞTERİ</span>
-        <span style="font-size:9px;color:#6a7080;font-weight:700">TELEFON</span>
-        <span style="font-size:9px;color:#6a7080;font-weight:700">TARİFE</span>
-        <span style="font-size:9px;color:#6a7080;font-weight:700;text-align:center">AD</span>
-        <span style="font-size:9px;color:#6a7080;font-weight:700;text-align:right">TUTAR</span>
-      </div>
       <div style="overflow-y:auto;flex:1">
-        <table style="width:100%;border-collapse:collapse">${rows}
-          <tr style="border-top:2px solid #e2231a;background:#1e2124">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#1a1d21;position:sticky;top:0">
+            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:left;white-space:nowrap">TARİH</th>
+            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:left">MÜŞTERİ</th>
+            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:left;white-space:nowrap">TELEFON</th>
+            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:left">TARİFE</th>
+            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:center">AD</th>
+            <th style="padding:8px 10px;font-size:9px;color:#6a7080;font-weight:700;text-align:right">TUTAR</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot><tr style="border-top:2px solid #e2231a;background:#1e2124">
             <td colspan="4" style="padding:10px;font-size:12px;color:#fff;font-weight:800">TOPLAM</td>
             <td style="padding:10px;font-size:13px;color:#fff;font-weight:800;text-align:center">${totalCount}</td>
             <td style="padding:10px;font-size:13px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(totalAmt)}</td>
-          </tr>
+          </tfoot>
         </table>
       </div>
     </div>`;
@@ -12617,6 +12618,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v132',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Versiyon gösterimi: onclick hatası yakalanıyor, metin her koşulda yazılıyor' },
+      { type: 'ui',  text: 'Özet popup tablosu: thead/tbody/tfoot ile gerçek tablo, başlık ve veriler hizalı' },
+    ]
+  },
+  {
     version: 'v131',
     date: '02.07.2026',
     items: [
@@ -13093,12 +13102,13 @@ function toggleChangelog(){
 (function updateVersionDisplay(){
   try {
     const deployDate = getDeployDate();
-    // Mobil versiyon
+    const verTxt = APP_VERSION + ' · Son güncelleme: ' + deployDate;
+    // Mobil
     const mv = document.getElementById('mobileVersionInfo');
-    if(mv){ mv.style.cursor='pointer'; mv.onclick = toggleChangelog; mv.textContent = APP_VERSION + ' · ' + deployDate; }
-    // Ana başlık (masaüstü) - tüm eşleşenleri güncelle (duplicate ID varsa hepsini düzelt)
+    if(mv){ mv.textContent = verTxt; mv.style.cursor='pointer'; try{ mv.onclick=toggleChangelog; }catch(e){} }
+    // Masaüstü
     document.querySelectorAll('#versionInfoBtn').forEach(btn => {
-      btn.innerHTML = APP_VERSION + ' · Son güncelleme: ' + deployDate + ' <span style="font-size:9px;opacity:.6">▼</span>';
+      btn.innerHTML = verTxt + ' <span style="font-size:9px;opacity:.6">▼</span>';
     });
   } catch(e){ console.warn('Versiyon güncelleme hatası:', e); }
 })();
