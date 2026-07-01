@@ -2374,7 +2374,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v104';
+const APP_VERSION = 'v105';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -5621,7 +5621,8 @@ function renderDash(){
   const maxTrend = Math.max(...trend6.map(t=>t.v),1);
   const isMob = window.innerWidth <= 700;
   const trendBars = trend6.map((t,i)=>{
-    const h=Math.max(Math.round(t.v/maxTrend*(isMob?55:260)),isMob?4:8), isCur=i===5;
+    const maxH = isMob ? 45 : 110; // container 180px - etiketler (~70px) = ~110px bar alanı
+    const h=Math.max(Math.round(t.v/maxTrend*maxH),isMob?4:4), isCur=i===5;
     const color = isCur ? '#3fd0ff' : 'rgba(63,208,255,0.3)';
     const ayKisa = monthLabel(t.ym).split(' ')[0];
     const adetColor  = isCur ? '#3fd0ff' : '#999';
@@ -5885,7 +5886,7 @@ function renderDash(){
       <!-- Sol: Grafik -->
       <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;flex:1;min-width:0">
         <div style="font-size:9.5px;color:var(--muted);margin-bottom:8px;font-weight:600">📊 Son 6 Ay Trendi <span style="font-size:8px;opacity:.6">(adet · tutar)</span></div>
-        <div class="trend-bars-wrap" style="display:flex;align-items:flex-end;gap:4px;height:180px;padding-top:8px;min-width:280px">${trendBars}</div>
+        <div class="trend-bars-wrap" style="display:flex;align-items:flex-end;gap:4px;height:200px;padding-top:4px;min-width:280px">${trendBars}</div>
       </div>
 
       <!-- Sağ: Kategori Dağılımı -->
@@ -12370,6 +12371,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v105',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'Trend grafiği bar yüksekliği 260px→110px maksimum olarak düzeltildi — artık container taşmıyor, adet/tutar etiketleri görünüyor' },
+    ]
+  },
   {
     version: 'v104',
     date: '01.07.2026',
