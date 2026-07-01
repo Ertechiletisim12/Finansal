@@ -1364,7 +1364,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <!-- Oturum Bilgisi - Nav altı kompakt (masaüstünde görünür) -->
     <div id="sidebarOturumBox" style="display:none;margin:4px 14px 6px" class="desktop-only-oturum">
       <div style="background:rgba(226,35,26,0.08);border:1px solid rgba(226,35,26,0.18);border-radius:9px;padding:7px 10px">
-        <!-- Tek satır: ikon + sayaçlar + kilitle -->
+        <!-- Tek satır: ikon + sayaçlar (kırmızı buton kaldırıldı) -->
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:11px;opacity:.6">🔐</span>
           <div style="display:flex;align-items:center;gap:6px;flex:1">
@@ -1378,13 +1378,15 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
               <div id="sidebarAcikSure" style="font-size:13px;font-weight:800;color:#4cd964;font-variant-numeric:tabular-nums;line-height:1">0:00</div>
             </div>
           </div>
-          <button onclick="oturumKapat()" style="background:rgba(226,35,26,0.2);border:1px solid rgba(226,35,26,0.3);color:#ff8080;border-radius:6px;padding:3px 7px;font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0">🔒</button>
         </div>
         <!-- Progress bar -->
         <div id="sidebarProgress" style="height:2px;border-radius:1px;background:rgba(255,255,255,0.06);margin-top:6px;overflow:hidden">
           <div id="sidebarProgressBar" style="height:100%;width:100%;background:#4cd964;border-radius:1px;transition:width .5s,background .5s"></div>
         </div>
-        <div id="sidebarUyari" style="font-size:8.5px;color:#ff9f0a;margin-top:4px;min-height:10px;text-align:center;font-weight:600"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px;min-height:12px">
+          <div id="sidebarUyari" style="font-size:8.5px;color:#ff9f0a;font-weight:600"></div>
+          <span onclick="oturumKapat()" style="font-size:8px;color:rgba(255,100,100,0.6);cursor:pointer;font-weight:600;letter-spacing:.03em" title="Kilitle">🔒 kilitle</span>
+        </div>
       </div>
     </div>
 
@@ -1427,7 +1429,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v89 · 01.07.2026 14:15</div>
+    <div style="font-size:9px;color:var(--muted)" id="mobileVersionInfo">v90 · 01.07.2026 15:00</div>
   </div>
   <!-- Offline göstergesi -->
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
@@ -1448,7 +1450,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
-            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v89 · Son güncelleme: 01.07.2026 14:15 <span style="font-size:9px;opacity:.6">▼</span></div>
+            <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">v90 · Son güncelleme: 01.07.2026 15:00 <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
           <div id="dashNavRow" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -2364,8 +2366,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v89';
-const BUILD_DATE = '01.07.2026 14:15';
+const APP_VERSION = 'v90';
+const BUILD_DATE = '01.07.2026 15:00';
 
 const CATS = ["PrePaid","PostPaid","Red","P2P","Mccm","İnternet","Diğer"];
 // MNP olan kategoriler (+ basınca soru sorulacak)
@@ -11979,7 +11981,7 @@ function exportModalToExcel(){
 // Ben sana her versiyonda bunu güncel olarak vereceğim
 const GH_DOSYA_LISTESI = [
   { dosya: 'index.html',    etiket: '📄 index.html',    aciklama: 'Ana uygulama',       degisti: true  },
-  { dosya: 'sw.js',         etiket: '⚙️ sw.js',          aciklama: 'Önbellek yöneticisi', degisti: true  },
+  { dosya: 'sw.js',         etiket: '⚙️ sw.js',          aciklama: 'Önbellek yöneticisi', degisti: false },
   { dosya: 'manifest.json', etiket: '📋 manifest.json',  aciklama: 'PWA ayarları',        degisti: false },
   { dosya: 'icon-192.png',  etiket: '🖼️ icon-192.png',   aciklama: 'Küçük ikon',          degisti: false },
   { dosya: 'icon-512.png',  etiket: '🖼️ icon-512.png',   aciklama: 'Büyük ikon',          degisti: false },
@@ -12242,6 +12244,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v90',
+    date: '01.07.2026',
+    items: [
+      { type: 'ui', text: 'Oturum kutusundaki kırmızı kilit butonu kaldırıldı — progress bar altına küçük "🔒 kilitle" linki eklendi, alan kazanıldı' },
+    ]
+  },
   {
     version: 'v89',
     date: '01.07.2026',
