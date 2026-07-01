@@ -2360,7 +2360,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v94';
+const APP_VERSION = 'v95';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -5491,10 +5491,31 @@ function renderDash(){
   entries.filter(e=>effectiveYm(e)===now).forEach(e=>{ adetMapNow[e.cat]=(adetMapNow[e.cat]||0)+e.count; });
   let dashBonusToplam = 0;
   const dashBonusDetay = [];
+
+  // 1. Fiyat kampanyası etkisi (normal fiyat ile kampanya fiyatı arasındaki fark)
+  CATS.forEach(c=>{
+    const normalFiyat = priceFor(now, c);
+    if(!normalFiyat) return;
+    const ayEntries = entries.filter(e=>e.cat===c && effectiveYm(e)===now);
+    let fiyatFarkToplam = 0;
+    ayEntries.forEach(e=>{
+      const kampFiyat = kampanyaFiyatFor(e.date, c, normalFiyat);
+      const fark = (kampFiyat - normalFiyat) * e.count;
+      if(fark > 0) fiyatFarkToplam += fark;
+    });
+    if(fiyatFarkToplam > 0){
+      dashBonusToplam += fiyatFarkToplam;
+      dashBonusDetay.push({label: c + ' fiyat kampanyası (+' + fmt(kampanyaFiyatFor(ayEntries[0]?.date||now+'-15', c, normalFiyat)) + '/ad)', tutar: fiyatFarkToplam, tip:'fiyat'});
+    }
+  });
+
+  // 2. Eşik bazlı bonuslar
   CATS.forEach(c=>{
     const b = kampanyaBonusFor(now, c, adetMapNow[c]||0);
-    if(b>0){ dashBonusToplam+=b; dashBonusDetay.push({label:c, tutar:b}); }
+    if(b>0){ dashBonusToplam+=b; dashBonusDetay.push({label:c+' eşik bonusu', tutar:b, tip:'bonus'}); }
   });
+
+  // 3. Tekrarlı bonuslar
   kampanyaData.filter(k=>k.tip==='tekrarli' && k.ym===now && (k.minAdet||0)>0).forEach(k=>{
     const cats=(k.catList&&k.catList.length)?k.catList:[k.cat];
     let tot=0;
@@ -5503,7 +5524,7 @@ function renderDash(){
       tot+=es.reduce((a,e)=>a+e.count,0);
     });
     const kume=Math.floor(tot/k.minAdet);
-    if(kume>0){ const t=kume*k.deger; dashBonusToplam+=t; dashBonusDetay.push({label:cats.join('+')+' x'+kume, tutar:t}); }
+    if(kume>0){ const t=kume*k.deger; dashBonusToplam+=t; dashBonusDetay.push({label:cats.join('+')+' x'+kume+' tekrarlı bonus', tutar:t, tip:'tekrarli'}); }
   });
   // Bir sonraki tekrarlı bonus eşiğine ne kadar kaldı (bugün kartı için)
   const dashBonusYaklas = [];
@@ -5603,50 +5624,56 @@ function renderDash(){
       </div>` : ''}
 
       ${mnpGecikmus.length>0 ? `
-      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="flex:1;min-width:140px;background:rgba(226,35,26,0.07);border:1px solid rgba(226,35,26,0.28);border-radius:10px;padding:8px 10px;cursor:pointer" onmouseover="this.style.borderColor='rgba(226,35,26,0.5)'" onmouseout="this.style.borderColor='rgba(226,35,26,0.28)'">
+      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="flex:1;min-width:140px;background:rgba(226,35,26,0.07);border:1px solid rgba(226,35,26,0.28);border-radius:10px;padding:8px 10px;cursor:pointer;display:flex;flex-direction:column" onmouseover="this.style.borderColor='rgba(226,35,26,0.5)'" onmouseout="this.style.borderColor='rgba(226,35,26,0.28)'">
         <div style="font-size:9px;font-weight:700;color:#ff5252;margin-bottom:4px">🔴 GECİKMİŞ</div>
         <div style="font-size:18px;font-weight:900;color:#ff5252;line-height:1;margin-bottom:4px">${mnpGecikmus.length}</div>
+        <div style="flex:1">
         ${mnpGecikmus.slice(0,2).map(m=>{
           const gec=Math.round((new Date(today)-new Date(m.aktivasyonTarihi))/(1000*60*60*24));
           return `<div style="padding:3px 0;border-top:1px solid rgba(226,35,26,0.12)">
             <div style="display:flex;justify-content:space-between;font-size:9px">
-              <span style="color:var(--txt);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px">${m.ad||'?'} ${(m.soyad||'').charAt(0)}.</span>
+              <span style="color:var(--txt);font-weight:600">${m.ad||'?'}${m.soyad?' '+m.soyad.charAt(0)+'.':''}</span>
               <span style="color:#ff5252;font-weight:700;flex-shrink:0">${gec}g</span>
             </div>
-            ${m.tarife||m.tel?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
+            ${m.tel||m.tarife?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
           </div>`;
         }).join('')}
-        ${mnpGecikmus.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:2px">+${mnpGecikmus.length-2} daha</div>`:''}
+        ${mnpGecikmus.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:3px">+${mnpGecikmus.length-2} daha</div>`:''}
+        </div>
       </div>` : ''}
 
       ${mnpBugun.length>0 ? `
-      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="flex:1;min-width:140px;background:rgba(255,183,77,0.07);border:1px solid rgba(255,183,77,0.3);border-radius:10px;padding:8px 10px;cursor:pointer" onmouseover="this.style.borderColor='rgba(255,183,77,0.55)'" onmouseout="this.style.borderColor='rgba(255,183,77,0.3)'">
+      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="flex:1;min-width:140px;background:rgba(255,183,77,0.07);border:1px solid rgba(255,183,77,0.3);border-radius:10px;padding:8px 10px;cursor:pointer;display:flex;flex-direction:column" onmouseover="this.style.borderColor='rgba(255,183,77,0.55)'" onmouseout="this.style.borderColor='rgba(255,183,77,0.3)'">
         <div style="font-size:9px;font-weight:700;color:#ffb74d;margin-bottom:4px">🟡 BUGÜN ONAYLANMALI</div>
         <div style="font-size:18px;font-weight:900;color:#ffb74d;line-height:1;margin-bottom:4px">${mnpBugun.length}</div>
+        <div style="flex:1">
         ${mnpBugun.slice(0,2).map(m=>`
           <div style="padding:3px 0;border-top:1px solid rgba(255,183,77,0.12)">
-            <div style="font-size:9px;color:var(--txt);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.ad||'?'} ${(m.soyad||'').charAt(0)}.</div>
-            ${m.tarife||m.tel?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
+            <div style="font-size:9px;color:var(--txt);font-weight:600">${m.ad||'?'}${m.soyad?' '+m.soyad.charAt(0)+'.':''}</div>
+            ${m.tel||m.tarife?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
           </div>
         `).join('')}
-        ${mnpBugun.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:2px">+${mnpBugun.length-2} daha</div>`:''}
+        ${mnpBugun.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:3px">+${mnpBugun.length-2} daha</div>`:''}
+        </div>
       </div>` : ''}
 
       ${mnpYakinda.length>0 ? `
-      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="flex:1;min-width:140px;background:rgba(76,217,100,0.05);border:1px solid rgba(76,217,100,0.2);border-radius:10px;padding:8px 10px;cursor:pointer" onmouseover="this.style.borderColor='rgba(76,217,100,0.45)'" onmouseout="this.style.borderColor='rgba(76,217,100,0.2)'">
-        <div style="font-size:9px;font-weight:700;color:#4cd964;margin-bottom:4px">🟢 YAKINDA</div>
+      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="flex:1;min-width:140px;background:rgba(76,217,100,0.05);border:1px solid rgba(76,217,100,0.2);border-radius:10px;padding:8px 10px;cursor:pointer;display:flex;flex-direction:column" onmouseover="this.style.borderColor='rgba(76,217,100,0.45)'" onmouseout="this.style.borderColor='rgba(76,217,100,0.2)'">
+        <div style="font-size:9px;font-weight:700;color:#4cd964;margin-bottom:4px">🟢 ONAYLANACAK</div>
         <div style="font-size:18px;font-weight:900;color:#4cd964;line-height:1;margin-bottom:4px">${mnpYakinda.length}</div>
+        <div style="flex:1">
         ${mnpYakinda.slice(0,2).map(m=>{
           const kalan=Math.round((new Date(m.aktivasyonTarihi)-new Date(today))/(1000*60*60*24));
           return `<div style="padding:3px 0;border-top:1px solid rgba(76,217,100,0.1)">
             <div style="display:flex;justify-content:space-between;font-size:9px">
-              <span style="color:var(--txt);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px">${m.ad||'?'} ${(m.soyad||'').charAt(0)}.</span>
-              <span style="color:#4cd964;font-weight:700;flex-shrink:0">${kalan===1?'Yarın':kalan+'g'}</span>
+              <span style="color:var(--txt);font-weight:600">${m.ad||'?'}${m.soyad?' '+m.soyad.charAt(0)+'.':''}</span>
+              <span style="color:#4cd964;font-weight:700;flex-shrink:0">${kalan===1?'Yarın':kalan+'g sonra'}</span>
             </div>
-            ${m.tarife||m.tel?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
+            ${m.tel||m.tarife?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
           </div>`;
         }).join('')}
-        ${mnpYakinda.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:2px">+${mnpYakinda.length-2} daha</div>`:''}
+        ${mnpYakinda.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:3px">+${mnpYakinda.length-2} daha</div>`:''}
+        </div>
       </div>` : ''}
 
     </div>
@@ -12258,6 +12285,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v95',
+    date: '01.07.2026',
+    items: [
+      { type: 'fix', text: 'MNP kartlarında telefon numarası gösterimi düzeltildi (soyad yoksa nokta çıkmıyordu)' },
+      { type: 'ui',  text: '"YAKINDA" → "ONAYLANACAK" olarak değiştirildi, kartlar eşit yükseklikte hizalandı' },
+      { type: 'new', text: 'Anasayfa bonus detayına fiyat kampanyası etkisi eklendi — normal fiyat ile kampanya fiyatı arasındaki fark ayrıca gösteriliyor' },
+    ]
+  },
   {
     version: 'v94',
     date: '01.07.2026',
