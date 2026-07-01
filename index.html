@@ -2433,7 +2433,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v134';
+const APP_VERSION = 'v135';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -8643,6 +8643,9 @@ function saveMusteriKayit(){
 
   // _confirmedIsMnp'yi temizle - bir sonraki kayıt için taze başlasın
   window._confirmedIsMnp = null;
+
+  // Activity list'i güncelle (müşteri ismi hemen görünsün, sayfa yenilemesi gerekmesin)
+  setTimeout(()=>{ try{ render(); }catch(e){} }, 100);
 }
 
 
@@ -12612,6 +12615,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v135',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Müşteri kaydedilince İşlem Listesi anında güncelleniyor — sayfa yenilemesi gerekmiyor' },
+    ]
+  },
   {
     version: 'v134',
     date: '02.07.2026',
