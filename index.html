@@ -2432,7 +2432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v146';
+const APP_VERSION = 'v148';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -3111,33 +3111,40 @@ function load(){
 
   // Migration: null logId olan müşterileri entryLog ile eşleştir (v144 bug'ı onarımı)
   (function repairLogIds(){
-    let fixed = 0;
-    // Kullanılmış logId'leri bul
-    const usedLogIds = new Set(musteriler.filter(m=>m.logId).map(m=>m.logId));
-    // null logId olan müşteriler için eşleştirme dene
-    musteriler.forEach(m=>{
-      if(m.logId) return; // zaten var
-      // Aynı tarih ve kategori için kullanılmamış log entries bul
-      const candidates = (entryLog||[]).filter(l=>
-        l.date===m.entryDate &&
-        l.cat===m.cat &&
-        !usedLogIds.has(l.id)
+    // 1. Entries'e ID ekle (yoksa)
+    entries.forEach(e=>{
+      if(!e.id) e.id='ent_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,5);
+    });
+    // 2. EntryLog'lara entryId bağla (yoksa) - date+cat+mnp eşleşmesiyle
+    entryLog.forEach(l=>{
+      if(l.entryId) return;
+      const e = entries.find(x=>
+        x.date===l.date && x.cat===l.cat &&
+        (MNP_CATS.includes(l.cat) ? !!x.mnp===!!l.mnp : true)
       );
-      if(candidates.length===0) return;
-      // Saate göre en yakını seç (veya ilkini)
-      const match = m.entryTime
-        ? candidates.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).find(l=>l.time===m.entryTime) || candidates[0]
+      if(e) l.entryId = e.id;
+    });
+    // 3. Null logId olan müşterileri entryLog ile eşleştir
+    let fixed=0;
+    const usedLogIds=new Set(musteriler.filter(m=>m.logId).map(m=>m.logId));
+    musteriler.forEach(m=>{
+      if(m.logId) return;
+      const candidates=(entryLog||[]).filter(l=>
+        l.date===m.entryDate && l.cat===m.cat && !usedLogIds.has(l.id)
+      );
+      if(!candidates.length) return;
+      const match=m.entryTime
+        ? candidates.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).find(l=>l.time===m.entryTime)||candidates[0]
         : candidates[0];
-      if(match){
-        m.logId = match.id;
-        usedLogIds.add(match.id);
-        fixed++;
-      }
+      if(match){ m.logId=match.id; usedLogIds.add(match.id); fixed++; }
     });
     if(fixed>0){
       try{ localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler)); }catch(e){}
-      console.log('[Migration] '+fixed+' müşterinin logId onarıldı');
     }
+    // Entries ve log kaydet
+    try{ localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries)); }catch(e){}
+    try{ localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog)); }catch(e){}
+    if(fixed>0) console.log('[Migration] '+fixed+' müşteri logId onarıldı');
   })();
   if(!localStorage.getItem('legacy_migration_v2')){
     const ESIK = '2026-06-29'; // 29 Haziran dahil oncesi
@@ -3374,7 +3381,7 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
     const entryId = 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6);
     window._lastEntryId = entryId; // saveMusteriKayit okuyacak
 
-    // entries: count bazlı (geriye dönük uyumluluk için koru)
+    // entries: her kayıt benzersiz ID ile takip edilir
     let e;
     if(useSubtype){
       e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag && (x.tarife||'')===(tarife||''));
@@ -3382,17 +3389,19 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
       e = entries.find(x => x.date===date && x.cat===cat && (x.tarife||'')===(tarife||''));
     }
     if(!e){
-      e = {date, cat, count:0};
+      e = {id: 'ent_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,5), date, cat, count:0};
       if(useSubtype) e.mnp = mnpFlag;
       if(cat==='İnternet' && activationDate) e.activationDate = activationDate;
       if(tarife) e.tarife = tarife;
       entries.push(e);
     }
+    if(!e.id) e.id = 'ent_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,5); // migration
     e.count++;
 
-    // entryLog: her kayıt için ayrı satır, entryId ile bağlı
+    // entryLog: her kayıt için ayrı satır, entryId ile entry'ye bağlı
     const logEntry = {
       id: entryId,
+      entryId: e.id, // ← entry'ye doğrudan referans
       date, cat,
       time: nowTimeStr(),
       platform: getPlatformName()
@@ -3404,7 +3413,7 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
     entryLog.push(logEntry);
 
   } else if(delta < 0){
-    // ── SİL: Son eklenen eşleşen log kaydını sil ──
+    // ── SİL: entryId zinciriyle doğru entry'yi bul ──
     let logIdx = -1;
     for(let i = entryLog.length-1; i >= 0; i--){
       const l = entryLog[i];
@@ -3415,19 +3424,23 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
         }
       }
     }
-    // Silinen logun tarifesini al - dogru entry'den dussun
-    const silinenTarife = (logIdx >= 0) ? (entryLog[logIdx].tarife || '') : (tarife || '');
-    if(logIdx >= 0) entryLog.splice(logIdx, 1);
-
-    // entries count'u azalt - TARIFE eslesmesiyle dogru entry'yi bul
     let e;
-    if(useSubtype){
-      e = entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag && (x.tarife||'')===silinenTarife)
-        || entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag);
-    } else {
-      e = entries.find(x => x.date===date && x.cat===cat && (x.tarife||'')===silinenTarife)
-        || entries.find(x => x.date===date && x.cat===cat);
+    if(logIdx >= 0 && entryLog[logIdx].entryId){
+      // entryId referansıyla doğrudan bul
+      e = entries.find(x => x.id === entryLog[logIdx].entryId);
     }
+    if(!e){
+      // Eski veri uyumluluğu: tarife eşleşmesiyle bul
+      const silinenTarife = logIdx >= 0 ? (entryLog[logIdx].tarife||'') : (tarife||'');
+      if(useSubtype){
+        e = entries.find(x=>x.date===date&&x.cat===cat&&!!x.mnp===mnpFlag&&(x.tarife||'')===silinenTarife)
+          || entries.find(x=>x.date===date&&x.cat===cat&&!!x.mnp===mnpFlag);
+      } else {
+        e = entries.find(x=>x.date===date&&x.cat===cat&&(x.tarife||'')===silinenTarife)
+          || entries.find(x=>x.date===date&&x.cat===cat);
+      }
+    }
+    if(logIdx >= 0) entryLog.splice(logIdx, 1);
     if(e && e.count > 0){
       e.count--;
       if(e.count === 0) entries = entries.filter(x => x !== e);
@@ -11941,12 +11954,14 @@ function showCatDetail(cat, rStart, rEnd){
     .filter(e=>e.cat===cat && e.date>=rStart && e.date<=rEnd && e.count>0)
     .sort((a,b)=>b.date.localeCompare(a.date));
 
-  // Her müşteri ayrı satır
+  // Her müşteri ayrı satır — usedIds ile çift sayım önle
   const musteriSatirlari = [];
+  const usedMIds = new Set();
   catEntries.forEach(e => {
     const amt1 = kampanyaFiyatFor(e.date, cat, priceFor(ymKey(e.date), cat));
     const logs = (entryLog||[]).filter(l=>l.date===e.date&&l.cat===cat).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-    const ilgiliM = (musteriler||[]).filter(m=>m.logId&&logs.some(l=>l.id===m.logId));
+    const ilgiliM = (musteriler||[]).filter(m=>m.logId&&!usedMIds.has(m.id)&&logs.some(l=>l.id===m.logId)).slice(0,e.count);
+    ilgiliM.forEach(m=>usedMIds.add(m.id));
     if(ilgiliM.length>0){
       ilgiliM.forEach((m,i)=>{
         const logE=logs.find(l=>l.id===m.logId);
@@ -12245,18 +12260,30 @@ function openExportPreview(tableId, fileLabel){
     if(!filtRows.length){ alert('Bu aralıkta aktarılacak işlem yok.'); return; }
     const now = nowTR().toLocaleString('tr-TR');
     // Müşteri bazlı satırlar
+    // date+cat bazında grupla (TES+MNP ayrı entries'i birleştir, mükerrer önle)
     const musteriRows = [];
-    filtRows.forEach(e => {
-      const birimAmt = kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat));
-      const dayLogs = (entryLog||[]).filter(l=>l.date===e.date && l.cat===e.cat);
-      const ilgiliM = (musteriler||[]).filter(m=>m.logId && dayLogs.some(l=>l.id===m.logId));
+    const dateGruplari = {};
+    filtRows.forEach(e=>{
+      const k = e.date+'_'+e.cat;
+      if(!dateGruplari[k]) dateGruplari[k]={date:e.date, cat:e.cat, count:0};
+      dateGruplari[k].count += e.count;
+    });
+    Object.values(dateGruplari).sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat)).forEach(g=>{
+      const birimAmt = kampanyaFiyatFor(g.date, g.cat, priceFor(ymKey(g.date), g.cat));
+      const dayLogs = (entryLog||[]).filter(l=>l.date===g.date && l.cat===g.cat);
+      const usedIds = new Set();
+      const ilgiliM = (musteriler||[]).filter(m=>m.logId && dayLogs.some(l=>l.id===m.logId))
+                                       .filter(m=>{ if(usedIds.has(m.logId)) return false; usedIds.add(m.logId); return true; });
       if(ilgiliM.length > 0){
-        ilgiliM.forEach(m=>{ const logE=dayLogs.find(l=>l.id===m.logId); musteriRows.push({date:e.date,cat:e.cat,count:1,amt:birimAmt,
-          ad:(m.ad||'')+' '+(m.soyad||''),tel:m.tel||'-',tarife:m.tarife||(logE&&logE.tarife)||'-'}); });
-        const kalan=e.count-ilgiliM.length;
-        if(kalan>0) musteriRows.push({date:e.date,cat:e.cat,count:kalan,amt:birimAmt*kalan,ad:'-',tel:'-',tarife:'-'});
+        ilgiliM.forEach(m=>{
+          const logE = dayLogs.find(l=>l.id===m.logId);
+          musteriRows.push({date:g.date,cat:g.cat,count:1,amt:birimAmt,
+            ad:(m.ad||'')+' '+(m.soyad||''),tel:m.tel||'-',tarife:m.tarife||(logE&&logE.tarife)||'-'});
+        });
+        const kalan = g.count - ilgiliM.length;
+        if(kalan>0) musteriRows.push({date:g.date,cat:g.cat,count:kalan,amt:birimAmt*kalan,ad:'-',tel:'-',tarife:'-'});
       } else {
-        musteriRows.push({date:e.date,cat:e.cat,count:e.count,amt:birimAmt*e.count,ad:'-',tel:'-',tarife:'-'});
+        musteriRows.push({date:g.date,cat:g.cat,count:g.count,amt:birimAmt*g.count,ad:'-',tel:'-',tarife:'-'});
       }
     });
     const catSummary = CATS.map(c=>{
@@ -12660,6 +12687,21 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v148',
+    date: '02.07.2026',
+    items: [
+      { type: 'new', text: 'Veritabani mantigi: her entry benzersiz ID alıyor, entryLog entries e entryId ile bagli. Duzenleme silme islemleri ID zinciriyle yapiliyor.' },
+      { type: 'fix', text: 'Migration: mevcut entries e ID, entryLog a entryId ataniyor. Null logId ler onariliyor.' },
+    ]
+  },
+  {
+    version: 'v147',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Ozet popup cift sayim duzeltildi: PostPaid/Red/PrePaid de Tesis+MNP ayri entry oldugu icin ayni musteriler iki kez listeleniyor du. usedIds ile onlendi.' },
+    ]
+  },
   {
     version: 'v146',
     date: '02.07.2026',
