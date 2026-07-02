@@ -2432,7 +2432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v148';
+const APP_VERSION = 'v149';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -3438,6 +3438,15 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
       } else {
         e = entries.find(x=>x.date===date&&x.cat===cat&&(x.tarife||'')===silinenTarife)
           || entries.find(x=>x.date===date&&x.cat===cat);
+      }
+    }
+    // Müşteri kaydını da sil (logId ile eşleştir)
+    if(logIdx >= 0){
+      const silinecekLogId = entryLog[logIdx].id;
+      const musteriIdx = musteriler.findIndex(m => m.logId === silinecekLogId);
+      if(musteriIdx >= 0){
+        musteriler.splice(musteriIdx, 1);
+        saveMusteriStore();
       }
     }
     if(logIdx >= 0) entryLog.splice(logIdx, 1);
@@ -12687,6 +12696,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v149',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Kritik: - butonuyla entry silinince musteri takipten de siliniyor. Ana ekran ve musteri takip sayfalari artik tutarli.' },
+    ]
+  },
   {
     version: 'v148',
     date: '02.07.2026',
