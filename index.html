@@ -2432,7 +2432,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v149';
+const APP_VERSION = 'v150';
 const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
@@ -2897,8 +2897,6 @@ function quickHash(obj){
 let lastSyncedEntries = null;
 
 function mergeEntries(local, cloud){
-  // Key: date + '_' + cat + '_' + (mnp ? 'MNP' : 'TES') + '_' + tarife
-  // MNP/Tesis ve TARIFE ayrımını koru (Red30/Red50 gibi alt tarifeler birbirine karışmasın)
   function entryKey(e){
     const mnpSuffix = (e.mnp === true) ? '_MNP' : '_TES';
     const tarifeSuffix = e.tarife ? '_' + e.tarife : '';
@@ -2909,7 +2907,12 @@ function mergeEntries(local, cloud){
   (cloud||[]).forEach(e=>{ cloudMap[entryKey(e)] = {count: e.count||0, entry: e}; });
 
   const baseMap = {};
-  (lastSyncedEntries||cloud||[]).forEach(e=>{ baseMap[entryKey(e)] = e.count||0; });
+  // FİX: lastSyncedEntries null veya boş ise cloud'u base al
+  // (boş array ile null farkı: [] ile base=0 olurdu, cloud ile base=cloud olur)
+  const baseSource = (lastSyncedEntries && lastSyncedEntries.length > 0)
+    ? lastSyncedEntries
+    : (cloud||[]);
+  baseSource.forEach(e=>{ baseMap[entryKey(e)] = e.count||0; });
 
   const allKeys = new Set([
     ...Object.keys(cloudMap),
@@ -2924,10 +2927,11 @@ function mergeEntries(local, cloud){
     const cloudCount = cloudMap[k]?.count || 0;
     const baseCount  = baseMap[k] || 0;
 
-    // 3-way merge: local değişim + cloud değişim
+    // 3-way merge: her iki tarafın değişimlerini topla
     const localDelta = localCount - baseCount;
     const cloudDelta = cloudCount - baseCount;
-    const merged = Math.max(0, baseCount + localDelta + cloudDelta);
+    // FİX: merged asla local'den küçük olamaz (local her zaman gerçek)
+    const merged = Math.max(localCount, Math.max(0, baseCount + localDelta + cloudDelta));
 
     if(merged > 0){
       const base = localEntry || cloudEntry || {date:'', cat:''};
@@ -2936,6 +2940,7 @@ function mergeEntries(local, cloud){
       if(base.mnp !== undefined) r.mnp = isMnp;
       if(base.activationDate) r.activationDate = base.activationDate;
       if(base.tarife) r.tarife = base.tarife;
+      if(base.id) r.id = base.id;
       result.push(r);
     }
   });
@@ -3020,9 +3025,30 @@ async function pullFromCloud(){
     if(hash === lastCloudHash){ updateCloudIndicator('saved'); return false; }
     lastCloudHash = hash;
     if(data.pin) localStorage.setItem('vf_pin', data.pin);
-    if(data.entries)    { entries    = data.entries; lastSyncedEntries = JSON.parse(JSON.stringify(entries)); }
-    if(data.entryLog)   entryLog   = data.entryLog;
-    if(data.prices)     prices     = data.prices;
+    // entries: merge yap (direkt ezme değil)
+    if(data.entries){
+      entries = mergeEntries(entries, data.entries);
+      lastSyncedEntries = JSON.parse(JSON.stringify(entries));
+    }
+    // entryLog: yeni olanları ekle (direkt ezme değil)
+    if(data.entryLog){
+      const localLogIds = new Set(entryLog.map(l=>l.id));
+      const yeniLogs = data.entryLog.filter(l=>!localLogIds.has(l.id));
+      entryLog = [...entryLog, ...yeniLogs];
+    }
+    // musteriler: yeni olanları ekle (direkt ezme değil)
+    if(data.musteriler){
+      const localMIds = new Set(musteriler.map(m=>m.id));
+      const yeniMusteriler = data.musteriler.filter(m=>!localMIds.has(m.id));
+      musteriler = [...musteriler, ...yeniMusteriler];
+      // Gelen müşterilerin logId'leri local entryLog'da yoksa ekle
+      musteriler.forEach(m=>{
+        if(m.logId && !entryLog.find(l=>l.id===m.logId)){
+          const cloudLog = (data.entryLog||[]).find(l=>l.id===m.logId);
+          if(cloudLog) entryLog.push(cloudLog);
+        }
+      });
+    }
     if(data.yatirilan)  yatirilan  = data.yatirilan;
     if(data.hedefler)   hedefler   = data.hedefler;
     if(data.hedefKatData) hedefKatData = data.hedefKatData;
@@ -3032,7 +3058,6 @@ async function pullFromCloud(){
     if(data.notlarData) notlarData = data.notlarData;
     if(data.kampanyaData) kampanyaData = data.kampanyaData;
     if(data.tarifeData) tarifeData = data.tarifeData;
-    if(data.musteriler)   musteriler   = data.musteriler;
     if(data.finansTrash) finansTrash = data.finansTrash;
     localStorage.setItem(STORE_KEY_ENTRIES,   JSON.stringify(entries));
     localStorage.setItem(STORE_KEY_LOG,       JSON.stringify(entryLog));
@@ -3141,9 +3166,17 @@ function load(){
     if(fixed>0){
       try{ localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler)); }catch(e){}
     }
-    // Entries ve log kaydet
-    try{ localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries)); }catch(e){}
-    try{ localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog)); }catch(e){}
+    // 4. Entries count ile entryLog sayısını eşitle (count fazlaysa düzelt)
+    entries.forEach(e=>{
+      const logCount = entryLog.filter(l=>
+        l.date===e.date && l.cat===e.cat && !!l.mnp===!!e.mnp
+      ).length;
+      if(logCount > 0 && e.count > logCount){
+        console.log(`[Migration] ${e.cat} ${e.date} count=${e.count}→${logCount}`);
+        e.count = logCount;
+      }
+    });
+    entries = entries.filter(e=>e.count>0);
     if(fixed>0) console.log('[Migration] '+fixed+' müşteri logId onarıldı');
   })();
   if(!localStorage.getItem('legacy_migration_v2')){
@@ -12696,6 +12729,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v150',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'mergeEntries: lastSynced bos ise cloud base alinir, count hic local den fazla olamaz — PostPaid 3 gorunup 2 kayit olma sorunu cozuldu' },
+      { type: 'fix', text: 'Migration: entries.count > entryLog.length ise count otomatik duzeltiliyor' },
+    ]
+  },
   {
     version: 'v149',
     date: '02.07.2026',
