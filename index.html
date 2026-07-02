@@ -14,7 +14,7 @@
   // SW — offline destek, PWA
   if('serviceWorker' in navigator){
     const swKod = `
-const CACHE_VER = 'finansal-v151';
+const CACHE_VER = 'finansal-v152';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -1557,7 +1557,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button class="prim-tool-pill" onclick="switchPage('hedef')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964">🎯 Hedef Yönetimi</button>
       <button class="prim-tool-pill" onclick="switchPage('rapor')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964">📅 Haftalık / Yıllık</button>
       <button class="prim-tool-pill" onclick="switchPage('trend')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964">📈 Trend Analizi</button>
-      <span id="gunlukHedefChip" style="display:none;flex-shrink:0;margin-left:auto;font-size:10.5px;font-weight:700;padding:5px 10px;border-radius:20px;background:rgba(255,183,77,0.12);border:1px solid rgba(255,183,77,0.35);color:var(--gold);white-space:nowrap;cursor:pointer" onclick="switchPage('hedef')" title="Aylık hedefe ulaşmak için bugün gereken tutar"></span>
+      <span id="gunlukHedefChip" style="display:none;flex-shrink:0;margin-left:auto;font-size:10.5px;font-weight:700;padding:5px 10px;border-radius:20px;background:rgba(255,183,77,0.12);border:1px solid rgba(255,183,77,0.35);color:var(--gold);white-space:nowrap;cursor:pointer" onclick="openGunlukKirilimModal()" title="Günlük kırılım: bugün kaç TL / kaç adet gerekiyor?"></span>
     </div>
     <!-- Mobil filterbar - sabit, screenshot stili -->
     <div id="primFilterBar" style="background:var(--bg);padding:5px 10px 4px;border-bottom:1px solid var(--line);flex-shrink:0;display:none">
@@ -1571,6 +1571,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <button class="prim-tool-pill" onclick="switchPage('hedef')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964;font-size:10px;padding:4px 10px">🎯 Hedef</button>
         <button class="prim-tool-pill" onclick="switchPage('rapor')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964;font-size:10px;padding:4px 10px">📅 Rapor</button>
         <button class="prim-tool-pill" onclick="switchPage('trend')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964;font-size:10px;padding:4px 10px">📈 Trend</button>
+        <span id="gunlukHedefChipMob" style="display:none;flex-shrink:0;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,183,77,0.12);border:1px solid rgba(255,183,77,0.35);color:var(--gold);white-space:nowrap;cursor:pointer" onclick="openGunlukKirilimModal()"></span>
       </div>
       <!-- Yatırılan Prim butonu -->
       <button onclick="openYatirilanModal()" style="width:100%;margin-bottom:5px;background:linear-gradient(135deg,#92400e,#78350f);border:1px solid #d97706;color:#fcd34d;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.03em;box-shadow:0 2px 8px rgba(217,119,6,0.3)">💰 Yatırılan Prim</button>
@@ -2254,6 +2255,28 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   </div>
 </div>
 
+<!-- GRAFİK BAR DETAY MODALI (v152) -->
+<div id="chartDetayModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1250;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:440px;width:98%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#2fae4e,#1f7f37);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <span id="chartDetayTitle" style="font-size:14px;font-weight:700;color:#fff">📊 Ay Detayı</span>
+      <button onclick="closePrimModal('chartDetayModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+    </div>
+    <div id="chartDetayBody" style="padding:14px 16px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- GÜNLÜK KIRILIM MODALI (v152) -->
+<div id="gunlukKirilimModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1250;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:480px;width:98%;margin:auto 0">
+    <div style="background:linear-gradient(135deg,#b8860b,#8a6508);padding:13px 18px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:14px;font-weight:700;color:#fff">🎯 Günlük Hedef Kırılımı</span>
+      <button onclick="closePrimModal('gunlukKirilimModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+    </div>
+    <div id="gunlukKirilimBody" style="padding:14px 16px"></div>
+  </div>
+</div>
+
 <!-- MÜŞTERİ ARAMA MODALI -->
 <div id="primAraModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1250;align-items:flex-start;justify-content:center;padding:24px 12px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:640px;width:98%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
@@ -2597,8 +2620,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v151';
-const BUILD_DATE = '02.07.2026 12:00'; // Hazırlanma tarihi (dahili)
+const APP_VERSION = 'v152';
+const BUILD_DATE = '02.07.2026 17:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -2671,11 +2694,13 @@ function saveTarifeStore(){
   scheduleCloudSync();
 }
 // Tarife bazli fiyat - entry.tarife varsa tarifeData'dan fiyati al, yoksa null doner
+// v152: 'Diğer' kategorisi de esnek kampanya olarak destekleniyor
+const TARIFE_CATS = ['Red','Diğer'];
 function tarifeFiyatFor(entryOrTarife, cat){
-  if(cat !== 'Red') return null;
+  if(!TARIFE_CATS.includes(cat)) return null;
   const tarifeAdi = typeof entryOrTarife === 'string' ? entryOrTarife : entryOrTarife?.tarife;
   if(!tarifeAdi) return null;
-  const t = (tarifeData['Red']||[]).find(x=>x.ad===tarifeAdi);
+  const t = (tarifeData[cat]||[]).find(x=>x.ad===tarifeAdi);
   return t ? t.fiyat : null;
 }
 
@@ -3048,9 +3073,27 @@ let lastPushTime = 0;
 
 function scheduleCloudSync(){
   userChangedData = true;
+  // v152: Çevrimdışı kuyruk — internet yoksa değişikliği işaretle, online olunca otomatik gönderilecek
+  try{ localStorage.setItem('vf_pending_sync','1'); }catch(e){}
+  if(!navigator.onLine){
+    updateCloudIndicator('queued');
+    return; // offline'ken fetch denemesi yapma; 'online' event tetikleyecek
+  }
   if(cloudSyncTimer) clearTimeout(cloudSyncTimer);
   cloudSyncTimer = setTimeout(pushToCloud, 3000);
 }
+
+// v152: internet geri gelince kuyruğu otomatik boşalt
+window.addEventListener('online', ()=>{
+  if(localStorage.getItem('vf_pending_sync')==='1'){
+    userChangedData = true;
+    updateCloudIndicator('saving');
+    setTimeout(pushToCloud, 1500);
+  }
+});
+window.addEventListener('offline', ()=>{
+  if(localStorage.getItem('vf_pending_sync')==='1') updateCloudIndicator('queued');
+});
 
 function quickHash(obj){
   const s = JSON.stringify(obj);
@@ -3161,6 +3204,7 @@ async function pushToCloud(){
     });
     if(res.ok){
       userChangedData = false; // Sadece başarılı push'ta false yap
+      try{ localStorage.removeItem('vf_pending_sync'); }catch(e){} // v152: kuyruk boşaldı
       lastCloudHash = hash;
       lastSyncedEntries = JSON.parse(JSON.stringify(entries));
       updateCloudIndicator('saved', getPlatformName() + ' · ' + nowTR().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
@@ -3276,7 +3320,8 @@ function updateCloudIndicator(status, extra){
   if(extra) lastPlatformInfo = extra;
   if(status === 'saving') el.innerHTML = '☁️ <span style="color:var(--gold)">Kaydediliyor...</span>';
   else if(status === 'saved') el.innerHTML = '☁️ <span style="color:var(--green)">Bulut ✓</span>'+(lastPlatformInfo?` <span style="color:var(--muted);font-size:10px">${lastPlatformInfo}</span>`:'');
-  else if(status === 'error') el.innerHTML = '☁️ <span style="color:#ff5252">Bağlantı yok</span>';
+  else if(status === 'queued') el.innerHTML = '📴 <span style="color:var(--gold)">Kuyrukta — internet gelince gönderilecek</span>';
+  else if(status === 'error') el.innerHTML = '☁️ <span style="color:#ff5252">Bağlantı yok</span>'+(localStorage.getItem('vf_pending_sync')==='1'?' <span style="color:var(--gold);font-size:10px">· değişiklikler kuyrukta</span>':'');
   else el.innerHTML = '☁️';
 }
 
@@ -3463,10 +3508,11 @@ function financeFor(ym, mMap){
   // Kampanya fiyatları: entries üzerinden tarih bazlı hesapla
   let primTutar = 0;
   if(typeof kampanyaData!=='undefined' && kampanyaData.length > 0){
-    // Her entry için tarih bazlı kampanya fiyatı uygula
+    // Her entry için tarife (Red/Diğer) → yoksa tarih bazlı kampanya fiyatı uygula (v152)
     entries.forEach(e=>{
       if(effectiveYm(e) !== ym) return;
-      const fiyat = kampanyaFiyatFor(e.date, e.cat, priceFor(ym, e.cat));
+      const tFiyat = tarifeFiyatFor(e, e.cat);
+      const fiyat = tFiyat != null ? tFiyat : kampanyaFiyatFor(e.date, e.cat, priceFor(ym, e.cat));
       primTutar += e.count * fiyat;
     });
     // Eğer entries yeterli değilse (mMap modunda) fallback
@@ -3488,7 +3534,16 @@ function financeFor(ym, mMap){
     });
     primTutar += kampanyaTekrarliBonusToplam(ym, m, mnpDetay2);
   } else {
-    primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0);
+    // v152: kampanya yoksa da tarife fiyatlarını (Red/Diğer) hesaba kat
+    const entriesYm2 = entries.filter(e=>effectiveYm(e)===ym);
+    if(entriesYm2.length){
+      entriesYm2.forEach(e=>{
+        const tFiyat = tarifeFiyatFor(e, e.cat);
+        primTutar += e.count * (tFiyat != null ? tFiyat : priceFor(ym, e.cat));
+      });
+    } else {
+      primTutar = CATS.reduce((a,c)=> a + (m[c]||0)*priceFor(ym,c), 0);
+    }
   }
 
   const kdv = primTutar * KDV_ORANI;
@@ -5156,7 +5211,7 @@ function render(){
     const hasData = chartVals[i] > 0;
     const color = !hasData ? 'var(--line)' : (chartVals[i] >= chartAvg ? '#2fae4e' : '#e2231a');
     const shortLbl = monthLabel(k).split(' ')[0].slice(0,3);
-    return `<div class="bar-col">
+    return `<div class="bar-col" onclick="showChartBarDetay('${k}')" style="cursor:pointer" title="Dokun: ${monthLabel(k)} detayı">
       <div class="n">${hasData? chartCnts[i]+' Adet' : ''}</div>
       <div class="v">${hasData? fmt(chartVals[i]) : '-'}</div>
       <div class="bar" style="height:${h}px;background:${color}"></div>
@@ -5431,35 +5486,157 @@ function renderPrimAra(){
   }).join('');
 }
 
-// ==================== V151: GÜNLÜK HEDEF KIRILIMI ÇİPİ ====================
+// ==================== V151/V152: GÜNLÜK HEDEF KIRILIMI ====================
+function _gunlukHedefHesap(){
+  const curYm = thisMonthKey();
+  const hedef = hedefler[curYm] || 0;
+  // v152: Resmi hesap — financeFor (tarife + kampanya bonusları + KDV dahil).
+  // Prim Finans Özeti'ndeki "Hedefe %" sütunuyla birebir aynı değer.
+  const realized = financeFor(curYm).genelToplamTutar;
+  const bugun = new Date();
+  const aySonu = new Date(bugun.getFullYear(), bugun.getMonth()+1, 0).getDate();
+  const kalanGun = Math.max(1, aySonu - bugun.getDate() + 1);
+  return { curYm, hedef, realized, kalan: hedef - realized, kalanGun, gunluk: Math.max(0, hedef - realized) / kalanGun };
+}
 function updateGunlukHedefChip(){
-  const chip = document.getElementById('gunlukHedefChip');
-  if(!chip) return;
+  const chips = [document.getElementById('gunlukHedefChip'), document.getElementById('gunlukHedefChipMob')].filter(Boolean);
+  if(!chips.length) return;
   try{
-    const curYm = thisMonthKey();
-    const hedef = hedefler[curYm] || 0;
-    if(hedef <= 0){ chip.style.display='none'; return; }
-    let realized = 0;
-    entries.filter(e=>effectiveYm(e)===curYm).forEach(e=>{
-      const tFiyat = tarifeFiyatFor(e, e.cat);
-      const p = tFiyat != null ? tFiyat : (kampanyaFiyatFor(e.date,e.cat,priceFor(curYm,e.cat))||0);
-      realized += e.count * p;
+    const h = _gunlukHedefHesap();
+    if(h.hedef <= 0){ chips.forEach(c=>c.style.display='none'); return; }
+    chips.forEach(chip=>{
+      chip.style.display='inline-block';
+      if(h.kalan <= 0){
+        chip.style.background='rgba(76,217,100,0.12)'; chip.style.borderColor='rgba(76,217,100,0.4)'; chip.style.color='#4cd964';
+        chip.innerHTML = '🎉 Aylık hedef tamamlandı!';
+      } else {
+        chip.style.background='rgba(255,183,77,0.12)'; chip.style.borderColor='rgba(255,183,77,0.35)'; chip.style.color='var(--gold)';
+        chip.innerHTML = '🎯 Bugün: <b>' + h.gunluk.toLocaleString('tr-TR',{maximumFractionDigits:0}) + ' ₺</b> · ' + h.kalanGun + ' gün';
+      }
     });
-    const kalan = hedef - realized;
-    const bugun = new Date();
-    const aySonu = new Date(bugun.getFullYear(), bugun.getMonth()+1, 0).getDate();
-    const kalanGun = Math.max(1, aySonu - bugun.getDate() + 1);
-    if(kalan <= 0){
-      chip.style.display='inline-block';
-      chip.style.background='rgba(76,217,100,0.12)'; chip.style.borderColor='rgba(76,217,100,0.4)'; chip.style.color='#4cd964';
-      chip.innerHTML = '🎉 Aylık hedef tamamlandı!';
+  }catch(e){ chips.forEach(c=>c.style.display='none'); }
+}
+
+// v152: Günlük Kırılım Modalı — "bugün kaç adet satmalıyım?"
+function openGunlukKirilimModal(){
+  const modal = document.getElementById('gunlukKirilimModal');
+  const body = document.getElementById('gunlukKirilimBody');
+  if(!modal || !body) return;
+  const h = _gunlukHedefHesap();
+  const fmtTL = v => v.toLocaleString('tr-TR',{maximumFractionDigits:0}) + ' ₺';
+  let html = '';
+
+  if(h.hedef <= 0){
+    html = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">
+      ${monthLabel(h.curYm)} için aylık hedef girilmemiş.<br><br>
+      <button onclick="closePrimModal('gunlukKirilimModal');switchPage('hedef')" class="prim-tool-pill" style="background:rgba(47,174,78,0.15);border-color:rgba(47,174,78,0.4);color:#4cd964;font-size:12px;padding:8px 16px">🎯 Hedef Belirle</button>
+    </div>`;
+  } else {
+    const pct = Math.min(999, Math.round(h.realized / h.hedef * 100));
+    const barColor = pct>=100?'#4cd964':pct>=80?'var(--gold)':'var(--accent)';
+    // Genel ₺ kırılımı
+    html += `<div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:700">💰 ${monthLabel(h.curYm)} — Toplam Hedef</span>
+        <span style="font-size:11px;color:var(--muted)">${fmtTL(h.realized)} / ${fmtTL(h.hedef)}</span>
+      </div>
+      <div style="background:var(--panel);border-radius:5px;height:16px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;width:${Math.min(pct,100)}%;background:${barColor};display:flex;align-items:center;justify-content:center"><span style="font-size:10px;font-weight:700;color:#fff">%${pct}</span></div>
+      </div>
+      ${h.kalan <= 0
+        ? '<div style="text-align:center;font-size:13px;font-weight:800;color:#4cd964">🎉 Hedef tamamlandı! Fazla: +'+fmtTL(-h.kalan)+'</div>'
+        : `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+            <div><div style="font-size:9.5px;color:var(--muted)">KALAN</div><div style="font-size:13px;font-weight:800;color:var(--gold)">${fmtTL(h.kalan)}</div></div>
+            <div><div style="font-size:9.5px;color:var(--muted)">KALAN GÜN</div><div style="font-size:13px;font-weight:800">${h.kalanGun}</div></div>
+            <div><div style="font-size:9.5px;color:var(--muted)">BUGÜN GEREKEN</div><div style="font-size:13px;font-weight:800;color:var(--accent)">${fmtTL(h.gunluk)}</div></div>
+          </div>`}
+      <div style="font-size:9.5px;color:var(--muted);margin-top:8px;text-align:center">Tarife/kampanya fiyatları, eşik bonusları ve KDV dahil — Prim Finans Özeti ile aynı hesap</div>
+    </div>`;
+
+    // Kategori bazlı adet kırılımı — "bugün kaç adet satmalıyım?"
+    const katHedefs = hedefKatData[h.curYm] || {};
+    const catsWithHedef = CATS.filter(c=>katHedefs[c]>0);
+    if(catsWithHedef.length){
+      const katAdet = {};
+      entries.filter(e=>effectiveYm(e)===h.curYm).forEach(e=>{ katAdet[e.cat]=(katAdet[e.cat]||0)+e.count; });
+      html += `<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">📦 Bugün Kaç Adet Satmalıyım?</div>`;
+      html += catsWithHedef.map(c=>{
+        const hAdet = katHedefs[c];
+        const gAdet = katAdet[c]||0;
+        const kAdet = Math.max(0, hAdet - gAdet);
+        const gunlukAdet = Math.ceil(kAdet / h.kalanGun);
+        const kPct = Math.min(100, Math.round(gAdet/hAdet*100));
+        const renk = (CAT_CONFIG[c]&&CAT_CONFIG[c].color)||'var(--accent)';
+        const tamam = kAdet===0;
+        return `<div style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid ${renk};border-radius:8px;padding:9px 11px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <span style="font-size:12px;font-weight:700">${c}</span>
+            <span style="font-size:11px;color:var(--muted)">${gAdet} / ${hAdet} adet</span>
+          </div>
+          <div style="background:var(--panel);border-radius:4px;height:8px;overflow:hidden;margin-bottom:6px">
+            <div style="height:100%;width:${kPct}%;background:${renk}"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px">
+            ${tamam
+              ? '<span style="color:#4cd964;font-weight:700">✅ Kategori hedefi tamam!</span><span></span>'
+              : `<span style="color:var(--muted)">Kalan: <b style="color:var(--txt)">${kAdet} adet</b></span>
+                 <span style="color:${renk};font-weight:800">Bugün: ${gunlukAdet} adet ${gunlukAdet>0?'satmalısın':''}</span>`}
+          </div>
+        </div>`;
+      }).join('');
     } else {
-      const gunluk = kalan / kalanGun;
-      chip.style.display='inline-block';
-      chip.style.background='rgba(255,183,77,0.12)'; chip.style.borderColor='rgba(255,183,77,0.35)'; chip.style.color='var(--gold)';
-      chip.innerHTML = '🎯 Bugün gereken: <b>' + gunluk.toLocaleString('tr-TR',{maximumFractionDigits:0}) + ' ₺</b> · ' + kalanGun + ' gün kaldı';
+      html += `<div style="text-align:center;font-size:11.5px;color:var(--muted);padding:10px;background:var(--panel2);border:1px dashed var(--line);border-radius:8px">
+        Kategori bazlı adet hedefi girilmemiş.<br>Hedef Yönetimi'nden kategori hedefleri girersen burada "bugün kaç adet" kırılımını görürsün.
+      </div>`;
     }
-  }catch(e){ chip.style.display='none'; }
+    html += `<button onclick="closePrimModal('gunlukKirilimModal');switchPage('hedef')" style="width:100%;margin-top:12px;background:rgba(47,174,78,0.12);border:1px solid rgba(47,174,78,0.35);color:#4cd964;border-radius:8px;padding:10px;font-size:12px;font-weight:700;cursor:pointer">🎯 Hedef Yönetimine Git</button>`;
+  }
+  body.innerHTML = html;
+  modal.style.display = 'flex';
+}
+
+// v152: Grafik barına dokununca ay detayı — kategori kırılımı modalı
+function showChartBarDetay(ym){
+  const modal = document.getElementById('chartDetayModal');
+  const body = document.getElementById('chartDetayBody');
+  if(!modal || !body) return;
+  const f = financeFor(ym);
+  const katAdet = {}, katTutar = {};
+  entries.filter(e=>effectiveYm(e)===ym).forEach(e=>{
+    const tFiyat = tarifeFiyatFor(e, e.cat);
+    const p = tFiyat != null ? tFiyat : (kampanyaFiyatFor(e.date,e.cat,priceFor(ym,e.cat))||0);
+    katAdet[e.cat]  = (katAdet[e.cat]||0) + e.count;
+    katTutar[e.cat] = (katTutar[e.cat]||0) + e.count*p;
+  });
+  const cats = CATS.filter(c=>katAdet[c]>0);
+  const maxT = Math.max(1, ...cats.map(c=>katTutar[c]||0));
+  document.getElementById('chartDetayTitle').textContent = '📊 ' + monthLabel(ym) + ' Detayı';
+  if(!cats.length){
+    body.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Bu aya ait kayıt yok.</div>';
+  } else {
+    body.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:12px">
+        <div style="background:var(--panel2);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--muted)">TOPLAM ADET</div><div style="font-size:15px;font-weight:800">${f.genelToplamAdet}</div></div>
+        <div style="background:var(--panel2);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--muted)">PRİM (HAM)</div><div style="font-size:13px;font-weight:800;color:var(--accent)">${fmt(f.primTutar)}</div></div>
+        <div style="background:var(--panel2);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--muted)">KDV DAHİL</div><div style="font-size:13px;font-weight:800;color:var(--gold)">${fmt(f.genelToplamTutar)}</div></div>
+      </div>
+      <div style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Kategori Kırılımı</div>
+      ${cats.map(c=>{
+        const renk = (CAT_CONFIG[c]&&CAT_CONFIG[c].color)||'var(--accent)';
+        const w = Math.max(4, (katTutar[c]/maxT)*100);
+        return `<div style="margin-bottom:7px">
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px">
+            <span style="font-weight:700">${c}</span>
+            <span style="color:var(--muted)">${katAdet[c]} adet · <b style="color:var(--txt)">${fmt(katTutar[c])}</b></span>
+          </div>
+          <div style="background:var(--panel2);border-radius:4px;height:10px;overflow:hidden">
+            <div style="height:100%;width:${w}%;background:${renk};border-radius:4px"></div>
+          </div>
+        </div>`;
+      }).join('')}
+      <div style="font-size:9.5px;color:var(--muted);margin-top:10px;text-align:center">Kırılım tutarları ham prim (KDV hariç), tarife/kampanya fiyatları dahildir.</div>`;
+  }
+  modal.style.display = 'flex';
 }
 
 // ==================== AY KAPANIS SİHİRBAZI ====================
@@ -8802,52 +8979,63 @@ function editKampanya(id){
   // Forma scroll
   document.getElementById('kFormTitle').scrollIntoView({behavior:'smooth'});
 }
-// ── TARİFE YÖNETİMİ (Red30/40/50/80 gibi alt tarifeler) ──
-function addTarife(){
-  const ad = document.getElementById('tarifeAdInput').value.trim();
-  const fiyat = parseFloat(document.getElementById('tarifeFiyatInput').value);
-  if(!ad){ alert('Tarife adı giriniz.'); return; }
+// ── TARİFE / KAMPANYA YÖNETİMİ (Red30/40/50 tarifeleri + Diğer esnek kampanyaları) ──
+function addTarife(cat){
+  cat = cat || 'Red';
+  const sfx = cat === 'Diğer' ? 'Diger' : '';
+  const ad = document.getElementById('tarifeAdInput'+sfx).value.trim();
+  const fiyat = parseFloat(document.getElementById('tarifeFiyatInput'+sfx).value);
+  if(!ad){ alert(cat==='Diğer' ? 'Kampanya/ürün adı giriniz.' : 'Tarife adı giriniz.'); return; }
   if(isNaN(fiyat) || fiyat<0){ alert('Geçerli bir prim tutarı giriniz.'); return; }
 
-  if(!tarifeData['Red']) tarifeData['Red'] = [];
-  const mevcut = tarifeData['Red'].find(t=>t.ad===ad);
+  if(!tarifeData[cat]) tarifeData[cat] = [];
+  const mevcut = tarifeData[cat].find(t=>t.ad===ad);
   if(mevcut){
     mevcut.fiyat = fiyat;
   } else {
-    tarifeData['Red'].push({ad, fiyat});
+    tarifeData[cat].push({ad, fiyat});
   }
   saveTarifeStore();
   renderTarifeList();
-  document.getElementById('tarifeAdInput').value = '';
-  document.getElementById('tarifeFiyatInput').value = '';
+  document.getElementById('tarifeAdInput'+sfx).value = '';
+  document.getElementById('tarifeFiyatInput'+sfx).value = '';
   render();
 }
 
-function deleteTarife(ad){
-  if(!tarifeData['Red']) return;
-  if(!confirm(ad + ' tarifesini silmek istiyor musunuz?')) return;
-  tarifeData['Red'] = tarifeData['Red'].filter(t=>t.ad!==ad);
+function deleteTarife(ad, cat){
+  cat = cat || 'Red';
+  if(!tarifeData[cat]) return;
+  const kullanımda = entries.some(e=>e.cat===cat && e.tarife===ad);
+  const msg = kullanımda
+    ? ad + ' kayıtlarda kullanılıyor.\nListeden silinir ama mevcut kayıtlar etkilenmez (fiyatları o günkü değerle hesaplanmaya devam etmez, varsayılan fiyata döner).\n\nSilmek istiyor musunuz?'
+    : ad + (cat==='Diğer'?' kampanyasını':' tarifesini') + ' silmek istiyor musunuz?';
+  if(!confirm(msg)) return;
+  tarifeData[cat] = tarifeData[cat].filter(t=>t.ad!==ad);
   saveTarifeStore();
   renderTarifeList();
   render();
 }
 
 function renderTarifeList(){
-  const div = document.getElementById('tarifeListDiv');
-  if(!div) return;
-  const list = tarifeData['Red'] || [];
-  if(!list.length){
-    div.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px">Henüz tarife eklenmedi.</div>';
-    return;
-  }
-  div.innerHTML = list.map(t => `
-    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px">
-      <span style="font-size:12px;font-weight:700;color:var(--txt)">${t.ad}</span>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;font-weight:700;color:#4cd964">${t.fiyat.toLocaleString('tr-TR')} ₺</span>
-        <button onclick="deleteTarife('${t.ad}')" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
-      </div>
-    </div>`).join('');
+  const yap = (cat, divId) => {
+    const div = document.getElementById(divId);
+    if(!div) return;
+    const list = tarifeData[cat] || [];
+    if(!list.length){
+      div.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px">Henüz '+(cat==='Diğer'?'kampanya':'tarife')+' eklenmedi.</div>';
+      return;
+    }
+    div.innerHTML = list.map(t => `
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px">
+        <span style="font-size:12px;font-weight:700;color:var(--txt)">${t.ad}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;font-weight:700;color:#4cd964">${t.fiyat.toLocaleString('tr-TR')} ₺</span>
+          <button onclick="deleteTarife('${t.ad.replace(/'/g,"\\'")}','${cat}')" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
+        </div>
+      </div>`).join('');
+  };
+  yap('Red','tarifeListDiv');
+  yap('Diğer','tarifeListDivDiger');
 }
 
 // Müşteri formundaki tarife dropdown'unu kategoriye göre güncelle
@@ -8855,15 +9043,43 @@ function updateMkTarifeField(){
   const cat = document.getElementById('mkCat').value;
   const tarifeDiv = document.getElementById('mkTarifeDiv');
   const tarifeSelect = document.getElementById('mkTarife');
+  const tarifeLbl = document.getElementById('mkTarifeLabel');
   if(!tarifeDiv || !tarifeSelect) return;
 
   if(cat === 'Red' && tarifeData['Red'] && tarifeData['Red'].length){
     tarifeDiv.style.display = 'block';
+    if(tarifeLbl) tarifeLbl.textContent = '📶 Tarife';
     tarifeSelect.innerHTML = '<option value="">— Seçiniz —</option>' +
       tarifeData['Red'].map(t => `<option value="${t.ad}">${t.ad} (${t.fiyat.toLocaleString('tr-TR')} ₺)</option>`).join('');
+  } else if(cat === 'Diğer'){
+    // v152: Diğer — esnek kampanya alanı (liste boş olsa bile göster, yeni ekleme seçeneğiyle)
+    tarifeDiv.style.display = 'block';
+    if(tarifeLbl) tarifeLbl.textContent = '🎁 Kampanya / Ürün';
+    const list = tarifeData['Diğer'] || [];
+    tarifeSelect.innerHTML = '<option value="">— Kampanyasız (varsayılan fiyat) —</option>' +
+      list.map(t => `<option value="${t.ad}">${t.ad} (${t.fiyat.toLocaleString('tr-TR')} ₺)</option>`).join('') +
+      '<option value="__yeni__">➕ Yeni kampanya ekle…</option>';
+    tarifeSelect.onchange = function(){
+      if(this.value === '__yeni__'){
+        const ad = prompt('Yeni kampanya/ürün adı:');
+        if(!ad || !ad.trim()){ this.value=''; return; }
+        const fStr = prompt('"'+ad.trim()+'" için adet başı prim (₺):');
+        const fiyat = parseFloat((fStr||'').replace(',','.'));
+        if(isNaN(fiyat) || fiyat<0){ alert('Geçersiz tutar.'); this.value=''; return; }
+        if(!tarifeData['Diğer']) tarifeData['Diğer'] = [];
+        const mevcut = tarifeData['Diğer'].find(t=>t.ad===ad.trim());
+        if(mevcut) mevcut.fiyat = fiyat; else tarifeData['Diğer'].push({ad: ad.trim(), fiyat});
+        saveTarifeStore();
+        if(typeof scheduleCloudSync==='function') scheduleCloudSync();
+        updateMkTarifeField();
+        this.value = ad.trim();
+        if(typeof renderTarifeList==='function') renderTarifeList();
+      }
+    };
   } else {
     tarifeDiv.style.display = 'none';
     tarifeSelect.value = '';
+    tarifeSelect.onchange = null;
   }
 }
 
@@ -10029,7 +10245,7 @@ function renderKasa(){
       const fark = k.toplam-k.beklenen;
       const h = Math.max(6, Math.abs(fark)/maxAbs*100);
       const renk = fark < -0.005 ? '#ff5252' : '#4cd964';
-      return `<div class="bar-wrap" title="${k.date} ${k.time||''} → Fark: ${(fark>0?'+':'')+fmtTL(fark)}" style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;flex:1;height:100%">
+      return `<div class="bar-wrap" onclick="showToast('🧮 ${k.date} ${k.time||''} → Sayılan: ${fmtTL(k.toplam)} · Beklenen: ${fmtTL(k.beklenen)} · Fark: ${(fark>0?'+':'')+fmtTL(fark)}', '${fark<-0.005?'err':'ok'}')" title="${k.date} ${k.time||''} → Fark: ${(fark>0?'+':'')+fmtTL(fark)}" style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;flex:1;height:100%;cursor:pointer">
         <div style="width:70%;max-width:26px;height:${h}%;background:${renk};border-radius:3px 3px 0 0;opacity:.9"></div>
         <div style="font-size:8px;color:var(--muted);margin-top:2px;white-space:nowrap">${k.date.slice(8,10)}.${k.date.slice(5,7)}</div>
       </div>`;
@@ -12027,6 +12243,12 @@ checkLock();
 load();
 // v151: kategori migration — gelirData yüklendikten sonra çalışmalı
 if(typeof migrateGelirKategorilerV151==='function') migrateGelirKategorilerV151();
+// v152: önceki oturumdan kalan senkron kuyruğu varsa gönder
+if(localStorage.getItem('vf_pending_sync')==='1'){
+  userChangedData = true;
+  if(navigator.onLine){ setTimeout(()=>{ try{ pushToCloud(); }catch(e){} }, 4000); }
+  else updateCloudIndicator('queued');
+}
 // Buluttan veri çek — localStorage'dan daha yeni veri varsa uygula
 setTimeout(()=>{ pullFromCloud().then(()=>startCloudPolling()); }, 800);
 // Orphan log temizleme - entries ile eslesmeyenleri kaldir
@@ -12452,9 +12674,21 @@ function renderHedefGecmis(){
         <div style="display:grid;grid-template-columns:1.2fr 1fr auto;gap:6px;margin-bottom:8px">
           <input type="text" id="tarifeAdInput" placeholder="Tarife adı (örn: Red30)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
           <input type="number" id="tarifeFiyatInput" placeholder="Prim (₺)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
-          <button onclick="addTarife()" style="padding:7px 12px;background:#e2231a;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
+          <button onclick="addTarife('Red')" style="padding:7px 12px;background:#e2231a;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
         </div>
         <div id="tarifeListDiv" style="display:flex;flex-direction:column;gap:5px"></div>
+      </div>
+
+      <!-- v152: Diğer — Esnek Kampanya Alanı -->
+      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-size:11px;color:#c084fc;font-weight:700;text-transform:uppercase;margin-bottom:4px">🎁 Diğer — Esnek Kampanyalar</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">"Diğer" kategorisine girilen her işlem bir kampanya/ürünle eşleştirilebilir (cihaz, aksesuar, özel kampanya...). Her kampanyanın kendi adet primi olur.</div>
+        <div style="display:grid;grid-template-columns:1.2fr 1fr auto;gap:6px;margin-bottom:8px">
+          <input type="text" id="tarifeAdInputDiger" placeholder="Kampanya/ürün adı" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
+          <input type="number" id="tarifeFiyatInputDiger" placeholder="Prim (₺)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
+          <button onclick="addTarife('Diğer')" style="padding:7px 12px;background:#7c3aed;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
+        </div>
+        <div id="tarifeListDivDiger" style="display:flex;flex-direction:column;gap:5px"></div>
       </div>
 
       <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px">Kayıtlı Kampanyalar</div>
@@ -12494,7 +12728,7 @@ function renderHedefGecmis(){
 
       <!-- Tarife (sadece Red icin) -->
       <div id="mkTarifeDiv" style="display:none;margin-bottom:12px">
-        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">TARİFE</div>
+        <div id="mkTarifeLabel" style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">TARİFE</div>
         <select id="mkTarife" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
           <option value="">— Seçiniz —</option>
         </select>
@@ -13361,6 +13595,19 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v152',
+    date: '02.07.2026',
+    items: [
+      { type: 'fix', text: 'Gunluk hedef cipi duzeltildi: artik Prim Finans Ozeti ile birebir ayni resmi hesap kullaniliyor (tarife fiyatlari + esik bonuslari + tekrarli bonuslar + KDV dahil)' },
+      { type: 'new', text: 'Gunluk hedef cipi mobilde de gorunuyor (mobil arac cubugunda)' },
+      { type: 'new', text: 'Cipe dokununca Gunluk Kirilim penceresi aciliyor: genel TL kirilimi + kategori bazli "bugun kac ADET satmaliyim?" hesabi (kategori hedeflerinden)' },
+      { type: 'new', text: 'Diger kategorisi esnek kampanya alanina donusturuldu: her Diger girisine kampanya/urun atanabilir (cihaz, aksesuar, ozel kampanya...), her kampanyanin kendi adet primi var. Kampanya yonetimi Kampanyalar penceresinde, giris sirasinda hizli ekleme (+Yeni kampanya) destegi' },
+      { type: 'fix', text: 'Prim Finans Ozeti ve tum ay hesaplari artik Red tarife ve Diger kampanya fiyatlarini da iceriyor (onceden sadece kampanya fiyati vardi) — tum tablolar tutarli' },
+      { type: 'new', text: 'Cevrimdisi kuyruk: internetsizken girilen veriler kuyruga alinir (gosterge: "Kuyrukta"), internet gelince veya uygulama tekrar acilinca otomatik gonderilir' },
+      { type: 'new', text: 'Grafiklere dokunmatik detay: Aylik Prim Grafiginde bir aya dokununca kategori kirilimli detay penceresi acilir; Kasa fark grafiginde dokununca sayim ozeti gosterilir' },
+    ]
+  },
   {
     version: 'v151',
     date: '02.07.2026',
