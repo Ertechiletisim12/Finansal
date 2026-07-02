@@ -14,7 +14,7 @@
   // SW — offline destek, PWA
   if('serviceWorker' in navigator){
     const swKod = `
-const CACHE_VER = 'finansal-v152';
+const CACHE_VER = 'finansal-v153';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2620,8 +2620,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v152';
-const BUILD_DATE = '02.07.2026 17:30'; // Hazırlanma tarihi (dahili)
+const APP_VERSION = 'v153';
+const BUILD_DATE = '02.07.2026 19:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -2694,8 +2694,8 @@ function saveTarifeStore(){
   scheduleCloudSync();
 }
 // Tarife bazli fiyat - entry.tarife varsa tarifeData'dan fiyati al, yoksa null doner
-// v152: 'Diğer' kategorisi de esnek kampanya olarak destekleniyor
-const TARIFE_CATS = ['Red','Diğer'];
+// v152: Red + PostPaid + Mccm + İnternet tarifeleri ve 'Diğer' esnek kampanyaları destekleniyor
+const TARIFE_CATS = ['Red','PostPaid','Mccm','İnternet','Diğer'];
 function tarifeFiyatFor(entryOrTarife, cat){
   if(!TARIFE_CATS.includes(cat)) return null;
   const tarifeAdi = typeof entryOrTarife === 'string' ? entryOrTarife : entryOrTarife?.tarife;
@@ -4570,13 +4570,13 @@ function render(){
       : normalFiyat;
     const kampanyaVar = price !== normalFiyat;
 
-    // Red icin tarife bazli tutar hesabi (varsa)
+    // Tarife bazli tutar hesabi (Red/PostPaid/Mccm/İnternet/Diğer — varsa)
     let amt;
-    if(cat === 'Red' && tarifeData['Red'] && tarifeData['Red'].length){
+    if(TARIFE_CATS.includes(cat) && tarifeData[cat] && tarifeData[cat].length){
       amt = entries
-        .filter(e => e.date===activeDate && e.cat==='Red')
+        .filter(e => e.date===activeDate && e.cat===cat)
         .reduce((a,e) => {
-          const tFiyat = tarifeFiyatFor(e, 'Red');
+          const tFiyat = tarifeFiyatFor(e, cat);
           return a + e.count * (tFiyat != null ? tFiyat : price);
         }, 0);
     } else {
@@ -9022,7 +9022,7 @@ function renderTarifeList(){
     if(!div) return;
     const list = tarifeData[cat] || [];
     if(!list.length){
-      div.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px">Henüz '+(cat==='Diğer'?'kampanya':'tarife')+' eklenmedi.</div>';
+      div.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px">'+cat+' için henüz '+(cat==='Diğer'?'kampanya':'tarife')+' eklenmedi.</div>';
       return;
     }
     div.innerHTML = list.map(t => `
@@ -9034,11 +9034,14 @@ function renderTarifeList(){
         </div>
       </div>`).join('');
   };
-  yap('Red','tarifeListDiv');
+  // v152: seçili kategori (yoksa Red) + Diğer esnek kampanyalar
+  const sel = document.getElementById('tarifeCatSel');
+  yap(sel ? sel.value : 'Red', 'tarifeListDiv');
   yap('Diğer','tarifeListDivDiger');
 }
 
 // Müşteri formundaki tarife dropdown'unu kategoriye göre güncelle
+// v152: Red/PostPaid/Mccm/İnternet → tarife, Diğer → esnek kampanya. Hepsinde ➕ hızlı ekleme var.
 function updateMkTarifeField(){
   const cat = document.getElementById('mkCat').value;
   const tarifeDiv = document.getElementById('mkTarifeDiv');
@@ -9046,29 +9049,25 @@ function updateMkTarifeField(){
   const tarifeLbl = document.getElementById('mkTarifeLabel');
   if(!tarifeDiv || !tarifeSelect) return;
 
-  if(cat === 'Red' && tarifeData['Red'] && tarifeData['Red'].length){
+  if(TARIFE_CATS.includes(cat)){
     tarifeDiv.style.display = 'block';
-    if(tarifeLbl) tarifeLbl.textContent = '📶 Tarife';
-    tarifeSelect.innerHTML = '<option value="">— Seçiniz —</option>' +
-      tarifeData['Red'].map(t => `<option value="${t.ad}">${t.ad} (${t.fiyat.toLocaleString('tr-TR')} ₺)</option>`).join('');
-  } else if(cat === 'Diğer'){
-    // v152: Diğer — esnek kampanya alanı (liste boş olsa bile göster, yeni ekleme seçeneğiyle)
-    tarifeDiv.style.display = 'block';
-    if(tarifeLbl) tarifeLbl.textContent = '🎁 Kampanya / Ürün';
-    const list = tarifeData['Diğer'] || [];
-    tarifeSelect.innerHTML = '<option value="">— Kampanyasız (varsayılan fiyat) —</option>' +
+    const isDiger = cat === 'Diğer';
+    if(tarifeLbl) tarifeLbl.textContent = isDiger ? '🎁 Kampanya / Ürün' : '📶 Tarife';
+    const list = tarifeData[cat] || [];
+    tarifeSelect.innerHTML =
+      `<option value="">— ${isDiger?'Kampanyasız':'Tarifesiz'} (varsayılan fiyat) —</option>` +
       list.map(t => `<option value="${t.ad}">${t.ad} (${t.fiyat.toLocaleString('tr-TR')} ₺)</option>`).join('') +
-      '<option value="__yeni__">➕ Yeni kampanya ekle…</option>';
+      `<option value="__yeni__">➕ Yeni ${isDiger?'kampanya':'tarife'} ekle…</option>`;
     tarifeSelect.onchange = function(){
       if(this.value === '__yeni__'){
-        const ad = prompt('Yeni kampanya/ürün adı:');
+        const ad = prompt('Yeni ' + (isDiger?'kampanya/ürün':'tarife') + ' adı:');
         if(!ad || !ad.trim()){ this.value=''; return; }
         const fStr = prompt('"'+ad.trim()+'" için adet başı prim (₺):');
         const fiyat = parseFloat((fStr||'').replace(',','.'));
         if(isNaN(fiyat) || fiyat<0){ alert('Geçersiz tutar.'); this.value=''; return; }
-        if(!tarifeData['Diğer']) tarifeData['Diğer'] = [];
-        const mevcut = tarifeData['Diğer'].find(t=>t.ad===ad.trim());
-        if(mevcut) mevcut.fiyat = fiyat; else tarifeData['Diğer'].push({ad: ad.trim(), fiyat});
+        if(!tarifeData[cat]) tarifeData[cat] = [];
+        const mevcut = tarifeData[cat].find(t=>t.ad===ad.trim());
+        if(mevcut) mevcut.fiyat = fiyat; else tarifeData[cat].push({ad: ad.trim(), fiyat});
         saveTarifeStore();
         if(typeof scheduleCloudSync==='function') scheduleCloudSync();
         updateMkTarifeField();
@@ -12668,13 +12667,21 @@ function renderHedefGecmis(){
       </div>
     </div>
     <div style="flex:1;overflow-y:auto;padding:12px 16px">
-      <!-- Tarife Yönetimi (Red için alt/üst tarife) -->
+      <!-- Tarife Yönetimi (Red / PostPaid / Mccm / İnternet) -->
       <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px">
-        <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:8px">📶 Tarife Yönetimi (Red için)</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase">📶 Tarife Yönetimi</div>
+          <select id="tarifeCatSel" onchange="renderTarifeList()" style="font-size:11px;padding:4px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--txt)">
+            <option value="Red">Red</option>
+            <option value="PostPaid">PostPaid</option>
+            <option value="Mccm">Mccm</option>
+            <option value="İnternet">İnternet</option>
+          </select>
+        </div>
         <div style="display:grid;grid-template-columns:1.2fr 1fr auto;gap:6px;margin-bottom:8px">
           <input type="text" id="tarifeAdInput" placeholder="Tarife adı (örn: Red30)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
           <input type="number" id="tarifeFiyatInput" placeholder="Prim (₺)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
-          <button onclick="addTarife('Red')" style="padding:7px 12px;background:#e2231a;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
+          <button onclick="addTarife(document.getElementById('tarifeCatSel').value)" style="padding:7px 12px;background:#e2231a;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
         </div>
         <div id="tarifeListDiv" style="display:flex;flex-direction:column;gap:5px"></div>
       </div>
@@ -13595,6 +13602,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v153',
+    date: '02.07.2026',
+    items: [
+      { type: 'new', text: 'Tarife yonetimi genisletildi: Red\'e ek olarak PostPaid, Mccm ve Internet icin de tarife tanimlanabiliyor — Kampanyalar penceresindeki Tarife Yonetimi panelinde kategori secici eklendi' },
+      { type: 'new', text: 'Musteri kaydinda tarife secimi artik 4 kategoride de var; secicide "+Yeni tarife ekle" ile formdan cikmadan hizli tanimlama yapilabiliyor' },
+      { type: 'fix', text: 'Kategori kartlarindaki gunluk tutar hesabi tum tarife kategorileri icin tarife fiyatini kullaniyor (onceden sadece Red)' },
+    ]
+  },
   {
     version: 'v152',
     date: '02.07.2026',
