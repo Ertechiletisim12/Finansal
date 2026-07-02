@@ -14,7 +14,7 @@
   // SW — offline destek, PWA
   if('serviceWorker' in navigator){
     const swKod = `
-const CACHE_VER = 'finansal-v137';
+const CACHE_VER = 'finansal-v151';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -291,6 +291,7 @@ html{scrollbar-gutter:stable}
   #page-trend{ padding-top:80px!important; }
 
   #primTitleBar{ display:none!important; }
+  #primToolBar{ display:none!important; }
   #primFilterBar{
     display:block!important;
     position:fixed!important;
@@ -1171,6 +1172,9 @@ input:focus,select:focus{outline:1px solid var(--accent)}
 .preview-btn{background:rgba(63,208,255,0.13);border:1px solid rgba(63,208,255,0.4);color:var(--accent);border-radius:6px;padding:4px 11px;font-size:10.5px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
 .preview-btn:hover{background:rgba(63,208,255,0.25)}
 .section-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:18px 0 8px}
+.prim-tool-pill{flex-shrink:0;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:filter .15s,background .15s}
+.prim-tool-pill:hover{filter:brightness(1.15)}
+#primToolBar::-webkit-scrollbar{display:none}
 .section-title-row .section-title{margin:0}
 .tool-btn:hover{border-color:rgba(255,255,255,0.25);color:#e0e3e7;background:rgba(255,255,255,0.09)}
 .tool-btn.active-theme{background:var(--accent);border-color:var(--accent);color:#000}
@@ -1403,10 +1407,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div style="padding:6px 0 8px;border-bottom:1px solid #242628">
       <div class="nav-item active" id="navDash" onclick="switchPage('dash')">🏠 Anasayfa</div>
       <div class="nav-item" id="navPrim" onclick="switchPage('prim')">📊 Prim Sayfası</div>
-      <div class="nav-item" id="navHedef" onclick="switchPage('hedef')">🎯 Hedef Yönetimi</div>
-      <div class="nav-item" id="navRapor" onclick="switchPage('rapor')">📅 Haftalık / Yıllık</div>
-      <div class="nav-item" id="navTrend" onclick="switchPage('trend')">📈 Trend Analizi</div>
       <div class="nav-item" id="navFinans" onclick="switchPage('finans')">💹 Finansal Analiz</div>
+      <div class="nav-item" id="navKasa" onclick="switchPage('kasa')">🧮 Kasa Sayımı</div>
       <div class="nav-item" id="navGelir" onclick="switchPage('gelir')">💰 Gelir Takibi</div>
       <div class="nav-item" id="navNot" onclick="switchPage('not')">🏷️ Not & Etiket</div>
     </div>
@@ -1482,7 +1484,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <button class="tool-btn" id="notifPanelBtn" onclick="toggleNotifPanel()">🔔 Bildirimler <span id="notifBadge" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
         <button class="tool-btn" onclick="openPinModal()">🔐 Kilit / PIN Ayarı</button>
         <button class="tool-btn" onclick="openGirisLogModal()">📋 Giriş Logları</button>
-        <div style="border-top:1px solid #2a2d30;margin-top:2px;padding-top:6px">
+        <div style="border-top:1px solid #2a2d30;margin-top:2px;padding-top:6px;display:flex;flex-direction:column;gap:6px">
+          <button class="tool-btn" style="color:#ff9f5a;border-color:rgba(255,159,10,0.3);font-size:10.5px;width:100%;justify-content:center" onclick="resetFinansData()">↺ Finansal Veriyi Sıfırla</button>
           <button class="tool-btn" style="color:#ff5252;border-color:rgba(226,35,26,0.3);font-size:10.5px;width:100%;justify-content:center" onclick="clearAllData()">⚠ Tüm Verileri Sıfırla</button>
         </div>
       </div>
@@ -1536,15 +1539,39 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
     <div id="page-prim" style="display:none;flex-direction:column;height:100vh">
     <!-- Sabit başlık -->
-    <div id="primTitleBar" style="background:var(--bg);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px;z-index:40">
+    <div id="primTitleBar" style="background:var(--bg);padding:10px 20px 4px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px;z-index:40">
       <h2 style="margin:0;font-size:15px;white-space:nowrap">Prim Sayfası</h2>
       <div style="display:flex;gap:10px;align-items:center;flex-shrink:0">
         <button class="btn-hero" onclick="openYatirilanModal()" style="background:linear-gradient(135deg,#92400e,#78350f);border:1px solid #d97706;color:#fcd34d;white-space:nowrap;font-weight:700;letter-spacing:0.03em;box-shadow:0 2px 8px rgba(217,119,6,0.3)">💰 Yatırılan Prim</button>
         <div id="clock" style="text-align:right;line-height:1.3;color:#8fe3a8;font-variant-numeric:tabular-nums;flex-shrink:0"></div>
       </div>
     </div>
+    <!-- Prim Araç Çubuğu: modal pencereler + alt sayfa erişimi -->
+    <div id="primToolBar" style="background:var(--bg);padding:4px 20px 8px;flex-shrink:0;display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none;z-index:39;-webkit-overflow-scrolling:touch">
+      <button class="prim-tool-pill" onclick="openPrimAraModal()" style="background:rgba(63,208,255,0.12);border-color:rgba(63,208,255,0.35);color:var(--accent)">🔍 Müşteri Ara</button>
+      <button class="prim-tool-pill" onclick="openCmpModal()">📊 Ay Karşılaştırma</button>
+      <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Detay Tabloları</button>
+      <button class="prim-tool-pill" onclick="openSaatModal()">⏱ Saat Analizi</button>
+      <button class="prim-tool-pill" onclick="openFiyatModal()">💰 Fiyatlar & Veri</button>
+      <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
+      <button class="prim-tool-pill" onclick="switchPage('hedef')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964">🎯 Hedef Yönetimi</button>
+      <button class="prim-tool-pill" onclick="switchPage('rapor')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964">📅 Haftalık / Yıllık</button>
+      <button class="prim-tool-pill" onclick="switchPage('trend')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964">📈 Trend Analizi</button>
+      <span id="gunlukHedefChip" style="display:none;flex-shrink:0;margin-left:auto;font-size:10.5px;font-weight:700;padding:5px 10px;border-radius:20px;background:rgba(255,183,77,0.12);border:1px solid rgba(255,183,77,0.35);color:var(--gold);white-space:nowrap;cursor:pointer" onclick="switchPage('hedef')" title="Aylık hedefe ulaşmak için bugün gereken tutar"></span>
+    </div>
     <!-- Mobil filterbar - sabit, screenshot stili -->
     <div id="primFilterBar" style="background:var(--bg);padding:5px 10px 4px;border-bottom:1px solid var(--line);flex-shrink:0;display:none">
+      <!-- v151: Mobil araç çubuğu -->
+      <div style="display:flex;gap:5px;align-items:center;overflow-x:auto;scrollbar-width:none;margin-bottom:5px;-webkit-overflow-scrolling:touch">
+        <button class="prim-tool-pill" onclick="openPrimAraModal()" style="background:rgba(63,208,255,0.12);border-color:rgba(63,208,255,0.35);color:var(--accent);font-size:10px;padding:4px 10px">🔍 Ara</button>
+        <button class="prim-tool-pill" onclick="openCmpModal()" style="font-size:10px;padding:4px 10px">📊 Karşılaştır</button>
+        <button class="prim-tool-pill" onclick="openTablolarModal()" style="font-size:10px;padding:4px 10px">📋 Tablolar</button>
+        <button class="prim-tool-pill" onclick="openSaatModal()" style="font-size:10px;padding:4px 10px">⏱ Saat</button>
+        <button class="prim-tool-pill" onclick="openFiyatModal()" style="font-size:10px;padding:4px 10px">💰 Fiyatlar</button>
+        <button class="prim-tool-pill" onclick="switchPage('hedef')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964;font-size:10px;padding:4px 10px">🎯 Hedef</button>
+        <button class="prim-tool-pill" onclick="switchPage('rapor')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964;font-size:10px;padding:4px 10px">📅 Rapor</button>
+        <button class="prim-tool-pill" onclick="switchPage('trend')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964;font-size:10px;padding:4px 10px">📈 Trend</button>
+      </div>
       <!-- Yatırılan Prim butonu -->
       <button onclick="openYatirilanModal()" style="width:100%;margin-bottom:5px;background:linear-gradient(135deg,#92400e,#78350f);border:1px solid #d97706;color:#fcd34d;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.03em;box-shadow:0 2px 8px rgba(217,119,6,0.3)">💰 Yatırılan Prim</button>
       <!-- TARİH: label + input yan yana tek satır -->
@@ -1655,34 +1682,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <!-- Scroll eden içerik -->
         <div class="content-col" style="overflow-y:auto;flex:1;padding-top:0">
 
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin:8px 0 8px">
-      <div class="section-title" id="compareTitle" style="margin:0">Bu Ay / Geçen Ay Karşılaştırması</div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin-left:auto">
-        <select id="cmpMonthSel" onchange="render()"></select>
-        <select id="cmpYearSel" onchange="render()"></select>
-        <button class="preview-btn" onclick="openExportPreview('compareTable','Ay_Karsilastirma')" style="white-space:nowrap;flex-shrink:0">📤 Dışa Aktar</button>
-      </div>
-    </div>
-    <div class="compare-panel" id="comparePanel"></div>
-
-    <div class="section-title-row">
-      <div class="section-title">Aylık Kategori Dağılımı (Detay)</div>
-      <button class="preview-btn" onclick="openExportPreview('mainTable','Aylik_Kategori_Dagilimi')">📤 Dışa Aktar</button>
-    </div>
-    <div class="table-wrap" style="max-height:400px;overflow-y:auto">
-      <table class="main-table" id="mainTable"></table>
-    </div>
-
-    <div class="section-title-row">
-      <div class="section-title">Prim Finans Özeti</div>
-      <button class="preview-btn" onclick="openExportPreview('financeTable','Prim_Finans_Ozeti')">📤 Dışa Aktar</button>
-    </div>
-    <div class="table-wrap" style="max-height:400px;overflow-x:auto;overflow-y:auto">
-      <table class="main-table" style="width:100%" id="financeTable"></table>
-    </div>
-    <div class="note" style="margin:-2px 0 14px">Bu tablo seçilen tarih aralığından bağımsız olarak tüm ay geçmişini gösterir.</div>
-
-    <div class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
       <span>Genel Durum &amp; Tahminler</span>
       <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:normal">Yıl:</span>
       <select id="yearAvgSel" onchange="render()" style="font-size:11px;padding:2px 6px;text-transform:none"></select>
@@ -1696,71 +1696,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div class="bars" id="chartBars"></div>
       <div class="avg-line" id="avgLine"></div>
     </div>
-
-    <!-- ===== EntryLog Saat Analizi ===== -->
-    <details id="saatAnalizDetails" style="margin-bottom:6px" ontoggle="document.getElementById('saatAnalizArrow').style.transform = this.open ? 'rotate(90deg)' : 'none'">
-      <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:700;color:var(--muted)">
-        <span id="saatAnalizArrow" style="display:inline-block;transition:transform .2s">▶</span>
-        <span style="color:var(--txt)">⏱ Saatlik Giriş Yoğunluğu & Isı Haritası</span>
-        <span style="font-size:11px;font-weight:400;margin-left:auto">(tıkla aç/kapat)</span>
-      </summary>
-    <div class="hourly-bar-wrap">
-      <h3>
-        ⏱ Saatlik Giriş Yoğunluğu
-        <span id="peakHourBadge" class="peak-badge" style="display:none"></span>
-      </h3>
-      <div class="hourly-bars" id="hourlyBars"></div>
-      <div style="display:flex;justify-content:space-between;margin-top:4px;padding:0 4px">
-        <span style="font-size:9.5px;color:var(--muted)">00:00</span>
-        <span style="font-size:9.5px;color:var(--muted)">06:00</span>
-        <span style="font-size:9.5px;color:var(--muted)">12:00</span>
-        <span style="font-size:9.5px;color:var(--muted)">18:00</span>
-        <span style="font-size:9.5px;color:var(--muted)">23:00</span>
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px" id="hourlyBarNote"></div>
-    </div>
-
-    <div class="heatmap-wrap">
-      <h3>🗓 Kategori × Saat Isı Haritası</h3>
-      <div style="overflow-x:auto;max-width:100%">
-        <div class="heatmap-grid" id="heatmapGrid" style="min-width:500px"></div>
-      </div>
-      <div class="hm-legend">
-        <span>Az</span>
-        <div class="hm-legend-bar" id="hmLegend"></div>
-        <span>Çok</span>
-        <span style="margin-left:10px;opacity:.6">· hücrenin üzerine gel → adet gösterir</span>
-      </div>
-    </div>
-    </details>
-    <!-- ===== EntryLog Saat Analizi Sonu ===== -->
-
-    <div class="section-title">Veri Yönetimi &amp; Aylık Birim Fiyatları</div>
-    <div class="data-panel">
-      <strong style="font-size:12.5px;margin-right:4px">Veri Yönetimi:</strong>
-      <button class="btn-warn" onclick="clearRangeData()">Seçili Aralıktaki Kayıtları Sil</button>
-      <span class="note" style="margin:0">Bu işlem geri alınamaz, silmeden önce onay istenir.</span>
-    </div>
-
-    <details class="price-panel" id="pricePanelDetails">
-      <summary style="cursor:pointer;font-size:13px;font-weight:700;list-style:none;display:flex;align-items:center;gap:8px">
-        <span style="font-size:11px">▶</span> Aylık Birim Fiyatlar
-      </summary>
-      <div class="hdr" style="margin-top:12px">
-        <span style="color:var(--muted);font-size:12px">Ay seç:</span>
-        <select id="priceMonthSel" onchange="render()"></select>
-      </div>
-      <div class="price-row" id="priceRow"></div>
-      <div class="note">Her kategori için o aya ait adet başı prim tutarını girip kaydedin. Bir ay için fiyat tanımlanmazsa bir önceki tanımlı aydaki fiyat otomatik kullanılır.</div>
-      <div class="price-history">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
-          <button class="preview-btn" onclick="openExportPreview('priceHistTable','Fiyat_Gecmisi')">📤 Dışa Aktar</button>
-        </div>
-        <div style="overflow-x:auto;max-width:100%">
-          <table id="priceHistTable" style="min-width:400px"></table>
-        </div>
-      </div>
-    </details>
 
       </div><!-- /content-col scroll -->
       </div><!-- /sağ kolon wrapper -->
@@ -1864,7 +1799,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <!-- ===================== HAFTALIK / YILLIK RAPOR SAYFASI ===================== -->
     <div id="page-rapor" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
       <div id="raporHeader" style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;flex-wrap:wrap;gap:8px">
-        <h2 style="margin:0;font-size:15px">📅 Haftalık / Yıllık Rapor</h2>
+        <h2 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px"><button onclick="switchPage('prim')" class="prim-tool-pill" style="padding:4px 10px" title="Prim Sayfasına dön">← Prim</button> 📅 Haftalık / Yıllık Rapor</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <div id="raporYilBtns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
           <div style="width:1px;height:20px;background:var(--line);margin:0 2px"></div>
@@ -1904,7 +1839,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div id="page-hedef" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
       <div id="hedefOzetDiv" style="margin-bottom:10px"></div>
       <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;gap:8px">
-        <h2 style="margin:0;font-size:15px">🎯 Hedef Yönetimi</h2>
+        <h2 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px"><button onclick="switchPage('prim')" class="prim-tool-pill" style="padding:4px 10px" title="Prim Sayfasına dön">← Prim</button> 🎯 Hedef Yönetimi</h2>
         <div style="display:flex;gap:8px;align-items:center">
           <button onclick="openHedefGecmisModal()" style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='var(--panel2)'">📋 Geçmiş Hedefler</button>
           <button onclick="openHedefModal()" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#2fae4e,#1f7f37);border:none;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(47,174,78,0.35);transition:filter .15s" onmouseover="this.style.filter='brightness(1.12)'" onmouseout="this.style.filter='none'">➕ Yeni Hedef</button>
@@ -1950,7 +1885,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <!-- ==================== TREND ANALİZİ SAYFASI ==================== -->
     <div id="page-trend" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
       <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40">
-        <h2 style="margin:0;font-size:15px">📈 Trend Analizi</h2>
+        <h2 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px"><button onclick="switchPage('prim')" class="prim-tool-pill" style="padding:4px 10px" title="Prim Sayfasına dön">← Prim</button> 📈 Trend Analizi</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <select id="trendAySayisi" onchange="renderTrend()" style="font-size:12px;padding:4px 8px">
             <option value="6">Son 6 Ay</option>
@@ -1976,6 +1911,40 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <table class="main-table" id="trendKatTable"></table>
       </div>
     </div><!-- /page-trend -->
+
+    <!-- ==================== KASA SAYIMI TAKİBİ SAYFASI (v151) ==================== -->
+    <div id="page-kasa" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
+      <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0;font-size:15px">🧮 Kasa Sayımı Takibi</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="kasaAySel" onchange="renderKasa()" style="font-size:12px;padding:4px 8px"></select>
+          <button class="btn-hero" onclick="openKasaSayimModal()" style="background:linear-gradient(135deg,#2fae4e,#1f7f37);border:none;color:#fff;box-shadow:0 2px 8px rgba(47,174,78,0.35)">➕ Yeni Sayım</button>
+        </div>
+      </div>
+
+      <!-- Özet Kartlar -->
+      <div class="stats-row" id="kasaSummaryRow" style="margin-bottom:10px"></div>
+
+      <!-- Fark Trend Grafiği -->
+      <div class="chart-box" style="margin-bottom:10px">
+        <h3 id="kasaChartTitle">Kasa Farkı Trendi (Sayılan − Beklenen)</h3>
+        <div class="bars" id="kasaChartBars" style="height:160px"></div>
+        <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:11px;color:var(--muted)">
+          <span><span style="display:inline-block;width:10px;height:10px;background:#4cd964;border-radius:2px;margin-right:4px"></span>Fazla / Tam</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#ff5252;border-radius:2px;margin-right:4px"></span>Açık</span>
+        </div>
+      </div>
+
+      <!-- Sayım Geçmişi -->
+      <div class="section-title-row">
+        <div class="section-title">📋 Sayım Geçmişi</div>
+        <button class="preview-btn" onclick="openExportPreview('kasaTable','Kasa_Sayim_Gecmisi')">📤 Dışa Aktar</button>
+      </div>
+      <div class="table-wrap" style="max-height:460px;overflow-y:auto">
+        <table class="main-table" id="kasaTable"></table>
+      </div>
+      <div class="note">Fark = Sayılan − Beklenen. Negatif fark kasa açığı (kırmızı), pozitif fark kasa fazlası (yeşil) anlamına gelir.</div>
+    </div><!-- /page-kasa -->
 
     <!-- NOT / ETİKET GİRİŞ MODALI -->
     <div id="notModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center">
@@ -2156,6 +2125,202 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 </div>
 
 <!-- YATIRILAN PRİM MODALI -->
+<!-- ==================== V151: PRİM SAYFASI MODAL PENCERELERİ ==================== -->
+
+<!-- AY KARŞILAŞTIRMA MODALI -->
+<div id="cmpModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:980px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#3fd0ff,#1a90b8);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <span style="font-size:14px;font-weight:700;color:#000">📊 Ay Karşılaştırması</span>
+      <button onclick="closePrimModal('cmpModal')" style="background:rgba(0,0,0,0.15);border:none;color:#000;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+    </div>
+    <div style="padding:14px 18px;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin:0 0 10px">
+        <div class="section-title" id="compareTitle" style="margin:0">Bu Ay / Geçen Ay Karşılaştırması</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin-left:auto">
+          <select id="cmpMonthSel" onchange="render()"></select>
+          <select id="cmpYearSel" onchange="render()"></select>
+          <button class="preview-btn" onclick="openExportPreview('compareTable','Ay_Karsilastirma')" style="white-space:nowrap;flex-shrink:0">📤 Dışa Aktar</button>
+        </div>
+      </div>
+      <div class="compare-panel" id="comparePanel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAY TABLOLARI MODALI (Kategori Dağılımı + Prim Finans Özeti) -->
+<div id="tablolarModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:1100px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#e2231a,#b81b14);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <span style="font-size:14px;font-weight:700;color:#fff">📋 Detay Tabloları</span>
+      <button onclick="closePrimModal('tablolarModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+    </div>
+    <div style="padding:14px 18px;overflow-y:auto">
+      <div class="section-title-row" style="margin-top:0">
+        <div class="section-title">Aylık Kategori Dağılımı (Detay)</div>
+        <button class="preview-btn" onclick="openExportPreview('mainTable','Aylik_Kategori_Dagilimi')">📤 Dışa Aktar</button>
+      </div>
+      <div class="table-wrap" style="max-height:340px;overflow-y:auto">
+        <table class="main-table" id="mainTable"></table>
+      </div>
+
+      <div class="section-title-row">
+        <div class="section-title">Prim Finans Özeti</div>
+        <button class="preview-btn" onclick="openExportPreview('financeTable','Prim_Finans_Ozeti')">📤 Dışa Aktar</button>
+      </div>
+      <div class="table-wrap" style="max-height:340px;overflow-x:auto;overflow-y:auto">
+        <table class="main-table" style="width:100%" id="financeTable"></table>
+      </div>
+      <div class="note" style="margin:6px 0 4px">Bu tablo seçilen tarih aralığından bağımsız olarak tüm ay geçmişini gösterir.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SAAT ANALİZİ MODALI -->
+<div id="saatModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:900px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#5a4fcf,#3d35a0);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <span style="font-size:14px;font-weight:700;color:#fff">⏱ Saatlik Giriş Yoğunluğu &amp; Isı Haritası</span>
+      <button onclick="closePrimModal('saatModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+    </div>
+    <div style="padding:14px 18px;overflow-y:auto">
+      <div class="hourly-bar-wrap">
+        <h3>
+          ⏱ Saatlik Giriş Yoğunluğu
+          <span id="peakHourBadge" class="peak-badge" style="display:none"></span>
+        </h3>
+        <div class="hourly-bars" id="hourlyBars"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;padding:0 4px">
+          <span style="font-size:9.5px;color:var(--muted)">00:00</span>
+          <span style="font-size:9.5px;color:var(--muted)">06:00</span>
+          <span style="font-size:9.5px;color:var(--muted)">12:00</span>
+          <span style="font-size:9.5px;color:var(--muted)">18:00</span>
+          <span style="font-size:9.5px;color:var(--muted)">23:00</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px" id="hourlyBarNote"></div>
+      </div>
+
+      <div class="heatmap-wrap">
+        <h3>🗓 Kategori × Saat Isı Haritası</h3>
+        <div style="overflow-x:auto;max-width:100%">
+          <div class="heatmap-grid" id="heatmapGrid" style="min-width:500px"></div>
+        </div>
+        <div class="hm-legend">
+          <span>Az</span>
+          <div class="hm-legend-bar" id="hmLegend"></div>
+          <span>Çok</span>
+          <span style="margin-left:10px;opacity:.6">· hücrenin üzerine gel → adet gösterir</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FİYATLAR & VERİ YÖNETİMİ MODALI -->
+<div id="fiyatModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:820px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#92400e,#78350f);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <span style="font-size:14px;font-weight:700;color:#fcd34d">💰 Aylık Birim Fiyatlar &amp; Veri Yönetimi</span>
+      <button onclick="closePrimModal('fiyatModal')" style="background:rgba(255,255,255,0.15);border:none;color:#fcd34d;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+    </div>
+    <div style="padding:14px 18px;overflow-y:auto">
+      <details class="price-panel" id="pricePanelDetails" open>
+        <summary style="cursor:pointer;font-size:13px;font-weight:700;list-style:none;display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px">▶</span> Aylık Birim Fiyatlar
+        </summary>
+        <div class="hdr" style="margin-top:12px">
+          <span style="color:var(--muted);font-size:12px">Ay seç:</span>
+          <select id="priceMonthSel" onchange="render()"></select>
+        </div>
+        <div class="price-row" id="priceRow"></div>
+        <div class="note">Her kategori için o aya ait adet başı prim tutarını girip kaydedin. Bir ay için fiyat tanımlanmazsa bir önceki tanımlı aydaki fiyat otomatik kullanılır.</div>
+        <div class="price-history">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
+            <button class="preview-btn" onclick="openExportPreview('priceHistTable','Fiyat_Gecmisi')">📤 Dışa Aktar</button>
+          </div>
+          <div style="overflow-x:auto;max-width:100%">
+            <table id="priceHistTable" style="min-width:400px"></table>
+          </div>
+        </div>
+      </details>
+
+      <div class="section-title" style="margin-top:16px">Veri Yönetimi</div>
+      <div class="data-panel">
+        <strong style="font-size:12.5px;margin-right:4px">Veri Yönetimi:</strong>
+        <button class="btn-warn" onclick="clearRangeData()">Seçili Aralıktaki Kayıtları Sil</button>
+        <span class="note" style="margin:0">Bu işlem geri alınamaz, silmeden önce onay istenir.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MÜŞTERİ ARAMA MODALI -->
+<div id="primAraModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1250;align-items:flex-start;justify-content:center;padding:24px 12px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:640px;width:98%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#3fd0ff,#1a90b8);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <span style="font-size:14px;font-weight:700;color:#000">🔍 Müşteri Arama</span>
+      <button onclick="closePrimModal('primAraModal')" style="background:rgba(0,0,0,0.15);border:none;color:#000;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+    </div>
+    <div style="padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0">
+      <input type="text" id="primAraInput" placeholder="👤 Müşteri adı veya 📞 telefon numarası yazın..." oninput="renderPrimAra()" autocomplete="off"
+        style="width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:10px 14px;font-size:13px;box-sizing:border-box">
+      <div id="primAraSonuc" style="font-size:11px;color:var(--muted);margin-top:6px;min-height:14px"></div>
+    </div>
+    <div id="primAraList" style="overflow-y:auto;flex:1;padding:4px 0"></div>
+  </div>
+</div>
+
+<!-- KASA SAYIM MODALI -->
+<div id="kasaSayimModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1250;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:520px;width:98%;margin:auto 0">
+    <div style="background:linear-gradient(135deg,#2fae4e,#1f7f37);padding:14px 18px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
+      <span id="kasaSayimModalBaslik" style="font-size:14px;font-weight:700;color:#fff">🧮 Yeni Kasa Sayımı</span>
+      <button onclick="closeKasaSayimModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+    </div>
+    <div style="padding:16px 18px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Tarih</label>
+          <input type="date" id="kasaDate" style="width:100%">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Saat</label>
+          <input type="time" id="kasaTime" style="width:100%">
+        </div>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💵 Kupür Sayımı</div>
+      <div id="kasaKupurGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px"></div>
+
+      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:700;color:var(--muted)">SAYILAN TOPLAM</span>
+        <span id="kasaToplamGoster" style="font-size:18px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums">0,00 ₺</span>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Beklenen Kasa Tutarı (₺)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none">₺</span>
+          <input type="text" inputmode="decimal" id="kasaBeklenen" placeholder="0,00" style="width:100%;padding-left:22px;box-sizing:border-box" oninput="onCurrencyInput(this);updateKasaFark()" onblur="onCurrencyBlurGeneric(this);updateKasaFark()" onfocus="onCurrencyFocus(this)">
+        </div>
+      </div>
+
+      <div id="kasaFarkGoster" style="border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line)">
+        <span style="font-size:12px;font-weight:700;color:var(--muted)">FARK</span>
+        <span id="kasaFarkDeger" style="font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--muted)">—</span>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Not (opsiyonel)</label>
+        <input type="text" id="kasaNot" placeholder="Örn: Akşam kapanış sayımı" style="width:100%;box-sizing:border-box">
+      </div>
+
+      <button onclick="saveKasaSayim()" style="width:100%;background:linear-gradient(135deg,#2fae4e,#1f7f37);color:#fff;border:none;border-radius:8px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(47,174,78,0.35)">✅ Sayımı Kaydet</button>
+    </div>
+  </div>
+</div>
+<!-- ==================== V151 MODAL SONU ==================== -->
+
 <div id="yatirilanModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:440px;width:96%;max-height:88vh;overflow-y:auto">
     <div style="background:linear-gradient(135deg,#3fd0ff,#1a90b8);padding:15px 18px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
@@ -2271,7 +2436,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <input type="text" id="katYonetimYeniInput" placeholder="Yeni kategori adı..." style="flex:1">
         <button onclick="addKategori()" style="background:var(--green,#2fae4e);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">➕ Ekle</button>
       </div>
-      <div style="font-size:10.5px;color:var(--muted)">Varsayılan kategoriler silinemez. Kategori sırasını değiştirmek için tekrar silin-ekleyin.</div>
+      <div style="font-size:10.5px;color:var(--muted)">Tüm kategoriler silinebilir; silinen kategori mevcut kayıtlardan kaldırılmaz. Sırayı değiştirmek için silin-ekleyin.</div>
     </div>
   </div>
 </div>
@@ -2432,8 +2597,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v150';
-const BUILD_DATE = '01.07.2026 15:00'; // Hazırlanma tarihi (dahili)
+const APP_VERSION = 'v151';
+const BUILD_DATE = '02.07.2026 12:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3059,6 +3224,16 @@ async function pullFromCloud(){
     if(data.kampanyaData) kampanyaData = data.kampanyaData;
     if(data.tarifeData) tarifeData = data.tarifeData;
     if(data.finansTrash) finansTrash = data.finansTrash;
+    // v151: kasaData — id bazlı merge (silme değil ekleme/güncelleme; updatedAt yeni olan kazanır)
+    if(data.kasaData && typeof kasaData!=='undefined'){
+      const localKMap = {}; kasaData.forEach(k=>{ localKMap[k.id]=k; });
+      data.kasaData.forEach(ck=>{
+        const lk = localKMap[ck.id];
+        if(!lk){ kasaData.push(ck); }
+        else if((ck.updatedAt||'') > (lk.updatedAt||'')){ Object.assign(lk, ck); }
+      });
+      try{ localStorage.setItem(STORE_KEY_KASA, JSON.stringify(kasaData)); }catch(e){}
+    }
     localStorage.setItem(STORE_KEY_ENTRIES,   JSON.stringify(entries));
     localStorage.setItem(STORE_KEY_LOG,       JSON.stringify(entryLog));
     localStorage.setItem(STORE_KEY_PRICES,    JSON.stringify(prices));
@@ -3546,7 +3721,7 @@ function vibrate(pattern){
 
 // ==================== SWIPE İLE SAYFA GEÇİŞİ ====================
 (function(){
-  const pages = ['dash','prim','hedef','rapor','trend','finans','gelir','not'];
+  const pages = ['dash','prim','finans','kasa','gelir','not'];
   let touchStartX = 0, touchStartY = 0;
   document.addEventListener('touchstart', e=>{
     touchStartX = e.touches[0].clientX;
@@ -3867,7 +4042,7 @@ function exportActivityListToExcel(){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, kasaData: (typeof kasaData!=='undefined'?kasaData:[]), pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
 }
 function timeStr(){
   const d = new Date();
@@ -3929,6 +4104,7 @@ function restoreData(event){
       notlarData = data.notlarData || [];
       kampanyaData = data.kampanyaData || [];
       musteriler   = data.musteriler   || [];
+      if(data.kasaData && typeof kasaData!=='undefined'){ kasaData = data.kasaData; try{ localStorage.setItem(STORE_KEY_KASA, JSON.stringify(kasaData)); }catch(e){} }
       if(data.finansData) finansData = data.finansData;
       saveEntries(); saveEntryLog(); savePricesStore(); saveYatirilanStore(); saveGelirStore(); saveNotlarStore(); saveFinansStore(); saveHedefStore();
       render();
@@ -4102,10 +4278,12 @@ async function backupNowFromReminder(){
 
 function adjustStickyOffsets(){
   const titleBar = document.getElementById('primTitleBar');
+  const toolBar = document.getElementById('primToolBar');
   const actPanel = document.querySelector('.activity-panel');
   const actCol = document.querySelector('.activity-col');
   const stickyHdr = document.querySelector('#page-prim .sticky-header');
-  const h = titleBar ? titleBar.getBoundingClientRect().height : 45;
+  let h = titleBar ? titleBar.getBoundingClientRect().height : 45;
+  if(toolBar && toolBar.offsetParent !== null) h += toolBar.getBoundingClientRect().height;
   if(actCol) actCol.style.top = h + 'px';
   if(stickyHdr) stickyHdr.style.top = h + 'px';
   if(actPanel) actPanel.style.maxHeight = 'calc(100vh - ' + (h + 8) + 'px)';
@@ -5081,6 +5259,7 @@ function render(){
   }
   adjustStickyOffsets();
   renderEntryLogCharts();
+  updateGunlukHedefChip();
   // Mobil filterbar değerlerini güncelle
   const mob = document.getElementById('primFilterBar');
   if(mob){
@@ -5120,14 +5299,19 @@ function renderHedefOzet(){
 
 function switchPage(page){
   currentPage = page;
-  ['dash','prim','finans','gelir','not','rapor','hedef','trend'].forEach(p=>{
+  ['dash','prim','finans','gelir','not','rapor','hedef','trend','kasa'].forEach(p=>{
     const el = document.getElementById('page-'+p);
     if(el) el.style.display = page===p ? (p==='prim'?'flex':'') : 'none';
   });
-  ['Dash','Prim','Finans','Gelir','Not','Rapor','Hedef','Trend'].forEach(p=>{
+  ['Dash','Prim','Finans','Gelir','Not','Rapor','Hedef','Trend','Kasa'].forEach(p=>{
     const el = document.getElementById('nav'+p);
     if(el) el.classList.toggle('active', page===p.toLowerCase());
   });
+  // v151: Hedef/Rapor/Trend artık Prim'in alt sayfaları — sidebar'da Prim aktif görünsün
+  if(['hedef','rapor','trend'].includes(page)){
+    const np = document.getElementById('navPrim');
+    if(np) np.classList.add('active');
+  }
   if(page==='dash') renderDash();
   if(page==='hedef') renderHedefOzet();
   if(page==='finans') renderFinans();
@@ -5136,7 +5320,146 @@ function switchPage(page){
   if(page==='rapor') renderRaporPage();
   if(page==='hedef') renderHedefPage();
   if(page==='trend') renderTrend();
+  if(page==='kasa') renderKasa();
   if(window.innerWidth <= 700) closeMobileMenu();
+}
+
+// ==================== V151: PRİM MODAL PENCERELERİ ====================
+function openPrimModal(id){
+  const m = document.getElementById(id);
+  if(m) m.style.display = 'flex';
+}
+function closePrimModal(id){
+  const m = document.getElementById(id);
+  if(m) m.style.display = 'none';
+}
+function openCmpModal(){ openPrimModal('cmpModal'); }
+function openTablolarModal(){ openPrimModal('tablolarModal'); }
+function openSaatModal(){ openPrimModal('saatModal'); if(typeof renderEntryLogCharts==='function') renderEntryLogCharts(); }
+function openFiyatModal(){ openPrimModal('fiyatModal'); }
+// Modal dışına tıklayınca kapat
+document.addEventListener('click', function(e){
+  if(e.target.classList && e.target.classList.contains('prim-modal')) e.target.style.display='none';
+});
+// ESC ile açık prim modallarını kapat
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape'){
+    document.querySelectorAll('.prim-modal').forEach(m=>{ if(m.style.display==='flex') m.style.display='none'; });
+  }
+});
+
+// ==================== V151: MÜŞTERİ ARAMA (Prim Sayfası) ====================
+function openPrimAraModal(){
+  openPrimModal('primAraModal');
+  const inp = document.getElementById('primAraInput');
+  if(inp){ inp.value=''; setTimeout(()=>inp.focus(),100); }
+  renderPrimAra();
+}
+function _trLower(s){ try{ return (s||'').toLocaleLowerCase('tr-TR'); }catch(e){ return (s||'').toLowerCase(); } }
+function _araVurgula(metin, terim){
+  if(!terim || !metin) return metin || '';
+  const idx = _trLower(metin).indexOf(_trLower(terim));
+  if(idx === -1) return metin;
+  return metin.slice(0,idx) + '<mark style="background:rgba(255,183,77,0.45);color:inherit;border-radius:2px;padding:0 1px">' + metin.slice(idx, idx+terim.length) + '</mark>' + metin.slice(idx+terim.length);
+}
+function renderPrimAra(){
+  const list = document.getElementById('primAraList');
+  const sonuc = document.getElementById('primAraSonuc');
+  if(!list) return;
+  const terim = (document.getElementById('primAraInput')?.value || '').trim();
+  if(terim.length < 2){
+    sonuc.textContent = 'En az 2 karakter yazın — isim veya telefon numarası ile arayın.';
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px 16px;font-size:12px">🔍<br><br>Geçmiş tüm işlem kayıtlarında arama yapılır.<br>Aynı müşterinin birden fazla işlemi varsa hepsi ayrı ayrı listelenir.</div>';
+    return;
+  }
+  const terimL = _trLower(terim);
+  const terimTel = terim.replace(/\s/g,'');
+  const bulunan = musteriler.filter(m=>{
+    const ad = _trLower(m.ad||'');
+    const tel = (m.tel||'').replace(/\s/g,'');
+    return ad.includes(terimL) || (terimTel && tel.includes(terimTel));
+  }).sort((a,b)=>(b.entryDate||'').localeCompare(a.entryDate||''));
+
+  if(!bulunan.length){
+    sonuc.textContent = '0 kayıt bulundu';
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Eşleşen kayıt bulunamadı.</div>';
+    return;
+  }
+
+  // Aynı müşteri (isim+tel) gruplama — her işlem ayrı kart, grup başlığında işlem sayısı
+  const gruplar = {};
+  const sira = [];
+  bulunan.forEach(m=>{
+    const key = _trLower(m.ad||'?') + '|' + (m.tel||'?').replace(/\s/g,'');
+    if(!gruplar[key]){ gruplar[key] = []; sira.push(key); }
+    gruplar[key].push(m);
+  });
+  sonuc.textContent = bulunan.length + ' işlem kaydı · ' + sira.length + ' müşteri bulundu';
+
+  const durumRenk = { bekliyor:'#ff9f0a', aktif:'#4cd964', iptal:'#ff5252', tasima:'#c084fc', gecissiz:'#ff9f0a', onaylandi:'#4cd964' };
+  const durumIcon = { bekliyor:'⏳', aktif:'✅', iptal:'❌', tasima:'🔄', gecissiz:'⚠️', onaylandi:'✅' };
+  const durumLabel = { bekliyor:'Takipte', aktif:'Hat Aktif', iptal:'İptal', tasima:'Taşındı', gecissiz:'Geçişsiz', onaylandi:'Onaylandı' };
+
+  list.innerHTML = sira.map(key=>{
+    const kayitlar = gruplar[key];
+    const ilk = kayitlar[0];
+    return `<div style="margin:6px 12px 12px">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px 8px 0 0">
+        <span style="font-size:13px;font-weight:800">${_araVurgula(ilk.ad||'İsimsiz Müşteri', terim)}</span>
+        ${ilk.tel?`<span style="font-size:12px;color:var(--accent)">📞 ${_araVurgula(ilk.tel, terim)}</span>`:''}
+        <span style="margin-left:auto;font-size:10px;font-weight:700;background:rgba(63,208,255,0.15);color:var(--accent);border-radius:10px;padding:2px 9px">${kayitlar.length} işlem</span>
+      </div>
+      <div style="border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px;overflow:hidden">
+      ${kayitlar.map(m=>`
+        <div style="padding:9px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+              <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:rgba(${m.tip==='mnp'?'155,89,182':'76,217,100'},0.15);color:${m.tip==='mnp'?'#c084fc':'#4cd964'};font-weight:700">${m.tip==='mnp'?'🔄 MNP':'🆕 Tesis'}</span>
+              <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--panel2);color:var(--muted)">${m.cat||'—'}</span>
+              ${m.tarife?`<span style="font-size:10px;color:var(--muted)">${m.tarife}</span>`:''}
+              <span style="font-size:10.5px;font-weight:700;color:${durumRenk[m.durum]||'#888'}">${durumIcon[m.durum]||'⏳'} ${durumLabel[m.durum]||m.durum||'—'}</span>
+            </div>
+            <div style="font-size:10.5px;color:var(--muted)">📅 ${m.entryDate||'—'} ${m.entryTime||''}${m.aktivasyonTarihi?` · 🔓 ${m.aktivasyonTarihi}`:''}${m.not?` · 💬 ${m.not}`:''}</div>
+          </div>
+          <div style="display:flex;gap:5px;flex-shrink:0">
+            <button onclick="closePrimModal('primAraModal');openMusteriDurum('${m.id}')" style="padding:5px 9px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">📋 Durum</button>
+            <button onclick="closePrimModal('primAraModal');openMusteriEdit('${m.id}')" style="padding:5px 9px;background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.25);color:var(--accent);border-radius:6px;font-size:10px;font-weight:600;cursor:pointer">✏️</button>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ==================== V151: GÜNLÜK HEDEF KIRILIMI ÇİPİ ====================
+function updateGunlukHedefChip(){
+  const chip = document.getElementById('gunlukHedefChip');
+  if(!chip) return;
+  try{
+    const curYm = thisMonthKey();
+    const hedef = hedefler[curYm] || 0;
+    if(hedef <= 0){ chip.style.display='none'; return; }
+    let realized = 0;
+    entries.filter(e=>effectiveYm(e)===curYm).forEach(e=>{
+      const tFiyat = tarifeFiyatFor(e, e.cat);
+      const p = tFiyat != null ? tFiyat : (kampanyaFiyatFor(e.date,e.cat,priceFor(curYm,e.cat))||0);
+      realized += e.count * p;
+    });
+    const kalan = hedef - realized;
+    const bugun = new Date();
+    const aySonu = new Date(bugun.getFullYear(), bugun.getMonth()+1, 0).getDate();
+    const kalanGun = Math.max(1, aySonu - bugun.getDate() + 1);
+    if(kalan <= 0){
+      chip.style.display='inline-block';
+      chip.style.background='rgba(76,217,100,0.12)'; chip.style.borderColor='rgba(76,217,100,0.4)'; chip.style.color='#4cd964';
+      chip.innerHTML = '🎉 Aylık hedef tamamlandı!';
+    } else {
+      const gunluk = kalan / kalanGun;
+      chip.style.display='inline-block';
+      chip.style.background='rgba(255,183,77,0.12)'; chip.style.borderColor='rgba(255,183,77,0.35)'; chip.style.color='var(--gold)';
+      chip.innerHTML = '🎯 Bugün gereken: <b>' + gunluk.toLocaleString('tr-TR',{maximumFractionDigits:0}) + ' ₺</b> · ' + kalanGun + ' gün kaldı';
+    }
+  }catch(e){ chip.style.display='none'; }
 }
 
 // ==================== AY KAPANIS SİHİRBAZI ====================
@@ -6750,10 +7073,6 @@ function renderFinans(){
       <table class="main-table" id="finansDetailTable" style="min-width:600px"></table>
     </div>
     <div class="note">Mavi noktalı çizgili hücrelere tıklayıp doğrudan yazabilirsiniz (Mevcut Sermaye, Vod./MİXY Kâr, Vod./MİXY Masraf, Açıklama). <b>Gereken Sermaye</b> artık otomatik hesaplanır (önceki ayın mevcut sermayesi + bu ayın toplam kâr/zararı) ve elle düzenlenemez. Bir ayın <b>Mevcut Sermaye</b>'sini henüz girmediyseniz o satır "⏳ Bekliyor" olarak işaretlenir; Gereken Sermaye yine de otomatik hesaplanmaya devam eder. Hücreden çıkınca (Enter veya tıklayarak başka yere geçince) değişiklik kaydedilir.</div>
-
-    <div style="margin:14px 0">
-      <button class="tool-btn" onclick="resetFinansData()">↺ Varsayılan Veriye Sıfırla</button>
-    </div>
   `;
 
   // Sermaye Gelişimi / Kâr-Zarar grafiği / Kâr Marjı pivot tablosu için ortak dönem veri seti:
@@ -7675,7 +7994,50 @@ function deleteFinansRow(ym){
   renderFinans();
 }
 function resetFinansData(){
+  // v151: PIN korumalı — PIN kayıtlıysa onaysız çalışmaz
+  const pin = getPin();
+  if(pin){
+    const modal = document.createElement('div');
+    modal.id = 'resetFinansPinModal';
+    modal.style.cssText = 'position:fixed;z-index:9999;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.innerHTML = `
+      <div style="background:var(--panel);border:1px solid rgba(255,159,10,0.4);border-radius:14px;padding:24px;width:100%;max-width:320px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">↺</div>
+        <div style="font-size:14px;font-weight:800;color:#ff9f5a;margin-bottom:6px">Finansal Veriyi Sıfırla</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:16px">Tüm finansal analiz verileri başlangıçtaki orijinal verilerle DEĞİŞTİRİLECEK. Bu işlem geri alınamaz. Devam etmek için PIN'inizi girin.</div>
+        <input type="password" id="resetFinansPinInput" inputmode="numeric" placeholder="PIN" maxlength="8"
+          style="width:100%;padding:10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:16px;text-align:center;box-sizing:border-box;letter-spacing:4px">
+        <div id="resetFinansPinErr" style="font-size:11px;color:#ff5252;margin-top:8px;min-height:16px"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button onclick="document.getElementById('resetFinansPinModal').remove()" style="flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:10px;font-size:12px;font-weight:700;cursor:pointer">İptal</button>
+          <button onclick="confirmResetFinansWithPin()" style="flex:1;background:rgba(255,159,10,0.15);border:1px solid rgba(255,159,10,0.5);color:#ff9f5a;border-radius:8px;padding:10px;font-size:12px;font-weight:700;cursor:pointer">↺ Sıfırla</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    setTimeout(()=>{ const el=document.getElementById('resetFinansPinInput'); if(el) el.focus(); }, 100);
+    return;
+  }
+  // PIN yoksa çift onay
   if(!confirm('Tüm finansal analiz verileri başlangıçtaki orijinal verilerle değiştirilecek. Emin misiniz?')) return;
+  if(!confirm('SON UYARI: Bu işlem GERİ ALINAMAZ. Girdiğiniz tüm finansal aylar silinip varsayılan veri yüklenecek. Devam?')) return;
+  _executeResetFinansData();
+}
+function confirmResetFinansWithPin(){
+  const input = document.getElementById('resetFinansPinInput');
+  const err = document.getElementById('resetFinansPinErr');
+  const pin = getPin();
+  if(!input || !err) return;
+  if(input.value !== pin){
+    err.textContent = '❌ Yanlış PIN';
+    input.value = '';
+    input.focus();
+    return;
+  }
+  document.getElementById('resetFinansPinModal')?.remove();
+  if(!confirm('Finansal veriler varsayılana dönecek. Bu işlem GERİ ALINAMAZ!')) return;
+  _executeResetFinansData();
+}
+function _executeResetFinansData(){
   finansData = JSON.parse(JSON.stringify(FINANS_DEFAULT_DATA));
   recomputeAllFinans();
   saveFinansStore();
@@ -9475,22 +9837,273 @@ function renderNotPage() {
 }
 // ==================== NOT & ETİKET SONU ====================
 // ==================== GELİR TAKİBİ MODÜLÜ ====================
+// ==================== V151: KASA SAYIMI TAKİBİ ====================
+const STORE_KEY_KASA = 'vf_kasa_sayim_v1';
+let kasaData = [];
+try{ kasaData = JSON.parse(localStorage.getItem(STORE_KEY_KASA) || '[]'); }catch(e){ kasaData = []; }
+
+const KASA_KUPURLER = [
+  { key:'b200', label:'200 ₺', deger:200 },
+  { key:'b100', label:'100 ₺', deger:100 },
+  { key:'b50',  label:'50 ₺',  deger:50 },
+  { key:'b20',  label:'20 ₺',  deger:20 },
+  { key:'b10',  label:'10 ₺',  deger:10 },
+  { key:'b5',   label:'5 ₺',   deger:5 },
+  { key:'m1',   label:'1 ₺',   deger:1 },
+  { key:'m50k', label:'50 Kr', deger:0.5 },
+  { key:'m25k', label:'25 Kr', deger:0.25 },
+  { key:'m10k', label:'10 Kr', deger:0.10 },
+  { key:'m5k',  label:'5 Kr',  deger:0.05 },
+  { key:'m1k',  label:'1 Kr',  deger:0.01 },
+];
+
+function saveKasaStore(){
+  try{ localStorage.setItem(STORE_KEY_KASA, JSON.stringify(kasaData)); }catch(e){}
+  if(typeof scheduleAutoBackup==='function') scheduleAutoBackup();
+  if(typeof checkStorageAfterSave==='function') checkStorageAfterSave();
+  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
+}
+
+let _kasaEditId = null;
+
+function openKasaSayimModal(id){
+  _kasaEditId = id || null;
+  const kayit = id ? kasaData.find(k=>k.id===id) : null;
+  document.getElementById('kasaSayimModalBaslik').textContent = kayit ? '✏️ Sayımı Düzenle' : '🧮 Yeni Kasa Sayımı';
+  const now = new Date();
+  document.getElementById('kasaDate').value = kayit ? kayit.date : todayStr();
+  document.getElementById('kasaTime').value = kayit ? (kayit.time||'') : now.toTimeString().slice(0,5);
+  // Kupür gridi
+  const grid = document.getElementById('kasaKupurGrid');
+  grid.innerHTML = KASA_KUPURLER.map(k=>{
+    const adet = kayit && kayit.denoms ? (kayit.denoms[k.key]||'') : '';
+    return `<div style="display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:5px 8px">
+      <span style="font-size:11px;font-weight:700;min-width:44px;color:${k.deger>=5?'var(--gold)':'var(--muted)'}">${k.label}</span>
+      <input type="number" min="0" inputmode="numeric" id="kasaKupur_${k.key}" value="${adet}" placeholder="0" oninput="updateKasaToplam()"
+        style="flex:1;width:60px;min-width:0;background:transparent;border:none;color:var(--txt);font-size:13px;font-weight:700;text-align:center;outline:none">
+      <span id="kasaKupurTut_${k.key}" style="font-size:9.5px;color:var(--muted);min-width:52px;text-align:right;font-variant-numeric:tabular-nums">—</span>
+    </div>`;
+  }).join('');
+  const bekEl = document.getElementById('kasaBeklenen');
+  bekEl.value = kayit && kayit.beklenen != null ? kayit.beklenen.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+  document.getElementById('kasaNot').value = kayit ? (kayit.not||'') : '';
+  updateKasaToplam();
+  document.getElementById('kasaSayimModal').style.display = 'flex';
+}
+function closeKasaSayimModal(){
+  document.getElementById('kasaSayimModal').style.display = 'none';
+  _kasaEditId = null;
+}
+function _kasaHesaplaToplam(){
+  let toplam = 0;
+  KASA_KUPURLER.forEach(k=>{
+    const adet = parseInt(document.getElementById('kasaKupur_'+k.key)?.value) || 0;
+    const tutar = adet * k.deger;
+    toplam += tutar;
+    const tEl = document.getElementById('kasaKupurTut_'+k.key);
+    if(tEl) tEl.textContent = adet>0 ? tutar.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺' : '—';
+  });
+  return Math.round(toplam*100)/100;
+}
+function updateKasaToplam(){
+  const toplam = _kasaHesaplaToplam();
+  document.getElementById('kasaToplamGoster').textContent = toplam.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺';
+  updateKasaFark();
+}
+function updateKasaFark(){
+  const toplam = _kasaHesaplaToplam();
+  const bekEl = document.getElementById('kasaBeklenen');
+  const beklenen = (typeof parseCurrencyVal==='function') ? parseCurrencyVal(bekEl) : parseFloat((bekEl.value||'').replace(/\./g,'').replace(',','.'));
+  const kutu = document.getElementById('kasaFarkGoster');
+  const deger = document.getElementById('kasaFarkDeger');
+  if(beklenen == null || isNaN(beklenen) || bekEl.value.trim()===''){
+    kutu.style.background='var(--panel2)'; kutu.style.borderColor='var(--line)';
+    deger.style.color='var(--muted)'; deger.textContent='—';
+    return;
+  }
+  const fark = Math.round((toplam - beklenen)*100)/100;
+  const fmtF = fark.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺';
+  if(Math.abs(fark) < 0.005){
+    kutu.style.background='rgba(76,217,100,0.08)'; kutu.style.borderColor='rgba(76,217,100,0.35)';
+    deger.style.color='#4cd964'; deger.textContent='✓ Tam · 0,00 ₺';
+  } else if(fark > 0){
+    kutu.style.background='rgba(76,217,100,0.08)'; kutu.style.borderColor='rgba(76,217,100,0.35)';
+    deger.style.color='#4cd964'; deger.textContent='▲ Fazla · +' + fmtF;
+  } else {
+    kutu.style.background='rgba(226,35,26,0.08)'; kutu.style.borderColor='rgba(226,35,26,0.35)';
+    deger.style.color='#ff5252'; deger.textContent='▼ Açık · ' + fmtF;
+  }
+}
+function saveKasaSayim(){
+  const date = document.getElementById('kasaDate').value;
+  if(!date){ alert('Tarih seçin.'); return; }
+  const time = document.getElementById('kasaTime').value || '';
+  const denoms = {};
+  KASA_KUPURLER.forEach(k=>{
+    const adet = parseInt(document.getElementById('kasaKupur_'+k.key)?.value) || 0;
+    if(adet>0) denoms[k.key] = adet;
+  });
+  const toplam = _kasaHesaplaToplam();
+  const bekEl = document.getElementById('kasaBeklenen');
+  let beklenen = (typeof parseCurrencyVal==='function') ? parseCurrencyVal(bekEl) : parseFloat((bekEl.value||'').replace(/\./g,'').replace(',','.'));
+  if(bekEl.value.trim()==='' || isNaN(beklenen)) beklenen = null;
+  const notMetin = document.getElementById('kasaNot').value.trim();
+  if(toplam===0 && beklenen==null){ alert('En az bir kupür adedi veya beklenen tutar girin.'); return; }
+
+  if(_kasaEditId){
+    const k = kasaData.find(x=>x.id===_kasaEditId);
+    if(k){
+      k.date=date; k.time=time; k.denoms=denoms; k.toplam=toplam; k.beklenen=beklenen; k.not=notMetin;
+      k.updatedAt = new Date().toISOString();
+    }
+  } else {
+    kasaData.push({
+      id: 'ks_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      date, time, denoms, toplam, beklenen, not: notMetin,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  }
+  saveKasaStore();
+  closeKasaSayimModal();
+  renderKasa();
+}
+function deleteKasaSayim(id){
+  const k = kasaData.find(x=>x.id===id);
+  if(!k) return;
+  if(!confirm(`${k.date} tarihli sayım silinecek. Emin misiniz?`)) return;
+  kasaData = kasaData.filter(x=>x.id!==id);
+  saveKasaStore();
+  renderKasa();
+}
+function renderKasa(){
+  const sel = document.getElementById('kasaAySel');
+  if(!sel) return;
+  // Ay filtresi seçenekleri
+  const aylar = [...new Set(kasaData.map(k=>k.date.slice(0,7)))].sort().reverse();
+  const curYm = thisMonthKey();
+  if(!aylar.includes(curYm)) aylar.unshift(curYm);
+  const prev = sel.value;
+  sel.innerHTML = '<option value="all">Tüm Aylar</option>' + aylar.map(a=>`<option value="${a}" ${a===(prev||curYm)?'selected':''}>${typeof monthLabel==='function'?monthLabel(a):a}</option>`).join('');
+  const filtre = sel.value;
+
+  const sorted = [...kasaData].sort((a,b)=>((b.date+' '+(b.time||'')).localeCompare(a.date+' '+(a.time||''))));
+  const filtered = filtre==='all' ? sorted : sorted.filter(k=>k.date.startsWith(filtre));
+
+  // --- Özet kartlar ---
+  const farkli = filtered.filter(k=>k.beklenen!=null);
+  const netFark = farkli.reduce((a,k)=>a+(k.toplam-k.beklenen),0);
+  const acikSayisi = farkli.filter(k=>(k.toplam-k.beklenen) < -0.005).length;
+  const son = sorted[0];
+  const fmtTL = v => v.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺';
+  document.getElementById('kasaSummaryRow').innerHTML = `
+    <div class="stat" style="border-left:3px solid var(--accent)">
+      <div class="t">📋 Sayım Adedi</div>
+      <div class="v" style="margin-top:6px">${filtered.length}</div>
+      <div class="sub">${filtre==='all'?'tüm zamanlar':(typeof monthLabel==='function'?monthLabel(filtre):filtre)}</div>
+    </div>
+    <div class="stat" style="border-left:3px solid var(--gold)">
+      <div class="t">🧮 Son Sayım</div>
+      <div class="v" style="color:var(--gold);margin-top:6px">${son?fmtTL(son.toplam):'—'}</div>
+      <div class="sub">${son?son.date+' '+(son.time||''):'kayıt yok'}</div>
+    </div>
+    <div class="stat" style="border-left:3px solid ${netFark<-0.005?'#ff5252':'#4cd964'}">
+      <div class="t">⚖️ Net Fark</div>
+      <div class="v" style="color:${netFark<-0.005?'#ff5252':netFark>0.005?'#4cd964':'var(--txt)'};margin-top:6px">${farkli.length?((netFark>0?'+':'')+fmtTL(netFark)):'—'}</div>
+      <div class="sub">${farkli.length} sayımda beklenen girildi</div>
+    </div>
+    <div class="stat" style="border-left:3px solid ${acikSayisi>0?'#ff5252':'#4cd964'}">
+      <div class="t">🔻 Açık Veren Sayım</div>
+      <div class="v" style="color:${acikSayisi>0?'#ff5252':'#4cd964'};margin-top:6px">${acikSayisi}</div>
+      <div class="sub">${acikSayisi>0?'dikkat — kasa açığı var':'kasa açığı yok 👍'}</div>
+    </div>`;
+
+  // --- Fark trend grafiği (kronolojik) ---
+  const bars = document.getElementById('kasaChartBars');
+  const grafKayitlar = [...filtered].filter(k=>k.beklenen!=null).sort((a,b)=>((a.date+' '+(a.time||'')).localeCompare(b.date+' '+(b.time||'')))).slice(-30);
+  if(!grafKayitlar.length){
+    bars.innerHTML = '<div style="width:100%;text-align:center;color:var(--muted);font-size:12px;align-self:center">Beklenen tutar girilmiş sayım yok — grafik için sayımlarda beklenen tutarı da girin.</div>';
+  } else {
+    const maxAbs = Math.max(...grafKayitlar.map(k=>Math.abs(k.toplam-k.beklenen)), 1);
+    bars.innerHTML = grafKayitlar.map(k=>{
+      const fark = k.toplam-k.beklenen;
+      const h = Math.max(6, Math.abs(fark)/maxAbs*100);
+      const renk = fark < -0.005 ? '#ff5252' : '#4cd964';
+      return `<div class="bar-wrap" title="${k.date} ${k.time||''} → Fark: ${(fark>0?'+':'')+fmtTL(fark)}" style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;flex:1;height:100%">
+        <div style="width:70%;max-width:26px;height:${h}%;background:${renk};border-radius:3px 3px 0 0;opacity:.9"></div>
+        <div style="font-size:8px;color:var(--muted);margin-top:2px;white-space:nowrap">${k.date.slice(8,10)}.${k.date.slice(5,7)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // --- Geçmiş tablosu ---
+  const tbl = document.getElementById('kasaTable');
+  if(!filtered.length){
+    tbl.innerHTML = '<tbody><tr><td style="text-align:center;color:var(--muted);padding:28px;font-size:13px">Henüz sayım kaydı yok. "➕ Yeni Sayım" ile başlayın.</td></tr></tbody>';
+    return;
+  }
+  const kupurOzet = k => KASA_KUPURLER.filter(x=>k.denoms&&k.denoms[x.key]).map(x=>`${k.denoms[x.key]}×${x.label}`).join(', ') || '—';
+  tbl.innerHTML = '<thead><tr><th>Tarih</th><th>Saat</th><th style="text-align:right">Sayılan</th><th style="text-align:right">Beklenen</th><th style="text-align:right">Fark</th><th>Kupür Detayı</th><th>Not</th><th style="width:76px"></th></tr></thead><tbody>' +
+    filtered.map(k=>{
+      const fark = k.beklenen!=null ? k.toplam-k.beklenen : null;
+      const farkHtml = fark==null ? '<span style="color:var(--muted)">—</span>'
+        : Math.abs(fark)<0.005 ? '<span style="color:#4cd964;font-weight:700">✓ Tam</span>'
+        : fark>0 ? `<span style="color:#4cd964;font-weight:700">+${fmtTL(fark)}</span>`
+        : `<span style="color:#ff5252;font-weight:700">${fmtTL(fark)}</span>`;
+      return `<tr>
+        <td style="white-space:nowrap">${k.date}</td>
+        <td>${k.time||'—'}</td>
+        <td style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmtTL(k.toplam)}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums">${k.beklenen!=null?fmtTL(k.beklenen):'—'}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums">${farkHtml}</td>
+        <td style="font-size:10px;color:var(--muted);max-width:200px">${kupurOzet(k)}</td>
+        <td style="font-size:11px;color:var(--muted)">${k.not||''}</td>
+        <td style="white-space:nowrap">
+          <button onclick="openKasaSayimModal('${k.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.25);color:var(--accent);border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer">✏️</button>
+          <button onclick="deleteKasaSayim('${k.id}')" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer">🗑</button>
+        </td>
+      </tr>`;
+    }).join('') + '</tbody>';
+}
+// ==================== KASA SAYIMI SONU ====================
+
 const STORE_KEY_GELIR_KAT = 'vf_gelir_kategoriler_v1';
-const GELIR_KATEGORILER_DEFAULT = ['Maaş','Prim','Kira Geliri','Faiz','Temettü','Satış','Diğer Gelir'];
-const GIDER_KATEGORILER_DEFAULT = ['Kira','Fatura','Personel','Hammadde','Ulaşım','Pazarlama','Vergi','Sigorta','Bakım','Diğer Gider'];
-let GELIR_KATEGORILER = [...GELIR_KATEGORILER_DEFAULT];
-let GIDER_KATEGORILER = [...GIDER_KATEGORILER_DEFAULT];
+// v151: Varsayılan kategori dayatması kaldırıldı — kullanıcı kendi kategorilerini yönetir
+const GELIR_KATEGORILER_DEFAULT = [];
+const GIDER_KATEGORILER_DEFAULT = [];
+let GELIR_KATEGORILER = [];
+let GIDER_KATEGORILER = [];
 
 function loadGelirKategoriler(){
   try {
     const s = localStorage.getItem(STORE_KEY_GELIR_KAT);
-    if(s){ const d = JSON.parse(s); GELIR_KATEGORILER = d.gelir || [...GELIR_KATEGORILER_DEFAULT]; GIDER_KATEGORILER = d.gider || [...GIDER_KATEGORILER_DEFAULT]; }
+    if(s){ const d = JSON.parse(s); GELIR_KATEGORILER = d.gelir || []; GIDER_KATEGORILER = d.gider || []; }
   }catch(e){}
 }
 function saveGelirKategoriler(){
   try{ localStorage.setItem(STORE_KEY_GELIR_KAT, JSON.stringify({gelir: GELIR_KATEGORILER, gider: GIDER_KATEGORILER})); }catch(e){}
 }
 loadGelirKategoriler();
+
+// v151 Migration: eski varsayılan kategorilerden yalnızca GERÇEKTEN KULLANILANLAR korunur,
+// hiç kullanılmamış varsayılanlar listeden temizlenir. Kullanıcının eklediği özel kategoriler
+// ve mevcut kayıtların kategorileri asla silinmez — veri bütünlüğü tam korunur.
+function migrateGelirKategorilerV151(){
+  try{
+    if(localStorage.getItem('vf_migr_v151_katlar')) return;
+    const OLD_GELIR = ['Maaş','Prim','Kira Geliri','Faiz','Temettü','Satış','Diğer Gelir'];
+    const OLD_GIDER = ['Kira','Fatura','Personel','Hammadde','Ulaşım','Pazarlama','Vergi','Sigorta','Bakım','Diğer Gider'];
+    const usedGelir = new Set(gelirData.filter(g=>g.tip==='gelir').map(g=>g.kategori).filter(Boolean));
+    const usedGider = new Set(gelirData.filter(g=>g.tip==='gider').map(g=>g.kategori).filter(Boolean));
+    GELIR_KATEGORILER = GELIR_KATEGORILER.filter(k => !OLD_GELIR.includes(k) || usedGelir.has(k));
+    GIDER_KATEGORILER = GIDER_KATEGORILER.filter(k => !OLD_GIDER.includes(k) || usedGider.has(k));
+    // Kayıtlarda kullanılan ama listede olmayan kategori varsa listeye geri ekle (tutarlılık)
+    usedGelir.forEach(k=>{ if(!GELIR_KATEGORILER.includes(k)) GELIR_KATEGORILER.push(k); });
+    usedGider.forEach(k=>{ if(!GIDER_KATEGORILER.includes(k)) GIDER_KATEGORILER.push(k); });
+    saveGelirKategoriler();
+    localStorage.setItem('vf_migr_v151_katlar','1');
+  }catch(e){ console.warn('v151 kategori migration:', e); }
+}
 
 let gelirModalTip = 'gelir';
 let gelirEditId = null;
@@ -9520,14 +10133,15 @@ function setGelirTip(tip) {
   const btnGelir = document.getElementById('gelirTipGelir');
   const btnGider = document.getElementById('gelirTipGider');
   const sel = document.getElementById('gelirKategori');
+  const bosMsg = '<option value="" disabled selected>⚙️ Önce kategori ekleyin →</option>';
   if (tip === 'gelir') {
     btnGelir.style.background = '#2fae4e'; btnGelir.style.borderColor = '#2fae4e'; btnGelir.style.color = '#fff';
     btnGider.style.background = 'var(--panel2)'; btnGider.style.borderColor = 'var(--line)'; btnGider.style.color = 'var(--txt)';
-    sel.innerHTML = GELIR_KATEGORILER.map(k => `<option>${k}</option>`).join('');
+    sel.innerHTML = GELIR_KATEGORILER.length ? GELIR_KATEGORILER.map(k => `<option>${k}</option>`).join('') : bosMsg;
   } else {
     btnGider.style.background = '#e2231a'; btnGider.style.borderColor = '#e2231a'; btnGider.style.color = '#fff';
     btnGelir.style.background = 'var(--panel2)'; btnGelir.style.borderColor = 'var(--line)'; btnGelir.style.color = 'var(--txt)';
-    sel.innerHTML = GIDER_KATEGORILER.map(k => `<option>${k}</option>`).join('');
+    sel.innerHTML = GIDER_KATEGORILER.length ? GIDER_KATEGORILER.map(k => `<option>${k}</option>`).join('') : bosMsg;
   }
 }
 
@@ -9540,6 +10154,7 @@ function saveGelirEntry() {
   const etiketlerRaw = document.getElementById('gelirEtiketler') ? document.getElementById('gelirEtiketler').value.trim() : '';
   if (!tarih) { alert('Tarih giriniz.'); return; }
   if (!tutar || tutar <= 0) { alert('Geçerli bir tutar giriniz.'); return; }
+  if (!kategori) { alert('Önce bir kategori ekleyin (⚙️ Kategorileri Düzenle).'); return; }
   const entryId = Date.now() + '_' + Math.random().toString(36).slice(2,7);
   const entry = {
     id: entryId,
@@ -9589,12 +10204,12 @@ function setGelirEditTip(tip) {
     if(hdr) hdr.style.background = 'linear-gradient(135deg,#2fae4e,#1f7f37)';
     if(btnG) { btnG.style.background='#2fae4e'; btnG.style.borderColor='#2fae4e'; btnG.style.color='#fff'; }
     if(btnD) { btnD.style.background='var(--panel2)'; btnD.style.borderColor='var(--line)'; btnD.style.color='var(--txt)'; }
-    if(sel) sel.innerHTML = GELIR_KATEGORILER.map(k=>`<option>${k}</option>`).join('');
+    if(sel) sel.innerHTML = GELIR_KATEGORILER.length ? GELIR_KATEGORILER.map(k=>`<option>${k}</option>`).join('') : '<option value="" disabled selected>⚙️ Önce kategori ekleyin →</option>';
   } else {
     if(hdr) hdr.style.background = 'linear-gradient(135deg,#e2231a,#b81b14)';
     if(btnD) { btnD.style.background='#e2231a'; btnD.style.borderColor='#e2231a'; btnD.style.color='#fff'; }
     if(btnG) { btnG.style.background='var(--panel2)'; btnG.style.borderColor='var(--line)'; btnG.style.color='var(--txt)'; }
-    if(sel) sel.innerHTML = GIDER_KATEGORILER.map(k=>`<option>${k}</option>`).join('');
+    if(sel) sel.innerHTML = GIDER_KATEGORILER.length ? GIDER_KATEGORILER.map(k=>`<option>${k}</option>`).join('') : '<option value="" disabled selected>⚙️ Önce kategori ekleyin →</option>';
   }
 }
 
@@ -9607,9 +10222,18 @@ function openGelirEditModal(id) {
   document.getElementById('gelirEditDate').value = entry.tarih;
   setCurrencyInputVal('gelirEditTutar', entry.tutar || 0);
   document.getElementById('gelirEditAciklama').value = entry.aciklama || '';
-  // Kategori seç
+  // Kategori seç — kayıttaki kategori listeden silinmişse geçici olarak ekle (kayıt kategorisi kaybolmasın)
   const sel = document.getElementById('gelirEditKategori');
-  if(sel) Array.from(sel.options).forEach(o => { o.selected = o.value === entry.kategori; });
+  if(sel && entry.kategori){
+    if(!Array.from(sel.options).some(o => o.value === entry.kategori)){
+      const opt = document.createElement('option');
+      opt.value = entry.kategori; opt.textContent = entry.kategori + ' (listeden silinmiş)';
+      sel.insertBefore(opt, sel.firstChild);
+    }
+    Array.from(sel.options).forEach(o => { o.selected = o.value === entry.kategori; });
+  } else if(sel){
+    Array.from(sel.options).forEach(o => { o.selected = o.value === entry.kategori; });
+  }
   // Not & Etiket — bağlı notu bul
   const linkedNot = notlarData.find(n => n.gelirId === id);
   const notEl = document.getElementById('gelirEditNot');
@@ -9629,6 +10253,7 @@ function saveGelirEdit() {
   const etiketlerRaw = document.getElementById('gelirEditEtiketler')?.value.trim() || '';
   if (!tarih) { alert('Tarih giriniz.'); return; }
   if (!tutar || tutar <= 0) { alert('Geçerli bir tutar giriniz.'); return; }
+  if (!kategori) { alert('Önce bir kategori ekleyin (⚙️ Kategorileri Düzenle).'); return; }
   const idx = gelirData.findIndex(g => g.id === gelirEditId);
   if (idx >= 0) {
     gelirData[idx] = { ...gelirData[idx], tip: gelirEditTipCur, tarih, ym: tarih.slice(0,7), kategori, tutar, aciklama };
@@ -9694,13 +10319,16 @@ function renderKatYonetimListesi() {
   const div = document.getElementById('katYonetimListesi');
   if(!div) return;
   const list = katYonetimTip==='gelir' ? GELIR_KATEGORILER : GIDER_KATEGORILER;
-  const defaults = katYonetimTip==='gelir' ? GELIR_KATEGORILER_DEFAULT : GIDER_KATEGORILER_DEFAULT;
+  if(!list.length){
+    div.innerHTML = '<div style="text-align:center;color:var(--muted);padding:18px;font-size:12px">Henüz kategori yok.<br>Aşağıdan ilk kategorinizi ekleyin. 👇</div>';
+    return;
+  }
   div.innerHTML = list.map((k,i) => {
-    const isDefault = defaults.includes(k);
+    const kullaniliyor = gelirData.some(g=>g.tip===katYonetimTip && g.kategori===k);
     return `<div style="display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 10px">
       <span style="flex:1;font-size:13px">${k}</span>
-      ${isDefault ? `<span style="font-size:10px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:1px 5px">Varsayılan</span>` : ''}
-      <button onclick="deleteKategori(${i})" ${isDefault?'disabled title="Varsayılan silinemez"':''} style="background:${isDefault?'var(--panel2)':'rgba(226,35,26,0.15)'};border:1px solid ${isDefault?'var(--line)':'rgba(226,35,26,0.4)'};color:${isDefault?'var(--muted)':'#e2231a'};border-radius:4px;padding:3px 8px;cursor:${isDefault?'not-allowed':'pointer'};font-size:11px;font-weight:700">🗑</button>
+      ${kullaniliyor ? `<span style="font-size:10px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:1px 5px" title="Bu kategoriyle kayıt mevcut">📌 Kullanımda</span>` : ''}
+      <button onclick="deleteKategori(${i})" style="background:rgba(226,35,26,0.15);border:1px solid rgba(226,35,26,0.4);color:#e2231a;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:700">🗑</button>
     </div>`;
   }).join('');
 }
@@ -9719,10 +10347,12 @@ function addKategori() {
 
 function deleteKategori(idx) {
   const list = katYonetimTip==='gelir' ? GELIR_KATEGORILER : GIDER_KATEGORILER;
-  const defaults = katYonetimTip==='gelir' ? GELIR_KATEGORILER_DEFAULT : GIDER_KATEGORILER_DEFAULT;
   const kat = list[idx];
-  if(defaults.includes(kat)){ alert('Varsayılan kategoriler silinemez.'); return; }
-  if(!confirm(`"${kat}" kategorisini silmek istiyor musunuz?`)) return;
+  const kayitSayisi = gelirData.filter(g=>g.tip===katYonetimTip && g.kategori===kat).length;
+  const uyari = kayitSayisi > 0
+    ? `"${kat}" kategorisi ${kayitSayisi} kayıtta kullanılıyor.\nKategori listeden silinir ama mevcut kayıtlar SİLİNMEZ, kategori adları üzerlerinde kalır.\n\nSilmek istiyor musunuz?`
+    : `"${kat}" kategorisini silmek istiyor musunuz?`;
+  if(!confirm(uyari)) return;
   list.splice(idx, 1);
   saveGelirKategoriler();
   renderKatYonetimListesi();
@@ -11395,6 +12025,8 @@ loadTheme();
 updateOfflineIndicator();
 checkLock();
 load();
+// v151: kategori migration — gelirData yüklendikten sonra çalışmalı
+if(typeof migrateGelirKategorilerV151==='function') migrateGelirKategorilerV151();
 // Buluttan veri çek — localStorage'dan daha yeni veri varsa uygula
 setTimeout(()=>{ pullFromCloud().then(()=>startCloudPolling()); }, 800);
 // Orphan log temizleme - entries ile eslesmeyenleri kaldir
@@ -12729,6 +13361,23 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v151',
+    date: '02.07.2026',
+    items: [
+      { type: 'new', text: 'Kasa Sayimi Takibi sayfasi: kupur bazli sayim (200TL-1Kr), otomatik toplam, beklenen tutar karsilastirma, acik/fazla takibi, fark trend grafigi, gecmis tablosu ve disa aktarma' },
+      { type: 'new', text: 'Prim sayfasina Musteri Arama: isim veya telefonla gecmis kayitlarda arama — ayni musterinin birden fazla islemi ayri ayri listelenir, eslesme vurgulanir' },
+      { type: 'new', text: 'Gunluk hedef kirilimi cipi: prim sayfasinda "bugun kac TL gerek" otomatik hesaplanir (kalan hedef / kalan gun)' },
+      { type: 'ui', text: 'Hedef Yonetimi, Haftalik/Yillik ve Trend Analizi sidebar\'dan kaldirildi — artik Prim sayfasindaki arac cubugundan erisiliyor, sayfalarda "← Prim" donus butonu var' },
+      { type: 'ui', text: 'Ay Karsilastirmasi tablosu sayfadan kaldirildi — basliktaki butonla modal pencerede aciliyor' },
+      { type: 'ui', text: 'Aylik Kategori Dagilimi + Prim Finans Ozeti tek modal pencerede birlestirildi (Detay Tablolari butonu)' },
+      { type: 'ui', text: 'Saatlik Giris Yogunlugu & Isi Haritasi modal pencereye tasindi' },
+      { type: 'ui', text: 'Aylik Birim Fiyatlar & Veri Yonetimi modal pencereye tasindi, sayfa akisi sadelesti' },
+      { type: 'fix', text: 'Finansal Analiz "Varsayilan Veriye Sifirla" PIN korumasina alindi ve sidebar Sistem bolumune tasindi — yanlislikla basma riski kalkti' },
+      { type: 'fix', text: 'Gelir/Gider varsayilan kategorileri kaldirildi: kullanilmayan varsayilanlar temizlendi, kullanimda olanlar korundu, artik tum kategoriler silinebilir (kayitlar etkilenmez)' },
+      { type: 'fix', text: 'Kasa verisi bulut senkronuna dahil edildi: id bazli akilli birlestirme, yedekleme/geri yukleme destegi' },
+    ]
+  },
   {
     version: 'v150',
     date: '02.07.2026',
