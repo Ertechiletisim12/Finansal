@@ -14,7 +14,7 @@
   // SW — offline destek, PWA
   if('serviceWorker' in navigator){
     const swKod = `
-const CACHE_VER = 'finansal-v158';
+const CACHE_VER = 'finansal-v159';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2277,10 +2277,19 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px">ADET BAŞI PRİM (₺)</label>
         <input type="number" inputmode="decimal" id="tfmFiyat" placeholder="0" style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px">
       </div>
-      <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);margin-bottom:14px;cursor:pointer;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px">
+      <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);margin-bottom:10px;cursor:pointer;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px">
         <input type="checkbox" id="tfmKdv" style="width:15px;height:15px;cursor:pointer;flex-shrink:0">
         <span>Girdiğim fiyat <b style="color:var(--txt)">KDV dahil</b> <span style="opacity:.7">(sistem net'e çevirir, çift KDV olmaz)</span></span>
       </label>
+      <!-- v159: opsiyonel kampanya tarih aralığı — ayrı adımda dönem eklemeye gerek kalmaz -->
+      <div id="tfmTarihWrap" style="margin-bottom:14px">
+        <div style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:5px">📅 KAMPANYA TARİH ARALIĞI <span style="font-weight:400;color:var(--muted)">(opsiyonel)</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div><label style="font-size:9px;color:var(--muted);display:block;margin-bottom:2px">Başlangıç</label><input type="date" id="tfmStart" style="width:100%;box-sizing:border-box;font-size:12px;padding:7px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt)"></div>
+          <div><label style="font-size:9px;color:var(--muted);display:block;margin-bottom:2px">Bitiş</label><input type="date" id="tfmEnd" style="width:100%;box-sizing:border-box;font-size:12px;padding:7px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt)"></div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:4px;line-height:1.5">Tarih girersen bu fiyat o aralık için <b>dönem fiyatı</b> olarak kaydedilir (süresi bitince Geçmiş Dönemler'e iner). Boş bırakırsan her tarihte geçerli olur. Sonradan 📅 ile başka dönemler de ekleyebilirsin.</div>
+      </div>
       <div style="display:flex;gap:8px">
         <button onclick="closeTarifeFormModal(true)" style="flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:11px;font-size:12px;font-weight:700;cursor:pointer">İptal</button>
         <button id="tfmSaveBtn" onclick="saveTarifeFormModal()" style="flex:2;background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;color:#fff;border-radius:8px;padding:11px;font-size:12px;font-weight:700;cursor:pointer">💾 Kaydet</button>
@@ -2682,7 +2691,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v158';
+const APP_VERSION = 'v159';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2762,7 +2771,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '03.07.2026 06:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '03.07.2026 07:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -9233,16 +9242,29 @@ function addTarife(cat){
   if(!tarifeData[cat]) tarifeData[cat] = [];
   const kdvCb = document.getElementById('tarifeKdvDahil'+sfx);
   const kdvDahil = kdvCb ? kdvCb.checked : false;
-  const mevcut = tarifeData[cat].find(t=>t.ad===ad);
-  if(mevcut){
-    mevcut.fiyat = fiyat;
-    if(kdvDahil) mevcut.kdvDahil = true; else delete mevcut.kdvDahil;
+  // v159: opsiyonel kampanya tarih aralığı — aynı adımda dönem fiyatı kaydı
+  const tsEl = document.getElementById('tarifeStart'+sfx);
+  const teEl = document.getElementById('tarifeEnd'+sfx);
+  const ts = tsEl ? (tsEl.value || null) : null;
+  const te = teEl ? (teEl.value || null) : null;
+  if(ts && te && ts > te){ alert('Başlangıç tarihi bitişten sonra olamaz.'); return; }
+  let hedef = tarifeData[cat].find(t=>t.ad===ad);
+  if(hedef){
+    hedef.fiyat = fiyat;
+    if(kdvDahil) hedef.kdvDahil = true; else delete hedef.kdvDahil;
   } else {
-    const yeni = {ad, fiyat};
-    if(kdvDahil) yeni.kdvDahil = true;
-    tarifeData[cat].push(yeni);
+    hedef = {ad, fiyat};
+    if(kdvDahil) hedef.kdvDahil = true;
+    tarifeData[cat].push(hedef);
+  }
+  if(ts || te){
+    if(!hedef.donemler) hedef.donemler = [];
+    const dn = {s: ts, e: te, fiyat};
+    if(kdvDahil) dn.kdvDahil = true;
+    hedef.donemler.push(dn);
   }
   if(kdvCb) kdvCb.checked = false;
+  if(tsEl) tsEl.value = ''; if(teEl) teEl.value = '';
   saveTarifeStore();
   renderTarifeList();
   document.getElementById('tarifeAdInput'+sfx).value = '';
@@ -9461,6 +9483,11 @@ function openTarifeFormModal(opts){
   document.getElementById('tfmAdKilit').style.display = opts.adLocked ? 'block' : 'none';
   document.getElementById('tfmFiyat').value = opts.fiyat != null ? opts.fiyat : '';
   document.getElementById('tfmKdv').checked = !!opts.kdvDahil;
+  // v159: tarih aralığı yalnızca yeni ekleme akışında gösterilir
+  const tarihWrap = document.getElementById('tfmTarihWrap');
+  tarihWrap.style.display = opts.showDates ? 'block' : 'none';
+  document.getElementById('tfmStart').value = '';
+  document.getElementById('tfmEnd').value = '';
   document.getElementById('tfmSaveBtn').textContent = opts.saveLabel || '💾 Kaydet';
   document.getElementById('tarifeFormModal').style.display = 'flex';
   setTimeout(()=>{ (opts.adVisible===false || opts.adLocked ? document.getElementById('tfmFiyat') : adInp).focus(); }, 100);
@@ -9477,10 +9504,15 @@ function saveTarifeFormModal(){
   const kdvDahil = document.getElementById('tfmKdv').checked;
   if(adWrapGorunur && !ad){ alert('Ad giriniz.'); return; }
   if(isNaN(fiyat) || fiyat < 0){ alert('Geçerli bir fiyat giriniz.'); return; }
+  // v159: opsiyonel tarih aralığı
+  const tarihGorunur = document.getElementById('tfmTarihWrap').style.display !== 'none';
+  const ts = tarihGorunur ? (document.getElementById('tfmStart').value || null) : null;
+  const te = tarihGorunur ? (document.getElementById('tfmEnd').value || null) : null;
+  if(ts && te && ts > te){ alert('Başlangıç tarihi bitişten sonra olamaz.'); return; }
   const cb = _tfmOnSave;
   _tfmOnCancel = null; // başarılı kayıtta iptal callback'i çalışmasın
   closeTarifeFormModal(false);
-  if(cb) cb(ad, fiyat, kdvDahil);
+  if(cb) cb(ad, fiyat, kdvDahil, ts, te);
 }
 
 // Müşteri formundaki tarife dropdown'unu kategoriye göre güncelle
@@ -9519,16 +9551,24 @@ function updateMkTarifeField(){
           adVisible: true,
           subInfo: '📌 <b>' + cat + '</b> kategorisine eklenecek ve bu kayıtta otomatik seçilecek.',
           saveLabel: '💾 Ekle ve Seç',
-          onSave: (ad, fiyat, kdvDahil) => {
+          showDates: true,
+          onSave: (ad, fiyat, kdvDahil, ts, te) => {
             if(!tarifeData[cat]) tarifeData[cat] = [];
-            const mevcut = tarifeData[cat].find(t=>t.ad===ad);
-            if(mevcut){
-              mevcut.fiyat = fiyat;
-              if(kdvDahil) mevcut.kdvDahil = true; else delete mevcut.kdvDahil;
+            let hedef = tarifeData[cat].find(t=>t.ad===ad);
+            if(hedef){
+              hedef.fiyat = fiyat;
+              if(kdvDahil) hedef.kdvDahil = true; else delete hedef.kdvDahil;
             } else {
-              const yeni = {ad, fiyat};
-              if(kdvDahil) yeni.kdvDahil = true;
-              tarifeData[cat].push(yeni);
+              hedef = {ad, fiyat};
+              if(kdvDahil) hedef.kdvDahil = true;
+              tarifeData[cat].push(hedef);
+            }
+            // v159: tarih girildiyse aynı adımda dönem fiyatı da kaydedilir
+            if(ts || te){
+              if(!hedef.donemler) hedef.donemler = [];
+              const dn = {s: ts, e: te, fiyat};
+              if(kdvDahil) dn.kdvDahil = true;
+              hedef.donemler.push(dn);
             }
             saveTarifeStore();
             if(typeof scheduleCloudSync==='function') scheduleCloudSync();
@@ -13180,7 +13220,14 @@ function renderHedefGecmis(){
           <input type="number" id="tarifeFiyatInput" placeholder="Prim (₺)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
           <button onclick="addTarife(document.getElementById('tarifeCatSel').value)" style="padding:7px 12px;background:#e2231a;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
         </div>
-        <label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin-bottom:8px;cursor:pointer"><input type="checkbox" id="tarifeKdvDahil" style="width:14px;height:14px;cursor:pointer"> Girdiğim fiyat <b>KDV dahil</b> (sistem net'e çevirir, çift KDV olmaz)</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin-bottom:6px;cursor:pointer"><input type="checkbox" id="tarifeKdvDahil" style="width:14px;height:14px;cursor:pointer"> Girdiğim fiyat <b>KDV dahil</b> (sistem net'e çevirir, çift KDV olmaz)</label>
+        <details style="margin-bottom:8px"><summary style="cursor:pointer;font-size:10px;color:var(--gold);font-weight:700">📅 Kampanya tarih aralığı ekle (opsiyonel)</summary>
+          <div class="tarife-add-row" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+            <input type="date" id="tarifeStart" title="Başlangıç" style="padding:6px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:11px;box-sizing:border-box;min-width:0">
+            <input type="date" id="tarifeEnd" title="Bitiş" style="padding:6px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:11px;box-sizing:border-box;min-width:0">
+          </div>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px">Tarih girersen fiyat bu aralık için dönem fiyatı olarak da kaydedilir.</div>
+        </details>
         <div id="tarifeListDiv" style="display:flex;flex-direction:column;gap:5px"></div>
       </div>
 
@@ -13193,7 +13240,14 @@ function renderHedefGecmis(){
           <input type="number" id="tarifeFiyatInputDiger" placeholder="Prim (₺)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
           <button onclick="addTarife('Diğer')" style="padding:7px 12px;background:#7c3aed;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
         </div>
-        <label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin-bottom:8px;cursor:pointer"><input type="checkbox" id="tarifeKdvDahilDiger" style="width:14px;height:14px;cursor:pointer"> Girdiğim fiyat <b>KDV dahil</b> (sistem net'e çevirir, çift KDV olmaz)</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin-bottom:6px;cursor:pointer"><input type="checkbox" id="tarifeKdvDahilDiger" style="width:14px;height:14px;cursor:pointer"> Girdiğim fiyat <b>KDV dahil</b> (sistem net'e çevirir, çift KDV olmaz)</label>
+        <details style="margin-bottom:8px"><summary style="cursor:pointer;font-size:10px;color:var(--gold);font-weight:700">📅 Kampanya tarih aralığı ekle (opsiyonel)</summary>
+          <div class="tarife-add-row" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+            <input type="date" id="tarifeStartDiger" title="Başlangıç" style="padding:6px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:11px;box-sizing:border-box;min-width:0">
+            <input type="date" id="tarifeEndDiger" title="Bitiş" style="padding:6px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:11px;box-sizing:border-box;min-width:0">
+          </div>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px">Tarih girersen fiyat bu aralık için dönem fiyatı olarak da kaydedilir.</div>
+        </details>
         <div id="tarifeListDivDiger" style="display:flex;flex-direction:column;gap:5px"></div>
       </div>
 
@@ -14101,6 +14155,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v159',
+    date: '03.07.2026',
+    items: [
+      { type: 'new', text: 'Hizli tarife/kampanya ekleme formuna KAMPANYA TARIH ARALIGI alani eklendi (opsiyonel): ad + fiyat + KDV + tarih tek adimda — sonradan 📅 donem penceresine gitme geregi kalmadi' },
+      { type: 'new', text: 'Kampanyalar penceresindeki tarife ve Diger ekleme satirlarinda da ayni ozellik: "📅 Kampanya tarih araligi ekle" bolumunu acip tarihleri girince fiyat o aralik icin donem fiyati olarak otomatik kaydediliyor' },
+      { type: 'new', text: 'Tarih girilirse donem kurallari otomatik islier: donem icinde kayit varsa silinemez, suresi bitince Gecmis Donemler bolumune iner, kayitlar kendi tarihinin fiyatiyla hesaplanir' },
+    ]
+  },
   {
     version: 'v158',
     date: '03.07.2026',
