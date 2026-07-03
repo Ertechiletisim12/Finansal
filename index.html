@@ -14,7 +14,7 @@
   // SW — offline destek, PWA
   if('serviceWorker' in navigator){
     const swKod = `
-const CACHE_VER = 'finansal-v155';
+const CACHE_VER = 'finansal-v156';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2260,7 +2260,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 </div>
 
 <!-- DÖNEM FİYATLARI MODALI (v155) -->
-<div id="tarifeDonemModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1300;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto">
+<div id="tarifeDonemModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:4200;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:420px;width:98%;margin:auto 0">
     <div style="background:linear-gradient(135deg,#b8860b,#8a6508);padding:13px 16px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
       <span id="tdBaslik" style="font-size:13px;font-weight:700;color:#fff">📅 Dönem Fiyatları</span>
@@ -2282,6 +2282,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <input type="number" id="tdFiyat" placeholder="Dönem fiyatı (₺)" style="width:100%;box-sizing:border-box;font-size:12px;padding:7px;min-width:0">
         <button onclick="addTarifeDonem()" style="padding:7px 14px;background:linear-gradient(135deg,#b8860b,#8a6508);border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
       </div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin-top:6px;cursor:pointer"><input type="checkbox" id="tdKdvDahil" style="width:14px;height:14px;cursor:pointer"> Dönem fiyatı <b>KDV dahil</b></label>
     </div>
   </div>
 </div>
@@ -2651,8 +2652,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v155';
-const BUILD_DATE = '03.07.2026 02:30'; // Hazırlanma tarihi (dahili)
+const APP_VERSION = 'v156';
+const BUILD_DATE = '03.07.2026 04:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -2737,13 +2738,15 @@ function tarifeFiyatFor(entryOrTarife, cat, dateOpt){
   // v155: Dönem fiyatları — kaydın tarihi hangi döneme düşüyorsa o fiyat geçerli.
   // Kampanya sistemiyle aynı kural: çakışan dönemlerde en son eklenen kazanır.
   const date = dateOpt || (isObj ? entryOrTarife?.date : null);
+  // v156: "KDV dahil" girilen fiyat net'e çevrilir; sistem KDV'yi sonda ekleyince girilen brüt korunur
+  const netle = (fiyat, kdvli) => kdvli ? fiyat / (1 + KDV_ORANI) : fiyat;
   if(date && Array.isArray(t.donemler) && t.donemler.length){
     for(let i = t.donemler.length - 1; i >= 0; i--){
       const d = t.donemler[i];
-      if((!d.s || date >= d.s) && (!d.e || date <= d.e)) return d.fiyat;
+      if((!d.s || date >= d.s) && (!d.e || date <= d.e)) return netle(d.fiyat, d.kdvDahil);
     }
   }
-  return t.fiyat;
+  return netle(t.fiyat, t.kdvDahil);
 }
 
 function kampanyaFiyatFor(date, cat, normalFiyat){
@@ -2755,8 +2758,9 @@ function kampanyaFiyatFor(date, cat, normalFiyat){
     (!k.endDate   || date<=k.endDate)
   );
   if(!aktif.length) return normalFiyat;
-  // En son eklenen kazanır
-  return aktif[aktif.length-1].deger;
+  // En son eklenen kazanır — v156: KDV dahil girildiyse net'e çevrilir
+  const k = aktif[aktif.length-1];
+  return k.kdvDahil ? k.deger / (1 + KDV_ORANI) : k.deger;
 }
 function kampanyaBonusFor(ym, cat, totalAdet){
   if(!kampanyaData || !kampanyaData.length) return 0;
@@ -6485,7 +6489,7 @@ function renderDash(){
     const adetColor  = isCur ? '#3fd0ff' : '#999';
     const tutarColor = isCur ? '#4cd964' : '#aaa';
     const tutarTam = t.v > 0 ? t.v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺' : '—';
-    return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1;min-width:44px;cursor:default" title="${monthLabel(t.ym)}&#10;Adet: ${t.adet}&#10;Tutar: ${tutarTam}">
+    return `<div onclick="showChartBarDetay('${t.ym}')" style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1;min-width:44px;cursor:pointer" title="Dokun: ${monthLabel(t.ym)} detayı&#10;Adet: ${t.adet}&#10;Tutar: ${tutarTam}">
       <div style="font-size:${isMob?'7px':'9px'};font-weight:700;text-align:center;line-height:1.5;margin-bottom:4px;width:100%">
         ${t.adet>0 ? `<div style="color:${adetColor}">${t.adet} ad</div>` : '<div>&nbsp;</div>'}
         ${t.v>0 ? `<div style="color:${tutarColor}">${fmtF(t.v)}</div>` : '<div>&nbsp;</div>'}
@@ -6766,7 +6770,7 @@ function renderDash(){
           <tbody>
             ${CATS.map(cat=>{
               const cnt   = catCounts[cat]||0;
-              const tutar = entries.filter(e=>e.date===now&&e.cat===cat).reduce((a,e)=>a+e.count*(kampanyaFiyatFor(e.date,cat,priceFor(now,cat))||0),0)*(1+KDV_ORANI);
+              const tutar = entries.filter(e=>effectiveYm(e)===now&&e.cat===cat).reduce((a,e)=>{const tF=tarifeFiyatFor(e,cat);return a+e.count*(tF!=null?tF:(kampanyaFiyatFor(e.date,cat,priceFor(now,cat))||0));},0)*(1+KDV_ORANI);
               const pct2  = catTotal>0 ? Math.round(cnt/catTotal*100) : 0;
               const color = CAT_COLORS[cat]||'var(--accent)';
               const katH  = catHedefler[cat]||null;
@@ -6811,6 +6815,28 @@ function renderDash(){
           </tfoot>
         </table>
         </div>
+        ${(()=>{ // v156: Ürün/Tarife Kırılımı — bilgi amaçlı, tutarlar toplama ZATEN dahil
+          const kir = {};
+          entries.filter(e=>effectiveYm(e)===now && e.tarife && TARIFE_CATS.includes(e.cat)).forEach(e=>{
+            const tF = tarifeFiyatFor(e, e.cat);
+            const p = tF!=null ? tF : (kampanyaFiyatFor(e.date,e.cat,priceFor(now,e.cat))||0);
+            const key = e.cat+'|'+e.tarife;
+            if(!kir[key]) kir[key] = {cat:e.cat, ad:e.tarife, adet:0, tutar:0};
+            kir[key].adet += e.count; kir[key].tutar += e.count*p;
+          });
+          const kl = Object.values(kir).sort((a,b)=>b.tutar-a.tutar);
+          if(!kl.length) return '';
+          return `<div style="margin-top:8px;background:rgba(196,165,247,0.05);border:1px solid rgba(196,165,247,0.15);border-radius:8px;padding:7px 9px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:9.5px;color:#c4a5f7;font-weight:700">🎁 Ürün / Tarife Kırılımı</span>
+              <span style="font-size:8px;color:var(--muted)">toplama dahil · ayrıca eklenmez</span>
+            </div>
+            ${kl.map(k=>`<div style="display:flex;justify-content:space-between;font-size:9.5px;padding:2px 0;border-top:1px solid rgba(196,165,247,0.08)">
+              <span style="color:var(--muted)">${k.cat==='Diğer'?'🎁':'📶'} ${k.cat} · ${k.ad}</span>
+              <span style="color:#c4a5f7;font-weight:700;margin-left:6px;white-space:nowrap">${k.adet} adet · ${fmtF(k.tutar*(1+KDV_ORANI))}</span>
+            </div>`).join('')}
+          </div>`;
+        })()}
       </div>
 
     </div>
@@ -9023,6 +9049,7 @@ function closeKampanyaModal(){
   resetKampanyaForm();
 }
 function resetKampanyaForm(){
+  const kdvCb = document.getElementById('kKdvDahil'); if(kdvCb) kdvCb.checked = false;
   document.getElementById('kEditId').value = '';
   document.getElementById('kAy').value = thisMonthKey();
   document.getElementById('kCat').value = 'PostPaid';
@@ -9069,6 +9096,7 @@ function editKampanya(id){
   document.getElementById('kEndDate').value = k.endDate||'';
   document.getElementById('kMinAdet').value = k.minAdet||'';
   document.getElementById('kAciklama').value = k.aciklama||'';
+  const kdvCb = document.getElementById('kKdvDahil'); if(kdvCb) kdvCb.checked = !!k.kdvDahil;
   document.getElementById('kFormTitle').textContent = '✏️ Kampanya Düzenle';
   document.getElementById('kSaveBtn').textContent = '💾 Güncelle';
   document.getElementById('kIptalBtn').style.display = 'block';
@@ -9094,12 +9122,18 @@ function addTarife(cat){
   if(isNaN(fiyat) || fiyat<0){ alert('Geçerli bir prim tutarı giriniz.'); return; }
 
   if(!tarifeData[cat]) tarifeData[cat] = [];
+  const kdvCb = document.getElementById('tarifeKdvDahil'+sfx);
+  const kdvDahil = kdvCb ? kdvCb.checked : false;
   const mevcut = tarifeData[cat].find(t=>t.ad===ad);
   if(mevcut){
     mevcut.fiyat = fiyat;
+    if(kdvDahil) mevcut.kdvDahil = true; else delete mevcut.kdvDahil;
   } else {
-    tarifeData[cat].push({ad, fiyat});
+    const yeni = {ad, fiyat};
+    if(kdvDahil) yeni.kdvDahil = true;
+    tarifeData[cat].push(yeni);
   }
+  if(kdvCb) kdvCb.checked = false;
   saveTarifeStore();
   renderTarifeList();
   document.getElementById('tarifeAdInput'+sfx).value = '';
@@ -9110,13 +9144,40 @@ function addTarife(cat){
 function deleteTarife(ad, cat){
   cat = cat || 'Red';
   if(!tarifeData[cat]) return;
-  const kullanımda = entries.some(e=>e.cat===cat && e.tarife===ad);
-  const msg = kullanımda
-    ? ad + ' kayıtlarda kullanılıyor.\nListeden silinir ama mevcut kayıtlar etkilenmez (fiyatları o günkü değerle hesaplanmaya devam etmez, varsayılan fiyata döner).\n\nSilmek istiyor musunuz?'
-    : ad + (cat==='Diğer'?' kampanyasını':' tarifesini') + ' silmek istiyor musunuz?';
-  if(!confirm(msg)) return;
+  // v156: Kayıtlarda kullanılan tarife/kampanya SİLİNEMEZ — geçmiş hesapların bozulmaması için.
+  const kullanımSayisi = entries.filter(e=>e.cat===cat && e.tarife===ad).length;
+  if(kullanımSayisi > 0){
+    alert('🔒 "' + ad + '" ' + kullanımSayisi + ' kayıtta kullanılıyor — silinemez!\n\nGeçmiş hesapların bozulmaması için korunuyor. İstersen:\n• ✏️ ile fiyatını düzeltebilirsin\n• 📅 ile yeni dönem fiyatı tanımlayabilirsin\n• Süresi bitince otomatik "Geçmiş" bölümüne iner.');
+    return;
+  }
+  if(!confirm(ad + (cat==='Diğer'?' kampanyasını':' tarifesini') + ' silmek istiyor musunuz?')) return;
   tarifeData[cat] = tarifeData[cat].filter(t=>t.ad!==ad);
   saveTarifeStore();
+  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
+  renderTarifeList();
+  render();
+}
+
+// v156: Tarife/kampanya düzenleme — ad (kullanılmıyorsa) ve temel fiyat
+function editTarife(ad, cat){
+  const t = (tarifeData[cat]||[]).find(x=>x.ad===ad);
+  if(!t) return;
+  const kullanımda = entries.some(e=>e.cat===cat && e.tarife===ad);
+  if(!kullanımda){
+    const yeniAd = prompt('Ad (değiştirebilirsin):', t.ad);
+    if(yeniAd === null) return;
+    if(yeniAd.trim() && yeniAd.trim() !== t.ad){
+      if((tarifeData[cat]||[]).some(x=>x.ad===yeniAd.trim())){ alert('Bu adda kayıt zaten var.'); return; }
+      t.ad = yeniAd.trim();
+    }
+  }
+  const fStr = prompt((kullanımda?'🔒 Ad kilitli (kayıtlarda kullanılıyor).\n':'') + '"' + t.ad + '" temel fiyatı (₺):', t.fiyat);
+  if(fStr === null){ saveTarifeStore(); renderTarifeList(); return; }
+  const fiyat = parseFloat((fStr||'').replace(',','.'));
+  if(isNaN(fiyat) || fiyat < 0){ alert('Geçersiz tutar.'); return; }
+  t.fiyat = fiyat;
+  saveTarifeStore();
+  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
   renderTarifeList();
   render();
 }
@@ -9151,14 +9212,38 @@ function renderTarifeDonemList(){
     div.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">Dönem tanımlı değil — her tarihte temel fiyat geçerli.</div>';
     return;
   }
-  div.innerHTML = list.map((d,i)=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 10px;gap:8px">
-      <span style="font-size:11px;color:var(--txt)">📅 ${d.s||'başlangıçsız'} → ${d.e||'süresiz'}</span>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-        <span style="font-size:12px;font-weight:700;color:var(--gold)">${d.fiyat.toLocaleString('tr-TR')} ₺</span>
+  const bugun = todayStr();
+  const satirYap = (d, i, gecmis) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 10px;gap:8px;${gecmis?'opacity:.65':''}">
+      <span style="font-size:11px;color:var(--txt)">📅 ${d.s||'başlangıçsız'} → ${d.e||'süresiz'}${gecmis?' <span style="font-size:9px;color:var(--muted)">(bitti)</span>':''}</span>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <span style="font-size:12px;font-weight:700;color:var(--gold)">${d.fiyat.toLocaleString('tr-TR')} ₺${d.kdvDahil?' <span style="font-size:8.5px;color:var(--muted)">KDV\u2009dahil</span>':''}</span>
+        <button onclick="editTarifeDonem(${i})" title="Fiyat düzelt" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button>
         <button onclick="deleteTarifeDonem(${i})" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  const aktifler = [], gecmisler = [];
+  list.forEach((d,i)=>{ (d.e && d.e < bugun ? gecmisler : aktifler).push([d,i]); });
+  let html = aktifler.map(([d,i])=>satirYap(d,i,false)).join('');
+  if(gecmisler.length){
+    html += `<details style="margin-top:4px"><summary style="cursor:pointer;font-size:10px;color:var(--muted);font-weight:700;padding:4px 0">📜 Geçmiş Dönemler (${gecmisler.length}) — geçmiş kayıtlar bu fiyatlarla hesaplanmaya devam eder</summary>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px">${gecmisler.map(([d,i])=>satirYap(d,i,true)).join('')}</div></details>`;
+  }
+  div.innerHTML = html;
+}
+// v156: dönem fiyat düzeltme (silme yerine güvenli yol)
+function editTarifeDonem(idx){
+  const t = (tarifeData[_donemCat]||[]).find(x=>x.ad===_donemAd);
+  if(!t || !t.donemler || !t.donemler[idx]) return;
+  const d = t.donemler[idx];
+  const fStr = prompt('📅 ' + (d.s||'?') + ' → ' + (d.e||'süresiz') + ' dönemi için yeni fiyat (₺):', d.fiyat);
+  if(fStr === null) return;
+  const fiyat = parseFloat((fStr||'').replace(',','.'));
+  if(isNaN(fiyat) || fiyat < 0){ alert('Geçersiz tutar.'); return; }
+  d.fiyat = fiyat;
+  saveTarifeStore();
+  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
+  renderTarifeDonemList();
 }
 function addTarifeDonem(){
   const t = (tarifeData[_donemCat]||[]).find(x=>x.ad===_donemAd);
@@ -9170,16 +9255,28 @@ function addTarifeDonem(){
   if(!s && !e){ alert('En az bir tarih (başlangıç veya bitiş) giriniz.'); return; }
   if(s && e && s > e){ alert('Başlangıç tarihi bitişten sonra olamaz.'); return; }
   if(!t.donemler) t.donemler = [];
-  t.donemler.push({s, e, fiyat});
+  const donem = {s, e, fiyat};
+  if(document.getElementById('tdKdvDahil')?.checked) donem.kdvDahil = true;
+  t.donemler.push(donem);
   saveTarifeStore();
   if(typeof scheduleCloudSync==='function') scheduleCloudSync();
   document.getElementById('tdStart').value=''; document.getElementById('tdEnd').value=''; document.getElementById('tdFiyat').value='';
+  const cb = document.getElementById('tdKdvDahil'); if(cb) cb.checked = false;
   renderTarifeDonemList();
 }
 function deleteTarifeDonem(idx){
   const t = (tarifeData[_donemCat]||[]).find(x=>x.ad===_donemAd);
   if(!t || !t.donemler) return;
   const d = t.donemler[idx];
+  // v156: Dönem içinde bu tarife/kampanya ile kayıt varsa dönem SİLİNEMEZ (geçmiş hesap korunur)
+  const kullanım = entries.filter(e=>
+    e.cat===_donemCat && e.tarife===_donemAd &&
+    (!d.s || e.date >= d.s) && (!d.e || e.date <= d.e)
+  ).length;
+  if(kullanım > 0){
+    alert('🔒 Bu dönemde "' + _donemAd + '" ile girilmiş ' + kullanım + ' kayıt var — dönem silinemez!\n\nGeçmiş hesapların bozulmaması için korunuyor. ✏️ ile dönem fiyatını düzeltebilirsin; süresi bittiğinde otomatik "Geçmiş Dönemler" altına iner.');
+    return;
+  }
   if(!confirm('📅 ' + (d.s||'?') + ' → ' + (d.e||'?') + ' dönemi (' + d.fiyat.toLocaleString('tr-TR') + ' ₺) silinsin mi?\nBu tarihlerdeki kayıtlar temel fiyata döner.')) return;
   t.donemler.splice(idx, 1);
   saveTarifeStore();
@@ -9200,7 +9297,8 @@ function renderTarifeList(){
       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px;gap:6px">
         <span style="font-size:12px;font-weight:700;color:var(--txt);min-width:0;overflow:hidden;text-overflow:ellipsis">${t.ad}${t.donemler&&t.donemler.length?` <span style="font-size:9px;background:rgba(255,183,77,0.18);color:var(--gold);border-radius:8px;padding:1px 6px;font-weight:700;white-space:nowrap">📅 ${t.donemler.length} dönem</span>`:''}</span>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-          <span style="font-size:12px;font-weight:700;color:#4cd964">${t.fiyat.toLocaleString('tr-TR')} ₺</span>
+          <span style="font-size:12px;font-weight:700;color:#4cd964">${t.fiyat.toLocaleString('tr-TR')} ₺${t.kdvDahil?' <span style="font-size:8.5px;color:var(--muted);font-weight:600">KDV\u2009dahil</span>':''}</span>
+          <button onclick="editTarife('${t.ad.replace(/'/g,"\\'")}','${cat}')" title="Ad/fiyat düzelt" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button>
           <button onclick="openTarifeDonemModal('${cat}','${t.ad.replace(/'/g,"\\'")}')" title="Dönem fiyatları (tarih aralıklı)" style="background:rgba(255,183,77,0.1);border:1px solid rgba(255,183,77,0.3);color:var(--gold);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">📅</button>
           <button onclick="deleteTarife('${t.ad.replace(/'/g,"\\'")}','${cat}')" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
         </div>
@@ -9287,6 +9385,7 @@ function saveKampanya(){
   if(isNaN(deger)||deger<=0){ alert('Geçerli bir tutar giriniz.'); return; }
 
   const k = { ym, cat, catList, tip, deger, startDate, endDate, aciklama };
+  if(tip==='fiyat' && document.getElementById('kKdvDahil')?.checked) k.kdvDahil = true;
   if(tip==='bonus' || tip==='tekrarli') k.minAdet = minAdet;
   if(tip==='tekrarli') k.tipFiltre = tipFiltre;
 
@@ -9303,8 +9402,21 @@ function saveKampanya(){
   render();
 }
 function deleteKampanya(id){
+  const k = kampanyaData.find(x=>x.id===id);
+  if(!k) return;
+  // v156: Kampanya döneminde ilgili kategori(ler)de kayıt varsa SİLİNEMEZ — hesap bütünlüğü korunur
+  const catlar = (k.catList && k.catList.length) ? k.catList : [k.cat];
+  const kullanım = entries.filter(e=>
+    catlar.includes(e.cat) && ymKey(e.date)===k.ym &&
+    (!k.startDate || e.date >= k.startDate) &&
+    (!k.endDate   || e.date <= k.endDate)
+  ).length;
+  if(kullanım > 0){
+    alert('🔒 Bu kampanyanın döneminde ' + kullanım + ' kayıt var — silinemez!\n\nGeçmiş hesapların bozulmaması için korunuyor. ✏️ ile düzenleyebilirsin; süresi bittiğinde otomatik "📜 Geçmiş Kampanyalar" bölümüne iner.');
+    return;
+  }
   if(!confirm('Bu kampanyayı silmek istiyor musunuz?')) return;
-  kampanyaData = kampanyaData.filter(k=>k.id!==id);
+  kampanyaData = kampanyaData.filter(x=>x.id!==id);
   saveKampanyaStore();
   renderKampanyaList();
   render();
@@ -9317,10 +9429,16 @@ function renderKampanyaList(){
     return;
   }
   const sorted = [...kampanyaData].sort((a,b)=>b.ym.localeCompare(a.ym));
-  const grouped = {};
-  sorted.forEach(k=>{ if(!grouped[k.ym]) grouped[k.ym]=[]; grouped[k.ym].push(k); });
-
-  list.innerHTML = Object.keys(grouped).sort().reverse().map(ym => `
+  // v156: süresi bitenler (ayı geçmiş VEYA bitiş tarihi geçmiş) "Geçmiş Kampanyalar" bölümüne iner
+  const buAy = thisMonthKey(), bugun = todayStr();
+  const bitti = k => k.ym < buAy || (k.ym === buAy && k.endDate && k.endDate < bugun);
+  const grouped = {}, groupedOld = {};
+  sorted.forEach(k=>{
+    const hedefGrup = bitti(k) ? groupedOld : grouped;
+    if(!hedefGrup[k.ym]) hedefGrup[k.ym]=[];
+    hedefGrup[k.ym].push(k);
+  });
+  const grupHtml = (grouped) => Object.keys(grouped).sort().reverse().map(ym => `
     <div style="margin-bottom:14px">
       <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;padding:2px 8px;background:rgba(63,208,255,0.08);border-radius:4px;display:inline-block">${ym}</div>
       ${grouped[ym].map(k=>{
@@ -9329,7 +9447,7 @@ function renderKampanyaList(){
           : 'Tüm ay';
         const tipFiltreEtiket = k.tipFiltre==='mnp' ? ' (Sadece MNP)' : k.tipFiltre==='tesis' ? ' (Sadece Yeni Tesis)' : '';
         const detay = k.tip==='fiyat'
-          ? `Birim fiyat: <b style="color:#4cd964">${k.deger.toLocaleString('tr-TR')} ₺</b> · ${tarihInfo}`
+          ? `Birim fiyat: <b style="color:#4cd964">${k.deger.toLocaleString('tr-TR')} ₺</b>${k.kdvDahil?' <span style="font-size:9px;color:var(--muted)">(KDV dahil)</span>':''} · ${tarihInfo}`
           : k.tip==='tekrarli'
           ? `Her <b>${k.minAdet||0}</b> adede <b style="color:#c084fc">${k.deger.toLocaleString('tr-TR')} ₺</b>${tipFiltreEtiket} · ${tarihInfo}`
           : `Min <b>${k.minAdet||0}</b> adet → <b style="color:#ffb74d">${k.deger.toLocaleString('tr-TR')} ₺</b> bonus · ${tarihInfo}`;
@@ -9351,6 +9469,16 @@ function renderKampanyaList(){
       }).join('')}
     </div>
   `).join('');
+  let html = grupHtml(grouped) || '<div style="text-align:center;color:var(--muted);padding:12px;font-size:12px">Aktif kampanya yok.</div>';
+  const oldKeys = Object.keys(groupedOld);
+  if(oldKeys.length){
+    const adet = oldKeys.reduce((a,ym)=>a+groupedOld[ym].length,0);
+    html += `<details style="margin-top:8px;border-top:1px dashed var(--line);padding-top:8px">
+      <summary style="cursor:pointer;font-size:11px;color:var(--muted);font-weight:700;padding:4px 0">📜 Geçmiş Kampanyalar (${adet}) — geçmiş kayıtlar bu kampanyalarla hesaplanmaya devam eder</summary>
+      <div style="margin-top:8px;opacity:.75">${grupHtml(groupedOld)}</div>
+    </details>`;
+  }
+  list.innerHTML = html;
 }
 // ==================== MÜŞTERİ KAYIT SİSTEMİ ====================
 
@@ -10817,7 +10945,7 @@ function renderGelir() {
       const dH = Math.max(2, (g.gider/maxV)*barH);
       const nH = Math.max(2, (Math.abs(net)/maxV)*barH);
       const shortLbl = monthLabel(a).split(' ')[0].slice(0,3);
-      return `<div class="bar-col" style="gap:2px;cursor:pointer" onclick="openGelirModal()">
+      return `<div class="bar-col" style="gap:2px;cursor:pointer" onclick="showToast('📅 ${monthLabel(a)} → Gelir: ${fmt(g.gelir)} · Gider: ${fmt(g.gider)} · Net: ${net>=0?'+':''}${fmt(net)}', '${net>=0?'ok':'err'}')" title="Dokun: ay özeti">
         <div class="n" style="font-size:9.5px;color:${netC};font-weight:700">${net>=0?'+':''}${fmt(net).replace(' ₺','')}</div>
         <div style="display:flex;align-items:flex-end;gap:3px;height:${barH}px">
           <div style="width:14px;height:${gH}px;background:#2fae4e;border-radius:2px 2px 0 0" title="Gelir: ${fmt(g.gelir)}"></div>
@@ -11621,7 +11749,7 @@ function _renderRaporShared({ chartTitle, bars, avgAmt, kpis, bestLabel, bestVal
       barsEl.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:20px">Veri yok</div>';
     } else {
       barsEl.innerHTML = bars.map(b => `
-        <div class="bar-col">
+        <div class="bar-col" style="cursor:pointer" onclick="showToast('📊 ${String(b.label).replace(/'/g,'')}${b.sublabel?' ('+String(b.sublabel).replace(/'/g,'')+')':''} → ${fmt(b.value)}')" title="Dokun: detay">
           <div class="n">${fmt(b.value)}</div>
           <div class="bar" style="height:${Math.max(b.pct,2)}%;background:linear-gradient(180deg,var(--accent),#1a90b8)"></div>
           <div class="lbl">${b.label}</div>
@@ -12791,6 +12919,7 @@ function renderHedefGecmis(){
         <div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:3px" id="kDegerLabel">Yeni Birim Fiyat (₺)</div>
           <input type="number" id="kDeger" placeholder="0" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
+          <label id="kKdvDahilWrap" style="display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted);margin-top:4px;cursor:pointer"><input type="checkbox" id="kKdvDahil" style="width:13px;height:13px;cursor:pointer"> Tutar <b>KDV dahil</b> (fiyat kampanyasında net'e çevrilir)</label>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
@@ -12862,6 +12991,7 @@ function renderHedefGecmis(){
           <input type="number" id="tarifeFiyatInput" placeholder="Prim (₺)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
           <button onclick="addTarife(document.getElementById('tarifeCatSel').value)" style="padding:7px 12px;background:#e2231a;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin-bottom:8px;cursor:pointer"><input type="checkbox" id="tarifeKdvDahil" style="width:14px;height:14px;cursor:pointer"> Girdiğim fiyat <b>KDV dahil</b> (sistem net'e çevirir, çift KDV olmaz)</label>
         <div id="tarifeListDiv" style="display:flex;flex-direction:column;gap:5px"></div>
       </div>
 
@@ -12874,6 +13004,7 @@ function renderHedefGecmis(){
           <input type="number" id="tarifeFiyatInputDiger" placeholder="Prim (₺)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
           <button onclick="addTarife('Diğer')" style="padding:7px 12px;background:#7c3aed;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin-bottom:8px;cursor:pointer"><input type="checkbox" id="tarifeKdvDahilDiger" style="width:14px;height:14px;cursor:pointer"> Girdiğim fiyat <b>KDV dahil</b> (sistem net'e çevirir, çift KDV olmaz)</label>
         <div id="tarifeListDivDiger" style="display:flex;flex-direction:column;gap:5px"></div>
       </div>
 
@@ -13781,6 +13912,19 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v156',
+    date: '03.07.2026',
+    items: [
+      { type: 'fix', text: 'Donem fiyatlari penceresi artik Kampanyalar penceresinin USTUNDE aciliyor (alta gizlenme sorunu duzeltildi)' },
+      { type: 'new', text: 'Anasayfaya Urun/Tarife Kirilimi kutusu eklendi (Kategori Dagilimi altinda) — bilgi amacli, tutarlar toplama zaten dahil, cift hesap yok' },
+      { type: 'new', text: 'Dokunmatik detay tum ana grafiklere yayildi: Anasayfa 6 Ay Trendi (aya dokun → kategori kirilimli detay), Haftalik/Yillik rapor barlari ve Gelir-Gider grafigi (dokun → ay ozeti)' },
+      { type: 'new', text: 'Silme korumasi: kayitlarda kullanilan tarife/kampanya/donem ve donemi icinde kayit olan fiyat kampanyalari SILINEMEZ; bunun yerine duzenlenebilir (yeni ✏️ butonlari: tarife adi/fiyati ve donem fiyati duzeltme)' },
+      { type: 'new', text: 'Suresi biten kampanyalar otomatik "Gecmis Kampanyalar", biten donemler "Gecmis Donemler" bolumune iner — gecmis kayitlar ayni fiyatlarla hesaplanmaya devam eder' },
+      { type: 'new', text: 'KDV dahil/haric secimi: tarife, donem fiyati ve fiyat kampanyasi girerken "KDV dahil" kutucugu isaretlenirse sistem tutari net\'e cevirir, KDV sonda bir kez eklenir — cift KDV olusmaz' },
+      { type: 'fix', text: 'Anasayfa Kategori Dagilimi tablosundaki tutar sutunu duzeltildi (onceden hep bos gorunuyordu) ve tarife fiyatlarini da hesaba katiyor' },
+    ]
+  },
   {
     version: 'v155',
     date: '03.07.2026',
