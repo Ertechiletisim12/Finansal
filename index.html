@@ -14,7 +14,7 @@
   // SW — offline destek, PWA
   if('serviceWorker' in navigator){
     const swKod = `
-const CACHE_VER = 'finansal-v157';
+const CACHE_VER = 'finansal-v158';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2682,8 +2682,87 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v157';
-const BUILD_DATE = '03.07.2026 05:00'; // Hazırlanma tarihi (dahili)
+const APP_VERSION = 'v158';
+
+// ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
+// Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
+// alert() global olarak devralınır (65 çağrı tek hamlede), await appConfirm() ise
+// Promise tabanlı appConfirm() ile fonksiyon fonksiyon dönüştürülmüştür.
+const _nativeAlert = window.alert.bind(window);
+let _dlgQueue = [];
+let _dlgBusy = false;
+
+function _ensureDlgModal(){
+  if(document.getElementById('appDialogModal')) return true;
+  if(!document.body) return false;
+  const div = document.createElement('div');
+  div.id = 'appDialogModal';
+  div.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:9500;align-items:center;justify-content:center;padding:16px';
+  div.innerHTML = `
+    <div style="background:var(--panel,#26282b);border:1px solid var(--line,#3a3d42);border-radius:12px;max-width:380px;width:96%;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+      <div id="appDlgHeader" style="padding:12px 16px;display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1a90b8,#0f6a8a)">
+        <span id="appDlgIcon" style="font-size:16px">ℹ️</span>
+        <span id="appDlgTitle" style="font-size:13px;font-weight:800;color:#fff;flex:1">Bilgi</span>
+      </div>
+      <div id="appDlgMsg" style="padding:16px;font-size:12.5px;color:var(--txt,#e8eaed);line-height:1.55;word-break:break-word;max-height:55vh;overflow-y:auto"></div>
+      <div id="appDlgBtns" style="display:flex;gap:8px;padding:0 16px 14px"></div>
+    </div>`;
+  document.body.appendChild(div);
+  return true;
+}
+function _dlgNext(){
+  if(_dlgBusy || !_dlgQueue.length) return;
+  if(!_ensureDlgModal()){ // body henüz yok — native'e düş
+    const d = _dlgQueue.shift();
+    if(d.type==='alert'){ _nativeAlert(d.msg); d.resolve(); }
+    else d.resolve(window.__nativeConfirmFallback ? window.__nativeConfirmFallback(d.msg) : false);
+    _dlgNext(); return;
+  }
+  _dlgBusy = true;
+  const d = _dlgQueue.shift();
+  const modal = document.getElementById('appDialogModal');
+  const hdr = document.getElementById('appDlgHeader');
+  const danger = d.type==='confirm' && /sil|GERİ ALINAMAZ|kalıcı|sıfırla/i.test(d.msg||'');
+  hdr.style.background = d.type==='alert'
+    ? (/❌|geçersiz|hata|olamaz|silinemez|bulunamadı|okunamadı|yanlış/i.test(d.msg||'') ? 'linear-gradient(135deg,#b8860b,#8a6508)' : 'linear-gradient(135deg,#1a90b8,#0f6a8a)')
+    : (danger ? 'linear-gradient(135deg,#e2231a,#8f1510)' : 'linear-gradient(135deg,#1a90b8,#0f6a8a)');
+  document.getElementById('appDlgIcon').textContent = d.type==='alert' ? 'ℹ️' : (danger ? '⚠️' : '❓');
+  document.getElementById('appDlgTitle').textContent = d.type==='alert' ? 'Bilgi' : 'Onay Gerekiyor';
+  // \n → <br>, HTML güvenliği için önce kaçır
+  const esc = String(d.msg==null?'':d.msg).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  document.getElementById('appDlgMsg').innerHTML = esc.replace(/\n/g,'<br>');
+  const btns = document.getElementById('appDlgBtns');
+  const bitir = (sonuc)=>{
+    modal.style.display='none';
+    _dlgBusy = false;
+    document.removeEventListener('keydown', escH, true);
+    d.resolve(sonuc);
+    setTimeout(_dlgNext, 40);
+  };
+  const escH = (e)=>{ if(e.key==='Escape'){ e.stopPropagation(); bitir(d.type==='confirm' ? false : undefined); } };
+  if(d.type==='alert'){
+    btns.innerHTML = '<button id="appDlgOk" style="flex:1;background:var(--panel2,#2c2f33);border:1px solid var(--line,#3a3d42);color:var(--txt,#e8eaed);border-radius:8px;padding:11px;font-size:12px;font-weight:700;cursor:pointer">Tamam</button>';
+    document.getElementById('appDlgOk').onclick = ()=>bitir(undefined);
+  } else {
+    btns.innerHTML = `
+      <button id="appDlgNo" style="flex:1;background:var(--panel2,#2c2f33);border:1px solid var(--line,#3a3d42);color:var(--muted,#9aa0a6);border-radius:8px;padding:11px;font-size:12px;font-weight:700;cursor:pointer">Vazgeç</button>
+      <button id="appDlgYes" style="flex:1;background:${danger?'linear-gradient(135deg,#e2231a,#8f1510)':'linear-gradient(135deg,#1a90b8,#0f6a8a)'};border:none;color:#fff;border-radius:8px;padding:11px;font-size:12px;font-weight:700;cursor:pointer">${danger?'Evet, Devam Et':'Evet'}</button>`;
+    document.getElementById('appDlgNo').onclick = ()=>bitir(false);
+    document.getElementById('appDlgYes').onclick = ()=>bitir(true);
+  }
+  document.addEventListener('keydown', escH, true);
+  modal.style.display='flex';
+}
+function appAlert(msg){
+  return new Promise(res=>{ _dlgQueue.push({type:'alert', msg, resolve:res}); _dlgNext(); });
+}
+function appConfirm(msg){
+  return new Promise(res=>{ _dlgQueue.push({type:'confirm', msg, resolve:res}); _dlgNext(); });
+}
+// alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
+window.alert = appAlert;
+// ==================== DİYALOG SİSTEMİ SONU ====================
+const BUILD_DATE = '03.07.2026 06:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -4221,11 +4300,11 @@ function restoreData(event){
   const file = event.target.files[0];
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = function(e){
+  reader.onload = async function(e){
     try{
       const data = JSON.parse(e.target.result);
       if(!data.entries || !data.prices) { alert('Geçersiz yedek dosyası!'); return; }
-      if(!confirm(`Yedek tarihi: ${data.exportedAt||'?'}\n${data.entries.length} kayıt geri yüklenecek. Mevcut veriler silinecek. Devam?`)) return;
+      if(!await appConfirm(`Yedek tarihi: ${data.exportedAt||'?'}\n${data.entries.length} kayıt geri yüklenecek. Mevcut veriler silinecek. Devam?`)) return;
       entries = data.entries;
       entryLog = data.entryLog || [];
       prices = data.prices;
@@ -4437,7 +4516,7 @@ function clock(){
 }
 setInterval(clock,1000); clock();
 
-function clearAllData(){
+async function clearAllData(){
   // PIN varsa önce PIN sor
   const pin = getPin();
   if(pin){
@@ -4462,11 +4541,11 @@ function clearAllData(){
     return;
   }
   // PIN yoksa sadece confirm
-  if(!confirm('TÜM kayıtlar silinecek. Bu işlem GERİ ALINAMAZ. Emin misiniz?')) return;
+  if(!await appConfirm('TÜM kayıtlar silinecek. Bu işlem GERİ ALINAMAZ. Emin misiniz?')) return;
   _executeClearAllData();
 }
 
-function confirmClearWithPin(){
+async function confirmClearWithPin(){
   const input = document.getElementById('clearPinInput');
   const err = document.getElementById('clearPinErr');
   const pin = getPin();
@@ -4478,7 +4557,7 @@ function confirmClearWithPin(){
     return;
   }
   document.getElementById('clearDataPinModal')?.remove();
-  if(!confirm('TÜM kayıtlar silinecek. Bu işlem GERİ ALINAMAZ!')) return;
+  if(!await appConfirm('TÜM kayıtlar silinecek. Bu işlem GERİ ALINAMAZ!')) return;
   _executeClearAllData();
 }
 
@@ -4497,10 +4576,10 @@ function sbToggle(id){
   el.style.display = isOpen ? 'none' : 'flex';
   if(arrow) arrow.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
 }
-function clearRangeData(){
+async function clearRangeData(){
   const rStart = document.getElementById('rangeStart').value;
   const rEnd = document.getElementById('rangeEnd').value;
-  if(!confirm(`${rStart} – ${rEnd} aralığındaki tüm işlem kayıtları silinecek (fiyatlar ve yatırılan prim etkilenmez). Emin misiniz?`)) return;
+  if(!await appConfirm(`${rStart} – ${rEnd} aralığındaki tüm işlem kayıtları silinecek (fiyatlar ve yatırılan prim etkilenmez). Emin misiniz?`)) return;
   entries = entries.filter(e=> !(e.date>=rStart && e.date<=rEnd));
   entryLog = entryLog.filter(e=> !(e.date>=rStart && e.date<=rEnd));
   saveEntries(); saveEntryLog();
@@ -8176,7 +8255,7 @@ function updateFinansAyModalOzet() {
     </div>` : ''}`;
 }
 
-function saveFinansAyModal() {
+async function saveFinansAyModal() {
   const monthNames=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
   const ym = document.getElementById('finansAyModalYm').value;
   if(!ym||ym.length!==7){ alert('Geçerli ay seçin.'); return; }
@@ -8186,7 +8265,7 @@ function saveFinansAyModal() {
   const needsConfirm = finansAyModalIsNewMode && existingIdx >= 0;
 
   if(needsConfirm) {
-    const step1 = confirm(
+    const step1 = await appConfirm(
       `✏️ MEVCUT KAYIT GÜNCELLENECEKTİR\n\n` +
       `Ay: ${monthLabel(ym)}\n\n` +
       `Bu işlem seçili ayın TÜM finansal verilerini (kâr, masraf, sermaye) girdiğiniz yeni değerlerle değiştirecektir.\n\n` +
@@ -8229,13 +8308,13 @@ function saveFinansAyModal() {
   closeFinansAyModal();
 }
 
-function deleteFinansAyModal() {
+async function deleteFinansAyModal() {
   if(!finansAyModalYm) return;
   const ym = finansAyModalYm;
   const d = finansData.find(x => x.ym === ym);
   if(!d) return;
 
-  const step1 = confirm(
+  const step1 = await appConfirm(
     `🗑️ KAYIT SİLME — 1. ADIM\n\n` +
     `Ay: ${monthLabel(ym)}\n\n` +
     `Bu kay kaydını SİLMEK istediğinizden emin misiniz?\n\n` +
@@ -8245,7 +8324,7 @@ function deleteFinansAyModal() {
 
   const topKar = (d.vodKarTutari||0) + (d.mixyKarTutari||0);
   const topMasraf = (d.vodMasraf||0) + (d.mixyMasraf||0);
-  const step2 = confirm(
+  const step2 = await appConfirm(
     `🗑️ KAYIT SİLME — 2. ADIM (SON ONAY)\n\n` +
     `Silinecek kayıt özeti:\n` +
     `• Ay: ${monthLabel(ym)}\n` +
@@ -8308,13 +8387,13 @@ function addFinansRow(){
     });
   });
 }
-function deleteFinansRow(ym){
+async function deleteFinansRow(ym){
   const d = finansData.find(x=>x.ym===ym);
   if(!d) return;
-  if(!confirm(`🗑️ KAYIT SİLME — 1. ADIM\n\nAy: ${monthLabel(ym)}\n\nBu kaydı silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz! (Çöp kutusundan geri yüklenebilir)`)) return;
+  if(!await appConfirm(`🗑️ KAYIT SİLME — 1. ADIM\n\nAy: ${monthLabel(ym)}\n\nBu kaydı silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz! (Çöp kutusundan geri yüklenebilir)`)) return;
   const topKar = (d.vodKarTutari||0) + (d.mixyKarTutari||0);
   const topMasraf = (d.vodMasraf||0) + (d.mixyMasraf||0);
-  if(!confirm(
+  if(!await appConfirm(
     `🗑️ KAYIT SİLME — 2. ADIM (SON ONAY)\n\n` +
     `• Ay: ${monthLabel(ym)}\n` +
     `• Toplam Kâr: ${fmtF(topKar)}\n` +
@@ -8331,7 +8410,7 @@ function deleteFinansRow(ym){
   saveFinansStore();
   renderFinans();
 }
-function resetFinansData(){
+async function resetFinansData(){
   // v151: PIN korumalı — PIN kayıtlıysa onaysız çalışmaz
   const pin = getPin();
   if(pin){
@@ -8356,11 +8435,11 @@ function resetFinansData(){
     return;
   }
   // PIN yoksa çift onay
-  if(!confirm('Tüm finansal analiz verileri başlangıçtaki orijinal verilerle değiştirilecek. Emin misiniz?')) return;
-  if(!confirm('SON UYARI: Bu işlem GERİ ALINAMAZ. Girdiğiniz tüm finansal aylar silinip varsayılan veri yüklenecek. Devam?')) return;
+  if(!await appConfirm('Tüm finansal analiz verileri başlangıçtaki orijinal verilerle değiştirilecek. Emin misiniz?')) return;
+  if(!await appConfirm('SON UYARI: Bu işlem GERİ ALINAMAZ. Girdiğiniz tüm finansal aylar silinip varsayılan veri yüklenecek. Devam?')) return;
   _executeResetFinansData();
 }
-function confirmResetFinansWithPin(){
+async function confirmResetFinansWithPin(){
   const input = document.getElementById('resetFinansPinInput');
   const err = document.getElementById('resetFinansPinErr');
   const pin = getPin();
@@ -8372,7 +8451,7 @@ function confirmResetFinansWithPin(){
     return;
   }
   document.getElementById('resetFinansPinModal')?.remove();
-  if(!confirm('Finansal veriler varsayılana dönecek. Bu işlem GERİ ALINAMAZ!')) return;
+  if(!await appConfirm('Finansal veriler varsayılana dönecek. Bu işlem GERİ ALINAMAZ!')) return;
   _executeResetFinansData();
 }
 function _executeResetFinansData(){
@@ -8825,7 +8904,7 @@ function renderIslemList(cat, date){
 
 
 // Log kaydı olmayan entries için direkt silme
-function deleteEntryDirect(cat, date, isMnp, btn){
+async function deleteEntryDirect(cat, date, isMnp, btn){
   const mnpFlag = isMnp === true || isMnp === 'true';
   const tip = MNP_CATS.includes(cat) ? (mnpFlag ? ' (MNP)' : ' (Yeni Tesis)') : '';
 
@@ -8838,7 +8917,7 @@ function deleteEntryDirect(cat, date, isMnp, btn){
   }
   if(!e || e.count <= 0){ alert('Silinecek kayıt bulunamadı.'); return; }
 
-  if(!confirm(
+  if(!await appConfirm(
     cat + tip + ' — 1 adet silmek istiyor musunuz?' +
     '\nTarih: ' + date +
     '\nKalan: ' + e.count + ' adet'
@@ -8863,7 +8942,7 @@ function deleteEntryDirect(cat, date, isMnp, btn){
   setTimeout(() => { renderIslemList(cat, date); }, 50);
 }
 
-function confirmDeleteIslem(btn){
+async function confirmDeleteIslem(btn){
   const logId = btn.dataset.logid;
   const cat   = btn.dataset.cat;
   const date  = btn.dataset.date;
@@ -8880,7 +8959,7 @@ function confirmDeleteIslem(btn){
   const saat = log ? log.time || '--:--' : '--:--';
   const aktStr = log && log.activationDate ? ' → Aktivasyon: ' + log.activationDate : '';
 
-  if(!confirm(
+  if(!await appConfirm(
     cat + tip + ' kaydını silmek istiyor musunuz?' +
     '\n\nSaat: ' + saat + aktStr +
     '\nTarih: ' + date
@@ -9171,7 +9250,7 @@ function addTarife(cat){
   render();
 }
 
-function deleteTarife(ad, cat){
+async function deleteTarife(ad, cat){
   cat = cat || 'Red';
   if(!tarifeData[cat]) return;
   // v156: Kayıtlarda kullanılan tarife/kampanya SİLİNEMEZ — geçmiş hesapların bozulmaması için.
@@ -9180,7 +9259,7 @@ function deleteTarife(ad, cat){
     alert('🔒 "' + ad + '" ' + kullanımSayisi + ' kayıtta kullanılıyor — silinemez!\n\nGeçmiş hesapların bozulmaması için korunuyor. İstersen:\n• ✏️ ile fiyatını düzeltebilirsin\n• 📅 ile yeni dönem fiyatı tanımlayabilirsin\n• Süresi bitince otomatik "Geçmiş" bölümüne iner.');
     return;
   }
-  if(!confirm(ad + (cat==='Diğer'?' kampanyasını':' tarifesini') + ' silmek istiyor musunuz?')) return;
+  if(!await appConfirm(ad + (cat==='Diğer'?' kampanyasını':' tarifesini') + ' silmek istiyor musunuz?')) return;
   tarifeData[cat] = tarifeData[cat].filter(t=>t.ad!==ad);
   saveTarifeStore();
   if(typeof scheduleCloudSync==='function') scheduleCloudSync();
@@ -9314,7 +9393,7 @@ function addTarifeDonem(){
   const cb = document.getElementById('tdKdvDahil'); if(cb) cb.checked = false;
   renderTarifeDonemList();
 }
-function deleteTarifeDonem(idx){
+async function deleteTarifeDonem(idx){
   const t = (tarifeData[_donemCat]||[]).find(x=>x.ad===_donemAd);
   if(!t || !t.donemler) return;
   const d = t.donemler[idx];
@@ -9327,7 +9406,7 @@ function deleteTarifeDonem(idx){
     alert('🔒 Bu dönemde "' + _donemAd + '" ile girilmiş ' + kullanım + ' kayıt var — dönem silinemez!\n\nGeçmiş hesapların bozulmaması için korunuyor. ✏️ ile dönem fiyatını düzeltebilirsin; süresi bittiğinde otomatik "Geçmiş Dönemler" altına iner.');
     return;
   }
-  if(!confirm('📅 ' + (d.s||'?') + ' → ' + (d.e||'?') + ' dönemi (' + d.fiyat.toLocaleString('tr-TR') + ' ₺) silinsin mi?\nBu tarihlerdeki kayıtlar temel fiyata döner.')) return;
+  if(!await appConfirm('📅 ' + (d.s||'?') + ' → ' + (d.e||'?') + ' dönemi (' + d.fiyat.toLocaleString('tr-TR') + ' ₺) silinsin mi?\nBu tarihlerdeki kayıtlar temel fiyata döner.')) return;
   t.donemler.splice(idx, 1);
   saveTarifeStore();
   if(typeof scheduleCloudSync==='function') scheduleCloudSync();
@@ -9511,7 +9590,7 @@ function saveKampanya(){
   renderKampanyaList();
   render();
 }
-function deleteKampanya(id){
+async function deleteKampanya(id){
   const k = kampanyaData.find(x=>x.id===id);
   if(!k) return;
   // v156: Kampanya döneminde ilgili kategori(ler)de kayıt varsa SİLİNEMEZ — hesap bütünlüğü korunur
@@ -9525,7 +9604,7 @@ function deleteKampanya(id){
     alert('🔒 Bu kampanyanın döneminde ' + kullanım + ' kayıt var — silinemez!\n\nGeçmiş hesapların bozulmaması için korunuyor. ✏️ ile düzenleyebilirsin; süresi bittiğinde otomatik "📜 Geçmiş Kampanyalar" bölümüne iner.');
     return;
   }
-  if(!confirm('Bu kampanyayı silmek istiyor musunuz?')) return;
+  if(!await appConfirm('Bu kampanyayı silmek istiyor musunuz?')) return;
   kampanyaData = kampanyaData.filter(x=>x.id!==id);
   saveKampanyaStore();
   renderKampanyaList();
@@ -10051,10 +10130,10 @@ function toggleSelectAll(checked){
   document.querySelectorAll('.mkSelectBox').forEach(cb => cb.checked = checked);
 }
 
-function topluOnayla(){
+async function topluOnayla(){
   const secilen = [...document.querySelectorAll('.mkSelectBox:checked')].map(cb=>cb.dataset.id);
   if(!secilen.length){ alert('Lütfen onaylanacak kayıtları seçin.'); return; }
-  if(!confirm(secilen.length + ' kayıt onaylanacak ve primlerine dahil edilecek. Emin misiniz?')) return;
+  if(!await appConfirm(secilen.length + ' kayıt onaylanacak ve primlerine dahil edilecek. Emin misiniz?')) return;
 
   secilen.forEach(id=>{
     const m = musteriler.find(x=>x.id===id);
@@ -10072,11 +10151,11 @@ function topluOnayla(){
 }
 
 // Belirli bir tarihe kadar olan bekleyen kayitlari toplu onayla
-function topluOnaylaGecmis(tarihEsigi){
+async function topluOnaylaGecmis(tarihEsigi){
   const esik = tarihEsigi || '2026-06-28';
   const bekleyenler = musteriler.filter(m=>m.durum==='bekliyor' && m.entryDate && m.entryDate <= esik);
   if(!bekleyenler.length){ alert('Bu tarihe kadar bekleyen kayıt yok.'); return; }
-  if(!confirm(bekleyenler.length + ' kayıt (' + esik + ' ve öncesi) onaylanacak. Emin misiniz?')) return;
+  if(!await appConfirm(bekleyenler.length + ' kayıt (' + esik + ' ve öncesi) onaylanacak. Emin misiniz?')) return;
   bekleyenler.forEach(m=>{
     m.durum = 'aktif';
     m.primDurum = 'dahil';
@@ -10113,10 +10192,10 @@ function openMusteriEdit(id){
   }, 80);
 }
 
-function deleteMusteriKayit(id){
+async function deleteMusteriKayit(id){
   const m = musteriler.find(x=>x.id===id);
   if(!m) return;
-  if(!confirm('Bu müşteri kaydını ve ilgili prim kaydını silmek istiyor musunuz?')) return;
+  if(!await appConfirm('Bu müşteri kaydını ve ilgili prim kaydını silmek istiyor musunuz?')) return;
 
   // Müşteriyi sil
   musteriler = musteriler.filter(x=>x.id!==id);
@@ -10351,9 +10430,9 @@ function editNotFromDetail() {
   document.getElementById('notModal').style.display = 'flex';
 }
 
-function deleteNot() {
+async function deleteNot() {
   if (!notDetailId) return;
-  if (!confirm('Bu notu silmek istiyor musunuz?')) return;
+  if (!await appConfirm('Bu notu silmek istiyor musunuz?')) return;
   notlarData = notlarData.filter(n => n.id !== notDetailId);
   saveNotlarStore();
   closeNotDetailModal();
@@ -10600,10 +10679,10 @@ function saveKasaSayim(){
   closeKasaSayimModal();
   renderKasa();
 }
-function deleteKasaSayim(id){
+async function deleteKasaSayim(id){
   const k = kasaData.find(x=>x.id===id);
   if(!k) return;
-  if(!confirm(`${k.date} tarihli sayım silinecek. Emin misiniz?`)) return;
+  if(!await appConfirm(`${k.date} tarihli sayım silinecek. Emin misiniz?`)) return;
   kasaData = kasaData.filter(x=>x.id!==id);
   saveKasaStore();
   renderKasa();
@@ -10977,14 +11056,14 @@ function addKategori() {
   renderKatYonetimListesi();
 }
 
-function deleteKategori(idx) {
+async function deleteKategori(idx) {
   const list = katYonetimTip==='gelir' ? GELIR_KATEGORILER : GIDER_KATEGORILER;
   const kat = list[idx];
   const kayitSayisi = gelirData.filter(g=>g.tip===katYonetimTip && g.kategori===kat).length;
   const uyari = kayitSayisi > 0
     ? `"${kat}" kategorisi ${kayitSayisi} kayıtta kullanılıyor.\nKategori listeden silinir ama mevcut kayıtlar SİLİNMEZ, kategori adları üzerlerinde kalır.\n\nSilmek istiyor musunuz?`
     : `"${kat}" kategorisini silmek istiyor musunuz?`;
-  if(!confirm(uyari)) return;
+  if(!await appConfirm(uyari)) return;
   list.splice(idx, 1);
   saveGelirKategoriler();
   renderKatYonetimListesi();
@@ -11181,8 +11260,8 @@ function saveNotifHistoryNote(key, note){
   const h = notifHistory.find(x=>x.key===key);
   if(h){ h.note = note; try { localStorage.setItem(STORE_KEY_NOTIF_HISTORY, JSON.stringify(notifHistory)); } catch(e) {} }
 }
-function clearNotifHistory(){
-  if(!confirm('Tüm bildirim geçmişi silinecek. Emin misiniz?')) return;
+async function clearNotifHistory(){
+  if(!await appConfirm('Tüm bildirim geçmişi silinecek. Emin misiniz?')) return;
   notifHistory = [];
   try { localStorage.removeItem(STORE_KEY_NOTIF_HISTORY); } catch(e) {}
   renderNotifPanel();
@@ -12593,13 +12672,13 @@ function renderFinansTrash(){
     <button onclick="clearAllTrash()" style="background:transparent;border:1px solid #7a1f1f;color:#ff5252;border-radius:6px;padding:6px 12px;font-size:11.5px;font-weight:600;cursor:pointer">🗑️ Çöp Kutusunu Tamamen Temizle</button>
   </div>`;
 }
-function restoreFinansTrash(idx){
+async function restoreFinansTrash(idx){
   const sorted = [...finansTrash].sort((a,b)=>(b._deletedAt||'').localeCompare(a._deletedAt||''));
   const item = sorted[idx];
   if(!item) return;
   const alreadyExists = finansData.some(x=>x.ym===item.ym);
   if(alreadyExists){
-    if(!confirm(`⚠️ ${monthLabel(item.ym)} ayı zaten mevcut!\n\nMevcut kaydın üzerine yazılacak. Devam etmek istiyor musunuz?`)) return;
+    if(!await appConfirm(`⚠️ ${monthLabel(item.ym)} ayı zaten mevcut!\n\nMevcut kaydın üzerine yazılacak. Devam etmek istiyor musunuz?`)) return;
     const existIdx = finansData.findIndex(x=>x.ym===item.ym);
     const { _deletedAt, ...clean } = item;
     finansData[existIdx] = clean;
@@ -12616,18 +12695,18 @@ function restoreFinansTrash(idx){
   renderFinans();
   renderFinansTrash();
 }
-function permanentDeleteTrash(idx){
+async function permanentDeleteTrash(idx){
   const sorted = [...finansTrash].sort((a,b)=>(b._deletedAt||'').localeCompare(a._deletedAt||''));
   const item = sorted[idx];
   if(!item) return;
-  if(!confirm(`Bu kaydı çöp kutusundan da kalıcı olarak silmek istediğinizden emin misiniz?\n\nAy: ${monthLabel(item.ym)}\n\nBu işlem GERİ ALINAMAZ.`)) return;
+  if(!await appConfirm(`Bu kaydı çöp kutusundan da kalıcı olarak silmek istediğinizden emin misiniz?\n\nAy: ${monthLabel(item.ym)}\n\nBu işlem GERİ ALINAMAZ.`)) return;
   const origIdx = finansTrash.findIndex(x=>x._deletedAt===item._deletedAt && x.ym===item.ym);
   if(origIdx>=0) finansTrash.splice(origIdx,1);
   saveTrashStore();
   renderFinansTrash();
 }
-function clearAllTrash(){
-  if(!confirm(`Çöp kutusundaki TÜM ${finansTrash.length} kayıt kalıcı olarak silinecek!\n\nBu işlem GERİ ALINAMAZ. Emin misiniz?`)) return;
+async function clearAllTrash(){
+  if(!await appConfirm(`Çöp kutusundaki TÜM ${finansTrash.length} kayıt kalıcı olarak silinecek!\n\nBu işlem GERİ ALINAMAZ. Emin misiniz?`)) return;
   finansTrash = [];
   saveTrashStore();
   renderFinansTrash();
@@ -14022,6 +14101,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v158',
+    date: '03.07.2026',
+    items: [
+      { type: 'ui', text: 'Tarayici popup pencereleri TAMAMEN kaldirildi: 65 bilgi mesaji (alert) ve 28 onay sorusu (confirm) artik uygulama tasariminda sik modal pencerelerle gosteriliyor' },
+      { type: 'ui', text: 'Onay pencereleri akilli: silme/geri alinamaz islemlerde kirmizi tehlike temasi ve "Evet, Devam Et" butonu; normal onaylarda mavi tema. ESC tusu = Vazgec' },
+      { type: 'ui', text: 'Bilgi pencereleri kuyruklu: arka arkaya birden fazla mesaj sirayla gosterilir, hicbiri kaybolmaz' },
+      { type: 'fix', text: 'Tum silme/onaylama akislari (kayit, musteri, kasa sayimi, kampanya, donem, not, kategori, cop kutusu, toplu onay, veri sifirlama) yeni onay sistemine tasindi ve tek tek test edildi' },
+    ]
+  },
   {
     version: 'v157',
     date: '03.07.2026',
