@@ -14,7 +14,7 @@
   // SW — offline destek, PWA
   if('serviceWorker' in navigator){
     const swKod = `
-const CACHE_VER = 'finansal-v161';
+const CACHE_VER = 'finansal-v162';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -1858,35 +1858,34 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- Özet Kartlar -->
       <div class="stats-row" id="hedefSummaryRow" style="margin-bottom:10px"></div>
 
-      <!-- İlerleme Barları + Ay Seçici -->
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:18px 0 8px">
-        <div class="section-title" style="margin:0">📊 Hedef İlerlemesi & Kategori Detayı</div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <label style="font-size:11px;color:var(--muted)">Yıl:</label>
-          <select id="hedefProgYilSel" onchange="onHedefProgYilChange()" style="font-size:11px;padding:3px 7px"></select>
-          <label style="font-size:11px;color:var(--muted)">Ay:</label>
-          <select id="hedefProgAySel" onchange="renderHedefPage()" style="font-size:11px;padding:3px 7px"></select>
+      <!-- v162: İlerleme (dar, sol) + Hedef Planlaması (sağ) yan yana -->
+      <div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-top:14px">
+        <div style="flex:1;min-width:min(340px,100%)">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 8px">
+            <div class="section-title" style="margin:0">📊 İlerleme & Kategori Detayı</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <select id="hedefProgYilSel" onchange="onHedefProgYilChange()" style="font-size:11px;padding:3px 7px"></select>
+              <select id="hedefProgAySel" onchange="renderHedefPage()" style="font-size:11px;padding:3px 7px"></select>
+            </div>
+          </div>
+          <div id="hedefProgressDiv" style="margin-bottom:10px"></div>
         </div>
-      </div>
-      <div id="hedefProgressDiv" style="margin-bottom:10px"></div>
 
-      <!-- Hedef Planlaması + Filtreler -->
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:18px 0 8px">
-        <div class="section-title" style="margin:0">📅 Hedef Planlaması</div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <label style="font-size:11px;color:var(--muted)">Yıl:</label>
-          <select id="hedefPlanYil" onchange="renderHedefPage()" style="font-size:11px;padding:3px 7px"></select>
-          <label style="font-size:11px;color:var(--muted)">Göster:</label>
-          <select id="hedefPlanGoster" onchange="renderHedefPage()" style="font-size:11px;padding:3px 7px">
-            <option value="hedefli">Sadece Hedefliler</option>
-            <option value="hepsi">Tüm Aylar</option>
-            <option value="ileri6">İleri 6 Ay</option>
-            <option value="ileri12">İleri 12 Ay</option>
-          </select>
+        <div style="flex:1.25;min-width:min(340px,100%)">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 8px">
+            <div class="section-title" style="margin:0">📅 Hedef Planlaması</div>
+            <select id="hedefPlanYil" onchange="renderHedefPage()" style="font-size:11px;padding:3px 7px"></select>
+          </div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px" id="hedefPlanBtns">
+            <button class="prim-tool-pill hplan-btn" data-v="hedefli" onclick="setHedefPlanGoster('hedefli')" style="padding:4px 11px;font-size:10.5px">🎯 Sadece Hedefliler</button>
+            <button class="prim-tool-pill hplan-btn" data-v="hepsi" onclick="setHedefPlanGoster('hepsi')" style="padding:4px 11px;font-size:10.5px">📋 Tüm Aylar</button>
+            <button class="prim-tool-pill hplan-btn" data-v="ileri6" onclick="setHedefPlanGoster('ileri6')" style="padding:4px 11px;font-size:10.5px">6 Ay</button>
+            <button class="prim-tool-pill hplan-btn" data-v="ileri12" onclick="setHedefPlanGoster('ileri12')" style="padding:4px 11px;font-size:10.5px">12 Ay</button>
+          </div>
+          <div class="table-wrap" style="max-height:520px;overflow-y:auto;margin-bottom:8px">
+            <table class="main-table" id="hedef6AyTable"></table>
+          </div>
         </div>
-      </div>
-      <div class="table-wrap" style="max-height:480px;overflow-y:auto;margin-bottom:8px">
-        <table class="main-table" id="hedef6AyTable"></table>
       </div>
 
     </div><!-- /page-hedef -->
@@ -2152,6 +2151,13 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <button class="preview-btn" onclick="openExportPreview('compareTable','Ay_Karsilastirma')" style="white-space:nowrap;flex-shrink:0">📤 Dışa Aktar</button>
         </div>
       </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:7px 10px">
+        <span style="font-size:10.5px;font-weight:700;color:var(--muted)">➕ Karşılaştırmaya ay ekle:</span>
+        <select id="cmpEkstraAy" style="font-size:11px;padding:4px 6px">${["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"].map((n,i)=>`<option value="${String(i+1).padStart(2,'0')}">${n}</option>`).join('')}</select>
+        <select id="cmpEkstraYil" style="font-size:11px;padding:4px 6px"></select>
+        <button class="prim-tool-pill" onclick="addCmpAy()" style="background:rgba(63,208,255,0.12);border-color:rgba(63,208,255,0.35);color:var(--accent);padding:4px 12px">Ekle</button>
+        <span style="font-size:9px;color:var(--muted)">· satır başındaki ✕ ile çıkarılır · Değişim satırı ilk↔son ayı kıyaslar</span>
+      </div>
       <div class="compare-panel" id="comparePanel"></div>
     </div>
   </div>
@@ -2165,6 +2171,14 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button onclick="closePrimModal('tablolarModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:7px 10px;margin-bottom:10px">
+        <span style="font-size:10.5px;font-weight:700;color:var(--muted)">📅 Dönem filtresi:</span>
+        <select id="tblYilSel" onchange="render()" style="font-size:11px;padding:4px 8px">
+          <option value="range">Sayfadaki seçili aralık</option>
+          <option value="all">Tüm aylar</option>
+        </select>
+        <span style="font-size:9px;color:var(--muted)">· iki tabloya birden uygulanır — sayfaya dönmeden dönem değiştir</span>
+      </div>
       <div class="section-title-row" style="margin-top:0">
         <div class="section-title">Aylık Kategori Dağılımı (Detay)</div>
         <button class="preview-btn" onclick="openExportPreview('mainTable','Aylik_Kategori_Dagilimi')">📤 Dışa Aktar</button>
@@ -2193,6 +2207,14 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button onclick="closePrimModal('saatModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:7px 10px;margin-bottom:10px">
+        <span style="font-size:10.5px;font-weight:700;color:var(--muted)">📅 Aralık:</span>
+        <button class="prim-tool-pill saat-flt" data-f="range" onclick="setSaatAralik('range')" style="padding:4px 10px;font-size:10px">Sayfa aralığı</button>
+        <button class="prim-tool-pill saat-flt" data-f="buay" onclick="setSaatAralik('buay')" style="padding:4px 10px;font-size:10px">Bu Ay</button>
+        <button class="prim-tool-pill saat-flt" data-f="gecenay" onclick="setSaatAralik('gecenay')" style="padding:4px 10px;font-size:10px">Geçen Ay</button>
+        <button class="prim-tool-pill saat-flt" data-f="30g" onclick="setSaatAralik('30g')" style="padding:4px 10px;font-size:10px">Son 30 Gün</button>
+        <button class="prim-tool-pill saat-flt" data-f="all" onclick="setSaatAralik('all')" style="padding:4px 10px;font-size:10px">Tümü</button>
+      </div>
       <div class="hourly-bar-wrap">
         <h3>
           ⏱ Saatlik Giriş Yoğunluğu
@@ -2233,25 +2255,27 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button onclick="closePrimModal('fiyatModal')" style="background:rgba(255,255,255,0.15);border:none;color:#fcd34d;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
-      <details class="price-panel" id="pricePanelDetails" open>
-        <summary style="cursor:pointer;font-size:13px;font-weight:700;list-style:none;display:flex;align-items:center;gap:8px">
-          <span style="font-size:11px">▶</span> Aylık Birim Fiyatlar
-        </summary>
-        <div class="hdr" style="margin-top:12px">
+      <div class="price-panel" id="pricePanelDetails">
+        <div style="font-size:13px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:4px">💰 Aylık Birim Fiyatlar</div>
+        <div class="hdr" style="margin-top:8px">
           <span style="color:var(--muted);font-size:12px">Ay seç:</span>
           <select id="priceMonthSel" onchange="render()"></select>
         </div>
         <div class="price-row" id="priceRow"></div>
         <div class="note">Her kategori için o aya ait adet başı prim tutarını girip kaydedin. Bir ay için fiyat tanımlanmazsa bir önceki tanımlı aydaki fiyat otomatik kullanılır.</div>
         <div class="price-history">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);cursor:pointer;font-weight:700">
+              <input type="checkbox" id="fiyatGecmisToggle" onchange="render()" style="width:14px;height:14px;cursor:pointer">
+              📜 Geçmiş dönemleri göster
+            </label>
             <button class="preview-btn" onclick="openExportPreview('priceHistTable','Fiyat_Gecmisi')">📤 Dışa Aktar</button>
           </div>
           <div style="overflow-x:auto;max-width:100%">
             <table id="priceHistTable" style="min-width:400px"></table>
           </div>
         </div>
-      </details>
+      </div>
 
       <div class="section-title" style="margin-top:16px">Veri Yönetimi</div>
       <div class="data-panel">
@@ -2695,7 +2719,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v161';
+const APP_VERSION = 'v162';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2766,6 +2790,40 @@ function _dlgNext(){
   document.addEventListener('keydown', escH, true);
   modal.style.display='flex';
 }
+// v162: Genel PIN onay penceresi — PIN kayıtlıysa doğrulama ister, Promise<boolean>
+function appPinConfirm(baslik, aciklama){
+  return new Promise(res=>{
+    const pin = getPin();
+    if(!pin){ res(true); return; }
+    const id = 'appPinModal_'+Date.now();
+    const m = document.createElement('div');
+    m.id = id;
+    m.style.cssText = 'position:fixed;z-index:9600;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = `
+      <div style="background:var(--panel,#26282b);border:1px solid rgba(255,159,10,0.4);border-radius:14px;padding:22px;width:100%;max-width:320px;text-align:center">
+        <div style="font-size:26px;margin-bottom:6px">🔐</div>
+        <div style="font-size:13.5px;font-weight:800;color:#ff9f5a;margin-bottom:6px">${baslik}</div>
+        <div style="font-size:11px;color:var(--muted,#9aa0a6);margin-bottom:14px">${aciklama}</div>
+        <input type="password" inputmode="numeric" maxlength="8" placeholder="PIN"
+          style="width:100%;padding:10px;background:var(--panel2,#2c2f33);border:1px solid var(--line,#3a3d42);border-radius:8px;color:var(--txt,#e8eaed);font-size:16px;text-align:center;box-sizing:border-box;letter-spacing:4px">
+        <div class="pinErr" style="font-size:11px;color:#ff5252;margin-top:8px;min-height:16px"></div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="pinNo" style="flex:1;background:var(--panel2,#2c2f33);border:1px solid var(--line,#3a3d42);color:var(--muted,#9aa0a6);border-radius:8px;padding:10px;font-size:12px;font-weight:700;cursor:pointer">İptal</button>
+          <button class="pinYes" style="flex:1;background:rgba(255,159,10,0.15);border:1px solid rgba(255,159,10,0.5);color:#ff9f5a;border-radius:8px;padding:10px;font-size:12px;font-weight:700;cursor:pointer">Onayla</button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    const inp = m.querySelector('input');
+    setTimeout(()=>inp.focus(), 80);
+    const bitir = ok => { m.remove(); res(ok); };
+    m.querySelector('.pinNo').onclick = ()=>bitir(false);
+    m.querySelector('.pinYes').onclick = ()=>{
+      if(inp.value === pin) bitir(true);
+      else { m.querySelector('.pinErr').textContent = '❌ Yanlış PIN'; inp.value=''; inp.focus(); }
+    };
+    inp.onkeydown = e => { if(e.key==='Enter') m.querySelector('.pinYes').click(); if(e.key==='Escape') bitir(false); };
+  });
+}
 function appAlert(msg){
   return new Promise(res=>{ _dlgQueue.push({type:'alert', msg, resolve:res}); _dlgNext(); });
 }
@@ -2775,7 +2833,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '03.07.2026 13:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '03.07.2026 15:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3129,14 +3187,27 @@ function checkBackupPermissionLost(){
 // ===== Yedek İzni Uyarısı Sonu =====
 
 // ===== EntryLog Saat Analizi Fonksiyonu =====
+// v162: Saat analizi modal içi aralık filtresi
+let saatAralik = 'range';
+function setSaatAralik(f){ saatAralik = f; renderEntryLogCharts(); }
 function renderEntryLogCharts(){
   const barsDiv = document.getElementById('hourlyBars');
   const gridDiv = document.getElementById('heatmapGrid');
   if(!barsDiv || !gridDiv) return;
 
-  // Aktif filtre aralığını al
-  const rStart = (document.getElementById('rangeStart')?.value) || '';
-  const rEnd   = (document.getElementById('rangeEnd')?.value)   || '';
+  // Aktif filtre aralığını al — v162: modal filtresi öncelikli
+  let rStart = (document.getElementById('rangeStart')?.value) || '';
+  let rEnd   = (document.getElementById('rangeEnd')?.value)   || '';
+  if(saatAralik === 'all'){ rStart=''; rEnd=''; }
+  else if(saatAralik === 'buay'){ rStart = thisMonthKey()+'-01'; rEnd = todayStr(); }
+  else if(saatAralik === 'gecenay'){ const g = addMonths(thisMonthKey(),-1); rStart = g+'-01'; rEnd = g+'-31'; }
+  else if(saatAralik === '30g'){ const d = new Date(); d.setDate(d.getDate()-30); rStart = d.toISOString().slice(0,10); rEnd = todayStr(); }
+  document.querySelectorAll('.saat-flt').forEach(b=>{
+    const aktif = b.dataset.f === saatAralik;
+    b.style.background = aktif ? 'rgba(90,79,207,0.25)' : '';
+    b.style.borderColor = aktif ? 'rgba(90,79,207,0.6)' : '';
+    b.style.color = aktif ? '#b0a6ff' : '';
+  });
 
   // entryLog'u filtrele — tarih yoksa tüm log
   const filteredLog = entryLog.filter(e => {
@@ -4605,6 +4676,8 @@ function sbToggle(id){
 async function clearRangeData(){
   const rStart = document.getElementById('rangeStart').value;
   const rEnd = document.getElementById('rangeEnd').value;
+  // v162: PIN korumalı — yanlışlıkla toplu silme riski kapatıldı
+  if(!await appPinConfirm('Seçili Aralıktaki Kayıtları Sil', rStart+' – '+rEnd+' aralığındaki TÜM işlem kayıtları silinecek. Bu işlem geri alınamaz.')) return;
   if(!await appConfirm(`${rStart} – ${rEnd} aralığındaki tüm işlem kayıtları silinecek (fiyatlar ve yatırılan prim etkilenmez). Emin misiniz?`)) return;
   entries = entries.filter(e=> !(e.date>=rStart && e.date<=rEnd));
   entryLog = entryLog.filter(e=> !(e.date>=rStart && e.date<=rEnd));
@@ -5102,12 +5175,17 @@ function render(){
       return `<div class="pi">${c}<input type="number" step="0.01" id="price_${c}" value="${v}"></div>`;
     }).join('') + `<button onclick="savePricesFromForm()">Bu Ayın Fiyatlarını Kaydet</button>`;
 
-  // price history table
-  const histYms = Object.keys(prices).sort().reverse();
+  // price history table — v162: geçmiş dönemler varsayılan gizli, satırda ✏️ düzenleme
+  let histYms = Object.keys(prices).sort().reverse();
+  const gecmisAc = document.getElementById('fiyatGecmisToggle')?.checked;
+  const buYmF = thisMonthKey();
+  const gizlenen = histYms.filter(ym => ym < buYmF).length;
+  if(!gecmisAc) histYms = histYms.filter(ym => ym >= buYmF);
   const ph = document.getElementById('priceHistTable');
-  if(histYms.length){
-    ph.innerHTML = '<tr><th>Ay</th>'+CATS.map(c=>`<th>${c}</th>`).join('')+'</tr>' +
-      histYms.map(ym=>`<tr><td>${monthLabel(ym)}</td>${CATS.map(c=>`<td>${prices[ym][c]!=null?fmt(prices[ym][c]):'<span style=\"color:var(--muted)\">—</span>'}</td>`).join('')}</tr>`).join('');
+  if(histYms.length || gizlenen){
+    ph.innerHTML = '<tr><th>Ay</th>'+CATS.map(c=>`<th>${c}</th>`).join('')+'<th style="width:40px"></th></tr>' +
+      histYms.map(ym=>`<tr><td>${monthLabel(ym)}${ym<buYmF?' <span style="font-size:8px;color:var(--muted)">📜</span>':''}</td>${CATS.map(c=>`<td>${prices[ym][c]!=null?fmt(prices[ym][c]):'<span style=\"color:var(--muted)\">—</span>'}</td>`).join('')}<td><button onclick="fiyatAyiDuzenle('${ym}')" title="Bu ayın fiyatlarını düzenle" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button></td></tr>`).join('') +
+      (!gecmisAc && gizlenen ? `<tr><td colspan="${CATS.length+2}" style="text-align:center;color:var(--muted);font-size:10px;padding:8px">📜 ${gizlenen} geçmiş dönem gizli — görmek için yukarıdaki anahtarı aç</td></tr>` : '');
   } else {
     ph.innerHTML = '<tr><td style="color:var(--muted)">Henüz kayıtlı fiyat geçmişi yok.</td></tr>';
   }
@@ -5122,7 +5200,10 @@ function render(){
   // monthAmountAll: kampanya fiyatıyla hesapla
   const monthAmountAll = (k,c) => {
     const ents = entries.filter(e=>effectiveYm(e)===k && e.cat===c);
-    if(ents.length) return ents.reduce((a,e)=>a+e.count*(kampanyaFiyatFor(e.date,c,priceFor(k,c))||0),0);
+    if(ents.length) return ents.reduce((a,e)=>{
+      const tF = tarifeFiyatFor(e, c); // v162: tarife/ürün ve dönem fiyatları da dahil
+      return a + e.count*(tF!=null ? tF : (kampanyaFiyatFor(e.date,c,priceFor(k,c))||0));
+    },0);
     return (monthMapAll[k]?.[c]||0) * kampanyaFiyatFor(k+'-15', c, priceFor(k,c));
   };
   const monthSumAll = k => CATS.reduce((a,c)=> a + monthAmountAll(k,c), 0);
@@ -5138,6 +5219,8 @@ function render(){
     const curY = new Date().getFullYear();
     const yrs = []; for(let y=curY-3;y<=curY+1;y++) yrs.push(y);
     cmpYearSel.innerHTML = yrs.map(y=>`<option value="${y}">${y}</option>`).join('');
+    const eY = document.getElementById('cmpEkstraYil');
+    if(eY) eY.innerHTML = yrs.map(y=>`<option value="${y}" ${y===curY?'selected':''}>${y}</option>`).join('');
   }
   // henüz seçim yapılmadıysa, aktif tarihin ay/yılını varsayılan yap
   if(!cmpMonthSel.dataset.init){
@@ -5161,26 +5244,45 @@ function render(){
   const diffColor = totalDiff>=0 ? '#4cd964' : '#ff5252';
   const diffArrow = totalDiff>=0 ? '▲' : '▼';
 
-  const prevCntTotal = CATS.reduce((a,c)=>a+(monthMapAll[prevKey]?.[c]||0),0);
-  const curCntTotal = CATS.reduce((a,c)=>a+(monthMapAll[curKey]?.[c]||0),0);
-
-  // Kategori satırları için veriler (adet + tutar)
-  const catData = CATS.map(c => {
-    const pCnt = monthMapAll[prevKey]?.[c]||0, cCnt = monthMapAll[curKey]?.[c]||0;
-    const pv = monthAmountAll(prevKey,c), cv = monthAmountAll(curKey,c);
-    const d = cv-pv;
-    const pct = pv ? (d/pv*100) : (cv>0?100:0);
-    return {c, pCnt, cCnt, pv, cv, d, pct};
-  });
+  // v162: ÇOKLU AY KARŞILAŞTIRMA — ana iki ay + kullanıcının eklediği aylar (kronolojik)
+  const ayListesi = [...new Set([prevKey, curKey, ...cmpEkstraAylar])].sort();
+  const ilkAy = ayListesi[0], sonAy = ayListesi[ayListesi.length-1];
 
   const thStyle = 'padding:5px 8px;font-size:11px;font-weight:600;color:var(--muted);text-align:center;border-bottom:1px solid var(--line)';
   const tdStyle = 'padding:5px 8px;text-align:center;border-bottom:1px solid var(--line);font-size:11.5px';
   const tdLeftStyle = 'padding:5px 8px;text-align:left;border-bottom:1px solid var(--line);font-size:12px;font-weight:600';
 
   const catThs = CATS.map(c=>`<th style="${thStyle}">${c}</th>`).join('');
-  const prevTds = catData.map(x=>`<td style="${tdStyle}"><b>${x.pCnt}</b> adet<br><span style="color:var(--muted)">${fmt(x.pv)}</span></td>`).join('');
-  const curTds  = catData.map(x=>`<td style="${tdStyle}"><b>${x.cCnt}</b> adet<br><span style="color:var(--muted)">${fmt(x.cv)}</span></td>`).join('');
-  const diffTds = catData.map(x=>`<td style="${tdStyle};color:${x.d>=0?'#4cd964':'#ff5252'};font-weight:700">${x.d>=0?'▲':'▼'} ${Math.abs(x.pct).toFixed(1)}%</td>`).join('');
+  const ayRows = ayListesi.map(ay => {
+    const cnts = CATS.map(c => monthMapAll[ay]?.[c]||0);
+    const vals = CATS.map(c => monthAmountAll(ay,c));
+    const cntTot = cnts.reduce((a,b)=>a+b,0);
+    const valTot = vals.reduce((a,b)=>a+b,0);
+    const ekstra = cmpEkstraAylar.includes(ay);
+    const tds = CATS.map((c,i)=>`<td style="${tdStyle}"><b>${cnts[i]}</b> adet<br><span style="color:var(--muted)">${fmt(vals[i])}</span></td>`).join('');
+    return `<tr>
+      <td style="${tdLeftStyle};${ay===curKey?'':'color:var(--muted)'}">${monthLabel(ay)}${ekstra?` <span onclick="removeCmpAy('${ay}')" title="Bu ayı çıkar" style="cursor:pointer;color:#ff7070;font-size:10px">✕</span>`:''}</td>
+      ${tds}
+      <td style="${tdStyle};font-weight:700">${cntTot}</td>
+      <td style="${tdStyle};font-weight:700">${fmt(valTot)}</td>
+      <td style="${tdStyle};font-weight:700;color:var(--gold)">${fmt(valTot*(1+KDV_ORANI))}</td>
+    </tr>`;
+  }).join('');
+
+  // Değişim: İLK ay ↔ SON ay
+  const ilkVals = CATS.map(c=>monthAmountAll(ilkAy,c)), sonVals = CATS.map(c=>monthAmountAll(sonAy,c));
+  const ilkCnts = CATS.map(c=>monthMapAll[ilkAy]?.[c]||0), sonCnts = CATS.map(c=>monthMapAll[sonAy]?.[c]||0);
+  const ilkTot = ilkVals.reduce((a,b)=>a+b,0), sonTot = sonVals.reduce((a,b)=>a+b,0);
+  const ilkCntTot = ilkCnts.reduce((a,b)=>a+b,0), sonCntTot = sonCnts.reduce((a,b)=>a+b,0);
+  const tDiff = sonTot-ilkTot;
+  const tPct = ilkTot ? (tDiff/ilkTot*100) : (sonTot>0?100:0);
+  const dColor = tDiff>=0 ? '#4cd964' : '#ff5252';
+  const dArrow = tDiff>=0 ? '▲' : '▼';
+  const diffTds = CATS.map((c,i)=>{
+    const d = sonVals[i]-ilkVals[i];
+    const pct = ilkVals[i] ? (d/ilkVals[i]*100) : (sonVals[i]>0?100:0);
+    return `<td style="${tdStyle};color:${d>=0?'#4cd964':'#ff5252'};font-weight:700">${d>=0?'▲':'▼'} ${Math.abs(pct).toFixed(1)}%</td>`;
+  }).join('');
 
   cmpDiv.innerHTML = `
     <div style="overflow-x:auto;max-width:100%">
@@ -5190,31 +5292,18 @@ function render(){
           <th style="${thStyle};text-align:left;width:110px"></th>
           ${catThs}
           <th style="${thStyle};color:var(--txt)">TOPLAM (adet)</th>
-          <th style="${thStyle};color:var(--txt)">TUTAR</th>
+          <th style="${thStyle};color:var(--txt)">TUTAR (hariç)</th>
           <th style="${thStyle};color:var(--txt)">KDV DAHİL</th>
         </tr>
       </thead>
       <tbody>
+        ${ayRows}
         <tr>
-          <td style="${tdLeftStyle};color:var(--muted)">${monthLabel(prevKey)}</td>
-          ${prevTds}
-          <td style="${tdStyle};font-weight:700">${prevCntTotal}</td>
-          <td style="${tdStyle};font-weight:700">${fmt(prevTotal)}</td>
-          <td style="${tdStyle};font-weight:700;color:var(--gold)">${fmt(prevTotalKdv)}</td>
-        </tr>
-        <tr>
-          <td style="${tdLeftStyle}">${monthLabel(curKey)}</td>
-          ${curTds}
-          <td style="${tdStyle};font-weight:700">${curCntTotal}</td>
-          <td style="${tdStyle};font-weight:700">${fmt(curTotal)}</td>
-          <td style="${tdStyle};font-weight:700;color:var(--gold)">${fmt(curTotalKdv)}</td>
-        </tr>
-        <tr>
-          <td style="${tdLeftStyle};color:var(--muted);font-size:11px">Değişim</td>
+          <td style="${tdLeftStyle};color:var(--muted);font-size:11px" title="${monthLabel(ilkAy)} → ${monthLabel(sonAy)}">Değişim ${ayListesi.length>2?`<span style="font-size:9px">(${monthLabel(ilkAy).split(' ')[0]}→${monthLabel(sonAy).split(' ')[0]})</span>`:''}</td>
           ${diffTds}
-          <td style="${tdStyle};font-weight:700">${curCntTotal-prevCntTotal>=0?'▲':'▼'} ${Math.abs(curCntTotal-prevCntTotal)}</td>
-          <td style="${tdStyle};color:${diffColor};font-weight:700">${diffArrow} ${fmt(Math.abs(totalDiff))}<br><span style="font-size:10.5px">${Math.abs(totalPct).toFixed(1)}%</span></td>
-          <td style="${tdStyle};color:${diffColor};font-weight:700">${diffArrow} ${fmt(Math.abs(curTotalKdv-prevTotalKdv))}</td>
+          <td style="${tdStyle};font-weight:700">${sonCntTot-ilkCntTot>=0?'▲':'▼'} ${Math.abs(sonCntTot-ilkCntTot)}</td>
+          <td style="${tdStyle};color:${dColor};font-weight:700">${dArrow} ${fmt(Math.abs(tDiff))}<br><span style="font-size:10.5px">${Math.abs(tPct).toFixed(1)}%</span></td>
+          <td style="${tdStyle};color:${dColor};font-weight:700">${dArrow} ${fmt(Math.abs(tDiff)*(1+KDV_ORANI))}</td>
         </tr>
       </tbody>
     </table>
@@ -5226,7 +5315,10 @@ function render(){
   let finHead = '<tr><th>Ay</th><th>Post Toplam (adet)</th><th>Genel Toplam (adet)</th><th>Prim Tutar</th><th>KDV (%20)</th>'+
     '<th>Genel Toplam (KDV Dahil)</th><th>%70</th><th>%30</th><th>Yatırılan Prim</th><th>Beklenen Prim</th><th>Prim Farkı</th>'+
     '<th style="color:#ffb74d">🎯 Aylık Hedef</th><th style="color:#ffb74d">Hedefe %</th></tr>';
-  let finRows = [...allMonths].reverse().map(m=>{
+  // v162: modal filtresi finans tablosuna da uygulanır (yıl seçiliyse)
+  const tblYilF = document.getElementById('tblYilSel') ? document.getElementById('tblYilSel').value : 'range';
+  const finAylar = (tblYilF!=='range' && tblYilF!=='all') ? allMonths.filter(m=>m.startsWith(tblYilF)) : allMonths;
+  let finRows = [...finAylar].reverse().map(m=>{
     const f = financeFor(m, monthMapAll);
     const bek = beklenenPrim(m, monthMapAll);
     const yat = yatirilan[m];
@@ -5366,17 +5458,34 @@ function render(){
   `;
 
   // ---- main table ----
+  // v162: modal içi dönem filtresi — yıl seçenekleri dinamik doldurulur
+  const tblYilSel = document.getElementById('tblYilSel');
+  let tblAylar = months;
+  if(tblYilSel){
+    const tumYillar = [...new Set(Object.keys(monthMapAll).map(k=>k.slice(0,4)))].sort().reverse();
+    if(!tblYilSel.dataset.yillar || tblYilSel.dataset.yillar !== tumYillar.join(',')){
+      const sec = tblYilSel.value;
+      tblYilSel.innerHTML = '<option value="range">Sayfadaki seçili aralık</option><option value="all">Tüm aylar</option>' +
+        tumYillar.map(y=>`<option value="${y}">${y} yılı</option>`).join('');
+      tblYilSel.dataset.yillar = tumYillar.join(',');
+      if([...tblYilSel.options].some(o=>o.value===sec)) tblYilSel.value = sec;
+    }
+    const f = tblYilSel.value;
+    if(f === 'all') tblAylar = Object.keys(monthMapAll).sort();
+    else if(f !== 'range') tblAylar = Object.keys(monthMapAll).filter(k=>k.startsWith(f)).sort();
+  }
   const tbl = document.getElementById('mainTable');
   let thead = '<tr><th>Ay</th>' + CATS.map(c=>`<th>${c} (adet)</th>`).join('') + '<th>Toplam Tutar</th></tr>';
-  let rows = months.map(m=>{
+  let rows = tblAylar.map(m=>{
     const cells = CATS.map(c=>{
-      const cnt = monthMap[m]?.[c]||0;
-      const amt = monthAmount(m,c);
+      const cnt = (monthMap[m]?.[c]) ?? (monthMapAll[m]?.[c]) ?? 0;
+      const amt = monthMap[m] ? monthAmount(m,c) : monthAmountAll(m,c);
       return `<td>${cnt} <span style="color:var(--muted)">(${fmt(amt)})</span></td>`;
     }).join('');
-    return `<tr><td style="text-align:left">${monthLabel(m)}</td>${cells}<td><b>${fmt(monthSum(m))}</b></td></tr>`;
+    const mSum = monthMap[m] ? monthSum(m) : CATS.reduce((a,c)=>a+monthAmountAll(m,c),0);
+    return `<tr><td style="text-align:left">${monthLabel(m)}</td>${cells}<td><b>${fmt(mSum)}</b></td></tr>`;
   }).join('');
-  if(!months.length) rows = `<tr><td colspan="${CATS.length+2}" style="text-align:center;color:var(--muted)">Seçili aralıkta kayıt yok</td></tr>`;
+  if(!tblAylar.length) rows = `<tr><td colspan="${CATS.length+2}" style="text-align:center;color:var(--muted)">Seçili dönemde kayıt yok</td></tr>`;
   tbl.innerHTML = thead + rows;
 
   // ---- bottom cards (KDV dahil) - hem TÜM ZAMANLAR hem SEÇİLİ YIL ayrı ayrı ----
@@ -5469,13 +5578,15 @@ function render(){
     actList.innerHTML = Object.keys(byDate).sort((a,b)=>b.localeCompare(a)).map(date => {
       const items = byDate[date];
       // Aynı gün+kategori kayıtlarını birleştir
+      // v162: kategori + tarife/ürün bazlı gruplama — "Diğer'e ne girdim" tek bakışta görünür
       const catMap = {};
       items.forEach(e => {
-        if(!catMap[e.cat]) catMap[e.cat] = {cat:e.cat, date:e.date, count:0, amt:0};
-        catMap[e.cat].count += e.count;
-        catMap[e.cat].amt += e.count * kampanyaFiyatFor(e.date,e.cat,priceFor(ymKey(e.date),e.cat));
+        const key = e.cat + '|' + (e.tarife||'');
+        if(!catMap[key]) catMap[key] = {cat:e.cat, tarife:e.tarife||'', date:e.date, count:0, amt:0, kaynak: fiyatKaynagi(e)};
+        catMap[key].count += e.count;
+        catMap[key].amt += entryTutarKdv(e) / (1 + KDV_ORANI); // net (görünümde çift gösterilir)
       });
-      const mergedItems = Object.values(catMap);
+      const mergedItems = Object.values(catMap).sort((a,b)=>a.cat.localeCompare(b.cat)||a.tarife.localeCompare(b.tarife));
       const dayTot = mergedItems.reduce((a,e)=>a+e.amt,0);
       const tblRows = mergedItems.map(e => {
         const color = (typeof CAT_COLORS !== 'undefined' && CAT_COLORS[e.cat]) || 'var(--accent)';
@@ -5488,7 +5599,7 @@ function render(){
         let musteriSat = '';
         try {
           const dayLogs2 = allDayLogs;
-          const ilgiliMusteriler2 = (musteriler||[]).filter(m=>m.logId && dayLogs2.some(l=>l.id===m.logId));
+          const ilgiliMusteriler2 = (musteriler||[]).filter(m=>m.logId && dayLogs2.some(l=>l.id===m.logId) && ((m.tarife||'')===(e.tarife||'')));
           if(ilgiliMusteriler2.length > 0){
             musteriSat = ilgiliMusteriler2.map(m=>{
               const adSoyad = `${m.ad||''} ${m.soyad||''}`.trim();
@@ -5503,23 +5614,26 @@ function render(){
             }).filter(Boolean).join('');
           }
         } catch(err){}
+        const birimNet = e.count>0 ? e.amt/e.count : 0;
         return `<tr>
           <td style="padding:4px 0">
-            <div style="display:flex;align-items:center;gap:5px">
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
               ${notDot}
               <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${color};flex-shrink:0"></span>
               <span style="font-size:11.5px;font-weight:600;color:var(--txt)">${e.cat}</span>
+              ${e.tarife?`<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:rgba(196,165,247,0.15);color:#c4a5f7;font-weight:700">${e.cat==='Diğer'?'🎁':'📶'} ${e.tarife}</span>`:''}
+              ${e.kaynak&&e.kaynak.ad!=='standart'?`<span style="font-size:8.5px;color:var(--muted)" title="Birim fiyat kaynağı">${e.kaynak.ikon} ${e.kaynak.ad} · birim ${fmt(kdvBrut(birimNet))}</span>`:''}
             </div>
             ${musteriSat}
           </td>
           <td style="text-align:right;padding:4px 0;font-size:11.5px;font-weight:700;color:var(--accent)">${e.count}</td>
-          <td style="text-align:right;padding:4px 0;font-size:11.5px;color:var(--txt)">${fmt(e.amt)}</td>
+          <td style="text-align:right;padding:4px 0;font-size:11px;color:var(--txt)">${fmt(kdvBrut(e.amt))}<div style="font-size:8px;color:var(--muted)">hariç: ${fmt(e.amt)}</div></td>
         </tr>`;
       }).join('');
       return `<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <div style="font-size:10.5px;font-weight:700;color:var(--accent)">📅 ${date}</div>
-          <div style="font-size:10px;font-weight:700;color:var(--green)">${fmt(dayTot)}</div>
+          <div style="font-size:10px;font-weight:700;color:var(--green)">${fmt(kdvBrut(dayTot))} <span style="font-size:8px;color:var(--muted);font-weight:600">KDV dahil</span></div>
         </div>
         <table style="width:100%;table-layout:fixed;border-collapse:collapse">
           <colgroup><col style="width:50%"><col style="width:18%"><col style="width:32%"></colgroup>
@@ -5532,7 +5646,7 @@ function render(){
           <tfoot><tr style="border-top:1px solid var(--line)">
             <td style="font-size:10px;font-weight:700;color:var(--muted);padding:4px 0 0">Toplam</td>
             <td style="text-align:right;font-size:10.5px;font-weight:800;padding:4px 0 0;color:var(--txt)">${items.reduce((a,e)=>a+e.count,0)}</td>
-            <td style="text-align:right;font-size:10.5px;font-weight:800;padding:4px 0 0;color:var(--green)">${fmt(dayTot)}</td>
+            <td style="text-align:right;font-size:10.5px;font-weight:800;padding:4px 0 0;color:var(--green)">${fmt(kdvBrut(dayTot))}<div style="font-size:8px;color:var(--muted);font-weight:600">hariç: ${fmt(dayTot)}</div></td>
           </tr></tfoot>
         </table>
       </div>`;
@@ -5605,6 +5719,35 @@ function switchPage(page){
   if(window.innerWidth <= 700) closeMobileMenu();
 }
 
+// v162: Hedef planlama görünüm butonları
+let hedefPlanGosterVal = 'hedefli';
+function setHedefPlanGoster(v){ hedefPlanGosterVal = v; renderHedefPage(); }
+// v162: Fiyat geçmişinde ✏️ — o ayı üstteki düzenleme alanına yükler
+function fiyatAyiDuzenle(ym){
+  const sel = document.getElementById('priceMonthSel');
+  if(!sel) return;
+  if(![...sel.options].some(o=>o.value===ym)){
+    const o = document.createElement('option'); o.value = ym; o.textContent = monthLabel(ym); sel.appendChild(o);
+  }
+  sel.value = ym;
+  render();
+  const row = document.getElementById('priceRow');
+  if(row){ row.scrollIntoView({behavior:'smooth', block:'center'}); row.style.outline='2px solid var(--gold)'; setTimeout(()=>row.style.outline='', 1600); }
+}
+// v162: Çoklu ay karşılaştırma — ekstra aylar
+let cmpEkstraAylar = [];
+function addCmpAy(){
+  const m = document.getElementById('cmpEkstraAy').value;
+  const y = document.getElementById('cmpEkstraYil').value;
+  const ym = y + '-' + m;
+  if(cmpEkstraAylar.length >= 4){ alert('En fazla 6 ay karşılaştırılabilir (2 ana + 4 ekstra).'); return; }
+  if(!cmpEkstraAylar.includes(ym)) cmpEkstraAylar.push(ym);
+  render();
+}
+function removeCmpAy(ym){
+  cmpEkstraAylar = cmpEkstraAylar.filter(a=>a!==ym);
+  render();
+}
 // ==================== V151: PRİM MODAL PENCERELERİ ====================
 function openPrimModal(id){
   const m = document.getElementById(id);
@@ -11790,6 +11933,21 @@ function entryTutarKdv(e){
 function getEntryAmount(e, ymStr) {
   return entryTutarKdv(e); // geriye dönük imza korunur; hesap birleşik motordan
 }
+// v162: bir kaydın birim fiyatının NEREDEN geldiğini söyler (işlem listesi etiketi)
+function fiyatKaynagi(e){
+  const ym = effectiveYm(e);
+  if(e.tarife && TARIFE_CATS.includes(e.cat)){
+    const t = (tarifeData[e.cat]||[]).find(x=>x.ad===e.tarife);
+    if(t){
+      if(e.date && Array.isArray(t.donemler) && t.donemler.some(d=>(!d.s||e.date>=d.s)&&(!d.e||e.date<=d.e))) return {ikon:'📅', ad:'dönem fiyatı'};
+      if(t.fiyat != null) return {ikon: e.cat==='Diğer'?'🎁':'📶', ad: e.cat==='Diğer'?'ürün fiyatı':'tarife fiyatı'};
+    }
+  }
+  const normal = priceFor(ym, e.cat);
+  const kamp = kampanyaFiyatFor(e.date, e.cat, normal);
+  if(Math.abs((kamp||0)-(normal||0)) > 0.005) return {ikon:'💰', ad:'kampanya fiyatı'};
+  return {ikon:'', ad:'standart'};
+}
 
 function renderRaporHaftalik(yilEntries, monthNames) {
   // Haftalara göre grupla
@@ -12478,16 +12636,16 @@ function renderHedefPage(){
   }
 
   function primForYm(ym){
-    return entries.filter(e=>effectiveYm(e)===ym).reduce((s,e)=>{
-      return s + e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(ym,e.cat))||0) * (1+KDV_ORANI);
-    },0);
+    // v162: resmi hesap — tarife + kampanya bonusları + KDV dahil (anasayfa/rapor ile birebir)
+    return financeFor(ym).genelToplamTutar;
   }
 
-  // Ozet kartlar (bu ay sabit)
-  const thisMonthPrim = primForYm(now);
-  const thisHedef = hedefler[now] || 0;
+  // v162: Özet kartlar SEÇİLEN AYA bağlı (üstteki yıl/ay filtresi)
+  const ozetYm = progYm || now;
+  const thisMonthPrim = primForYm(ozetYm);
+  const thisHedef = hedefler[ozetYm] || 0;
   const thisPct = thisHedef>0 ? Math.min(100,Math.round(thisMonthPrim/thisHedef*100)) : 0;
-  const prevYm = addMonths(now,-1);
+  const prevYm = addMonths(ozetYm,-1);
   const prevPrim = primForYm(prevYm);
   const prevHedef = hedefler[prevYm] || 0;
   const prevPct = prevHedef>0 ? Math.min(100,Math.round(prevPrim/prevHedef*100)) : 0;
@@ -12495,17 +12653,17 @@ function renderHedefPage(){
   const sumRow = document.getElementById('hedefSummaryRow');
   if(sumRow) sumRow.innerHTML = `
     <div class="stat">
-      <div class="t">Bu Ay Hedefi</div>
+      <div class="t">${monthLabel(ozetYm)} Hedefi</div>
       <div class="v" style="color:var(--gold)">${thisHedef>0?fmt(thisHedef):'—'}</div>
       <div class="sub">${monthLabel(now)}</div>
     </div>
     <div class="stat">
-      <div class="t">Bu Ay Gerçekleşen</div>
+      <div class="t">${monthLabel(ozetYm)} Gerçekleşen</div>
       <div class="v" style="color:${thisMonthPrim>=thisHedef&&thisHedef>0?'var(--green)':'var(--accent)'}">${fmt(thisMonthPrim)}</div>
       <div class="sub">%${thisPct}</div>
     </div>
     <div class="stat">
-      <div class="t">Geçen Ay</div>
+      <div class="t">${monthLabel(prevYm)}</div>
       <div class="v" style="color:var(--muted)">${prevHedef>0?fmt(prevHedef):'—'}</div>
       <div class="sub">${monthLabel(prevYm)} — %${prevPct}</div>
     </div>
@@ -12610,7 +12768,14 @@ function renderHedefPage(){
   }
 
   // Planlama tablosu
-  const planGoster = document.getElementById('hedefPlanGoster')?.value || 'hedefli';
+  const planGoster = (typeof hedefPlanGosterVal !== 'undefined' && hedefPlanGosterVal) || 'hedefli';
+  document.querySelectorAll('.hplan-btn').forEach(b=>{
+    const a = b.dataset.v === planGoster;
+    b.style.background = a ? 'rgba(47,174,78,0.2)' : '';
+    b.style.borderColor = a ? 'rgba(47,174,78,0.55)' : '';
+    b.style.color = a ? '#4cd964' : '';
+    b.style.fontWeight = a ? '800' : '';
+  });
   let planMonths = [];
   if(planGoster==='ileri6'){
     for(let i=0;i<6;i++) planMonths.push(addMonths(now,i));
@@ -13037,9 +13202,8 @@ function renderHedefGecmis(){
   if(yilFiltre !== 'hepsi') ymList = ymList.filter(ym => ym.startsWith(yilFiltre));
 
   function primForYm(ym){
-    return entries.filter(e=>effectiveYm(e)===ym).reduce((s,e)=>{
-      return s + e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(ym,e.cat))||0) * (1+KDV_ORANI);
-    },0);
+    // v162: resmi hesap — tarife + kampanya bonusları + KDV dahil (anasayfa/rapor ile birebir)
+    return financeFor(ym).genelToplamTutar;
   }
   // Gerçekleşen kategori adetleri
   function gercekAdetForYm(ym){
@@ -14260,6 +14424,20 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v162',
+    date: '03.07.2026',
+    items: [
+      { type: 'new', text: 'Islem listesi detaylandirildi: satirlar urun/tarife bazinda ayrildi (Diger - Kulaklik gibi), her satirda birim fiyat kaynagi etiketi (📅 donem / 📶 tarife / 🎁 urun / 💰 kampanya), musteriler dogru urun satirinin altinda, tutarlar KDV dahil+haric' },
+      { type: 'new', text: 'Coklu Ay Karsilastirma: karsilastirmaya 6 aya kadar ay eklenebiliyor (➕ Ekle), satir basindaki ✕ ile cikarilir, Degisim satiri ilk↔son ayi kiyaslar' },
+      { type: 'new', text: 'Detay Tablolari penceresine donem filtresi eklendi: sayfaya donmeden secili aralik / tum aylar / yil secimi — iki tabloya birden uygulanir' },
+      { type: 'new', text: 'Saat Analizi penceresine hizli aralik butonlari: Sayfa araligi / Bu Ay / Gecen Ay / Son 30 Gun / Tumu' },
+      { type: 'ui', text: 'Aylik Birim Fiyatlar yenilendi: acilir-kapanir kaldirildi, gecmis donemler varsayilan gizli (📜 anahtarla acilir), her ay satirinda ✏️ ile o ayin fiyatlari duzenlemeye yuklenir' },
+      { type: 'new', text: '"Secili Araliktaki Kayitlari Sil" artik PIN korumali (🔐 genel PIN onay penceresi)' },
+      { type: 'ui', text: 'Hedef Yonetimi yeniden duzenlendi: Kategori Detayi grafigi daraltilip Hedef Planlamasi yanina alindi (yan yana), gorunum combobox\'u buton grubuna donustu, ozet kartlar artik secilen ay filtresini takip ediyor' },
+      { type: 'fix', text: 'Hedef sayfasi ve Ay Karsilastirma/tablolar hesaplari resmi motora baglandi (tarife+bonus+KDV) — tum sayfalar artik ayni rakami gosteriyor' },
+    ]
+  },
   {
     version: 'v161',
     date: '03.07.2026',
