@@ -14,7 +14,7 @@
   // SW — offline destek, PWA
   if('serviceWorker' in navigator){
     const swKod = `
-const CACHE_VER = 'finansal-v156';
+const CACHE_VER = 'finansal-v157';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2259,6 +2259,36 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   </div>
 </div>
 
+<!-- TARİFE/KAMPANYA FORM MODALI (v157 — prompt yerine şık modal) -->
+<div id="tarifeFormModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:4600;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:360px;width:98%">
+    <div id="tfmHeader" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);padding:13px 16px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
+      <span id="tfmTitle" style="font-size:13px;font-weight:700;color:#fff">➕ Yeni Kampanya</span>
+      <button onclick="closeTarifeFormModal(true)" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+    </div>
+    <div style="padding:14px 16px">
+      <div id="tfmSubInfo" style="display:none;font-size:10.5px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:7px 10px;margin-bottom:10px"></div>
+      <div id="tfmAdWrap" style="margin-bottom:10px">
+        <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px" id="tfmAdLabel">AD</label>
+        <input type="text" id="tfmAd" placeholder="Örn: Kulaklık" style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px">
+        <div id="tfmAdKilit" style="display:none;font-size:9.5px;color:var(--gold);margin-top:3px">🔒 Ad kilitli — kayıtlarda kullanıldığı için değiştirilemez</div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px">ADET BAŞI PRİM (₺)</label>
+        <input type="number" inputmode="decimal" id="tfmFiyat" placeholder="0" style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px">
+      </div>
+      <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);margin-bottom:14px;cursor:pointer;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px">
+        <input type="checkbox" id="tfmKdv" style="width:15px;height:15px;cursor:pointer;flex-shrink:0">
+        <span>Girdiğim fiyat <b style="color:var(--txt)">KDV dahil</b> <span style="opacity:.7">(sistem net'e çevirir, çift KDV olmaz)</span></span>
+      </label>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeTarifeFormModal(true)" style="flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:11px;font-size:12px;font-weight:700;cursor:pointer">İptal</button>
+        <button id="tfmSaveBtn" onclick="saveTarifeFormModal()" style="flex:2;background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;color:#fff;border-radius:8px;padding:11px;font-size:12px;font-weight:700;cursor:pointer">💾 Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- DÖNEM FİYATLARI MODALI (v155) -->
 <div id="tarifeDonemModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:4200;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:420px;width:98%;margin:auto 0">
@@ -2652,8 +2682,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v156';
-const BUILD_DATE = '03.07.2026 04:00'; // Hazırlanma tarihi (dahili)
+const APP_VERSION = 'v157';
+const BUILD_DATE = '03.07.2026 05:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -9158,28 +9188,36 @@ function deleteTarife(ad, cat){
   render();
 }
 
-// v156: Tarife/kampanya düzenleme — ad (kullanılmıyorsa) ve temel fiyat
+// v156/v157: Tarife/kampanya düzenleme — şık modal form (ad kullanılıyorsa kilitli)
 function editTarife(ad, cat){
   const t = (tarifeData[cat]||[]).find(x=>x.ad===ad);
   if(!t) return;
-  const kullanımda = entries.some(e=>e.cat===cat && e.tarife===ad);
-  if(!kullanımda){
-    const yeniAd = prompt('Ad (değiştirebilirsin):', t.ad);
-    if(yeniAd === null) return;
-    if(yeniAd.trim() && yeniAd.trim() !== t.ad){
-      if((tarifeData[cat]||[]).some(x=>x.ad===yeniAd.trim())){ alert('Bu adda kayıt zaten var.'); return; }
-      t.ad = yeniAd.trim();
+  const kullanım = entries.filter(e=>e.cat===cat && e.tarife===ad).length;
+  const isDiger = cat === 'Diğer';
+  openTarifeFormModal({
+    title: '✏️ ' + (isDiger ? 'Kampanya' : 'Tarife') + ' Düzenle',
+    headerColor: 'linear-gradient(135deg,#1a90b8,#0f6a8a)',
+    adLabel: isDiger ? 'KAMPANYA / ÜRÜN ADI' : 'TARİFE ADI',
+    adVisible: true,
+    ad: t.ad,
+    adLocked: kullanım > 0,
+    fiyat: t.fiyat,
+    kdvDahil: !!t.kdvDahil,
+    subInfo: kullanım > 0 ? '📌 ' + kullanım + ' kayıtta kullanılıyor — fiyat değişikliği <b>tüm tarihlerdeki</b> kayıtları etkiler. Sadece belirli tarihler için fiyat değiştirmek istiyorsan 📅 <b>dönem fiyatı</b> kullan.' : null,
+    saveLabel: '💾 Güncelle',
+    onSave: (yeniAd, fiyat, kdvDahil) => {
+      if(kullanım === 0 && yeniAd && yeniAd !== t.ad){
+        if((tarifeData[cat]||[]).some(x=>x.ad===yeniAd)){ alert('Bu adda kayıt zaten var.'); return; }
+        t.ad = yeniAd;
+      }
+      t.fiyat = fiyat;
+      if(kdvDahil) t.kdvDahil = true; else delete t.kdvDahil;
+      saveTarifeStore();
+      if(typeof scheduleCloudSync==='function') scheduleCloudSync();
+      renderTarifeList();
+      render();
     }
-  }
-  const fStr = prompt((kullanımda?'🔒 Ad kilitli (kayıtlarda kullanılıyor).\n':'') + '"' + t.ad + '" temel fiyatı (₺):', t.fiyat);
-  if(fStr === null){ saveTarifeStore(); renderTarifeList(); return; }
-  const fiyat = parseFloat((fStr||'').replace(',','.'));
-  if(isNaN(fiyat) || fiyat < 0){ alert('Geçersiz tutar.'); return; }
-  t.fiyat = fiyat;
-  saveTarifeStore();
-  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
-  renderTarifeList();
-  render();
+  });
 }
 
 // ── v155: DÖNEM FİYATLARI (tarife/kampanya için tarih aralıklı fiyat) ──
@@ -9231,19 +9269,31 @@ function renderTarifeDonemList(){
   }
   div.innerHTML = html;
 }
-// v156: dönem fiyat düzeltme (silme yerine güvenli yol)
+// v156/v157: dönem fiyat düzeltme — şık modal form
 function editTarifeDonem(idx){
-  const t = (tarifeData[_donemCat]||[]).find(x=>x.ad===_donemAd);
+  const cat = _donemCat, ad = _donemAd;
+  const t = (tarifeData[cat]||[]).find(x=>x.ad===ad);
   if(!t || !t.donemler || !t.donemler[idx]) return;
   const d = t.donemler[idx];
-  const fStr = prompt('📅 ' + (d.s||'?') + ' → ' + (d.e||'süresiz') + ' dönemi için yeni fiyat (₺):', d.fiyat);
-  if(fStr === null) return;
-  const fiyat = parseFloat((fStr||'').replace(',','.'));
-  if(isNaN(fiyat) || fiyat < 0){ alert('Geçersiz tutar.'); return; }
-  d.fiyat = fiyat;
-  saveTarifeStore();
-  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
-  renderTarifeDonemList();
+  openTarifeFormModal({
+    title: '✏️ Dönem Fiyatı Düzenle',
+    headerColor: 'linear-gradient(135deg,#b8860b,#8a6508)',
+    adVisible: false,
+    fiyat: d.fiyat,
+    kdvDahil: !!d.kdvDahil,
+    subInfo: '🎁 <b>' + ad + '</b><br>📅 ' + (d.s||'başlangıçsız') + ' → ' + (d.e||'süresiz') + '<br><span style="opacity:.7">Bu tarihlerdeki tüm kayıtlar yeni fiyattan yeniden hesaplanır.</span>',
+    saveLabel: '💾 Güncelle',
+    onSave: (_, fiyat, kdvDahil) => {
+      const t2 = (tarifeData[cat]||[]).find(x=>x.ad===ad);
+      if(!t2 || !t2.donemler || !t2.donemler[idx]) return;
+      t2.donemler[idx].fiyat = fiyat;
+      if(kdvDahil) t2.donemler[idx].kdvDahil = true; else delete t2.donemler[idx].kdvDahil;
+      saveTarifeStore();
+      if(typeof scheduleCloudSync==='function') scheduleCloudSync();
+      renderTarifeDonemList();
+      render();
+    }
+  });
 }
 function addTarifeDonem(){
   const t = (tarifeData[_donemCat]||[]).find(x=>x.ad===_donemAd);
@@ -9310,6 +9360,50 @@ function renderTarifeList(){
   yap('Diğer','tarifeListDivDiger');
 }
 
+// ── v157: TARİFE/KAMPANYA FORM MODALI (prompt yerine) ──
+let _tfmOnSave = null, _tfmOnCancel = null;
+function openTarifeFormModal(opts){
+  // opts: {title, headerColor, subInfo, adVisible, ad, adLocked, adLabel, fiyat, kdvDahil, saveLabel, onSave(ad,fiyat,kdvDahil), onCancel()}
+  _tfmOnSave = opts.onSave || null;
+  _tfmOnCancel = opts.onCancel || null;
+  document.getElementById('tfmTitle').textContent = opts.title || '➕ Yeni';
+  const hdr = document.getElementById('tfmHeader');
+  hdr.style.background = opts.headerColor || 'linear-gradient(135deg,#7c3aed,#5b21b6)';
+  document.getElementById('tfmSaveBtn').style.background = opts.headerColor || 'linear-gradient(135deg,#7c3aed,#5b21b6)';
+  const sub = document.getElementById('tfmSubInfo');
+  if(opts.subInfo){ sub.style.display='block'; sub.innerHTML = opts.subInfo; } else sub.style.display='none';
+  const adWrap = document.getElementById('tfmAdWrap');
+  const adInp = document.getElementById('tfmAd');
+  adWrap.style.display = opts.adVisible === false ? 'none' : 'block';
+  document.getElementById('tfmAdLabel').textContent = opts.adLabel || 'AD';
+  adInp.value = opts.ad || '';
+  adInp.disabled = !!opts.adLocked;
+  adInp.style.opacity = opts.adLocked ? '.55' : '1';
+  document.getElementById('tfmAdKilit').style.display = opts.adLocked ? 'block' : 'none';
+  document.getElementById('tfmFiyat').value = opts.fiyat != null ? opts.fiyat : '';
+  document.getElementById('tfmKdv').checked = !!opts.kdvDahil;
+  document.getElementById('tfmSaveBtn').textContent = opts.saveLabel || '💾 Kaydet';
+  document.getElementById('tarifeFormModal').style.display = 'flex';
+  setTimeout(()=>{ (opts.adVisible===false || opts.adLocked ? document.getElementById('tfmFiyat') : adInp).focus(); }, 100);
+}
+function closeTarifeFormModal(iptal){
+  document.getElementById('tarifeFormModal').style.display = 'none';
+  if(iptal && _tfmOnCancel){ try{ _tfmOnCancel(); }catch(e){} }
+  _tfmOnSave = null; _tfmOnCancel = null;
+}
+function saveTarifeFormModal(){
+  const adWrapGorunur = document.getElementById('tfmAdWrap').style.display !== 'none';
+  const ad = document.getElementById('tfmAd').value.trim();
+  const fiyat = parseFloat((document.getElementById('tfmFiyat').value||'').replace(',','.'));
+  const kdvDahil = document.getElementById('tfmKdv').checked;
+  if(adWrapGorunur && !ad){ alert('Ad giriniz.'); return; }
+  if(isNaN(fiyat) || fiyat < 0){ alert('Geçerli bir fiyat giriniz.'); return; }
+  const cb = _tfmOnSave;
+  _tfmOnCancel = null; // başarılı kayıtta iptal callback'i çalışmasın
+  closeTarifeFormModal(false);
+  if(cb) cb(ad, fiyat, kdvDahil);
+}
+
 // Müşteri formundaki tarife dropdown'unu kategoriye göre güncelle
 // v152: Red/PostPaid/Mccm/İnternet → tarife, Diğer → esnek kampanya. Hepsinde ➕ hızlı ekleme var.
 function updateMkTarifeField(){
@@ -9336,19 +9430,35 @@ function updateMkTarifeField(){
       `<option value="__yeni__">➕ Yeni ${isDiger?'kampanya':'tarife'} ekle…</option>`;
     tarifeSelect.onchange = function(){
       if(this.value === '__yeni__'){
-        const ad = prompt('Yeni ' + (isDiger?'kampanya/ürün':'tarife') + ' adı:');
-        if(!ad || !ad.trim()){ this.value=''; return; }
-        const fStr = prompt('"'+ad.trim()+'" için adet başı prim (₺):');
-        const fiyat = parseFloat((fStr||'').replace(',','.'));
-        if(isNaN(fiyat) || fiyat<0){ alert('Geçersiz tutar.'); this.value=''; return; }
-        if(!tarifeData[cat]) tarifeData[cat] = [];
-        const mevcut = tarifeData[cat].find(t=>t.ad===ad.trim());
-        if(mevcut) mevcut.fiyat = fiyat; else tarifeData[cat].push({ad: ad.trim(), fiyat});
-        saveTarifeStore();
-        if(typeof scheduleCloudSync==='function') scheduleCloudSync();
-        updateMkTarifeField();
-        this.value = ad.trim();
-        if(typeof renderTarifeList==='function') renderTarifeList();
+        const sel = this;
+        sel.value = '';
+        // v157: prompt yerine şık modal — KDV dahil seçeneğiyle
+        openTarifeFormModal({
+          title: '➕ Yeni ' + (isDiger ? 'Kampanya / Ürün' : 'Tarife'),
+          headerColor: isDiger ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#e2231a,#b81b14)',
+          adLabel: isDiger ? 'KAMPANYA / ÜRÜN ADI' : 'TARİFE ADI',
+          adVisible: true,
+          subInfo: '📌 <b>' + cat + '</b> kategorisine eklenecek ve bu kayıtta otomatik seçilecek.',
+          saveLabel: '💾 Ekle ve Seç',
+          onSave: (ad, fiyat, kdvDahil) => {
+            if(!tarifeData[cat]) tarifeData[cat] = [];
+            const mevcut = tarifeData[cat].find(t=>t.ad===ad);
+            if(mevcut){
+              mevcut.fiyat = fiyat;
+              if(kdvDahil) mevcut.kdvDahil = true; else delete mevcut.kdvDahil;
+            } else {
+              const yeni = {ad, fiyat};
+              if(kdvDahil) yeni.kdvDahil = true;
+              tarifeData[cat].push(yeni);
+            }
+            saveTarifeStore();
+            if(typeof scheduleCloudSync==='function') scheduleCloudSync();
+            updateMkTarifeField();
+            const s2 = document.getElementById('mkTarife');
+            if(s2) s2.value = ad;
+            if(typeof renderTarifeList==='function') renderTarifeList();
+          }
+        });
       }
     };
   } else {
@@ -13912,6 +14022,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v157',
+    date: '03.07.2026',
+    items: [
+      { type: 'ui', text: 'Tarayici prompt pencereleri kaldirildi: hizli tarife/kampanya ekleme, tarife duzenleme ve donem fiyati duzenleme artik uygulama icinde sik modal formlarla yapiliyor' },
+      { type: 'new', text: 'Hizli ekleme formunda artik "KDV dahil" secenegi de var — Kampanyalar penceresiyle birebir ayni davranir, istisna kalmadi' },
+      { type: 'new', text: 'Duzenleme formlarinda KDV dahil isareti sonradan da degistirilebiliyor; ad kilidi ve fiyat degisikligi uyarilari form icinde aciklaniyor' },
+    ]
+  },
   {
     version: 'v156',
     date: '03.07.2026',
