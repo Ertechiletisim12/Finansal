@@ -14,7 +14,7 @@
   // SW — offline destek, PWA
   if('serviceWorker' in navigator){
     const swKod = `
-const CACHE_VER = 'finansal-v159';
+const CACHE_VER = 'finansal-v160';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -292,6 +292,10 @@ html{scrollbar-gutter:stable}
 
   #primTitleBar{ display:none!important; }
   #primToolBar{ display:none!important; }
+  /* v160: Anasayfa mobil — trend grafiği yatay kaydırmalı, barlar sıkışmaz */
+  #dashContent .trend-bars-wrap{ overflow-x:auto!important; -webkit-overflow-scrolling:touch; height:165px!important; gap:5px!important; min-width:0!important; scrollbar-width:none; padding-bottom:2px; }
+  #dashContent .trend-bars-wrap::-webkit-scrollbar{ display:none; }
+  #dashContent .trend-bars-wrap > div{ min-width:58px!important; flex-shrink:0!important; }
   /* v154: tarife/kampanya ekleme satırı mobilde taşmasın */
   .tarife-add-row{ grid-template-columns:1fr 1fr!important; }
   .tarife-add-row input{ min-width:0!important; }
@@ -2691,7 +2695,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v159';
+const APP_VERSION = 'v160';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2771,7 +2775,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '03.07.2026 07:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '03.07.2026 10:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6600,7 +6604,7 @@ function renderDash(){
   const maxTrend = Math.max(...trend6.map(t=>t.v),1);
   const isMob = window.innerWidth <= 700;
   const trendBars = trend6.map((t,i)=>{
-    const maxH = isMob ? 45 : 110; // container 180px - etiketler (~70px) = ~110px bar alanı
+    const maxH = isMob ? 82 : 110; // v160: mobilde bar alanı büyütüldü, konteyner yatay kaydırmalı
     const h=Math.max(Math.round(t.v/maxTrend*maxH),isMob?4:4), isCur=i===5;
     const color = isCur ? '#3fd0ff' : 'rgba(63,208,255,0.3)';
     const ayKisa = monthLabel(t.ym).split(' ')[0];
@@ -6610,7 +6614,7 @@ function renderDash(){
     return `<div onclick="showChartBarDetay('${t.ym}')" style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1;min-width:44px;cursor:pointer" title="Dokun: ${monthLabel(t.ym)} detayı&#10;Adet: ${t.adet}&#10;Tutar: ${tutarTam}">
       <div style="font-size:${isMob?'7px':'9px'};font-weight:700;text-align:center;line-height:1.5;margin-bottom:4px;width:100%">
         ${t.adet>0 ? `<div style="color:${adetColor}">${t.adet} ad</div>` : '<div>&nbsp;</div>'}
-        ${t.v>0 ? `<div style="color:${tutarColor}">${fmtF(t.v)}</div>` : '<div>&nbsp;</div>'}
+        ${t.v>0 ? `<div style="color:${tutarColor};white-space:nowrap">${isMob ? t.v.toLocaleString('tr-TR',{maximumFractionDigits:0})+' ₺' : fmtF(t.v)}</div>` : '<div>&nbsp;</div>'}
       </div>
       <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;min-height:${isMob?3:6}px"></div>
       <div style="font-size:${isMob?'8px':'10px'};font-weight:600;color:${isCur?'#3fd0ff':'#aaa'};white-space:nowrap;margin-top:4px;padding-top:3px;width:100%;text-align:center">${ayKisa}</div>
@@ -6713,10 +6717,10 @@ function renderDash(){
 
     <!-- ── BÖLÜM 1: Prim Ana Kart ── -->
     <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📅 ${monthLabel(now)} — Prim Durumu</div>
-    <div style="display:flex;gap:10px;margin-bottom:8px;align-items:stretch">
+    <div style="display:flex;gap:10px;margin-bottom:8px;align-items:stretch;flex-wrap:wrap">
 
       <!-- Sol: Ana Prim Kartı -->
-      <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;flex:1;min-width:0;overflow:hidden">
+      <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;flex:1.1;min-width:min(320px,100%);overflow:hidden;display:flex;flex-direction:column">
         <div style="font-size:10px;color:#8fe3a8;margin-bottom:4px;font-weight:600">Toplam Prim (KDV Dahil)</div>
         <div style="font-size:22px;font-weight:900;color:#4cd964;letter-spacing:-.5px;line-height:1">${fmtF(curKdv)}</div>
         ${dashBonusToplam>0 ? `
@@ -6735,6 +6739,29 @@ function renderDash(){
             <span style="font-size:8.5px;color:rgba(255,255,255,0.4)">${fmtF(curKdv-dashBonusToplam)}</span>
           </div>
         </div>` : ''}
+        ${(()=>{ // v160: Ürün / Tarife Kırılımı — ana kartta, bonus detayları tarzında (prim'e dahil, ayrıca eklenmez)
+          const kir = {};
+          entries.filter(e=>effectiveYm(e)===now && e.tarife && TARIFE_CATS.includes(e.cat)).forEach(e=>{
+            const tF = tarifeFiyatFor(e, e.cat);
+            const p = tF!=null ? tF : (kampanyaFiyatFor(e.date,e.cat,priceFor(now,e.cat))||0);
+            const key = e.cat+'|'+e.tarife;
+            if(!kir[key]) kir[key] = {cat:e.cat, ad:e.tarife, adet:0, tutar:0};
+            kir[key].adet += e.count; kir[key].tutar += e.count*p;
+          });
+          const kl = Object.values(kir).sort((a,b)=>b.tutar-a.tutar);
+          if(!kl.length) return '';
+          return `<div style="margin-top:6px;background:rgba(196,165,247,0.07);border:1px solid rgba(196,165,247,0.18);border-radius:8px;padding:7px 9px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:9.5px;color:#c4a5f7;font-weight:700">🎁 Ürün / Tarife Kırılımı</span>
+              <span style="font-size:7.5px;color:rgba(255,255,255,0.35);font-weight:600">prim'e dahil · ayrıca eklenmez</span>
+            </div>
+            ${kl.map(k=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-top:1px solid rgba(196,165,247,0.1)">
+              <span style="font-size:8.5px;color:rgba(255,255,255,0.5)">${k.cat==='Diğer'?'🎁':'📶'} ${k.cat} · ${k.ad}</span>
+              <span style="font-size:9px;font-weight:700;color:#c4a5f7;flex-shrink:0;margin-left:6px">${k.adet} adet · ${fmtF(k.tutar*(1+KDV_ORANI))}</span>
+            </div>`).join('')}
+          </div>`;
+        })()}
         <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
           <span style="background:${pctChange>=0?'rgba(76,217,100,0.15)':'rgba(226,35,26,0.15)'};border-radius:20px;padding:2px 9px;font-size:10.5px;font-weight:700;color:${pctColor}">${pctArrow} %${Math.abs(pctChange).toFixed(1)}</span>
           <span style="font-size:10.5px;color:rgba(255,255,255,0.5)">geçen aya göre</span>
@@ -6777,7 +6804,7 @@ function renderDash(){
       </div>
 
       <!-- Sağ sütun: Bugün + Ay Sonu yan yana, altında Hedef -->
-      <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:0">
+      <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:min(300px,100%)">
 
         <!-- Bugün + Ay Sonu yan yana -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -6860,16 +6887,16 @@ function renderDash(){
     </div><!-- /flex row -->
 
     <!-- ── Grafik + Kategori yan yana ── -->
-    <div style="display:flex;gap:10px;margin-bottom:8px;align-items:stretch">
+    <div style="display:flex;gap:10px;margin-bottom:8px;align-items:stretch;flex-wrap:wrap">
 
       <!-- Sol: Grafik -->
-      <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;flex:1;min-width:0">
+      <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;flex:1;min-width:min(300px,100%)">
         <div style="font-size:9.5px;color:var(--muted);margin-bottom:8px;font-weight:600">📊 Son 6 Ay Trendi <span style="font-size:8px;opacity:.6">(adet · tutar)</span></div>
         <div class="trend-bars-wrap" style="display:flex;align-items:flex-end;gap:4px;height:200px;padding-top:4px;min-width:280px">${trendBars}</div>
       </div>
 
       <!-- Sağ: Kategori Dağılımı -->
-      <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px;flex:1;min-width:0">
+      <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px;flex:1;min-width:min(300px,100%)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <div style="font-size:10.5px;color:var(--muted);font-weight:600">📦 Kategori Dağılımı — ${monthLabel(now)}</div>
           ${Object.keys(catHedefler).length ? '<div style="font-size:9px;color:var(--muted);white-space:nowrap;margin-left:8px">🎯 Hedef aktif</div>' : ''}
@@ -6960,7 +6987,7 @@ function renderDash(){
     </div>
 
     <!-- ── BÖLÜM 4: Finansal + Gelir yan yana ── -->
-    <div style="display:grid;grid-template-columns:${lastF&&(curGelir>0||curGider>0)?'1fr 1fr':'1fr'};gap:10px;margin-bottom:8px">
+    <div style="display:grid;grid-template-columns:${lastF&&(curGelir>0||curGider>0)?'repeat(auto-fit,minmax(min(300px,100%),1fr))':'1fr'};gap:10px;margin-bottom:8px">
       ${lastF ? `
       <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px">
         <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:8px">💹 Son Finansal Kayıt — ${monthLabel(lastF.ym)}</div>
@@ -14155,6 +14182,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v160',
+    date: '03.07.2026',
+    items: [
+      { type: 'new', text: 'Anasayfa Toplam Prim kartina Urun/Tarife Kirilimi kutusu eklendi — bonus detaylari tarzinda, KDV dahil tutarlarla, "prime dahil - ayrica eklenmez" (cift hesap yok)' },
+      { type: 'ui', text: 'Anasayfa kart hizalamasi duzeltildi: kartlar esit yukseklikte, dar ekranda duzgun alt alta iniyor (Prim karti, Bugun/Ay Sonu/Hedef sutunu, Grafik+Kategori, Finansal+Gelir)' },
+      { type: 'ui', text: 'Mobilde Son 6 Ay Trendi grafigi yeniden duzenlendi: barlar buyudu, tutarlar kurussuz ve okunakli, grafik parmakla saga-sola kaydirilabiliyor — sikisma/tasma yok' },
+    ]
+  },
   {
     version: 'v159',
     date: '03.07.2026',
