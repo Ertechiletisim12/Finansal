@@ -14,7 +14,7 @@
   // SW — offline destek, PWA
   if('serviceWorker' in navigator){
     const swKod = `
-const CACHE_VER = 'finansal-v160';
+const CACHE_VER = 'finansal-v161';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2695,7 +2695,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v160';
+const APP_VERSION = 'v161';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2775,7 +2775,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '03.07.2026 10:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '03.07.2026 13:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -2850,6 +2850,17 @@ function saveTarifeStore(){
 // Tarife bazli fiyat - entry.tarife varsa tarifeData'dan fiyati al, yoksa null doner
 // v152: Red + PostPaid + Mccm + İnternet tarifeleri ve 'Diğer' esnek kampanyaları destekleniyor
 const TARIFE_CATS = ['Red','PostPaid','Mccm','İnternet','Diğer'];
+// v161: KDV gösterim standardı — büyük rakam = KDV DAHİL, yanında küçük "hariç"
+function kdvBrut(net){ return net * (1 + KDV_ORANI); }
+// Tarife/dönem/kampanya kayıtlarının brüt-net çifti (kdvDahil bayrağına göre)
+function fiyatCifti(fiyat, kdvDahilMi){
+  if(fiyat == null || isNaN(fiyat)) return null;
+  return kdvDahilMi ? { brut: fiyat, net: fiyat/(1+KDV_ORANI) } : { brut: fiyat*(1+KDV_ORANI), net: fiyat };
+}
+function fmtCiftHtml(net, boyut){ // net değerden standart çift gösterim üretir
+  const b = boyut||'';
+  return `${fmt(net*(1+KDV_ORANI))}<span style="font-size:${b==='sm'?'8px':'9px'};color:var(--muted);font-weight:600;margin-left:4px">hariç: ${fmt(net)}</span>`;
+}
 function tarifeFiyatFor(entryOrTarife, cat, dateOpt){
   if(!TARIFE_CATS.includes(cat)) return null;
   const isObj = typeof entryOrTarife !== 'string';
@@ -2868,6 +2879,8 @@ function tarifeFiyatFor(entryOrTarife, cat, dateOpt){
       if((!d.s || date >= d.s) && (!d.e || date <= d.e)) return netle(d.fiyat, d.kdvDahil);
     }
   }
+  // v161: temel fiyat tanımsızsa (opsiyonel) null döner → kategori/kampanya fiyatı devreye girer
+  if(t.fiyat == null || isNaN(t.fiyat)) return null;
   return netle(t.fiyat, t.kdvDahil);
 }
 
@@ -4830,8 +4843,8 @@ function render(){
       </div>
       ${lastTime ? `<div style="font-size:10.5px;color:var(--muted);margin-top:4px">🕒 ${lastTime.time}${lastTime.platform ? ` <span style="opacity:.7">${lastTime.platform}</span>` : ''}</div>` : ''}
       ${mnpInfo}${intInfo}${tarifeInfo}
-      <div class="amt">${fmt(amt)}${kampanyaVar ? ` <span style="font-size:9px;background:rgba(255,183,77,0.2);color:#ffb74d;border-radius:4px;padding:1px 5px;font-weight:700">🎯 ${fmt(price)}</span>` : ''}</div>
-      <div class="amt" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);font-size:11px;color:var(--accent);font-weight:700">${raCnt(cat)} <span style="opacity:.85;font-weight:600">(${fmt(raAmt(cat))})</span></div>`;
+      <div class="amt">${fmtCiftHtml(amt)}${kampanyaVar ? ` <span style="font-size:9px;background:rgba(255,183,77,0.2);color:#ffb74d;border-radius:4px;padding:1px 5px;font-weight:700">🎯 ${fmt(kdvBrut(price))}</span>` : ''}</div>
+      <div class="amt" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);font-size:11px;color:var(--accent);font-weight:700">${raCnt(cat)} <span style="opacity:.85;font-weight:600">(${fmtCiftHtml(raAmt(cat),'sm')})</span></div>`;
     cardsDiv.appendChild(div);
   });
 
@@ -4978,7 +4991,7 @@ function render(){
     // Prim (kampanyasız baz)
     const primBaz = rangeAmt - fiyatKampToplam;
     detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px">
-      <span style="opacity:.75;font-weight:500">Prim (baz)</span>
+      <span style="opacity:.75;font-weight:500">Prim (baz · KDV hariç)</span>
       <span style="font-weight:700;color:#fff">${fmt(primBaz)}</span>
     </div>`;
 
@@ -5060,7 +5073,7 @@ function render(){
           ${kirilimList.map(k=>`
           <div style="display:flex;justify-content:space-between;font-size:9.5px;padding:2px 0;border-top:1px solid rgba(196,165,247,0.1)">
             <span style="color:rgba(255,255,255,0.55)">${k.cat==='Diğer'?'🎁':'📶'} ${k.cat} · ${k.ad}</span>
-            <span style="color:#c4a5f7;font-weight:700;flex-shrink:0;margin-left:6px">${k.adet} adet · ${fmt(k.tutar)}</span>
+            <span style="color:#c4a5f7;font-weight:700;flex-shrink:0;margin-left:6px">${k.adet} adet · ${fmt(kdvBrut(k.tutar))} <span style="font-size:8px;color:rgba(255,255,255,0.35)">KDV dahil</span></span>
           </div>`).join('')}
         </div>`;
       }
@@ -9258,33 +9271,44 @@ function editKampanya(id){
   document.getElementById('kFormTitle').scrollIntoView({behavior:'smooth'});
 }
 // ── TARİFE / KAMPANYA YÖNETİMİ (Red30/40/50 tarifeleri + Diğer esnek kampanyaları) ──
-function addTarife(cat){
+async function addTarife(cat){
   cat = cat || 'Red';
   const sfx = cat === 'Diğer' ? 'Diger' : '';
   const ad = document.getElementById('tarifeAdInput'+sfx).value.trim();
-  const fiyat = parseFloat(document.getElementById('tarifeFiyatInput'+sfx).value);
+  const fiyatStr = document.getElementById('tarifeFiyatInput'+sfx).value;
+  const fiyat = fiyatStr.trim()==='' ? null : parseFloat(fiyatStr);
   if(!ad){ alert(cat==='Diğer' ? 'Kampanya/ürün adı giriniz.' : 'Tarife adı giriniz.'); return; }
-  if(isNaN(fiyat) || fiyat<0){ alert('Geçerli bir prim tutarı giriniz.'); return; }
+  if(fiyat != null && (isNaN(fiyat) || fiyat<0)){ alert('Geçerli bir prim tutarı giriniz.'); return; }
 
   if(!tarifeData[cat]) tarifeData[cat] = [];
   const kdvCb = document.getElementById('tarifeKdvDahil'+sfx);
   const kdvDahil = kdvCb ? kdvCb.checked : false;
-  // v159: opsiyonel kampanya tarih aralığı — aynı adımda dönem fiyatı kaydı
   const tsEl = document.getElementById('tarifeStart'+sfx);
   const teEl = document.getElementById('tarifeEnd'+sfx);
   const ts = tsEl ? (tsEl.value || null) : null;
   const te = teEl ? (teEl.value || null) : null;
   if(ts && te && ts > te){ alert('Başlangıç tarihi bitişten sonra olamaz.'); return; }
+  // v161: doğrulama — fiyatsız + tarihsiz ekleme anlamsız; tarihli eklemede fiyat = dönem fiyatı (zorunlu)
+  if((ts || te) && fiyat == null){ alert('Dönem fiyatı giriniz — girilen tarih aralığında geçerli olacak tutar.'); return; }
+  if(!ts && !te && fiyat == null){ alert('Fiyat girin veya 📅 tarih aralığı + dönem fiyatı girin.\nİpucu: Fiyatı boş bırakıp yalnızca tarihli dönem eklerseniz, dönem dışı satışlar kategori fiyatından hesaplanır.'); return; }
+
   let hedef = tarifeData[cat].find(t=>t.ad===ad);
-  if(hedef){
+  const yeniKayit = !hedef;
+  if(yeniKayit){
+    hedef = {ad, fiyat: (ts||te) ? null : fiyat}; // tarihli eklemede temel fiyat BOŞ kalır → kategori fiyatına düşer
+    if(!(ts||te) && kdvDahil) hedef.kdvDahil = true;
+    tarifeData[cat].push(hedef);
+  } else if(!ts && !te){
+    // v161 (A2 düzeltmesi): temel fiyat YALNIZCA tarihsiz eklemede güncellenir
     hedef.fiyat = fiyat;
     if(kdvDahil) hedef.kdvDahil = true; else delete hedef.kdvDahil;
-  } else {
-    hedef = {ad, fiyat};
-    if(kdvDahil) hedef.kdvDahil = true;
-    tarifeData[cat].push(hedef);
   }
   if(ts || te){
+    // v161: çakışma uyarısı
+    if(donemCakisiyorMu(hedef.donemler, ts, te)){
+      const devam = await appConfirm('⚠️ Bu tarih aralığı mevcut bir dönemle ÇAKIŞIYOR.\nÇakışan günlerde en son eklenen dönem geçerli olur.\n\nYine de eklensin mi?');
+      if(!devam) return;
+    }
     if(!hedef.donemler) hedef.donemler = [];
     const dn = {s: ts, e: te, fiyat};
     if(kdvDahil) dn.kdvDahil = true;
@@ -9293,6 +9317,7 @@ function addTarife(cat){
   if(kdvCb) kdvCb.checked = false;
   if(tsEl) tsEl.value = ''; if(teEl) teEl.value = '';
   saveTarifeStore();
+  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
   renderTarifeList();
   document.getElementById('tarifeAdInput'+sfx).value = '';
   document.getElementById('tarifeFiyatInput'+sfx).value = '';
@@ -9329,17 +9354,24 @@ function editTarife(ad, cat){
     adVisible: true,
     ad: t.ad,
     adLocked: kullanım > 0,
-    fiyat: t.fiyat,
+    fiyat: t.fiyat != null ? t.fiyat : '',
     kdvDahil: !!t.kdvDahil,
-    subInfo: kullanım > 0 ? '📌 ' + kullanım + ' kayıtta kullanılıyor — fiyat değişikliği <b>tüm tarihlerdeki</b> kayıtları etkiler. Sadece belirli tarihler için fiyat değiştirmek istiyorsan 📅 <b>dönem fiyatı</b> kullan.' : null,
+    fiyatOpsiyonel: true,
+    subInfo: (kullanım > 0 ? '📌 ' + kullanım + ' kayıtta kullanılıyor — fiyat değişikliği <b>tüm tarihlerdeki</b> kayıtları etkiler. Sadece belirli tarihler için fiyat değiştirmek istiyorsan 📅 <b>dönem fiyatı</b> kullan.<br>' : '') + '💡 Fiyatı <b>boş bırakırsan</b> temel fiyat kalkar; dönem dışı satışlar <b>kategori fiyatından</b> hesaplanır.',
     saveLabel: '💾 Güncelle',
     onSave: (yeniAd, fiyat, kdvDahil) => {
       if(kullanım === 0 && yeniAd && yeniAd !== t.ad){
         if((tarifeData[cat]||[]).some(x=>x.ad===yeniAd)){ alert('Bu adda kayıt zaten var.'); return; }
         t.ad = yeniAd;
       }
-      t.fiyat = fiyat;
-      if(kdvDahil) t.kdvDahil = true; else delete t.kdvDahil;
+      if(fiyat == null){
+        // v161: temel fiyat kaldırıldı → kategori fiyatına düşer
+        t.fiyat = null;
+        delete t.kdvDahil;
+      } else {
+        t.fiyat = fiyat;
+        if(kdvDahil) t.kdvDahil = true; else delete t.kdvDahil;
+      }
       saveTarifeStore();
       if(typeof scheduleCloudSync==='function') scheduleCloudSync();
       renderTarifeList();
@@ -9348,6 +9380,15 @@ function editTarife(ad, cat){
   });
 }
 
+// v161: dönem çakışma kontrolü — yeni aralık mevcutlarla kesişiyor mu?
+function donemCakisiyorMu(donemler, s, e){
+  if(!donemler || !donemler.length) return false;
+  return donemler.some(d => {
+    const dS = d.s || '0000-00-00', dE = d.e || '9999-99-99';
+    const nS = s || '0000-00-00', nE = e || '9999-99-99';
+    return nS <= dE && dS <= nE;
+  });
+}
 // ── v155: DÖNEM FİYATLARI (tarife/kampanya için tarih aralıklı fiyat) ──
 let _donemCat = null, _donemAd = null;
 function openTarifeDonemModal(cat, ad){
@@ -9383,7 +9424,7 @@ function renderTarifeDonemList(){
     <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 10px;gap:8px;${gecmis?'opacity:.65':''}">
       <span style="font-size:11px;color:var(--txt)">📅 ${d.s||'başlangıçsız'} → ${d.e||'süresiz'}${gecmis?' <span style="font-size:9px;color:var(--muted)">(bitti)</span>':''}</span>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <span style="font-size:12px;font-weight:700;color:var(--gold)">${d.fiyat.toLocaleString('tr-TR')} ₺${d.kdvDahil?' <span style="font-size:8.5px;color:var(--muted)">KDV\u2009dahil</span>':''}</span>
+        ${(()=>{const c=fiyatCifti(d.fiyat,d.kdvDahil); return `<span style="font-size:12px;font-weight:700;color:var(--gold)">${c.brut.toLocaleString('tr-TR',{maximumFractionDigits:2})} ₺ <span style="font-size:8px;color:var(--muted);font-weight:600">KDV dahil · hariç ${c.net.toLocaleString('tr-TR',{maximumFractionDigits:2})}</span></span>`;})()}
         <button onclick="editTarifeDonem(${i})" title="Fiyat düzelt" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button>
         <button onclick="deleteTarifeDonem(${i})" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
       </div>
@@ -9423,7 +9464,7 @@ function editTarifeDonem(idx){
     }
   });
 }
-function addTarifeDonem(){
+async function addTarifeDonem(){
   const t = (tarifeData[_donemCat]||[]).find(x=>x.ad===_donemAd);
   if(!t) return;
   const s = document.getElementById('tdStart').value || null;
@@ -9432,6 +9473,10 @@ function addTarifeDonem(){
   if(isNaN(fiyat) || fiyat < 0){ alert('Geçerli bir fiyat giriniz.'); return; }
   if(!s && !e){ alert('En az bir tarih (başlangıç veya bitiş) giriniz.'); return; }
   if(s && e && s > e){ alert('Başlangıç tarihi bitişten sonra olamaz.'); return; }
+  if(donemCakisiyorMu(t.donemler, s, e)){
+    const devam = await appConfirm('⚠️ Bu tarih aralığı mevcut bir dönemle ÇAKIŞIYOR.\nÇakışan günlerde en son eklenen dönem geçerli olur.\n\nYine de eklensin mi?');
+    if(!devam) return;
+  }
   if(!t.donemler) t.donemler = [];
   const donem = {s, e, fiyat};
   if(document.getElementById('tdKdvDahil')?.checked) donem.kdvDahil = true;
@@ -9475,7 +9520,9 @@ function renderTarifeList(){
       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px;gap:6px">
         <span style="font-size:12px;font-weight:700;color:var(--txt);min-width:0;overflow:hidden;text-overflow:ellipsis">${t.ad}${t.donemler&&t.donemler.length?` <span style="font-size:9px;background:rgba(255,183,77,0.18);color:var(--gold);border-radius:8px;padding:1px 6px;font-weight:700;white-space:nowrap">📅 ${t.donemler.length} dönem</span>`:''}</span>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-          <span style="font-size:12px;font-weight:700;color:#4cd964">${t.fiyat.toLocaleString('tr-TR')} ₺${t.kdvDahil?' <span style="font-size:8.5px;color:var(--muted);font-weight:600">KDV\u2009dahil</span>':''}</span>
+          ${(()=>{const c=fiyatCifti(t.fiyat,t.kdvDahil); return c
+            ? `<span style="font-size:12px;font-weight:700;color:#4cd964">${c.brut.toLocaleString('tr-TR',{maximumFractionDigits:2})} ₺ <span style="font-size:8px;color:var(--muted);font-weight:600">KDV dahil · hariç ${c.net.toLocaleString('tr-TR',{maximumFractionDigits:2})}</span></span>`
+            : `<span style="font-size:10px;font-weight:700;color:var(--muted);background:var(--panel2);border:1px dashed var(--line);border-radius:5px;padding:2px 7px">kategori fiyatı</span>`;})()}
           <button onclick="editTarife('${t.ad.replace(/'/g,"\\'")}','${cat}')" title="Ad/fiyat düzelt" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button>
           <button onclick="openTarifeDonemModal('${cat}','${t.ad.replace(/'/g,"\\'")}')" title="Dönem fiyatları (tarih aralıklı)" style="background:rgba(255,183,77,0.1);border:1px solid rgba(255,183,77,0.3);color:var(--gold);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">📅</button>
           <button onclick="deleteTarife('${t.ad.replace(/'/g,"\\'")}','${cat}')" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
@@ -9489,7 +9536,7 @@ function renderTarifeList(){
 }
 
 // ── v157: TARİFE/KAMPANYA FORM MODALI (prompt yerine) ──
-let _tfmOnSave = null, _tfmOnCancel = null;
+let _tfmOnSave = null, _tfmOnCancel = null, _tfmFiyatOpsiyonel = false;
 function openTarifeFormModal(opts){
   // opts: {title, headerColor, subInfo, adVisible, ad, adLocked, adLabel, fiyat, kdvDahil, saveLabel, onSave(ad,fiyat,kdvDahil), onCancel()}
   _tfmOnSave = opts.onSave || null;
@@ -9508,6 +9555,8 @@ function openTarifeFormModal(opts){
   adInp.disabled = !!opts.adLocked;
   adInp.style.opacity = opts.adLocked ? '.55' : '1';
   document.getElementById('tfmAdKilit').style.display = opts.adLocked ? 'block' : 'none';
+  _tfmFiyatOpsiyonel = !!opts.fiyatOpsiyonel;
+  document.getElementById('tfmFiyat').placeholder = opts.fiyatOpsiyonel ? 'Boş = kategori fiyatı geçerli' : '0';
   document.getElementById('tfmFiyat').value = opts.fiyat != null ? opts.fiyat : '';
   document.getElementById('tfmKdv').checked = !!opts.kdvDahil;
   // v159: tarih aralığı yalnızca yeni ekleme akışında gösterilir
@@ -9530,16 +9579,25 @@ function saveTarifeFormModal(){
   const fiyat = parseFloat((document.getElementById('tfmFiyat').value||'').replace(',','.'));
   const kdvDahil = document.getElementById('tfmKdv').checked;
   if(adWrapGorunur && !ad){ alert('Ad giriniz.'); return; }
-  if(isNaN(fiyat) || fiyat < 0){ alert('Geçerli bir fiyat giriniz.'); return; }
   // v159: opsiyonel tarih aralığı
   const tarihGorunur = document.getElementById('tfmTarihWrap').style.display !== 'none';
   const ts = tarihGorunur ? (document.getElementById('tfmStart').value || null) : null;
   const te = tarihGorunur ? (document.getElementById('tfmEnd').value || null) : null;
   if(ts && te && ts > te){ alert('Başlangıç tarihi bitişten sonra olamaz.'); return; }
+  // v161: fiyat opsiyonel olabilir (yalnız tarih girildiyse dönem fiyatı zorunlu)
+  const fiyatBos = (document.getElementById('tfmFiyat').value||'').trim()==='';
+  if(_tfmFiyatOpsiyonel){
+    if((ts||te) && fiyatBos){ alert('Dönem fiyatı giriniz — girilen tarih aralığında geçerli olacak tutar.'); return; }
+    if(tarihGorunur && !ts && !te && fiyatBos){ alert('Fiyat girin veya 📅 tarih aralığı + dönem fiyatı girin.'); return; }
+    // tarih alanı gizliyken (düzenleme modu) boş fiyat serbest → temel fiyat kaldırılır
+  } else {
+    if(fiyatBos || isNaN(fiyat) || fiyat < 0){ alert('Geçerli bir fiyat giriniz.'); return; }
+  }
+  if(!fiyatBos && (isNaN(fiyat) || fiyat < 0)){ alert('Geçerli bir fiyat giriniz.'); return; }
   const cb = _tfmOnSave;
   _tfmOnCancel = null; // başarılı kayıtta iptal callback'i çalışmasın
   closeTarifeFormModal(false);
-  if(cb) cb(ad, fiyat, kdvDahil, ts, te);
+  if(cb) cb(ad, fiyatBos ? null : fiyat, kdvDahil, ts, te);
 }
 
 // Müşteri formundaki tarife dropdown'unu kategoriye göre güncelle
@@ -9561,9 +9619,12 @@ function updateMkTarifeField(){
     tarifeSelect.innerHTML =
       `<option value="">— ${isDiger?'Kampanyasız':'Tarifesiz'} (varsayılan fiyat) —</option>` +
       list.map(t => {
-        const efFiyat = tarifeFiyatFor(t.ad, cat, formTarih);
-        const donemli = t.donemler && t.donemler.length && efFiyat !== t.fiyat;
-        return `<option value="${t.ad}">${t.ad} (${(efFiyat!=null?efFiyat:t.fiyat).toLocaleString('tr-TR')} ₺${donemli?' 📅':''})</option>`;
+        // v161: seçilen tarihe göre geçerli NET fiyatı bul, ekranda KDV DAHİL göster
+        const efNet = tarifeFiyatFor(t.ad, cat, formTarih);
+        const donemli = t.donemler && t.donemler.length && efNet != null && (t.fiyat == null || Math.abs(efNet - (t.kdvDahil? t.fiyat/(1+KDV_ORANI) : t.fiyat)) > 0.005);
+        if(efNet == null) return `<option value="${t.ad}">${t.ad} (kategori fiyatı geçerli)</option>`;
+        const brut = efNet * (1 + KDV_ORANI);
+        return `<option value="${t.ad}">${t.ad} — ${brut.toLocaleString('tr-TR',{maximumFractionDigits:2})} ₺ KDV dahil${donemli?' 📅':''}</option>`;
       }).join('') +
       `<option value="__yeni__">➕ Yeni ${isDiger?'kampanya':'tarife'} ekle…</option>`;
     tarifeSelect.onchange = function(){
@@ -9579,19 +9640,25 @@ function updateMkTarifeField(){
           subInfo: '📌 <b>' + cat + '</b> kategorisine eklenecek ve bu kayıtta otomatik seçilecek.',
           saveLabel: '💾 Ekle ve Seç',
           showDates: true,
-          onSave: (ad, fiyat, kdvDahil, ts, te) => {
+          fiyatOpsiyonel: true,
+          onSave: async (ad, fiyat, kdvDahil, ts, te) => {
             if(!tarifeData[cat]) tarifeData[cat] = [];
             let hedef = tarifeData[cat].find(t=>t.ad===ad);
-            if(hedef){
-              hedef.fiyat = fiyat;
-              if(kdvDahil) hedef.kdvDahil = true; else delete hedef.kdvDahil;
-            } else {
-              hedef = {ad, fiyat};
-              if(kdvDahil) hedef.kdvDahil = true;
+            const yeniKayit = !hedef;
+            if(yeniKayit){
+              // v161: tarihli eklemede temel fiyat BOŞ → dönem dışı kategori fiyatı geçerli
+              hedef = {ad, fiyat: (ts||te) ? null : fiyat};
+              if(!(ts||te) && kdvDahil) hedef.kdvDahil = true;
               tarifeData[cat].push(hedef);
+            } else if(!ts && !te){
+              hedef.fiyat = fiyat; // temel fiyat yalnız tarihsiz eklemede güncellenir (A2)
+              if(kdvDahil) hedef.kdvDahil = true; else delete hedef.kdvDahil;
             }
-            // v159: tarih girildiyse aynı adımda dönem fiyatı da kaydedilir
             if(ts || te){
+              if(donemCakisiyorMu(hedef.donemler, ts, te)){
+                const devam = await appConfirm('⚠️ Bu tarih aralığı mevcut bir dönemle ÇAKIŞIYOR.\nÇakışan günlerde en son eklenen dönem geçerli olur.\n\nYine de eklensin mi?');
+                if(!devam){ if(yeniKayit) tarifeData[cat] = tarifeData[cat].filter(t=>t!==hedef); return; }
+              }
               if(!hedef.donemler) hedef.donemler = [];
               const dn = {s: ts, e: te, fiyat};
               if(kdvDahil) dn.kdvDahil = true;
@@ -9703,7 +9770,7 @@ function renderKampanyaList(){
           : 'Tüm ay';
         const tipFiltreEtiket = k.tipFiltre==='mnp' ? ' (Sadece MNP)' : k.tipFiltre==='tesis' ? ' (Sadece Yeni Tesis)' : '';
         const detay = k.tip==='fiyat'
-          ? `Birim fiyat: <b style="color:#4cd964">${k.deger.toLocaleString('tr-TR')} ₺</b>${k.kdvDahil?' <span style="font-size:9px;color:var(--muted)">(KDV dahil)</span>':''} · ${tarihInfo}`
+          ? (()=>{const c=fiyatCifti(k.deger,k.kdvDahil); return `Birim fiyat: <b style="color:#4cd964">${c.brut.toLocaleString('tr-TR',{maximumFractionDigits:2})} ₺</b> <span style="font-size:9px;color:var(--muted)">KDV dahil · hariç ${c.net.toLocaleString('tr-TR',{maximumFractionDigits:2})}</span> · ${tarihInfo}`;})()
           : k.tip==='tekrarli'
           ? `Her <b>${k.minAdet||0}</b> adede <b style="color:#c084fc">${k.deger.toLocaleString('tr-TR')} ₺</b>${tipFiltreEtiket} · ${tarihInfo}`
           : `Min <b>${k.minAdet||0}</b> adet → <b style="color:#ffb74d">${k.deger.toLocaleString('tr-TR')} ₺</b> bonus · ${tarihInfo}`;
@@ -9772,8 +9839,8 @@ function openMusteriKayit(cat, isMnp, date){
   document.getElementById('mkAd').value = '';
   document.getElementById('mkTel').value = '';
   document.getElementById('mkNot').value = '';
-  updateMkTarifeField();
   document.getElementById('mkTarih').value = date || todayStr();
+  updateMkTarifeField(); // v161: tarih set edildikten SONRA — fiyatlar seçilen güne göre gelir
   document.getElementById('mkSaat').value = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
   setMkTip(_mkTip);
   window._confirmedIsMnp = isMnpBool; // modal açıldıktan sonra da koru
@@ -11712,9 +11779,16 @@ function renderRaporPage() {
   else renderRaporYillik(monthNames);
 }
 
+// v161: BİRLEŞİK TUTAR MOTORU — anasayfa/prim/rapor aynı hesabı kullanır
+// Öncelik: dönem fiyatı → tarife temel fiyatı → kampanya/kategori fiyatı. KDV dahil döner.
+function entryTutarKdv(e){
+  const ym = effectiveYm(e);
+  const tF = tarifeFiyatFor(e, e.cat);
+  const p = tF != null ? tF : (kampanyaFiyatFor(e.date, e.cat, priceFor(ym, e.cat)) || 0);
+  return e.count * p * (1 + KDV_ORANI);
+}
 function getEntryAmount(e, ymStr) {
-  const p = kampanyaFiyatFor(e.date, e.cat, priceFor(ymStr, e.cat)) || 0;
-  return e.count * p;
+  return entryTutarKdv(e); // geriye dönük imza korunur; hesap birleşik motordan
 }
 
 function renderRaporHaftalik(yilEntries, monthNames) {
@@ -11724,8 +11798,7 @@ function renderRaporHaftalik(yilEntries, monthNames) {
     const d = new Date(e.date);
     const wn = getWeekNum(e.date);
     const key = wn;
-    const ym = e.date.slice(0,7);
-    const amt = getEntryAmount(e, ym);
+    const amt = entryTutarKdv(e); // v161: tarife+dönem fiyatlı, devir (effectiveYm) doğru, KDV dahil
     if (!haftaMap[key]) haftaMap[key] = { week: wn, count: 0, amount: 0, days: new Set() };
     haftaMap[key].count += e.count;
     haftaMap[key].amount += amt;
@@ -11739,7 +11812,7 @@ function renderRaporHaftalik(yilEntries, monthNames) {
   const botRow = rows.reduce((a,b)=>b.amount<a.amount?b:a, rows[0]||{});
 
   _renderRaporShared({
-    chartTitle: `${raporYil} — Haftalık Prim Tutarı`,
+    chartTitle: `${raporYil} — Haftalık Prim Tutarı (KDV dahil · eşik bonusları hariç)`,
     bars: rows.map(r => ({
       label: `H${r.week}`,
       sublabel: weekRange(raporYil, r.week),
@@ -11791,13 +11864,19 @@ function renderRaporYillik(monthNames) {
 
   const yilMap = {};
   allYears.forEach(y => { yilMap[y] = { year:y, count:0, amount:0, yat:0, bek:0, months:new Set() }; });
+  // v161: adetler entry'den, tutarlar ay bazlı resmi hesaptan (financeFor: tarife+bonus+KDV)
+  const yilAylari = {};
   entries.forEach(e => {
-    const y = new Date(e.date).getFullYear();
-    const ym = e.date.slice(0,7);
-    const p = kampanyaFiyatFor(e.date,e.cat,priceFor(ym,e.cat))||0;
-    yilMap[y].count  += e.count;
-    yilMap[y].amount += e.count * p * (1+KDV_ORANI);
+    const ym = effectiveYm(e);
+    const y = parseInt(ym.slice(0,4));
+    if(!yilMap[y]) return;
+    yilMap[y].count += e.count;
     yilMap[y].months.add(ym);
+    if(!yilAylari[y]) yilAylari[y] = new Set();
+    yilAylari[y].add(ym);
+  });
+  Object.keys(yilAylari).forEach(y => {
+    yilAylari[y].forEach(ym => { yilMap[y].amount += financeFor(ym).genelToplamTutar; });
   });
   // Yatırılan ve Beklenen — ay bazlı toplanıp yıla ekleniyor
   Object.keys(mMap).forEach(ym => {
@@ -11886,9 +11965,8 @@ function renderRaporAylik(yil, monthNames) {
     const ym = `${yil}-${String(ayNo).padStart(2,'0')}`;
     const ayEntries = entries.filter(e => effectiveYm(e)===ym);
     const count = ayEntries.reduce((a,e) => a + e.count, 0);
-    const amount = ayEntries.reduce((a,e) => {
-      return a + e.count * (kampanyaFiyatFor(e.date,e.cat,priceFor(ym,e.cat))||0) * (1+KDV_ORANI);
-    }, 0);
+    // v161: anasayfayla birebir aynı resmi hesap — tarife + kampanya bonusları + KDV dahil
+    const amount = count > 0 ? financeFor(ym).genelToplamTutar : 0;
     const hedef = hedefler[ym] || 0;
     const pct = hedef > 0 ? Math.min(100, Math.round(amount/hedef*100)) : null;
     const yat = yatirilan[ym] || 0;
@@ -14182,6 +14260,19 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v161',
+    date: '03.07.2026',
+    items: [
+      { type: 'fix', text: 'HESAP DOGRULUGU PAKETI — Kayit formundaki tarife/kampanya secicisi artik SECILEN GUNUN donem fiyatini gosteriyor (onceden bugunun fiyatini gosteriyordu)' },
+      { type: 'fix', text: 'Ayni urune tarihli ikinci kampanya eklemek temel fiyati artik EZMIYOR — sadece yeni donem eklenir' },
+      { type: 'fix', text: 'Secicideki fiyatlar artik KDV DAHIL gosteriliyor (orn. "Kulaklik — 120 TL KDV dahil"), donem aktifse 📅 isareti var' },
+      { type: 'fix', text: 'Haftalik/Yillik rapor hesaplari duzeltildi: tarife/urun fiyatlari dahil, devir kayitlari dogru aya sayiliyor, KDV dahil — aylik gorunum anasayfayla KURUSUNA BIREBIR ayni (financeFor)' },
+      { type: 'new', text: 'Fiyat hiyerarsisi sadelesti: tarife eklerken FIYAT BOS birakilabilir — donem disi satislar dogrudan kategori fiyatindan hesaplanir (orn. PostPaid kampanyasi: sadece 01-05.07 arasi 1000 TL, disi kategori 600 TL). Duzenlemede de temel fiyat bosaltilabilir' },
+      { type: 'new', text: 'Cakisan donem uyarisi: yeni tarih araligi mevcut bir donemle kesisiyorsa onay sorulur (cakisan gunlerde en son eklenen gecerli kurali hatirlatilir)' },
+      { type: 'ui', text: 'KDV GOSTERIM STANDARDI: her yerde buyuk rakam KDV DAHIL, yaninda kucuk "haric" — kategori kartlari, seciciler, tarife/donem/kampanya listeleri, hakedis kirilimi. KDV kutucugu yalnizca tanimlama/duzenleme formlarinda' },
+    ]
+  },
   {
     version: 'v160',
     date: '03.07.2026',
