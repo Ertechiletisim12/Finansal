@@ -14,7 +14,7 @@
   // SW — offline destek, PWA
   if('serviceWorker' in navigator){
     const swKod = `
-const CACHE_VER = 'finansal-v154';
+const CACHE_VER = 'finansal-v155';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2259,6 +2259,33 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   </div>
 </div>
 
+<!-- DÖNEM FİYATLARI MODALI (v155) -->
+<div id="tarifeDonemModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1300;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:420px;width:98%;margin:auto 0">
+    <div style="background:linear-gradient(135deg,#b8860b,#8a6508);padding:13px 16px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
+      <span id="tdBaslik" style="font-size:13px;font-weight:700;color:#fff">📅 Dönem Fiyatları</span>
+      <button onclick="closeTarifeDonemModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+    </div>
+    <div style="padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--muted);font-weight:700">TEMEL FİYAT (dönem dışı)</span>
+        <span id="tdBazFiyat" style="font-size:14px;font-weight:800;color:#4cd964">—</span>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px">Her satış <b>kendi tarihinin</b> dönem fiyatıyla hesaplanır. Tarih hiçbir döneme düşmüyorsa temel fiyat kullanılır. Çakışan dönemlerde en son eklenen geçerlidir.</div>
+      <div id="tdListe" style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px"></div>
+      <div style="font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">➕ Yeni Dönem</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+        <div><label style="font-size:9.5px;color:var(--muted);display:block;margin-bottom:2px">Başlangıç</label><input type="date" id="tdStart" style="width:100%;box-sizing:border-box;font-size:12px;padding:6px"></div>
+        <div><label style="font-size:9.5px;color:var(--muted);display:block;margin-bottom:2px">Bitiş</label><input type="date" id="tdEnd" style="width:100%;box-sizing:border-box;font-size:12px;padding:6px"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:6px">
+        <input type="number" id="tdFiyat" placeholder="Dönem fiyatı (₺)" style="width:100%;box-sizing:border-box;font-size:12px;padding:7px;min-width:0">
+        <button onclick="addTarifeDonem()" style="padding:7px 14px;background:linear-gradient(135deg,#b8860b,#8a6508);border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- GRAFİK BAR DETAY MODALI (v152) -->
 <div id="chartDetayModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1250;align-items:center;justify-content:center;padding:16px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:440px;width:98%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
@@ -2624,8 +2651,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v154';
-const BUILD_DATE = '03.07.2026 01:30'; // Hazırlanma tarihi (dahili)
+const APP_VERSION = 'v155';
+const BUILD_DATE = '03.07.2026 02:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -2700,12 +2727,23 @@ function saveTarifeStore(){
 // Tarife bazli fiyat - entry.tarife varsa tarifeData'dan fiyati al, yoksa null doner
 // v152: Red + PostPaid + Mccm + İnternet tarifeleri ve 'Diğer' esnek kampanyaları destekleniyor
 const TARIFE_CATS = ['Red','PostPaid','Mccm','İnternet','Diğer'];
-function tarifeFiyatFor(entryOrTarife, cat){
+function tarifeFiyatFor(entryOrTarife, cat, dateOpt){
   if(!TARIFE_CATS.includes(cat)) return null;
-  const tarifeAdi = typeof entryOrTarife === 'string' ? entryOrTarife : entryOrTarife?.tarife;
+  const isObj = typeof entryOrTarife !== 'string';
+  const tarifeAdi = isObj ? entryOrTarife?.tarife : entryOrTarife;
   if(!tarifeAdi) return null;
   const t = (tarifeData[cat]||[]).find(x=>x.ad===tarifeAdi);
-  return t ? t.fiyat : null;
+  if(!t) return null;
+  // v155: Dönem fiyatları — kaydın tarihi hangi döneme düşüyorsa o fiyat geçerli.
+  // Kampanya sistemiyle aynı kural: çakışan dönemlerde en son eklenen kazanır.
+  const date = dateOpt || (isObj ? entryOrTarife?.date : null);
+  if(date && Array.isArray(t.donemler) && t.donemler.length){
+    for(let i = t.donemler.length - 1; i >= 0; i--){
+      const d = t.donemler[i];
+      if((!d.s || date >= d.s) && (!d.e || date <= d.e)) return d.fiyat;
+    }
+  }
+  return t.fiyat;
 }
 
 function kampanyaFiyatFor(date, cat, normalFiyat){
@@ -9083,6 +9121,72 @@ function deleteTarife(ad, cat){
   render();
 }
 
+// ── v155: DÖNEM FİYATLARI (tarife/kampanya için tarih aralıklı fiyat) ──
+let _donemCat = null, _donemAd = null;
+function openTarifeDonemModal(cat, ad){
+  _donemCat = cat; _donemAd = ad;
+  const t = (tarifeData[cat]||[]).find(x=>x.ad===ad);
+  if(!t) return;
+  document.getElementById('tdBaslik').textContent = '📅 ' + ad + ' — Dönem Fiyatları';
+  document.getElementById('tdBazFiyat').textContent = t.fiyat.toLocaleString('tr-TR') + ' ₺';
+  document.getElementById('tdStart').value = '';
+  document.getElementById('tdEnd').value = '';
+  document.getElementById('tdFiyat').value = '';
+  renderTarifeDonemList();
+  document.getElementById('tarifeDonemModal').style.display = 'flex';
+}
+function closeTarifeDonemModal(){
+  document.getElementById('tarifeDonemModal').style.display = 'none';
+  _donemCat = null; _donemAd = null;
+  renderTarifeList();
+  if(typeof updateMkTarifeField==='function' && document.getElementById('musteriKayitModal')?.style.display==='flex') updateMkTarifeField();
+  render();
+}
+function renderTarifeDonemList(){
+  const div = document.getElementById('tdListe');
+  const t = (tarifeData[_donemCat]||[]).find(x=>x.ad===_donemAd);
+  if(!div || !t) return;
+  const list = t.donemler || [];
+  if(!list.length){
+    div.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">Dönem tanımlı değil — her tarihte temel fiyat geçerli.</div>';
+    return;
+  }
+  div.innerHTML = list.map((d,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 10px;gap:8px">
+      <span style="font-size:11px;color:var(--txt)">📅 ${d.s||'başlangıçsız'} → ${d.e||'süresiz'}</span>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span style="font-size:12px;font-weight:700;color:var(--gold)">${d.fiyat.toLocaleString('tr-TR')} ₺</span>
+        <button onclick="deleteTarifeDonem(${i})" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
+      </div>
+    </div>`).join('');
+}
+function addTarifeDonem(){
+  const t = (tarifeData[_donemCat]||[]).find(x=>x.ad===_donemAd);
+  if(!t) return;
+  const s = document.getElementById('tdStart').value || null;
+  const e = document.getElementById('tdEnd').value || null;
+  const fiyat = parseFloat(document.getElementById('tdFiyat').value);
+  if(isNaN(fiyat) || fiyat < 0){ alert('Geçerli bir fiyat giriniz.'); return; }
+  if(!s && !e){ alert('En az bir tarih (başlangıç veya bitiş) giriniz.'); return; }
+  if(s && e && s > e){ alert('Başlangıç tarihi bitişten sonra olamaz.'); return; }
+  if(!t.donemler) t.donemler = [];
+  t.donemler.push({s, e, fiyat});
+  saveTarifeStore();
+  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
+  document.getElementById('tdStart').value=''; document.getElementById('tdEnd').value=''; document.getElementById('tdFiyat').value='';
+  renderTarifeDonemList();
+}
+function deleteTarifeDonem(idx){
+  const t = (tarifeData[_donemCat]||[]).find(x=>x.ad===_donemAd);
+  if(!t || !t.donemler) return;
+  const d = t.donemler[idx];
+  if(!confirm('📅 ' + (d.s||'?') + ' → ' + (d.e||'?') + ' dönemi (' + d.fiyat.toLocaleString('tr-TR') + ' ₺) silinsin mi?\nBu tarihlerdeki kayıtlar temel fiyata döner.')) return;
+  t.donemler.splice(idx, 1);
+  saveTarifeStore();
+  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
+  renderTarifeDonemList();
+}
+
 function renderTarifeList(){
   const yap = (cat, divId) => {
     const div = document.getElementById(divId);
@@ -9093,10 +9197,11 @@ function renderTarifeList(){
       return;
     }
     div.innerHTML = list.map(t => `
-      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px">
-        <span style="font-size:12px;font-weight:700;color:var(--txt)">${t.ad}</span>
-        <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px;gap:6px">
+        <span style="font-size:12px;font-weight:700;color:var(--txt);min-width:0;overflow:hidden;text-overflow:ellipsis">${t.ad}${t.donemler&&t.donemler.length?` <span style="font-size:9px;background:rgba(255,183,77,0.18);color:var(--gold);border-radius:8px;padding:1px 6px;font-weight:700;white-space:nowrap">📅 ${t.donemler.length} dönem</span>`:''}</span>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
           <span style="font-size:12px;font-weight:700;color:#4cd964">${t.fiyat.toLocaleString('tr-TR')} ₺</span>
+          <button onclick="openTarifeDonemModal('${cat}','${t.ad.replace(/'/g,"\\'")}')" title="Dönem fiyatları (tarih aralıklı)" style="background:rgba(255,183,77,0.1);border:1px solid rgba(255,183,77,0.3);color:var(--gold);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">📅</button>
           <button onclick="deleteTarife('${t.ad.replace(/'/g,"\\'")}','${cat}')" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
         </div>
       </div>`).join('');
@@ -9121,9 +9226,15 @@ function updateMkTarifeField(){
     const isDiger = cat === 'Diğer';
     if(tarifeLbl) tarifeLbl.textContent = isDiger ? '🎁 Kampanya / Ürün' : '📶 Tarife';
     const list = tarifeData[cat] || [];
+    // v155: fiyatı formdaki kayıt tarihine göre göster (dönem fiyatı varsa o)
+    const formTarih = document.getElementById('mkTarih')?.value || todayStr();
     tarifeSelect.innerHTML =
       `<option value="">— ${isDiger?'Kampanyasız':'Tarifesiz'} (varsayılan fiyat) —</option>` +
-      list.map(t => `<option value="${t.ad}">${t.ad} (${t.fiyat.toLocaleString('tr-TR')} ₺)</option>`).join('') +
+      list.map(t => {
+        const efFiyat = tarifeFiyatFor(t.ad, cat, formTarih);
+        const donemli = t.donemler && t.donemler.length && efFiyat !== t.fiyat;
+        return `<option value="${t.ad}">${t.ad} (${(efFiyat!=null?efFiyat:t.fiyat).toLocaleString('tr-TR')} ₺${donemli?' 📅':''})</option>`;
+      }).join('') +
       `<option value="__yeni__">➕ Yeni ${isDiger?'kampanya':'tarife'} ekle…</option>`;
     tarifeSelect.onchange = function(){
       if(this.value === '__yeni__'){
@@ -12825,7 +12936,7 @@ function renderHedefGecmis(){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
         <div>
           <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">TARİH</div>
-          <input type="date" id="mkTarih" onchange="if(_mkTip==='mnp') updateMkAktTarih()" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
+          <input type="date" id="mkTarih" onchange="if(_mkTip==='mnp') updateMkAktTarih(); (function(){const s=document.getElementById('mkTarife');const v=s?s.value:'';updateMkTarifeField();if(s&&v&&v!=='__yeni__')s.value=v;})()" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
         </div>
         <div>
           <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">SAAT</div>
@@ -13670,6 +13781,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v155',
+    date: '03.07.2026',
+    items: [
+      { type: 'new', text: 'Donem fiyatlari: tarife ve Diger kampanyalarina tarih araligi bazli fiyat tanimlanabiliyor (orn. Kulaklik 1-5 Temmuz 100 TL, 10-20 Temmuz 200 TL). Her satis KENDI TARIHININ fiyatiyla hesaplanir; donem disinda temel fiyat gecerli' },
+      { type: 'new', text: 'Tarife/kampanya listesinde takvim (📅) butonu ile donem yonetimi: donem ekle/sil, cakisan donemlerde en son eklenen gecerli (kampanya sistemiyle ayni kural)' },
+      { type: 'new', text: 'Musteri kayit formunda tarife/kampanya secicisi formdaki TARIHE gore gecerli fiyati gosterir; donem fiyati aktifse 📅 isareti cikar, tarih degisince fiyatlar otomatik yenilenir' },
+      { type: 'fix', text: 'Fiyat degisikligi artik gecmis kayitlari etkilemiyor: donem tanimlayarak eski satislar eski fiyatta sabit kalir' },
+    ]
+  },
   {
     version: 'v154',
     date: '03.07.2026',
