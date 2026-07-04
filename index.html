@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v177';
+const CACHE_VER = 'finansal-v178';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -1024,6 +1024,13 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 @media(max-width:759px){
   .kamp-sol{border-bottom:1px solid var(--line)}
 }
+/* v178: Kampanya filtre segment butonları */
+.kamp-segment .seg-btn{background:transparent;border:none;color:var(--muted);border-radius:6px;padding:5px 11px;font-size:10.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s}
+.kamp-segment .seg-btn:hover{background:var(--panel2);color:var(--txt)}
+.kamp-segment .seg-btn.seg-aktif{background:var(--gold);color:#1a1a1a;font-weight:800}
+.kamp-segment .cat-seg{background:transparent;border:none;color:var(--muted);border-radius:6px;padding:5px 11px;font-size:10.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s}
+.kamp-segment .cat-seg:hover{background:var(--panel2);color:var(--txt)}
+.kamp-segment .cat-seg.seg-aktif{background:var(--accent);color:#08222e;font-weight:800}
 .price-row button{background:var(--red);color:#fff;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-weight:700;font-size:12px}
 .note{font-size:11px;color:var(--muted);margin-top:8px}
 
@@ -2763,7 +2770,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v177';
+const APP_VERSION = 'v178';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2877,7 +2884,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 19:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 20:15'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -9585,7 +9592,7 @@ function resetKampanyaForm(){
   document.getElementById('kEndDate').value = '';
   document.getElementById('kMinAdet').value = '';
   document.getElementById('kAciklama').value = '';
-  document.getElementById('kFormTitle').textContent = '+ Yeni Kampanya';
+  document.getElementById('kFormTitle').textContent = '➕ Yeni Kampanya Ekle';
   document.getElementById('kSaveBtn').textContent = '+ Kampanyayı Ekle';
   document.getElementById('kIptalBtn').style.display = 'none';
   updateKampanyaForm();
@@ -10185,19 +10192,16 @@ function renderKampFiltreCatBar(){
   const kats = [...new Set(kampanyaData.flatMap(k=> (k.catList&&k.catList.length)?k.catList:[k.cat]))].filter(Boolean).sort();
   const opts = [['hepsi','Tümü'], ...kats.map(c=>[c,c])];
   bar.innerHTML = opts.map(([v,l])=>
-    `<button class="prim-tool-pill" onclick="setKampFiltre('cat','${v}')" style="padding:4px 10px;font-size:10px;${_kampFiltre.cat===v?'background:var(--accent);color:#08222e;border-color:var(--accent);font-weight:800':''}">${l}</button>`
+    `<button class="cat-seg${_kampFiltre.cat===v?' seg-aktif':''}" onclick="setKampFiltre('cat','${v}')">${l}</button>`
   ).join('');
 }
 function renderKampanyaList(){
   const list = document.getElementById('kampanyaList');
   if(!list) return;
-  // filtre buton aktiflik görünümü
+  // filtre buton aktiflik görünümü — v178: seg-aktif class ile (inline style yerine)
   document.querySelectorAll('.kampf-tip').forEach(b=>{
-    const aktif = b.dataset.v===_kampFiltre.tip;
-    b.style.background = aktif ? 'var(--gold)' : '';
-    b.style.color = aktif ? '#1a1a1a' : '';
-    b.style.borderColor = aktif ? 'var(--gold)' : '';
-    b.style.fontWeight = aktif ? '800' : '';
+    b.classList.toggle('seg-aktif', b.dataset.v===_kampFiltre.tip);
+    b.style.background=''; b.style.color=''; b.style.borderColor=''; b.style.fontWeight='';
   });
   renderKampFiltreCatBar();
 
@@ -13735,7 +13739,7 @@ function renderHedefGecmis(){
     </div>
     <div class="kamp-modal-govde" style="display:grid;grid-template-columns:1fr;overflow:hidden;flex:1;min-height:0">
       <div class="kamp-sol" style="padding:14px 16px;flex-shrink:0;background:var(--panel2);overflow-y:auto">
-      <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:10px" id="kFormTitle">+ Yeni Kampanya</div>
+      <div style="font-size:13px;color:#ff6b60;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid rgba(226,35,26,0.25)" id="kFormTitle">➕ Yeni Kampanya Ekle</div>
       <input type="hidden" id="kEditId">
       <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">1️⃣ Ne tür kampanya?</div>
       <div style="display:grid;grid-template-columns:1fr;gap:7px;margin-bottom:14px" id="kTipKartlar">
@@ -13845,8 +13849,13 @@ function renderHedefGecmis(){
       </div>
     </div><!-- /kamp-sol (sadece form) -->
     <div class="kamp-sag" style="padding:14px 16px;overflow-y:auto;min-height:0">
+
+      <!-- ═══ GRUP 2: ÜRÜN FİYATLARI ═══ -->
+      <div style="border:1.5px solid rgba(63,208,255,0.35);border-radius:12px;padding:4px 4px 4px;margin-bottom:16px;background:rgba(63,208,255,0.03)">
+        <div style="font-size:11px;color:var(--accent);font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px 6px;display:flex;align-items:center;gap:6px">📦 Ürün Fiyatları <span style="font-size:9px;color:var(--muted);font-weight:600;text-transform:none">— tarife ve cihaz/aksesuar primleri</span></div>
+
       <!-- Tarife Yönetimi (Red / PostPaid / Mccm / İnternet) -->
-      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px">
+      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin:0 4px 8px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap">
           <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase">📶 Tarife Yönetimi</div>
           <select id="tarifeCatSel" onchange="renderTarifeList()" style="font-size:11px;padding:4px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--txt)">
@@ -13859,7 +13868,7 @@ function renderHedefGecmis(){
         <div class="tarife-add-row" style="display:grid;grid-template-columns:1.2fr 1fr auto;gap:6px;margin-bottom:8px">
           <input type="text" id="tarifeAdInput" placeholder="Tarife adı (örn: Red30)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
           <input type="number" id="tarifeFiyatInput" placeholder="Prim (₺)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
-          <button onclick="addTarife(document.getElementById('tarifeCatSel').value)" style="padding:7px 12px;background:#e2231a;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
+          <button onclick="addTarife(document.getElementById('tarifeCatSel').value)" style="padding:7px 14px;background:var(--accent);border:none;color:#08222e;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
         </div>
         <label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin-bottom:6px;cursor:pointer"><input type="checkbox" id="tarifeKdvDahil" style="width:14px;height:14px;cursor:pointer"> Girdiğim fiyat <b>KDV dahil</b> (sistem net'e çevirir, çift KDV olmaz)</label>
         <details style="margin-bottom:8px"><summary style="cursor:pointer;font-size:10px;color:var(--gold);font-weight:700">📅 Kampanya tarih aralığı ekle (opsiyonel)</summary>
@@ -13873,13 +13882,13 @@ function renderHedefGecmis(){
       </div>
 
       <!-- v152: Diğer — Esnek Kampanya Alanı -->
-      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px">
+      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin:0 4px 4px">
         <div style="font-size:11px;color:#c084fc;font-weight:700;text-transform:uppercase;margin-bottom:4px">🎁 Diğer — Esnek Kampanyalar</div>
         <div style="font-size:10px;color:var(--muted);margin-bottom:8px">"Diğer" kategorisine girilen her işlem bir kampanya/ürünle eşleştirilebilir (cihaz, aksesuar, özel kampanya...). Her kampanyanın kendi adet primi olur.</div>
         <div class="tarife-add-row" style="display:grid;grid-template-columns:1.2fr 1fr auto;gap:6px;margin-bottom:8px">
           <input type="text" id="tarifeAdInputDiger" placeholder="Kampanya/ürün adı" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
           <input type="number" id="tarifeFiyatInputDiger" placeholder="Prim (₺)" style="padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
-          <button onclick="addTarife('Diğer')" style="padding:7px 12px;background:#7c3aed;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
+          <button onclick="addTarife('Diğer')" style="padding:7px 14px;background:#7c3aed;border:none;color:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Ekle</button>
         </div>
         <label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin-bottom:6px;cursor:pointer"><input type="checkbox" id="tarifeKdvDahilDiger" style="width:14px;height:14px;cursor:pointer"> Girdiğim fiyat <b>KDV dahil</b> (sistem net'e çevirir, çift KDV olmaz)</label>
         <details style="margin-bottom:8px"><summary style="cursor:pointer;font-size:10px;color:var(--gold);font-weight:700">📅 Kampanya tarih aralığı ekle (opsiyonel)</summary>
@@ -13891,25 +13900,29 @@ function renderHedefGecmis(){
         </details>
         <div id="tarifeListDivDiger" style="display:flex;flex-direction:column;gap:5px"></div>
       </div>
+      </div><!-- /GRUP 2 -->
 
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;border-top:1px solid var(--line);padding-top:12px">
-        <div style="font-size:12px;color:var(--txt);font-weight:800">📋 Kayıtlı Kampanyalar</div>
-        <input type="text" id="kampFiltreAra" oninput="renderKampanyaList()" placeholder="🔍 Ara…" style="flex:1;min-width:110px;max-width:200px;padding:6px 10px;background:var(--panel);border:1.5px solid var(--line);border-radius:7px;color:var(--txt);font-size:11px;box-sizing:border-box">
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
-        <span style="font-size:9.5px;color:var(--muted);font-weight:700;min-width:38px">TİP:</span>
-        <div id="kampFiltreBar" style="display:flex;gap:4px;flex-wrap:wrap">
-          <button class="prim-tool-pill kampf-tip" data-v="hepsi" onclick="setKampFiltre('tip','hepsi')" style="padding:4px 10px;font-size:10px">Tümü</button>
-          <button class="prim-tool-pill kampf-tip" data-v="fiyat" onclick="setKampFiltre('tip','fiyat')" style="padding:4px 10px;font-size:10px">💰 Fiyat</button>
-          <button class="prim-tool-pill kampf-tip" data-v="bonus" onclick="setKampFiltre('tip','bonus')" style="padding:4px 10px;font-size:10px">🎁 Bonus</button>
-          <button class="prim-tool-pill kampf-tip" data-v="tekrarli" onclick="setKampFiltre('tip','tekrarli')" style="padding:4px 10px;font-size:10px">🔁 Tekrarlı</button>
+      <!-- ═══ GRUP 3: KAYITLI KAMPANYALAR ═══ -->
+      <div style="border:1.5px solid rgba(255,183,77,0.4);border-radius:12px;padding:10px 12px 12px;background:rgba(255,183,77,0.03)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <div style="font-size:12px;color:var(--gold);font-weight:800;text-transform:uppercase;letter-spacing:.04em">🎯 Kayıtlı Kampanyalar</div>
+          <input type="text" id="kampFiltreAra" oninput="renderKampanyaList()" placeholder="🔍 Ara…" style="flex:1;min-width:110px;max-width:200px;padding:6px 10px;background:var(--panel);border:1.5px solid var(--line);border-radius:7px;color:var(--txt);font-size:11px;box-sizing:border-box">
         </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-        <span style="font-size:9.5px;color:var(--muted);font-weight:700;min-width:38px">ÜRÜN:</span>
-        <div id="kampFiltreCatBar" style="display:flex;gap:4px;flex-wrap:wrap"></div>
-      </div>
-      <div id="kampanyaList"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap">
+          <span style="font-size:9.5px;color:var(--muted);font-weight:700;min-width:34px">TİP</span>
+          <div id="kampFiltreBar" class="kamp-segment" style="display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px">
+            <button class="kampf-tip seg-btn" data-v="hepsi" onclick="setKampFiltre('tip','hepsi')">Tümü</button>
+            <button class="kampf-tip seg-btn" data-v="fiyat" onclick="setKampFiltre('tip','fiyat')">💰 Fiyat</button>
+            <button class="kampf-tip seg-btn" data-v="bonus" onclick="setKampFiltre('tip','bonus')">🎁 Bonus</button>
+            <button class="kampf-tip seg-btn" data-v="tekrarli" onclick="setKampFiltre('tip','tekrarli')">🔁 Tekrarlı</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <span style="font-size:9.5px;color:var(--muted);font-weight:700;min-width:34px">ÜRÜN</span>
+          <div id="kampFiltreCatBar" class="kamp-segment" style="display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px;flex-wrap:wrap"></div>
+        </div>
+        <div id="kampanyaList"></div>
+      </div><!-- /GRUP 3 -->
       </div><!-- /kamp-sag -->
     </div>
   </div>
@@ -14813,6 +14826,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v178',
+    date: '04.07.2026',
+    items: [
+      { type: 'ui', text: 'Kampanya modali netlestirildi: uc bolum artik belirgin renkli cerceveli gruplar halinde — SOL: "➕ Yeni Kampanya Ekle" (kirmizi), SAG UST: "📦 Urun Fiyatlari" (tarife+diger, mavi cerceve), SAG ALT: "🎯 Kayitli Kampanyalar" (altin cerceve). Ic ice gecmis gorunum giderildi.' },
+      { type: 'ui', text: 'Kayitli kampanya filtre butonlari (Tip/Urun) segment kontrol tarzina cevrildi — tek kutu icinde bitisik, secili olan dolgulu. Daha derli toplu.' },
+    ]
+  },
   {
     version: 'v177',
     date: '04.07.2026',
