@@ -1867,19 +1867,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- Özet Kartlar -->
       <div class="stats-row" id="hedefSummaryRow" style="margin-bottom:10px"></div>
 
-      <!-- v162: İlerleme (dar, sol) + Hedef Planlaması (sağ) yan yana -->
+      <!-- v168: Hedef Planlaması (sol) + İlerleme & Kategori Detayı (sağ) yan yana — kolonlar takas edildi -->
       <div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-top:14px">
-        <div style="flex:1;min-width:min(340px,100%)">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 8px">
-            <div class="section-title" style="margin:0">📊 İlerleme & Kategori Detayı</div>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <select id="hedefProgYilSel" onchange="onHedefProgYilChange()" style="font-size:11px;padding:3px 7px"></select>
-              <select id="hedefProgAySel" onchange="renderHedefPage()" style="font-size:11px;padding:3px 7px"></select>
-            </div>
-          </div>
-          <div id="hedefProgressDiv" style="margin-bottom:10px"></div>
-        </div>
-
         <div style="flex:1.25;min-width:min(340px,100%)">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 8px">
             <div class="section-title" style="margin:0">📅 Hedef Planlaması</div>
@@ -1894,6 +1883,17 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <div class="table-wrap" style="max-height:520px;overflow-y:auto;margin-bottom:8px">
             <table class="main-table" id="hedef6AyTable"></table>
           </div>
+        </div>
+
+        <div style="flex:1;min-width:min(340px,100%)">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 8px">
+            <div class="section-title" style="margin:0">📊 İlerleme & Kategori Detayı</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <select id="hedefProgYilSel" onchange="onHedefProgYilChange()" style="font-size:11px;padding:3px 7px"></select>
+              <select id="hedefProgAySel" onchange="renderHedefPage()" style="font-size:11px;padding:3px 7px"></select>
+            </div>
+          </div>
+          <div id="hedefProgressDiv" style="margin-bottom:10px"></div>
         </div>
       </div>
 
@@ -14546,6 +14546,7 @@ const CHANGELOG_DATA = [
       { type: 'fix', text: 'Detay Tablolari penceresi ilk acildiginda donem filtresi butonlari ve tablolar bos geliyordu (modal acilinca render tetiklenmiyordu) — duzeltildi.' },
       { type: 'ui', text: 'Aylik Birim Fiyatlar giris kartlari kucultuldu ve sikilastirildi: artik alt alta uzamiyor, dar ekranda bile 2-3 sutun sigacak sekilde grid duzenlendi.' },
       { type: 'fix', text: 'Prim kartlarinda hizalama duzeltildi: veri eklendikce (MNP/tarife/devir bilgisi) kartlarin alt kismi birbirine gore kayiyordu. Artik tum kartlar esit yukseklikte, alttaki tutar satirlari hep ayni hizada.' },
+      { type: 'ui', text: 'Hedef Yonetimi duzeni degistirildi: Hedef Planlamasi tablosu sola, Ilerleme & Kategori Detayi saga tasindi.' },
     ]
   },
   {
