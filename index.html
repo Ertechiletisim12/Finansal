@@ -18,7 +18,7 @@
   // böylece localde gördüğün "URL protocol not supported" hatası da çıkmaz.
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v169';
+const CACHE_VER = 'finansal-v170';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -1566,6 +1566,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <!-- Prim Araç Çubuğu: modal pencereler + alt sayfa erişimi -->
     <div id="primToolBar" style="background:var(--bg);padding:4px 20px 8px;flex-shrink:0;display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none;z-index:39;-webkit-overflow-scrolling:touch">
       <button class="prim-tool-pill" onclick="openPrimAraModal()" style="background:rgba(63,208,255,0.12);border-color:rgba(63,208,255,0.35);color:var(--accent)">🔍 Müşteri Ara</button>
+      <button class="prim-tool-pill" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:var(--gold)">🎯 Kampanyalar</button>
+      <button class="prim-tool-pill" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent)">👥 Müşteri Takibi <span id="musteriTakipBadgeTop" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:9px;margin-left:2px"></span></button>
+      <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
       <button class="prim-tool-pill" onclick="openCmpModal()">📊 Ay Karşılaştırma</button>
       <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Detay Tabloları</button>
       <button class="prim-tool-pill" onclick="openSaatModal()">⏱ Saat Analizi</button>
@@ -1581,6 +1584,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- v151: Mobil araç çubuğu -->
       <div style="display:flex;gap:5px;align-items:center;overflow-x:auto;scrollbar-width:none;margin-bottom:5px;-webkit-overflow-scrolling:touch">
         <button class="prim-tool-pill" onclick="openPrimAraModal()" style="background:rgba(63,208,255,0.12);border-color:rgba(63,208,255,0.35);color:var(--accent);font-size:10px;padding:4px 10px">🔍 Ara</button>
+        <button class="prim-tool-pill" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:var(--gold);font-size:10px;padding:4px 10px">🎯 Kampanya</button>
+        <button class="prim-tool-pill" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent);font-size:10px;padding:4px 10px">👥 Müşteri</button>
         <button class="prim-tool-pill" onclick="openCmpModal()" style="font-size:10px;padding:4px 10px">📊 Karşılaştır</button>
         <button class="prim-tool-pill" onclick="openTablolarModal()" style="font-size:10px;padding:4px 10px">📋 Tablolar</button>
         <button class="prim-tool-pill" onclick="openSaatModal()" style="font-size:10px;padding:4px 10px">⏱ Saat</button>
@@ -2728,7 +2733,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v169';
+const APP_VERSION = 'v170';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2842,7 +2847,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 13:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 14:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -10031,14 +10036,55 @@ async function deleteKampanya(id){
   renderKampanyaList();
   render();
 }
+// v170: Kampanya listesi filtreleri
+let _kampFiltre = { tip:'hepsi', cat:'hepsi' };
+function setKampFiltre(alan, deger){ _kampFiltre[alan] = deger; renderKampanyaList(); }
+function renderKampFiltreCatBar(){
+  const bar = document.getElementById('kampFiltreCatBar');
+  if(!bar) return;
+  // sadece kampanyalarda geçen kategoriler
+  const kats = [...new Set(kampanyaData.flatMap(k=> (k.catList&&k.catList.length)?k.catList:[k.cat]))].filter(Boolean).sort();
+  const opts = [['hepsi','Tüm Kategoriler'], ...kats.map(c=>[c,c])];
+  bar.innerHTML = opts.map(([v,l])=>
+    `<button class="prim-tool-pill" onclick="setKampFiltre('cat','${v}')" style="padding:4px 10px;font-size:10px;${_kampFiltre.cat===v?'background:var(--accent);color:#08222e;border-color:var(--accent);font-weight:800':''}">${l}</button>`
+  ).join('');
+}
 function renderKampanyaList(){
   const list = document.getElementById('kampanyaList');
   if(!list) return;
+  // filtre buton aktiflik görünümü
+  document.querySelectorAll('.kampf-tip').forEach(b=>{
+    const aktif = b.dataset.v===_kampFiltre.tip;
+    b.style.background = aktif ? 'var(--gold)' : '';
+    b.style.color = aktif ? '#1a1a1a' : '';
+    b.style.borderColor = aktif ? 'var(--gold)' : '';
+    b.style.fontWeight = aktif ? '800' : '';
+  });
+  renderKampFiltreCatBar();
+
   if(!kampanyaData.length){
     list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:12px">Henüz kampanya eklenmedi.</div>';
     return;
   }
-  const sorted = [...kampanyaData].sort((a,b)=>b.ym.localeCompare(a.ym));
+  // filtre uygula
+  const ara = (document.getElementById('kampFiltreAra')?.value||'').toLowerCase().trim();
+  let veri = kampanyaData.filter(k=>{
+    if(_kampFiltre.tip!=='hepsi' && k.tip!==_kampFiltre.tip) return false;
+    if(_kampFiltre.cat!=='hepsi'){
+      const kats = (k.catList&&k.catList.length)?k.catList:[k.cat];
+      if(!kats.includes(_kampFiltre.cat)) return false;
+    }
+    if(ara){
+      const metin = ((k.catList&&k.catList.length?k.catList.join(' '):k.cat)+' '+(k.aciklama||'')+' '+k.ym).toLowerCase();
+      if(!metin.includes(ara)) return false;
+    }
+    return true;
+  });
+  if(!veri.length){
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:12px">Bu filtreye uyan kampanya yok.</div>';
+    return;
+  }
+  const sorted = [...veri].sort((a,b)=>b.ym.localeCompare(a.ym));
   // v156: süresi bitenler (ayı geçmiş VEYA bitiş tarihi geçmiş) "Geçmiş Kampanyalar" bölümüne iner
   const buAy = thisMonthKey(), bugun = todayStr();
   const bitti = k => k.ym < buAy || (k.ym === buAy && k.endDate && k.endDate < bugun);
@@ -10061,7 +10107,8 @@ function renderKampanyaList(){
           : k.tip==='tekrarli'
           ? `Her <b>${k.minAdet||0}</b> adede <b style="color:#c084fc">${k.deger.toLocaleString('tr-TR')} ₺</b>${tipFiltreEtiket} · ${tarihInfo}`
           : `Min <b>${k.minAdet||0}</b> adet → <b style="color:#ffb74d">${k.deger.toLocaleString('tr-TR')} ₺</b> bonus · ${tarihInfo}`;
-        return `<div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:6px">
+        const _tipRenk = k.tip==='fiyat'?'#4cd964':k.tip==='tekrarli'?'#c084fc':'#ffb74d';
+        return `<div style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid ${_tipRenk};border-radius:8px;padding:10px 12px;margin-bottom:6px">
           <div style="display:flex;align-items:flex-start;gap:8px">
             <div style="flex:1;min-width:0">
               <div style="font-size:12px;font-weight:700;color:var(--txt);margin-bottom:3px">
@@ -10674,6 +10721,12 @@ function checkMusteriTakip(){
   if(badge){
     badge.textContent = toplamUyari > 0 ? toplamUyari : '';
     badge.style.display = toplamUyari > 0 ? 'inline-block' : 'none';
+  }
+  // v170: prim sayfasındaki üst butondaki badge de senkron
+  const badgeTop = document.getElementById('musteriTakipBadgeTop');
+  if(badgeTop){
+    badgeTop.textContent = toplamUyari > 0 ? toplamUyari : '';
+    badgeTop.style.display = toplamUyari > 0 ? 'inline-block' : 'none';
   }
 }
 
@@ -13670,7 +13723,17 @@ function renderHedefGecmis(){
         <div id="tarifeListDivDiger" style="display:flex;flex-direction:column;gap:5px"></div>
       </div>
 
-      <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px">Kayıtlı Kampanyalar</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase">Kayıtlı Kampanyalar</div>
+        <input type="text" id="kampFiltreAra" oninput="renderKampanyaList()" placeholder="🔍 Ara (kategori, açıklama…)" style="flex:1;min-width:130px;max-width:220px;padding:6px 10px;background:var(--panel);border:1.5px solid var(--line);border-radius:7px;color:var(--txt);font-size:11px;box-sizing:border-box">
+      </div>
+      <div id="kampFiltreBar" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
+        <button class="prim-tool-pill kampf-tip" data-v="hepsi" onclick="setKampFiltre('tip','hepsi')" style="padding:4px 11px;font-size:10.5px">Tüm Tipler</button>
+        <button class="prim-tool-pill kampf-tip" data-v="fiyat" onclick="setKampFiltre('tip','fiyat')" style="padding:4px 11px;font-size:10.5px">💰 Fiyat</button>
+        <button class="prim-tool-pill kampf-tip" data-v="bonus" onclick="setKampFiltre('tip','bonus')" style="padding:4px 11px;font-size:10.5px">🎁 Bonus</button>
+        <button class="prim-tool-pill kampf-tip" data-v="tekrarli" onclick="setKampFiltre('tip','tekrarli')" style="padding:4px 11px;font-size:10.5px">🔁 Tekrarlı</button>
+      </div>
+      <div id="kampFiltreCatBar" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
       <div id="kampanyaList"></div>
     </div>
   </div>
@@ -14574,6 +14637,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v170',
+    date: '04.07.2026',
+    items: [
+      { type: 'ui', text: 'Kampanyalar ve Musteri Takibi butonlari prim sayfasindaki arac cubuguna tasindi (Musteri Ara yanina). Sol menudeki eski butonlar da duruyor.' },
+      { type: 'ui', text: 'Kampanya listesine filtre eklendi: tip (Fiyat / Bonus / Tekrarli), kategori ve arama kutusu. Ayrica kampanya kartlarina tip renginde sol serit eklendi — daha duzenli gorunum.' },
+    ]
+  },
   {
     version: 'v169',
     date: '04.07.2026',
