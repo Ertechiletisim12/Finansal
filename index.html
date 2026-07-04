@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v178';
+const CACHE_VER = 'finansal-v179';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -413,6 +413,17 @@ html{scrollbar-gutter:stable}
   }
   /* Topbar yüksekliği kadar padding ekle ki içerik altında kalmasın */
   .app>.main{ padding-top:52px!important; }
+  /* v179: sayfa-içi sticky başlıklar (nav butonları dahil) fixed topbar'ın ARKASINA girmesin —
+     top:0 yerine topbar yüksekliği (52px) kadar aşağıdan yapışsınlar */
+  #page-dash > div[style*="position:sticky"],
+  #primTitleBar,
+  #gelirTitleBar,
+  #page-prim > div[style*="position:sticky"],
+  #page-hedef > div[style*="position:sticky"],
+  #page-gelir > div[style*="position:sticky"],
+  #page-finans > div[style*="position:sticky"]{
+    top:52px!important;
+  }
 
   /* Tablolar sadece kendi içinde scroll */
   .table-wrap{ overflow-x:auto!important;max-width:100vw!important; }
@@ -2770,7 +2781,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v178';
+const APP_VERSION = 'v179';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2884,7 +2895,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 20:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 21:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3178,10 +3189,24 @@ let gizliMod = false;
 try{ gizliMod = localStorage.getItem('vf_gizli_mod')==='1'; }catch(e){}
 const PARA_MASKE = '\u2217\u2217\u2217\u2217,\u2217\u2217 \u20ba'; // ****,** ₺
 function toggleGizliMod(){
-  gizliMod = !gizliMod;
+  if(gizliMod){
+    // AÇMAK isteniyor → PIN doğrulaması gerek
+    const kayitliPin = (typeof getPin==='function') ? getPin() : '';
+    if(kayitliPin){
+      const girilen = prompt('🔒 Tutarları göstermek için PIN girin:');
+      if(girilen===null) return;              // vazgeçti
+      if(girilen.trim() !== kayitliPin){
+        alert('❌ Yanlış PIN. Tutarlar gizli kalıyor.');
+        return;
+      }
+    }
+    gizliMod = false;
+  } else {
+    // GİZLEMEK isteniyor → serbest, PIN sorma
+    gizliMod = true;
+  }
   try{ localStorage.setItem('vf_gizli_mod', gizliMod?'1':'0'); }catch(e){}
   guncelleGizliModButon();
-  // tüm ekranı yeniden çiz
   try{ render(); }catch(e){}
   try{ if(typeof renderDashboard==='function') renderDashboard(); }catch(e){}
   try{ if(typeof renderKampanyaList==='function') renderKampanyaList(); }catch(e){}
@@ -10174,8 +10199,17 @@ async function deleteKampanya(id){
   render();
 }
 // v170: Kampanya listesi filtreleri
-let _kampFiltre = { tip:'hepsi', cat:'hepsi' };
+let _kampFiltre = { tip:'hepsi', cat:'hepsi', ay:'hepsi' };
 function setKampFiltre(alan, deger){ _kampFiltre[alan] = deger; renderKampanyaList(); }
+function renderKampFiltreAyBar(){
+  const bar = document.getElementById('kampFiltreAyBar');
+  if(!bar) return;
+  const aylar = [...new Set((kampanyaData||[]).map(k=>k.ym))].filter(Boolean).sort().reverse();
+  const opts = [['hepsi','Tümü'], ...aylar.map( y=>[y, monthLabel(y)])];
+  bar.innerHTML = opts.map(([v,l])=>
+    `<button class="cat-seg${_kampFiltre.ay===v?' seg-aktif':''}" onclick="setKampFiltre('ay','${v}')">${l}</button>`
+  ).join('');
+}
 // v177: Kampanyalar butonundaki sayı rozeti — bu aya ait kampanya adedi
 function guncelleKampanyaSayiBadge(){
   const buAy = thisMonthKey();
@@ -10204,6 +10238,7 @@ function renderKampanyaList(){
     b.style.background=''; b.style.color=''; b.style.borderColor=''; b.style.fontWeight='';
   });
   renderKampFiltreCatBar();
+  renderKampFiltreAyBar();
 
   if(!kampanyaData.length){
     list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:12px">Henüz kampanya eklenmedi.</div>';
@@ -10213,6 +10248,7 @@ function renderKampanyaList(){
   const ara = (document.getElementById('kampFiltreAra')?.value||'').toLowerCase().trim();
   let veri = kampanyaData.filter(k=>{
     if(_kampFiltre.tip!=='hepsi' && k.tip!==_kampFiltre.tip) return false;
+    if(_kampFiltre.ay!=='hepsi' && k.ym!==_kampFiltre.ay) return false;
     if(_kampFiltre.cat!=='hepsi'){
       const kats = (k.catList&&k.catList.length)?k.catList:[k.cat];
       if(!kats.includes(_kampFiltre.cat)) return false;
@@ -10515,7 +10551,13 @@ function renderMusteriRapor(){
   }
 
   const bugun = todayStr();
-  let filtered = [...musteriler].sort((a,b)=>b.entryDate.localeCompare(a.entryDate));
+  // v179: yeniden eskiye — önce tarih (entryDate), eşitse ekleme zamanı/id'ye göre (yeni üstte)
+  let filtered = [...musteriler].sort((a,b)=>{
+    const da = a.entryDate||'', db = b.entryDate||'';
+    if(db !== da) return db.localeCompare(da);
+    const ca = a.createdAt || a.id || '', cb = b.createdAt || b.id || '';
+    return String(cb).localeCompare(String(ca));
+  });
 
   // Takip süresi geçmiş "bekliyor"ları vurgula
   filtered.forEach(m=>{
@@ -13909,6 +13951,10 @@ function renderHedefGecmis(){
           <input type="text" id="kampFiltreAra" oninput="renderKampanyaList()" placeholder="🔍 Ara…" style="flex:1;min-width:110px;max-width:200px;padding:6px 10px;background:var(--panel);border:1.5px solid var(--line);border-radius:7px;color:var(--txt);font-size:11px;box-sizing:border-box">
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap">
+          <span style="font-size:9.5px;color:var(--muted);font-weight:700;min-width:34px">AY</span>
+          <div id="kampFiltreAyBar" class="kamp-segment" style="display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px;flex-wrap:wrap"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap">
           <span style="font-size:9.5px;color:var(--muted);font-weight:700;min-width:34px">TİP</span>
           <div id="kampFiltreBar" class="kamp-segment" style="display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px">
             <button class="kampf-tip seg-btn" data-v="hepsi" onclick="setKampFiltre('tip','hepsi')">Tümü</button>
@@ -14826,6 +14872,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v179',
+    date: '04.07.2026',
+    items: [
+      { type: 'fix', text: 'Kampanya listesine AY filtresi geri eklendi (Tumu + her ay ayri). Onceki duzenlemede eksik kalmisti.' },
+      { type: 'ui', text: 'Musteri Takibi listesi yeniden eskiye siralaniyor (ayni gun icinde de en son eklenen ustte).' },
+      { type: 'new', text: 'Gizlilik modu artik PIN korumali: tutarlari GIZLEMEK icin sifre sorulmaz (tek tik), ama GOSTERMEK icin PIN dogrulamasi gerekir. Boylece baskasi tutarlari acamaz. (PIN kurulu degilse dogrudan acilir.)' },
+      { type: 'fix', text: 'Mobil gorunumde ust taraftaki menu/nav butonlari (Prim Girisi, Finansal, Hedef... ve arac cubugu) sabit ust bar arkasinda kalip kesiliyordu. Artik ust bar altina dogru konumlaniyor, hepsi gorunuyor.' },
+    ]
+  },
   {
     version: 'v178',
     date: '04.07.2026',
