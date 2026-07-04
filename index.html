@@ -18,7 +18,7 @@
   // böylece localde gördüğün "URL protocol not supported" hatası da çıkmaz.
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v166';
+const CACHE_VER = 'finansal-v167';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2159,7 +2159,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:7px 10px">
         <span style="font-size:10.5px;font-weight:700;color:var(--muted)">➕ Karşılaştırmaya ay ekle:</span>
-        <select id="cmpEkstraAy" style="font-size:11px;padding:4px 6px">${["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"].map((n,i)=>`<option value="${String(i+1).padStart(2,'0')}">${n}</option>`).join('')}</select>
+        <select id="cmpEkstraAy" style="font-size:11px;padding:4px 6px"></select>
         <select id="cmpEkstraYil" style="font-size:11px;padding:4px 6px"></select>
         <button class="prim-tool-pill" onclick="addCmpAy()" style="background:rgba(63,208,255,0.12);border-color:rgba(63,208,255,0.35);color:var(--accent);padding:4px 12px">Ekle</button>
         <span style="font-size:9px;color:var(--muted)">· satır başındaki ✕ ile çıkarılır · Değişim satırı ilk↔son ayı kıyaslar</span>
@@ -2177,13 +2177,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button onclick="closePrimModal('tablolarModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:7px 10px;margin-bottom:10px">
-        <span style="font-size:10.5px;font-weight:700;color:var(--muted)">📅 Dönem filtresi:</span>
-        <select id="tblYilSel" onchange="render()" style="font-size:11px;padding:4px 8px">
-          <option value="range">Sayfadaki seçili aralık</option>
-          <option value="all">Tüm aylar</option>
-        </select>
-        <span style="font-size:9px;color:var(--muted)">· iki tabloya birden uygulanır — sayfaya dönmeden dönem değiştir</span>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:7px 10px;margin-bottom:10px">
+        <span style="font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap">📅 Dönem:</span>
+        <div id="tblYilBtns" style="display:flex;gap:5px;flex-wrap:wrap"></div>
       </div>
       <div class="section-title-row" style="margin-top:0">
         <div class="section-title">Aylık Kategori Dağılımı (Detay)</div>
@@ -2218,7 +2214,11 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <button class="prim-tool-pill saat-flt" data-f="range" onclick="setSaatAralik('range')" style="padding:4px 10px;font-size:10px">Sayfa aralığı</button>
         <button class="prim-tool-pill saat-flt" data-f="buay" onclick="setSaatAralik('buay')" style="padding:4px 10px;font-size:10px">Bu Ay</button>
         <button class="prim-tool-pill saat-flt" data-f="gecenay" onclick="setSaatAralik('gecenay')" style="padding:4px 10px;font-size:10px">Geçen Ay</button>
+        <button class="prim-tool-pill saat-flt" data-f="7g" onclick="setSaatAralik('7g')" style="padding:4px 10px;font-size:10px">Son 7 Gün</button>
         <button class="prim-tool-pill saat-flt" data-f="30g" onclick="setSaatAralik('30g')" style="padding:4px 10px;font-size:10px">Son 30 Gün</button>
+        <button class="prim-tool-pill saat-flt" data-f="90g" onclick="setSaatAralik('90g')" style="padding:4px 10px;font-size:10px">Son 90 Gün</button>
+        <button class="prim-tool-pill saat-flt" data-f="buyil" onclick="setSaatAralik('buyil')" style="padding:4px 10px;font-size:10px">Bu Yıl</button>
+        <button class="prim-tool-pill saat-flt" data-f="gecenyil" onclick="setSaatAralik('gecenyil')" style="padding:4px 10px;font-size:10px">Geçen Yıl</button>
         <button class="prim-tool-pill saat-flt" data-f="all" onclick="setSaatAralik('all')" style="padding:4px 10px;font-size:10px">Tümü</button>
       </div>
       <div class="hourly-bar-wrap">
@@ -2725,7 +2725,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v166';
+const APP_VERSION = 'v167';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2839,7 +2839,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 10:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 11:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3265,7 +3265,11 @@ function renderEntryLogCharts(){
   if(saatAralik === 'all'){ rStart=''; rEnd=''; }
   else if(saatAralik === 'buay'){ rStart = thisMonthKey()+'-01'; rEnd = todayStr(); }
   else if(saatAralik === 'gecenay'){ const g = addMonths(thisMonthKey(),-1); rStart = g+'-01'; rEnd = g+'-31'; }
+  else if(saatAralik === '7g'){ const d = new Date(); d.setDate(d.getDate()-7); rStart = d.toISOString().slice(0,10); rEnd = todayStr(); }
   else if(saatAralik === '30g'){ const d = new Date(); d.setDate(d.getDate()-30); rStart = d.toISOString().slice(0,10); rEnd = todayStr(); }
+  else if(saatAralik === '90g'){ const d = new Date(); d.setDate(d.getDate()-90); rStart = d.toISOString().slice(0,10); rEnd = todayStr(); }
+  else if(saatAralik === 'buyil'){ const y = todayStr().slice(0,4); rStart = y+'-01-01'; rEnd = todayStr(); }
+  else if(saatAralik === 'gecenyil'){ const y = parseInt(todayStr().slice(0,4))-1; rStart = y+'-01-01'; rEnd = y+'-12-31'; }
   document.querySelectorAll('.saat-flt').forEach(b=>{
     const aktif = b.dataset.f === saatAralik;
     b.style.background = aktif ? 'rgba(90,79,207,0.25)' : '';
@@ -4776,14 +4780,24 @@ function goToday(){
   render();
 }
 
-function savePricesFromForm(){
+function savePricesFromForm(btn){
   const ym = document.getElementById('priceMonthSel').value || thisMonthKey();
   if(!prices[ym]) prices[ym] = {};
   CATS.forEach(c=>{
     const v = parseFloat(document.getElementById('price_'+c).value);
     if(!isNaN(v)) prices[ym][c] = v;
   });
-  savePricesStore(); render();
+  savePricesStore();
+  // v167: kayıt geri bildirimi — buton kısa süre "Kaydedildi ✓" olur
+  if(btn){
+    const eski = btn.innerHTML;
+    btn.innerHTML = '✅ Kaydedildi';
+    btn.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
+    btn.style.color = '#fff';
+    setTimeout(()=>{ render(); }, 700);
+  } else {
+    render();
+  }
 }
 
 let currentRange = 'this_month';
@@ -5234,10 +5248,26 @@ function render(){
   }
   const priceYm = monthSel.value || activeYm;
   const priceRow = document.getElementById('priceRow');
-  priceRow.innerHTML = CATS.map(c=>{
-      const v = (prices[priceYm] && prices[priceYm][c]!=null) ? prices[priceYm][c] : priceFor(priceYm,c);
-      return `<div class="pi">${c}<input type="number" step="0.01" id="price_${c}" value="${v}"></div>`;
-    }).join('') + `<button onclick="savePricesFromForm()">Bu Ayın Fiyatlarını Kaydet</button>`;
+  // v167: şık kategori kartları — her kategori kendi rengiyle, ₺ etiketli, büyük input
+  const kartlar = CATS.map(c=>{
+      const renk = (CAT_CONFIG[c]&&CAT_CONFIG[c].color)||'var(--gold)';
+      const tanimli = prices[priceYm] && prices[priceYm][c]!=null;
+      const v = tanimli ? prices[priceYm][c] : priceFor(priceYm,c);
+      const miras = !tanimli; // bu ay için tanımlı değil, önceki aydan miras
+      return `<div style="position:relative;background:var(--panel2);border:1px solid var(--line);border-left:3px solid ${renk};border-radius:9px;padding:9px 11px 10px;display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:11px;font-weight:800;color:${renk}">${c}</span>
+          ${miras?`<span title="Bu ay için ayrı fiyat girilmedi — önceki aydan miras" style="font-size:8px;color:var(--muted);background:rgba(255,255,255,0.05);border-radius:6px;padding:1px 5px;font-weight:700">miras</span>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1.5px solid var(--line);border-radius:7px;padding:2px 8px">
+          <input type="number" step="0.01" id="price_${c}" value="${v}" style="flex:1;min-width:0;background:transparent;border:none;color:var(--txt);font-size:15px;font-weight:700;padding:5px 0;outline:none">
+          <span style="font-size:12px;color:var(--muted);font-weight:700">₺</span>
+        </div>
+      </div>`;
+    }).join('');
+  priceRow.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:8px;margin-bottom:12px">${kartlar}</div>
+    <button onclick="savePricesFromForm(this)" style="width:100%;padding:11px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:9px;color:#1a1a1a;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s">💾 ${monthLabel(priceYm)} Fiyatlarını Kaydet</button>`;
 
   // price history table — v162: geçmiş dönemler varsayılan gizli, satırda ✏️ düzenleme
   let histYms = Object.keys(prices).sort().reverse();
@@ -5278,6 +5308,9 @@ function render(){
   if(!cmpMonthSel.options.length){
     const monthNames=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
     cmpMonthSel.innerHTML = monthNames.map((n,i)=>`<option value="${String(i+1).padStart(2,'0')}">${n}</option>`).join('');
+    // v167: ekstra ay dropdown'u — HTML içinde template literal çalışmadığı için ($'{n}' basılıyordu) JS ile dolduruluyor
+    const eAy = document.getElementById('cmpEkstraAy');
+    if(eAy) eAy.innerHTML = monthNames.map((n,i)=>`<option value="${String(i+1).padStart(2,'0')}">${n}</option>`).join('');
   }
   if(!cmpYearSel.options.length){
     const curY = new Date().getFullYear();
@@ -5379,8 +5412,8 @@ function render(){
   let finHead = '<tr><th>Ay</th><th>Post Toplam (adet)</th><th>Genel Toplam (adet)</th><th>Prim Tutar</th><th>KDV (%20)</th>'+
     '<th>Genel Toplam (KDV Dahil)</th><th>%70</th><th>%30</th><th>Yatırılan Prim</th><th>Beklenen Prim</th><th>Prim Farkı</th>'+
     '<th style="color:#ffb74d">🎯 Aylık Hedef</th><th style="color:#ffb74d">Hedefe %</th></tr>';
-  // v162: modal filtresi finans tablosuna da uygulanır (yıl seçiliyse)
-  const tblYilF = document.getElementById('tblYilSel') ? document.getElementById('tblYilSel').value : 'range';
+  // v162/v167: modal filtresi finans tablosuna da uygulanır (yıl seçiliyse) — buton grubu değişkeni
+  const tblYilF = tblYilFiltre;
   const finAylar = (tblYilF!=='range' && tblYilF!=='all') ? allMonths.filter(m=>m.startsWith(tblYilF)) : allMonths;
   let finRows = [...finAylar].reverse().map(m=>{
     const f = financeFor(m, monthMapAll);
@@ -5522,19 +5555,11 @@ function render(){
   `;
 
   // ---- main table ----
-  // v162: modal içi dönem filtresi — yıl seçenekleri dinamik doldurulur
-  const tblYilSel = document.getElementById('tblYilSel');
+  // v167: modal içi dönem filtresi — buton grubu (dropdown kaldırıldı)
+  renderTblYilBtns();
   let tblAylar = months;
-  if(tblYilSel){
-    const tumYillar = [...new Set(Object.keys(monthMapAll).map(k=>k.slice(0,4)))].sort().reverse();
-    if(!tblYilSel.dataset.yillar || tblYilSel.dataset.yillar !== tumYillar.join(',')){
-      const sec = tblYilSel.value;
-      tblYilSel.innerHTML = '<option value="range">Sayfadaki seçili aralık</option><option value="all">Tüm aylar</option>' +
-        tumYillar.map(y=>`<option value="${y}">${y} yılı</option>`).join('');
-      tblYilSel.dataset.yillar = tumYillar.join(',');
-      if([...tblYilSel.options].some(o=>o.value===sec)) tblYilSel.value = sec;
-    }
-    const f = tblYilSel.value;
+  {
+    const f = tblYilFiltre;
     if(f === 'all') tblAylar = Object.keys(monthMapAll).sort();
     else if(f !== 'range') tblAylar = Object.keys(monthMapAll).filter(k=>k.startsWith(f)).sort();
   }
@@ -5800,12 +5825,29 @@ function fiyatAyiDuzenle(ym){
 }
 // v162: Çoklu ay karşılaştırma — ekstra aylar
 let cmpEkstraAylar = [];
+// v167: Detay Tabloları dönem filtresi — dropdown yerine buton grubu
+let tblYilFiltre = 'range';
+function setTblYil(f){ tblYilFiltre = f; render(); }
+function renderTblYilBtns(){
+  const wrap = document.getElementById('tblYilBtns');
+  if(!wrap) return;
+  const tumYillar = [...new Set(Object.keys(monthMapAll||{}).map(k=>k.slice(0,4)))].sort().reverse();
+  const opts = [['range','Seçili aralık'],['all','Tüm aylar'], ...tumYillar.map(y=>[y, y+' yılı'])];
+  wrap.innerHTML = opts.map(([v,l])=>
+    `<button class="prim-tool-pill" onclick="setTblYil('${v}')" style="padding:4px 11px;font-size:10.5px;${tblYilFiltre===v?'background:var(--gold);color:#1a1a1a;border-color:var(--gold);font-weight:800':''}">${l}</button>`
+  ).join('');
+}
 function addCmpAy(){
   const m = document.getElementById('cmpEkstraAy').value;
   const y = document.getElementById('cmpEkstraYil').value;
   const ym = y + '-' + m;
+  // v167: ana iki ay (seçili ay + bir öncesi) zaten tabloda — tekrar eklenmesin
+  const curKey = document.getElementById('cmpYearSel').value + '-' + document.getElementById('cmpMonthSel').value;
+  const prevKey = addMonths(curKey,-1);
+  if(ym === curKey || ym === prevKey){ alert(monthLabel(ym) + ' zaten karşılaştırmada var (ana ay).'); return; }
+  if(cmpEkstraAylar.includes(ym)){ alert(monthLabel(ym) + ' zaten ekli.'); return; }
   if(cmpEkstraAylar.length >= 4){ alert('En fazla 6 ay karşılaştırılabilir (2 ana + 4 ekstra).'); return; }
-  if(!cmpEkstraAylar.includes(ym)) cmpEkstraAylar.push(ym);
+  cmpEkstraAylar.push(ym);
   render();
 }
 function removeCmpAy(ym){
@@ -12708,26 +12750,31 @@ function renderHedefPage(){
   const prevPct = prevHedef>0 ? Math.min(100,Math.round(prevPrim/prevHedef*100)) : 0;
 
   const sumRow = document.getElementById('hedefSummaryRow');
+  const thisBarColor = thisPct>=100?'#22c55e':thisPct>=80?'#f59e0b':'#3fd0ff';
   if(sumRow) sumRow.innerHTML = `
-    <div class="stat">
-      <div class="t">${monthLabel(ozetYm)} Hedefi</div>
+    <div class="stat" style="border-left:3px solid #fcd34d">
+      <div class="t">🎯 ${monthLabel(ozetYm)} Hedefi</div>
       <div class="v" style="color:var(--gold)">${thisHedef>0?fmt(thisHedef):'—'}</div>
-      <div class="sub">${monthLabel(now)}</div>
+      <div class="sub">Belirlenen hedef</div>
     </div>
-    <div class="stat">
-      <div class="t">${monthLabel(ozetYm)} Gerçekleşen</div>
+    <div class="stat" style="border-left:3px solid ${thisBarColor}">
+      <div class="t">📈 Gerçekleşen</div>
       <div class="v" style="color:${thisMonthPrim>=thisHedef&&thisHedef>0?'var(--green)':'var(--accent)'}">${fmt(thisMonthPrim)}</div>
-      <div class="sub">%${thisPct}</div>
+      ${thisHedef>0?`<div style="background:var(--panel2);border-radius:4px;height:6px;overflow:hidden;margin:5px 0 3px">
+        <div style="height:100%;width:${thisPct}%;background:${thisBarColor};border-radius:4px;transition:width .4s"></div>
+      </div>
+      <div class="sub" style="color:${thisBarColor};font-weight:700">%${thisPct} tamamlandı</div>`
+      :`<div class="sub">Hedef girilmedi</div>`}
     </div>
-    <div class="stat">
-      <div class="t">${monthLabel(prevYm)}</div>
-      <div class="v" style="color:var(--muted)">${prevHedef>0?fmt(prevHedef):'—'}</div>
-      <div class="sub">${monthLabel(prevYm)} — %${prevPct}</div>
+    <div class="stat" style="border-left:3px solid var(--line)">
+      <div class="t">🗓 ${monthLabel(prevYm)}</div>
+      <div class="v" style="color:var(--muted)">${prevHedef>0?fmt(prevPrim):'—'}</div>
+      <div class="sub">${prevHedef>0?`hedef ${fmt(prevHedef)} · %${prevPct}`:'geçen ay'}</div>
     </div>
-    <div class="stat" style="cursor:pointer" onclick="openHedefModal()">
-      <div class="t">Yeni Hedef</div>
-      <div class="v" style="font-size:28px">🎯</div>
-      <div class="sub">Ekle / düzenle</div>
+    <div class="stat" style="cursor:pointer;border-left:3px solid #2fae4e;background:linear-gradient(135deg,rgba(47,174,78,0.08),transparent)" onclick="openHedefModal()" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter='none'">
+      <div class="t" style="color:#4cd964">➕ Yeni Hedef</div>
+      <div class="v" style="font-size:30px">🎯</div>
+      <div class="sub" style="color:#4cd964;font-weight:700">Ekle / düzenle →</div>
     </div>`;
 
   // Ilerleme + Kategori (progYm'e gore)
@@ -12781,8 +12828,9 @@ function renderHedefPage(){
         const ht = ha*bf*(1+KDV_ORANI);
         const ap = ha>0 ? Math.min(100,Math.round(aa/ha*100)) : null;
         const col2 = ap===null?'var(--muted)':ap>=100?'var(--green)':ap>=80?'var(--gold)':'var(--accent)';
-        html += `<div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;flex:1;min-width:95px;text-align:center">
-          <div style="font-size:11px;font-weight:700;margin-bottom:3px">${c}</div>
+        const katRenk = (CAT_CONFIG[c]&&CAT_CONFIG[c].color)||'var(--accent)';
+        html += `<div style="background:var(--panel2);border:1px solid var(--line);border-top:2px solid ${katRenk};border-radius:8px;padding:9px 12px;flex:1;min-width:95px;text-align:center">
+          <div style="font-size:11px;font-weight:800;margin-bottom:3px;color:${katRenk}">${c}</div>
           <div style="font-size:14px;font-weight:700;color:var(--accent)">${aa}<span style="font-size:9px;color:var(--muted)"> adet</span></div>
           <div style="font-size:10.5px;color:var(--muted)">${fmt(at)}</div>
           ${ha>0?`<div style="background:var(--bg);border-radius:3px;height:5px;overflow:hidden;margin:4px 0">
@@ -14481,6 +14529,17 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v167',
+    date: '04.07.2026',
+    items: [
+      { type: 'fix', text: 'Coklu Ay Karsilastirma: ekstra ay ekleme menusunde ay isimleri yerine "${n}" yaziyordu (HTML icinde template literal calismiyordu) — duzeltildi, ay isimleri dogru gorunuyor. Ayrica ana aylardan biri veya zaten ekli bir ay tekrar eklenmek istenince uyari verip engelliyor.' },
+      { type: 'ui', text: 'Detay Tablolari donem filtresi: acilir liste (dropdown) yerine buton grubu — Secili aralik / Tum aylar / her yil ayri buton (secili olan altin renkte).' },
+      { type: 'ui', text: 'Saat Analizi hizli aralik butonlari artirildi: Son 7 Gun, Son 90 Gun, Bu Yil, Gecen Yil eklendi (toplam 9 secenek).' },
+      { type: 'ui', text: 'Aylik Birim Fiyatlar giris ekrani yenilendi: her kategori kendi rengiyle sik kart, buyuk ₺ etiketli input, o ay icin ayri fiyat yoksa "miras" rozeti, belirgin kaydet butonu ve "Kaydedildi ✓" geri bildirimi.' },
+      { type: 'ui', text: 'Hedef Yonetimi ozet kartlari yenilendi: renkli sol serit + ikon, Gerceklesen kartinda mini ilerleme cubugu, gecen ay karti artik gerceklesen tutari gosteriyor, Yeni Hedef karti daha davetkar. Kategori mini kartlarina kendi renk seridi eklendi.' },
+    ]
+  },
   {
     version: 'v166',
     date: '04.07.2026',
