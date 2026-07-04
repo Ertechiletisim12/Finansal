@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v173';
+const CACHE_VER = 'finansal-v174';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2761,7 +2761,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v173';
+const APP_VERSION = 'v174';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2875,7 +2875,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 16:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 17:15'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -9556,18 +9556,33 @@ function resetKampanyaForm(){
   document.getElementById('kMinAdet').value = '';
   document.getElementById('kAciklama').value = '';
   document.getElementById('kFormTitle').textContent = '+ Yeni Kampanya';
-  document.getElementById('kSaveBtn').textContent = '+ Ekle';
+  document.getElementById('kSaveBtn').textContent = '+ Kampanyayı Ekle';
   document.getElementById('kIptalBtn').style.display = 'none';
+  updateKampanyaForm();
+}
+function secKampanyaTipi(tip){
+  document.getElementById('kTip').value = tip;
   updateKampanyaForm();
 }
 function updateKampanyaForm(){
   const tip = document.getElementById('kTip').value;
   const bonusAlani = (tip==='bonus' || tip==='tekrarli');
   document.getElementById('kBonusFields').style.display = bonusAlani ? 'block' : 'none';
-  document.getElementById('kDegerLabel').textContent = tip==='fiyat' ? 'Yeni Birim Fiyat (₺)' : 'Bonus Tutar (₺)';
-  document.getElementById('kMinAdetLabel').textContent = tip==='tekrarli' ? 'Her Kaç Adet' : 'Minimum Adet Eşiği';
-  document.getElementById('kMinAdet').placeholder = tip==='tekrarli' ? 'Örn: 5 (her 5 adede bir bonus)' : 'Bu adede ulaşılınca bonus devreye girer';
+  document.getElementById('kDegerLabel').textContent = tip==='fiyat' ? 'Yeni Birim Fiyat (₺)' : 'Bonus Tutarı (₺)';
+  document.getElementById('kMinAdetLabel').textContent = tip==='tekrarli' ? 'Her Kaç Adette Bir?' : 'Kaç Adete Ulaşınca?';
+  document.getElementById('kMinAdet').placeholder = tip==='tekrarli' ? 'Örn: 2 (her 2 satışta bir öder)' : 'Örn: 10 (10 satışa ulaşınca bir kez öder)';
   document.getElementById('kTekrarliHint').style.display = tip==='tekrarli' ? 'block' : 'none';
+  // v174: adım 3 başlığı tipe göre
+  const adim3 = document.getElementById('kAdim3Baslik');
+  if(adim3) adim3.textContent = tip==='fiyat' ? '3️⃣ Yeni birim fiyat' : '3️⃣ Bonus tutarı ve koşulu';
+
+  // v174: tip kartlarını vurgula
+  document.querySelectorAll('.ktip-kart').forEach(kart=>{
+    const secili = kart.dataset.tip===tip;
+    const renk = tip==='fiyat'?'#4cd964':tip==='tekrarli'?'#c084fc':'#ffb74d';
+    kart.style.borderColor = secili ? renk : 'var(--line)';
+    kart.style.background = secili ? (tip==='fiyat'?'rgba(76,217,100,0.1)':tip==='tekrarli'?'rgba(192,132,252,0.1)':'rgba(255,183,77,0.1)') : 'var(--panel)';
+  });
 
   // Coklu kategori secimi sadece tekrarli icin gosterilsin
   const multiDiv = document.getElementById('kMultiCatDiv');
@@ -9579,6 +9594,39 @@ function updateKampanyaForm(){
     if(multiDiv) multiDiv.style.display = 'none';
     if(tekCatDiv) tekCatDiv.style.display = 'block';
   }
+  guncelleKampanyaOnizleme();
+}
+// v174: canlı önizleme — "bu kampanya şöyle çalışacak"
+function guncelleKampanyaOnizleme(){
+  const box = document.getElementById('kOnizleme');
+  const txt = document.getElementById('kOnizlemeMetin');
+  if(!box || !txt) return;
+  const tip = document.getElementById('kTip').value;
+  const deger = parseFloat(document.getElementById('kDeger').value);
+  const minAdet = parseInt(document.getElementById('kMinAdet')?.value)||0;
+  const kdvDahil = document.getElementById('kKdvDahil')?.checked;
+  let cat;
+  if(tip==='tekrarli'){
+    const secili = [...document.querySelectorAll('.kMultiCatBox:checked')].map(cb=>cb.value);
+    cat = secili.length ? secili.join(' + ') : '(kategori seç)';
+  } else {
+    cat = document.getElementById('kCat').value;
+  }
+  const kdvNot = kdvDahil ? ' (KDV dahil)' : '';
+  if(isNaN(deger) || deger<=0){ box.style.display='none'; return; }
+  let metin = '';
+  if(tip==='fiyat'){
+    metin = `<b>${cat}</b> kategorisinde her satış <b>${deger.toLocaleString('tr-TR')}₺${kdvNot}</b> prim getirecek (normal fiyat yerine).`;
+  } else if(tip==='bonus'){
+    if(minAdet<=0){ box.style.display='none'; return; }
+    metin = `<b>${cat}</b> satışların <b>${minAdet} adete</b> ulaşınca <b>bir kez</b> ekstra <b>${deger.toLocaleString('tr-TR')}₺${kdvNot}</b> kazanılır. ${minAdet} altında kalırsan bonus verilmez.`;
+  } else if(tip==='tekrarli'){
+    if(minAdet<=0){ box.style.display='none'; return; }
+    const ornek = minAdet*3;
+    metin = `<b>${cat}</b> satışlarında <b>her ${minAdet} adette</b> bir <b>${deger.toLocaleString('tr-TR')}₺${kdvNot}</b> kazanılır (tekrar tekrar). Örn: ${ornek} satış = ${ornek/minAdet} kez = <b>${(deger*(ornek/minAdet)).toLocaleString('tr-TR')}₺</b>.`;
+  }
+  txt.innerHTML = metin;
+  box.style.display = 'block';
 }
 function editKampanya(id){
   const k = kampanyaData.find(x=>x.id===id);
@@ -13648,6 +13696,37 @@ function renderHedefGecmis(){
       <div class="kamp-sol" style="padding:14px 16px;flex-shrink:0;background:var(--panel2);overflow-y:auto">
       <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:10px" id="kFormTitle">+ Yeni Kampanya</div>
       <input type="hidden" id="kEditId">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">1️⃣ Ne tür kampanya?</div>
+      <div style="display:grid;grid-template-columns:1fr;gap:7px;margin-bottom:14px" id="kTipKartlar">
+        <div class="ktip-kart" data-tip="fiyat" onclick="secKampanyaTipi('fiyat')" style="display:flex;gap:10px;align-items:flex-start;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:11px 12px;cursor:pointer;transition:all .15s">
+          <div style="font-size:22px;line-height:1">💰</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:800;color:var(--txt)">Fiyat Değişimi</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4">Bir ürünün <b>birim primini</b> geçici olarak değiştirir. Örn: P2P normalde 400₺, kampanyada her satış 750₺.</div>
+          </div>
+        </div>
+        <div class="ktip-kart" data-tip="bonus" onclick="secKampanyaTipi('bonus')" style="display:flex;gap:10px;align-items:flex-start;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:11px 12px;cursor:pointer;transition:all .15s">
+          <div style="font-size:22px;line-height:1">🎁</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:800;color:var(--txt)">Adet Bonusu (eşik)</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4">Belli sayıya ulaşınca <b>bir kez</b> ekstra ödeme. Örn: "10 P2P satarsan +2000₺". 10'a ulaşınca bir defa verilir.</div>
+          </div>
+        </div>
+        <div class="ktip-kart" data-tip="tekrarli" onclick="secKampanyaTipi('tekrarli')" style="display:flex;gap:10px;align-items:flex-start;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:11px 12px;cursor:pointer;transition:all .15s">
+          <div style="font-size:22px;line-height:1">🔁</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:800;color:var(--txt)">Tekrarlayan Bonus</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4">Her X adette bir <b>tekrar tekrar</b> öder. Örn: "her 2 satışa +1000₺". 6 satış = 3 kez = +3000₺.</div>
+          </div>
+        </div>
+      </div>
+      <select id="kTip" onchange="updateKampanyaForm()" style="display:none">
+        <option value="fiyat">Fiyat Değişimi</option>
+        <option value="bonus">Adet Bonusu</option>
+        <option value="tekrarli">Tekrarlayan Bonus</option>
+      </select>
+
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">2️⃣ Hangi ürün ve ne zaman?</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Ay</div>
@@ -13655,7 +13734,7 @@ function renderHedefGecmis(){
         </div>
         <div id="kCatTekDiv">
           <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Kategori</div>
-          <select id="kCat" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
+          <select id="kCat" onchange="guncelleKampanyaOnizleme()" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
             <option>PrePaid</option><option>PostPaid</option><option>Red</option>
             <option>P2P</option><option>Mccm</option><option>İnternet</option><option>Diğer</option>
           </select>
@@ -13663,32 +13742,24 @@ function renderHedefGecmis(){
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Kampanya Tipi</div>
-          <select id="kTip" onchange="updateKampanyaForm()" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
-            <option value="fiyat">💰 Fiyat Değişimi</option>
-            <option value="bonus">🎁 Adet Bonusu (eşik)</option>
-            <option value="tekrarli">🔁 Tekrarlayan Bonus (her X adede Y₺)</option>
-          </select>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:3px" id="kDegerLabel">Yeni Birim Fiyat (₺)</div>
-          <input type="number" id="kDeger" placeholder="0" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
-          <label id="kKdvDahilWrap" style="display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted);margin-top:4px;cursor:pointer"><input type="checkbox" id="kKdvDahil" style="width:13px;height:13px;cursor:pointer"> Tutar <b>KDV dahil</b> (işaretliyse girilen tutarın içinde KDV var sayılır)</label>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-        <div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Başlangıç Tarihi</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Başlangıç Tarihi <span style="opacity:.6">(boş = ay başı)</span></div>
           <input type="date" id="kStartDate" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
         </div>
         <div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Bitiş Tarihi</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Bitiş Tarihi <span style="opacity:.6">(boş = ay sonu)</span></div>
           <input type="date" id="kEndDate" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
         </div>
       </div>
+
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600" id="kAdim3Baslik">3️⃣ Tutar</div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px" id="kDegerLabel">Yeni Birim Fiyat (₺)</div>
+        <input type="number" id="kDeger" placeholder="0" oninput="guncelleKampanyaOnizleme()" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
+        <label id="kKdvDahilWrap" style="display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted);margin-top:4px;cursor:pointer"><input type="checkbox" id="kKdvDahil" onchange="guncelleKampanyaOnizleme()" style="width:13px;height:13px;cursor:pointer"> Tutar <b>KDV dahil</b> (işaretliyse girilen tutarın içinde KDV var sayılır)</label>
+      </div>
       <div id="kBonusFields" style="display:none;margin-bottom:8px">
         <div style="font-size:10px;color:var(--muted);margin-bottom:3px" id="kMinAdetLabel">Minimum Adet Eşiği</div>
-        <input type="number" id="kMinAdet" placeholder="Bu adede ulaşılınca bonus devreye girer" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
+        <input type="number" id="kMinAdet" oninput="guncelleKampanyaOnizleme()" placeholder="Bu adede ulaşılınca bonus devreye girer" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
         <div id="kTekrarliHint" style="display:none;font-size:10px;color:var(--accent);margin-top:4px">Örn: "her 5 adede 1000₺" için Adet=5, Tutar=1000. 23 işlemde 4 küme (20 adet) = 4×1000₺ kazanılır.</div>
 
         <!-- Çoklu kategori secimi (sadece tekrarli/bonus icin) -->
@@ -13696,19 +13767,19 @@ function renderHedefGecmis(){
           <div style="font-size:10px;color:var(--muted);margin-bottom:5px">Kategoriler (birden fazla seçilebilir — örn: PostPaid + Red toplamı)</div>
           <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
             <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
-              <input type="checkbox" class="kMultiCatBox" value="PrePaid" style="width:14px;height:14px;cursor:pointer">PrePaid</label>
+              <input type="checkbox" class="kMultiCatBox" onchange="guncelleKampanyaOnizleme()" value="PrePaid" style="width:14px;height:14px;cursor:pointer">PrePaid</label>
             <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
-              <input type="checkbox" class="kMultiCatBox" value="PostPaid" style="width:14px;height:14px;cursor:pointer">PostPaid</label>
+              <input type="checkbox" class="kMultiCatBox" onchange="guncelleKampanyaOnizleme()" value="PostPaid" style="width:14px;height:14px;cursor:pointer">PostPaid</label>
             <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
-              <input type="checkbox" class="kMultiCatBox" value="Red" style="width:14px;height:14px;cursor:pointer">Red</label>
+              <input type="checkbox" class="kMultiCatBox" onchange="guncelleKampanyaOnizleme()" value="Red" style="width:14px;height:14px;cursor:pointer">Red</label>
             <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
-              <input type="checkbox" class="kMultiCatBox" value="P2P" style="width:14px;height:14px;cursor:pointer">P2P</label>
+              <input type="checkbox" class="kMultiCatBox" onchange="guncelleKampanyaOnizleme()" value="P2P" style="width:14px;height:14px;cursor:pointer">P2P</label>
             <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
-              <input type="checkbox" class="kMultiCatBox" value="Mccm" style="width:14px;height:14px;cursor:pointer">Mccm</label>
+              <input type="checkbox" class="kMultiCatBox" onchange="guncelleKampanyaOnizleme()" value="Mccm" style="width:14px;height:14px;cursor:pointer">Mccm</label>
             <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
-              <input type="checkbox" class="kMultiCatBox" value="İnternet" style="width:14px;height:14px;cursor:pointer">İnternet</label>
+              <input type="checkbox" class="kMultiCatBox" onchange="guncelleKampanyaOnizleme()" value="İnternet" style="width:14px;height:14px;cursor:pointer">İnternet</label>
             <label style="display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px">
-              <input type="checkbox" class="kMultiCatBox" value="Diğer" style="width:14px;height:14px;cursor:pointer">Diğer</label>
+              <input type="checkbox" class="kMultiCatBox" onchange="guncelleKampanyaOnizleme()" value="Diğer" style="width:14px;height:14px;cursor:pointer">Diğer</label>
           </div>
 
           <div style="font-size:10px;color:var(--muted);margin-bottom:5px">İşlem Tipi (PrePaid/PostPaid/Red için)</div>
@@ -13720,12 +13791,16 @@ function renderHedefGecmis(){
         </div>
       </div>
       <div style="margin-bottom:10px">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Açıklama</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Açıklama <span style="opacity:.6">(opsiyonel)</span></div>
         <input type="text" id="kAciklama" placeholder="Örn: Red 1200₺ — 16 Haziran'dan itibaren" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
+      </div>
+      <div id="kOnizleme" style="display:none;background:rgba(76,217,100,0.08);border:1px solid rgba(76,217,100,0.3);border-radius:9px;padding:10px 12px;margin-bottom:10px">
+        <div style="font-size:9.5px;color:#4cd964;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">👁 Bu kampanya şöyle çalışacak</div>
+        <div id="kOnizlemeMetin" style="font-size:12px;color:var(--txt);line-height:1.5"></div>
       </div>
       <div style="display:flex;gap:8px">
         <button id="kIptalBtn" onclick="resetKampanyaForm()" style="display:none;flex:1;padding:10px;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">İptal</button>
-        <button onclick="saveKampanya()" style="flex:2;padding:10px;background:#e2231a;border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer" id="kSaveBtn">+ Ekle</button>
+        <button onclick="saveKampanya()" style="flex:2;padding:12px;background:#e2231a;border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer" id="kSaveBtn">+ Kampanyayı Ekle</button>
       </div>
     </div>
     <div style="flex:1;overflow-y:auto;padding:12px 16px">
@@ -14693,6 +14768,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v174',
+    date: '04.07.2026',
+    items: [
+      { type: 'ui', text: 'Kampanya ekleme ekrani bastan tasarlandi — hic bilmeyen biri bile anlasin diye: 1) Kampanya tipi artik acilir liste degil, her biri aciklamali+ornekli 3 buyuk kart (Fiyat / Adet Bonusu / Tekrarlayan). 2) Form adimlara bolundu (1-Tip, 2-Urun ve tarih, 3-Tutar). 3) CANLI ONIZLEME: girdikce "Bu kampanya soyle calisacak: ..." diye sade Turkce ozet gosteriyor. 4) Alan etiketleri sadelesti (orn. "Minimum Adet Esigi" yerine "Kac Adete Ulasinca?").' },
+    ]
+  },
   {
     version: 'v173',
     date: '04.07.2026',
