@@ -12,22 +12,23 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <script>
   // SW — offline destek, PWA
-  // v166: SW kodu tekrar index İÇİNDE (tek dosya — GitHub'a tek dosya atılır, eski çalışan düzen).
-  // blob: yöntemi GitHub Pages gibi gerçek https adreslerinde sorunsuz çalışır.
-  // file:// (localde çift tıklama) protokolü SW'ye izin vermez → o durumda hiç denenmez,
-  // böylece localde gördüğün "URL protocol not supported" hatası da çıkmaz.
+  // v171: clients.claim() eklendi — yeni SW aktifleşince acik sekmeleri HEMEN devralir,
+  // boylece "yukledim ama gelmedi / elle cache temizle" sorunu bitiyor.
+  // Otomatik reload YOK (gecmiste veri sorunu yaptigi icin); bunun yerine yeni surum gelince
+  // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v170';
+const CACHE_VER = 'finansal-v171';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE_VER).map(k=>caches.delete(k))))
-    // clients.claim YOK — mevcut sayfayı rahatsız etmez
-  );
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k=>k!==CACHE_VER).map(k=>caches.delete(k)));
+    await self.clients.claim(); // v171: acik sekmeleri hemen devral
+  })());
 });
 self.addEventListener('fetch', e => {
   if(e.request.mode==='navigate'){
@@ -43,10 +44,31 @@ self.addEventListener('fetch', e => {
 });`;
     try{
       const blob = new Blob([swKod],{type:'application/javascript'});
-      navigator.serviceWorker.register(URL.createObjectURL(blob))
-        .catch(e=>console.warn('SW:',e && e.message));
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).then(reg=>{
+        // v171: yeni surum tespiti — yeni SW kurulup beklemeye gecince kullaniciya "Yenile" cubugu goster
+        reg.addEventListener('updatefound', ()=>{
+          const yeni = reg.installing;
+          if(!yeni) return;
+          yeni.addEventListener('statechange', ()=>{
+            if(yeni.state==='installed' && navigator.serviceWorker.controller){
+              gosterYeniSurumCubugu();
+            }
+          });
+        });
+      }).catch(e=>console.warn('SW:',e && e.message));
     }catch(e){ /* blob desteklenmiyorsa sessizce geç */ }
     // controllerchange reload YOK — veri silinmesini önler
+  }
+  // v171: "Yeni sürüm var" bildirim çubuğu (kullanıcı tıklayınca yeniler)
+  function gosterYeniSurumCubugu(){
+    if(document.getElementById('yeniSurumCubugu')) return;
+    const bar = document.createElement('div');
+    bar.id = 'yeniSurumCubugu';
+    bar.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:99999;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a1a1a;padding:11px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:12px;font-size:13px;font-weight:700;max-width:92vw';
+    bar.innerHTML = '🎉 Yeni sürüm hazır!'
+      + '<button onclick="location.reload()" style="background:#1a1a1a;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer">Yenile</button>'
+      + '<button onclick="this.parentElement.remove()" style="background:transparent;border:none;color:#1a1a1a;font-size:18px;cursor:pointer;line-height:1;padding:0 2px" title="Sonra">×</button>';
+    document.body.appendChild(bar);
   }
   // PWA kurulum butonu
   let deferredPrompt;
@@ -993,6 +1015,15 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 .price-row{display:block}
 .price-row .pi{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted)}
 .price-row .pi input{width:95px}
+/* v171: Kampanya modalı — PC'de iki kolon (sol: form+tarife, sağ: kayıtlı liste), mobilde tek kolon */
+@media(min-width:760px){
+  .kamp-modal-govde{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+  .kamp-sag{border-left:1px solid var(--line)}
+  .kamp-sol{border-right:none}
+}
+@media(max-width:759px){
+  .kamp-sol{border-bottom:1px solid var(--line)}
+}
 .price-row button{background:var(--red);color:#fff;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-weight:700;font-size:12px}
 .note{font-size:11px;color:var(--muted);margin-top:8px}
 
@@ -1458,10 +1489,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- PWA Install (gizli) -->
       <button id="pwaInstallBtn" class="tool-btn" onclick="installPWA()" style="display:none;background:linear-gradient(90deg,#e2231a,#b81b14);color:#fff;border:none;font-weight:700;justify-content:center">📲 Uygulamayı Kur</button>
 
-      <!-- Hızlı Erişim -->
-      <div style="font-size:9.5px;letter-spacing:.1em;color:#8896a0;font-weight:700;padding:8px 6px 5px;text-transform:uppercase">Hızlı Erişim</div>
-      <button class="tool-btn" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.08);border-color:rgba(255,183,77,0.2);color:#c8963a;font-weight:600">🎯 Kampanyalar</button>
-      <button class="tool-btn" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.07);border-color:rgba(63,208,255,0.18);color:#4a9bb5;font-weight:600">👥 Müşteri Takibi <span id="musteriTakipBadge" style="display:inline-block;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px"></span></button>
+      <!-- v171: Kampanyalar ve Müşteri Takibi sidebar'dan kaldırıldı — prim sayfası araç çubuğuna taşındı -->
 
       <!-- Görünüm (katlanabilir) -->
       <div class="sidebar-divider"></div>
@@ -2733,7 +2761,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v170';
+const APP_VERSION = 'v171';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2847,7 +2875,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 14:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13587,12 +13615,13 @@ function renderHedefGecmis(){
 
 <!-- ===== KAMPANYA YÖNETİM MODALI ===== -->
 <div id="kampanyaModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.7);align-items:flex-start;justify-content:center;padding:0;padding-top:0">
-  <div style="background:var(--panel);border-radius:0 0 16px 16px;width:100%;max-width:520px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
+  <div style="background:var(--panel);border-radius:0 0 16px 16px;width:100%;max-width:940px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="display:flex;align-items:center;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
       <div style="flex:1;font-size:15px;font-weight:800;color:var(--txt)">🎯 Kampanya Yönetimi</div>
       <button onclick="closeKampanyaModal()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
     </div>
-    <div style="padding:14px 16px;border-bottom:1px solid var(--line);flex-shrink:0;background:var(--panel2);overflow-y:auto">
+    <div class="kamp-modal-govde" style="display:grid;grid-template-columns:1fr;overflow:hidden;flex:1;min-height:0">
+      <div class="kamp-sol" style="padding:14px 16px;flex-shrink:0;background:var(--panel2);overflow-y:auto">
       <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:10px" id="kFormTitle">+ Yeni Kampanya</div>
       <input type="hidden" id="kEditId">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
@@ -13722,7 +13751,9 @@ function renderHedefGecmis(){
         </details>
         <div id="tarifeListDivDiger" style="display:flex;flex-direction:column;gap:5px"></div>
       </div>
+      </div><!-- /kamp-sol -->
 
+      <div class="kamp-sag" style="padding:14px 16px;overflow-y:auto;min-height:0">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
         <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase">Kayıtlı Kampanyalar</div>
         <input type="text" id="kampFiltreAra" oninput="renderKampanyaList()" placeholder="🔍 Ara (kategori, açıklama…)" style="flex:1;min-width:130px;max-width:220px;padding:6px 10px;background:var(--panel);border:1.5px solid var(--line);border-radius:7px;color:var(--txt);font-size:11px;box-sizing:border-box">
@@ -13735,6 +13766,7 @@ function renderHedefGecmis(){
       </div>
       <div id="kampFiltreCatBar" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
       <div id="kampanyaList"></div>
+      </div><!-- /kamp-sag -->
     </div>
   </div>
 </div>
@@ -14637,6 +14669,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v171',
+    date: '04.07.2026',
+    items: [
+      { type: 'fix', text: 'Service Worker guclendirildi (clients.claim): yeni surum yuklendiginde acik sekmeleri hemen devralir — artik "yukledim ama gelmedi, elle cache temizle" sorunu olmayacak. Yeni surum gelince ekranda "Yeni surum - Yenile" cubugu cikar (otomatik reload YOK, veri guvende).' },
+      { type: 'ui', text: 'Kampanya Yonetimi modali PC de genisletildi (520px -> 940px) ve iki kolona ayrildi: solda form + tarife yonetimi, sagda kayitli kampanya listesi + filtreler. Mobilde tek kolon olarak kalir.' },
+      { type: 'ui', text: 'Sidebar daki Kampanyalar ve Musteri Takibi butonlari kaldirildi (prim sayfasi arac cubuguna tasinmisti).' },
+    ]
+  },
   {
     version: 'v170',
     date: '04.07.2026',
