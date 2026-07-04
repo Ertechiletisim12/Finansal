@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v171';
+const CACHE_VER = 'finansal-v172';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2761,7 +2761,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v171';
+const APP_VERSION = 'v172';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2875,7 +2875,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 15:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 15:45'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5214,6 +5214,27 @@ function render(){
 
     // Prim (kampanyasız baz)
     const primBaz = rangeAmt - fiyatKampToplam;
+
+    // v172: HAKEDİŞ DENKLEMİ — kampanyasız prim + kampanya etkisi = toplam (KDV dahil, kart başında özet)
+    const kampanyaEtkiToplam = fiyatKampToplam + tumBonusToplam;
+    if(kampanyaEtkiToplam > 0){
+      detayHTML += `<div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:9px 11px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:5px">
+          <span style="opacity:.75">Kampanyasız prim</span>
+          <span style="font-weight:700;color:#fff">${fmtCiftHtml(primBaz,'sm')}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:5px">
+          <span style="opacity:.75">+ Kampanya (fiyat + bonus)</span>
+          <span style="font-weight:800;color:#a3f0b5">+${fmtCiftHtml(kampanyaEtkiToplam,'sm')}</span>
+        </div>
+        <div style="height:1px;background:rgba(255,255,255,0.18);margin:5px 0"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">
+          <span style="font-weight:800">= Toplam Prim</span>
+          <span style="font-weight:800;color:#fff">${fmtCiftHtml(genelHakedis,'sm')}</span>
+        </div>
+      </div>`;
+    }
+
     detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px">
       <span style="opacity:.75;font-weight:500">Prim (baz)</span>
       <span style="font-weight:700;color:#fff">${fmtCiftHtml(primBaz,'sm')}</span>
@@ -7060,9 +7081,25 @@ function renderDash(){
         <div style="font-size:10px;color:#8fe3a8;margin-bottom:4px;font-weight:600">Toplam Prim (KDV Dahil)</div>
         <div style="font-size:22px;font-weight:900;color:#4cd964;letter-spacing:-.5px;line-height:1">${fmtF(curKdv)}</div>
         ${dashBonusToplam>0 ? `
+        <div style="margin-top:8px;background:rgba(0,0,0,0.18);border-radius:9px;padding:8px 10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;margin-bottom:4px">
+            <span style="color:rgba(255,255,255,0.7)">Kampanyasız prim</span>
+            <span style="font-weight:700;color:#fff">${fmtF(curKdv-dashBonusToplam)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;margin-bottom:4px">
+            <span style="color:rgba(255,255,255,0.7)">+ Kampanya (fiyat + bonus)</span>
+            <span style="font-weight:800;color:#a3f0b5">+${fmtF(dashBonusToplam)}</span>
+          </div>
+          <div style="height:1px;background:rgba(255,255,255,0.18);margin:5px 0"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px">
+            <span style="font-weight:800;color:#fff">= Toplam Prim</span>
+            <span style="font-weight:800;color:#4cd964">${fmtF(curKdv)}</span>
+          </div>
+        </div>` : ''}
+        ${dashBonusToplam>0 ? `
         <div style="margin-top:6px;background:rgba(255,211,122,0.07);border:1px solid rgba(255,211,122,0.15);border-radius:8px;padding:7px 9px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-            <span style="font-size:9.5px;color:#ffd27a;font-weight:700">🎁 Bonus Toplamı</span>
+            <span style="font-size:9.5px;color:#ffd27a;font-weight:700">🎁 Bonus Detayı</span>
             <span style="font-size:11px;font-weight:800;color:#ffd27a">+${fmtF(dashBonusToplam)}</span>
           </div>
           ${dashBonusDetay.map(b=>`
@@ -7070,10 +7107,6 @@ function renderDash(){
             <span style="font-size:8.5px;color:rgba(255,255,255,0.5);flex:1;padding-right:6px">${b.tip==='fiyat'?'💰':b.tip==='tekrarli'?'🔁':'⭐'} ${b.label}</span>
             <span style="font-size:9px;font-weight:700;color:#a3f0b5;flex-shrink:0">+${fmtF(b.tutar)}</span>
           </div>`).join('')}
-          <div style="display:flex;justify-content:space-between;margin-top:5px;padding-top:4px;border-top:1px solid rgba(255,211,122,0.2)">
-            <span style="font-size:8.5px;color:rgba(255,255,255,0.4)">Prim (kampanyasız)</span>
-            <span style="font-size:8.5px;color:rgba(255,255,255,0.4)">${fmtF(curKdv-dashBonusToplam)}</span>
-          </div>
         </div>` : ''}
         ${(()=>{ // v160: Ürün / Tarife Kırılımı — ana kartta, bonus detayları tarzında (prim'e dahil, ayrıca eklenmez)
           const kir = {};
@@ -14669,6 +14702,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v172',
+    date: '04.07.2026',
+    items: [
+      { type: 'ui', text: 'Anasayfa ve Prim sayfasi yesil toplam kartina hakedis denklemi eklendi: "Kampanyasiz prim + Kampanya (fiyat + bonus) = Toplam Prim" (hepsi KDV dahil). Toplam priminin nasil olustugu net gorunuyor.' },
+    ]
+  },
   {
     version: 'v171',
     date: '04.07.2026',
