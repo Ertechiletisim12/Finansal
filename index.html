@@ -990,9 +990,9 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 .price-panel summary span{display:inline-block;transition:transform .15s}
 .price-panel .hdr{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .price-panel select{padding:5px 8px}
-.price-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.price-row{display:block}
 .price-row .pi{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted)}
-.price-row input{width:95px}
+.price-row .pi input{width:95px}
 .price-row button{background:var(--red);color:#fff;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-weight:700;font-size:12px}
 .note{font-size:11px;color:var(--muted);margin-top:8px}
 
@@ -5262,20 +5262,20 @@ function render(){
       const tanimli = prices[priceYm] && prices[priceYm][c]!=null;
       const v = tanimli ? prices[priceYm][c] : priceFor(priceYm,c);
       const miras = !tanimli; // bu ay için tanımlı değil, önceki aydan miras
-      return `<div style="position:relative;background:var(--panel2);border:1px solid var(--line);border-left:3px solid ${renk};border-radius:7px;padding:6px 8px 7px;display:flex;flex-direction:column;gap:4px">
+      return `<div style="position:relative;background:var(--panel2);border:1px solid var(--line);border-left:3px solid ${renk};border-radius:8px;padding:8px 10px 9px;display:flex;flex-direction:column;gap:5px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:3px">
-          <span style="font-size:10px;font-weight:800;color:${renk};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c}</span>
-          ${miras?`<span title="Bu ay için ayrı fiyat girilmedi — önceki aydan miras" style="font-size:7px;color:var(--muted);background:rgba(255,255,255,0.05);border-radius:5px;padding:1px 4px;font-weight:700;flex-shrink:0">miras</span>`:''}
+          <span style="font-size:11px;font-weight:800;color:${renk};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c}</span>
+          ${miras?`<span title="Bu ay için ayrı fiyat girilmedi — önceki aydan miras" style="font-size:7.5px;color:var(--muted);background:rgba(255,255,255,0.05);border-radius:5px;padding:1px 4px;font-weight:700;flex-shrink:0">miras</span>`:''}
         </div>
-        <div style="display:flex;align-items:center;gap:3px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:1px 7px">
-          <input type="number" step="0.01" id="price_${c}" value="${v}" style="flex:1;min-width:0;background:transparent;border:none;color:var(--txt);font-size:13px;font-weight:700;padding:4px 0;outline:none">
-          <span style="font-size:11px;color:var(--muted);font-weight:700">₺</span>
+        <div style="display:flex;align-items:center;gap:3px;background:var(--panel);border:1.5px solid var(--line);border-radius:7px;padding:2px 9px">
+          <input type="number" step="0.01" id="price_${c}" value="${v}" style="flex:1;min-width:0;background:transparent;border:none;color:var(--txt);font-size:14px;font-weight:700;padding:5px 0;outline:none">
+          <span style="font-size:12px;color:var(--muted);font-weight:700">₺</span>
         </div>
       </div>`;
     }).join('');
   priceRow.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;margin-bottom:10px">${kartlar}</div>
-    <button onclick="savePricesFromForm(this)" style="width:100%;padding:10px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:8px;color:#1a1a1a;font-size:12.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s">💾 ${monthLabel(priceYm)} Fiyatlarını Kaydet</button>`;
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;margin-bottom:12px">${kartlar}</div>
+    <button onclick="savePricesFromForm(this)" style="width:100%;padding:11px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:9px;color:#1a1a1a;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s">💾 ${monthLabel(priceYm)} Fiyatlarını Kaydet</button>`;
 
   // price history table — v162: geçmiş dönemler varsayılan gizli, satırda ✏️ düzenleme
   let histYms = Object.keys(prices).sort().reverse();
@@ -5366,7 +5366,7 @@ function render(){
     const ekstra = cmpEkstraAylar.includes(ay);
     const tds = CATS.map((c,i)=>`<td style="${tdStyle}"><b>${cnts[i]}</b> adet<br><span style="color:var(--muted)">${fmt(vals[i])}</span></td>`).join('');
     return `<tr>
-      <td style="${tdLeftStyle};${ay===curKey?'':'color:var(--muted)'}">${monthLabel(ay)}${ekstra?` <span onclick="removeCmpAy('${ay}')" title="Bu ayı karşılaştırmadan çıkar" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(255,82,82,0.12);color:#ff7070;font-size:9px;font-weight:700;margin-left:5px;vertical-align:middle;transition:all .15s" onmouseover="this.style.background='#ff5252';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,82,82,0.12)';this.style.color='#ff7070'">✕</span>`:''}</td>
+      <td style="${tdLeftStyle};${ay===curKey?'':'color:var(--muted)'}">${ekstra?`<span onclick="removeCmpAy('${ay}')" title="Bu ayı karşılaştırmadan çıkar" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:6px;background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.25);color:#ff7070;font-size:10px;font-weight:700;margin-right:7px;vertical-align:middle;transition:all .15s" onmouseover="this.style.background='#ff5252';this.style.borderColor='#ff5252';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,82,82,0.1)';this.style.borderColor='rgba(255,82,82,0.25)';this.style.color='#ff7070'">✕</span>`:''}${monthLabel(ay)}</td>
       ${tds}
       <td style="${tdStyle};font-weight:700">${cntTot}</td>
       <td style="${tdStyle};font-weight:700">${fmt(valTot)}</td>
@@ -5839,10 +5839,11 @@ function setTblYil(f){ tblYilFiltre = f; render(); }
 function renderTblYilBtns(){
   const wrap = document.getElementById('tblYilBtns');
   if(!wrap) return;
-  const tumYillar = [...new Set(Object.keys(monthMapAll||{}).map(k=>k.slice(0,4)))].sort().reverse();
+  // v168: yıllar doğrudan global entries'ten — monthMapAll render()'a özel local'di, buradan erişilemiyordu (butonlar boş çıkıyordu)
+  const tumYillar = [...new Set(entries.map(e=>e.date.slice(0,4)))].sort().reverse();
   const opts = [['range','Seçili aralık'],['all','Tüm aylar'], ...tumYillar.map(y=>[y, y+' yılı'])];
   wrap.innerHTML = opts.map(([v,l])=>
-    `<button class="prim-tool-pill" onclick="setTblYil('${v}')" style="padding:4px 11px;font-size:10.5px;${tblYilFiltre===v?'background:var(--gold);color:#1a1a1a;border-color:var(--gold);font-weight:800':''}">${l}</button>`
+    `<button class="prim-tool-pill" onclick="setTblYil('${v}')" style="padding:5px 13px;font-size:11px;border-radius:7px;${tblYilFiltre===v?'background:var(--gold);color:#1a1a1a;border-color:var(--gold);font-weight:800':''}">${l}</button>`
   ).join('');
 }
 function addCmpAy(){
@@ -5872,7 +5873,7 @@ function closePrimModal(id){
   if(m) m.style.display = 'none';
 }
 function openCmpModal(){ openPrimModal('cmpModal'); }
-function openTablolarModal(){ openPrimModal('tablolarModal'); render(); }
+function openTablolarModal(){ openPrimModal('tablolarModal'); render(); if(typeof renderTblYilBtns==='function') renderTblYilBtns(); }
 function openSaatModal(){ openPrimModal('saatModal'); if(typeof renderEntryLogCharts==='function') renderEntryLogCharts(); }
 function openFiyatModal(){ openPrimModal('fiyatModal'); }
 // Modal dışına tıklayınca kapat
@@ -14547,6 +14548,9 @@ const CHANGELOG_DATA = [
       { type: 'ui', text: 'Aylik Birim Fiyatlar giris kartlari kucultuldu ve sikilastirildi: artik alt alta uzamiyor, dar ekranda bile 2-3 sutun sigacak sekilde grid duzenlendi.' },
       { type: 'fix', text: 'Prim kartlarinda hizalama duzeltildi: veri eklendikce (MNP/tarife/devir bilgisi) kartlarin alt kismi birbirine gore kayiyordu. Artik tum kartlar esit yukseklikte, alttaki tutar satirlari hep ayni hizada.' },
       { type: 'ui', text: 'Hedef Yonetimi duzeni degistirildi: Hedef Planlamasi tablosu sola, Ilerleme & Kategori Detayi saga tasindi.' },
+      { type: 'fix', text: 'Detay Tablolari donem filtresi butonlari hic gorunmuyordu (kod erisemedigi bir degiskene bakiyordu) — duzeltildi, butonlar artik kayitlardan yillari alip gosteriyor.' },
+      { type: 'fix', text: 'Aylik Birim Fiyatlar ekranindaki CSS cakismasi giderildi (eski .price-row flex + input genisligi yeni kartlari eziyordu). Kartlar artik duzgun grid, daha ferah ve okunakli.' },
+      { type: 'ui', text: 'Ay Karsilastirma cikar (✕) butonu ay isminin soluna alindi ve daha sik cerceveli bir buton oldu.' },
     ]
   },
   {
