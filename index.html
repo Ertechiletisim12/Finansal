@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v182';
+const CACHE_VER = 'finansal-v183';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -403,27 +403,15 @@ html{scrollbar-gutter:stable}
   .range-summary{ flex-direction:column!important; }
 
   /* Tablolar scroll */
-  /* Mobil topbar kesinlikle sabit */
+  /* Mobil topbar sabit — v183: fixed yerine sticky (fixed akıştan çıkıp altına manuel padding gerektiriyordu,
+     bu da top bar 2 satırlı olduğu için her sayfada boşluk/kesilme yaratıyordu). Sticky kendi yerini korur. */
   #mobileTopBar{
-    position:fixed!important;
+    position:sticky!important;
     top:0!important;
-    left:0!important;
-    right:0!important;
     z-index:500!important;
   }
-  /* Topbar yüksekliği kadar padding ekle ki içerik altında kalmasın */
-  .app>.main{ padding-top:52px!important; }
-  /* v179: sayfa-içi sticky başlıklar (nav butonları dahil) fixed topbar'ın ARKASINA girmesin —
-     top:0 yerine topbar yüksekliği (52px) kadar aşağıdan yapışsınlar */
-  #page-dash > div[style*="position:sticky"],
-  #primTitleBar,
-  #gelirTitleBar,
-  #page-prim > div[style*="position:sticky"],
-  #page-hedef > div[style*="position:sticky"],
-  #page-gelir > div[style*="position:sticky"],
-  #page-finans > div[style*="position:sticky"]{
-    top:52px!important;
-  }
+  /* padding-top kaldırıldı — sticky topbar zaten akışta yer kaplıyor, çift boşluk olmasın */
+  .app>.main{ padding-top:0!important; }
 
   /* Tablolar sadece kendi içinde scroll */
   .table-wrap{ overflow-x:auto!important;max-width:100vw!important; }
@@ -2799,7 +2787,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v182';
+const APP_VERSION = 'v183';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2913,7 +2901,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 22:45'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 23:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14984,6 +14972,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v183',
+    date: '04.07.2026',
+    items: [
+      { type: 'fix', text: 'KRITIK mobil duzeltme: TUM sayfalarda (Anasayfa, Prim, Finansal, Kasa, Gelir, Not) ust basligin altinda koca bosluk olusuyor ve butonlar/icerik kesiliyor du. Sebep: mobil ust bar "fixed" yapilmis, altina yanlis hesaplanmis sabit padding eklenmisti (ust bar 2 satirli oldugu icin bosluk cift saniyordu). Ust bar "sticky" yapildi, gereksiz padding kaldirildi — bosluk ve kesilme tamamen gitti.' },
+    ]
+  },
   {
     version: 'v182',
     date: '04.07.2026',
