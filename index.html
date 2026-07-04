@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v174';
+const CACHE_VER = 'finansal-v175';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -1498,6 +1498,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
       <div id="sbGorunum" style="display:flex;flex-direction:column;gap:6px;overflow:hidden;transition:all .2s">
         <button class="tool-btn" id="themeBtn" onclick="toggleTheme()">🌙 Koyu Mod</button>
+        <button class="tool-btn gizli-mod-btn" onclick="toggleGizliMod()">👁 Tutarları Gizle</button>
         <div id="cloudSyncIndicator" style="font-size:10px;padding:2px 6px;color:var(--muted)">☁️ Bağlanıyor...</div>
       </div>
 
@@ -1549,6 +1550,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
   <!-- Tema toggle -->
   <button onclick="toggleTheme()" id="mobileThemeBtn" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:16px;flex-shrink:0">🌙</button>
+  <button onclick="toggleGizliMod()" id="mobileGizliBtn" class="gizli-mod-btn-mob" title="Tutarları gizle/göster" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;flex-shrink:0">👁</button>
   <div id="mobileOturumBox" style="display:none;align-items:center;gap:6px;flex-shrink:0">
     <div style="text-align:right">
       <div id="mobileOturumSure" style="font-size:11px;font-weight:700;color:var(--txt)">10:00</div>
@@ -2761,7 +2763,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v174';
+const APP_VERSION = 'v175';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2875,7 +2877,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 17:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 18:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3162,7 +3164,29 @@ const STORE_KEY_NOTLAR = 'vf_notlar_v1'; // Not/Etiket kayıtları: [{id,tip,tar
 const STORE_KEY_TRASH = 'vf_finans_trash_v1'; // Silinen finans kayıtları çöp kutusu
 const KDV_ORANI = 0.20;
 
-function fmt(n){ return (Math.round(n*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + " ₺"; }
+// v175: Gizlilik modu — para tutarlarını maskeler (****,**₺)
+let gizliMod = false;
+try{ gizliMod = localStorage.getItem('vf_gizli_mod')==='1'; }catch(e){}
+const PARA_MASKE = '\u2217\u2217\u2217\u2217,\u2217\u2217 \u20ba'; // ****,** ₺
+function toggleGizliMod(){
+  gizliMod = !gizliMod;
+  try{ localStorage.setItem('vf_gizli_mod', gizliMod?'1':'0'); }catch(e){}
+  guncelleGizliModButon();
+  // tüm ekranı yeniden çiz
+  try{ render(); }catch(e){}
+  try{ if(typeof renderDashboard==='function') renderDashboard(); }catch(e){}
+  try{ if(typeof renderKampanyaList==='function') renderKampanyaList(); }catch(e){}
+}
+function guncelleGizliModButon(){
+  document.querySelectorAll('.gizli-mod-btn').forEach(b=>{
+    b.innerHTML = gizliMod ? '🙈 Tutarlar Gizli' : '👁 Tutarları Gizle';
+    b.style.color = gizliMod ? '#ffb74d' : '';
+  });
+  document.querySelectorAll('.gizli-mod-btn-mob').forEach(b=>{
+    b.textContent = gizliMod ? '🙈' : '👁';
+  });
+}
+function fmt(n){ if(gizliMod) return PARA_MASKE; return (Math.round(n*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + " \u20ba"; }
 function ymKey(d){ return d.slice(0,7); }
 function monthLabel(ym){
   const [y,m]=ym.split('-');
@@ -6083,7 +6107,7 @@ function openGunlukKirilimModal(){
   const body = document.getElementById('gunlukKirilimBody');
   if(!modal || !body) return;
   const h = _gunlukHedefHesap();
-  const fmtTL = v => v.toLocaleString('tr-TR',{maximumFractionDigits:0}) + ' ₺';
+  const fmtTL = v => gizliMod ? PARA_MASKE : v.toLocaleString('tr-TR',{maximumFractionDigits:0}) + ' ₺';
   let html = '';
 
   if(h.hedef <= 0){
@@ -7400,6 +7424,7 @@ function renderDash(){
 // ==================== ANA ÖZET DASHBOARD SONU ====================
 
 function fmtF(n){
+  if(gizliMod) return PARA_MASKE;
   const v = Math.round((n||0)*100)/100;
   return v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + " ₺";
 }
@@ -8917,7 +8942,7 @@ function buildManagerReportHTML(){
     : (ok ? `<span style="background:#e6f4ea;color:#1e8e3e;padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">✓ Sermaye Artısı</span>`
           : `<span style="background:#fce8e6;color:#d93025;padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700">⚠ Sermaye Eksildi</span>`);
 
-  const fmtR = n => (Math.round(n*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
+  const fmtR = n => gizliMod ? PARA_MASKE : (Math.round(n*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
 
   return `
     <div class="report-doc">
@@ -11280,7 +11305,7 @@ function renderKasa(){
   const netFark = farkli.reduce((a,k)=>a+(k.toplam-k.beklenen),0);
   const acikSayisi = farkli.filter(k=>(k.toplam-k.beklenen) < -0.005).length;
   const son = sorted[0];
-  const fmtTL = v => v.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺';
+  const fmtTL = v => gizliMod ? PARA_MASKE : v.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺';
   document.getElementById('kasaSummaryRow').innerHTML = `
     <div class="stat" style="border-left:3px solid var(--accent)">
       <div class="t">📋 Sayım Adedi</div>
@@ -13346,6 +13371,7 @@ function closeMobileMenu(){
 // ==================== MOBİL MENÜ SONU ====================
 
 loadTheme();
+guncelleGizliModButon();
 updateOfflineIndicator();
 checkLock();
 load();
@@ -14768,6 +14794,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v175',
+    date: '04.07.2026',
+    items: [
+      { type: 'new', text: 'Gizlilik modu eklendi: bir butona basinca tum para tutarlari "****,**₺" seklinde maskelenir (bankalarin bakiye gizle ozelligi gibi). Baskasi ekrana bakarken tutarlari saklamak icin. Sidebar > Gorunum altinda "👁 Tutarlari Gizle" butonu; mobilde ust barda 👁 ikonu. Secim hatirlanir.' },
+    ]
+  },
   {
     version: 'v174',
     date: '04.07.2026',
