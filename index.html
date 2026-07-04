@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v181';
+const CACHE_VER = 'finansal-v182';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -1412,6 +1412,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     </div>
   </div>
 </div>
+<!-- Giriş Logları Modalı (v182: açılış div'i geri eklendi — v180'de yanlışlıkla silinmişti, modal sürekli görünüyordu) -->
+<div id="girisLogModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2100;align-items:center;justify-content:center">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;width:92vw;max-width:400px;overflow:hidden">
     <div style="background:linear-gradient(135deg,#1a1c20,#26282b);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)">
       <div style="display:flex;align-items:center;gap:10px">
@@ -2797,7 +2799,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v181';
+const APP_VERSION = 'v182';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2911,7 +2913,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 22:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 22:45'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14982,6 +14984,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v182',
+    date: '04.07.2026',
+    items: [
+      { type: 'fix', text: 'KRITIK duzeltme: Giris Loglari modali ekranin ustune yapisip tum gorunumu bozuyordu. Sebep: bir onceki surumde (v180) gizli mod PIN modali eklenirken bu modalin acilis etiketi yanlislikla silinmis, modal surekli gorunur kalmisti. Duzeltildi.' },
+    ]
+  },
   {
     version: 'v181',
     date: '04.07.2026',
