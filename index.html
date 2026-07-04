@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v180';
+const CACHE_VER = 'finansal-v181';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2797,7 +2797,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v180';
+const APP_VERSION = 'v181';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2911,7 +2911,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 21:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 22:15'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3595,6 +3595,38 @@ function quickHash(obj){
 
 let lastSyncedEntries = null;
 
+// ═══════════════════════════════════════════════════════════
+// v181: KAYIT-BAZLI SENKRON — Tombstone (silme işareti) sistemi
+// Amaç: iki cihazdan da ekle/sil yapılabilsin; eklemeler birleşsin,
+// silme HER cihazdan gitsin ve geri gelmesin.
+// Her silinen kaydın id'si "silindi" olarak işaretlenir (tombstone),
+// buluta taşınır; pull sırasında tombstone'daki id'ler asla geri eklenmez.
+// ═══════════════════════════════════════════════════════════
+let tombstones = {};  // { "log:ID": zaman, "mus:ID": zaman, "kmp:ID": zaman, ... }
+try{ tombstones = JSON.parse(localStorage.getItem('vf_tombstones')||'{}'); }catch(e){ tombstones = {}; }
+function saveTombstones(){ try{ localStorage.setItem('vf_tombstones', JSON.stringify(tombstones)); }catch(e){} }
+function markDeleted(tur, id){
+  if(!id) return;
+  tombstones[tur+':'+id] = Date.now();
+  saveTombstones();
+  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
+}
+function isDeleted(tur, id){ return !!tombstones[tur+':'+id]; }
+// Tombstone'ları 90 günden eskiyse temizle (sonsuza kadar büyümesin)
+function cleanupTombstones(){
+  const esik = Date.now() - 90*24*60*60*1000;
+  let degisti = false;
+  for(const k in tombstones){ if(tombstones[k] < esik){ delete tombstones[k]; degisti = true; } }
+  if(degisti) saveTombstones();
+}
+// İki tombstone objesini birleştir (senkronda)
+function mergeTombstones(local, cloud){
+  const r = Object.assign({}, cloud||{}, local||{});
+  // local ve cloud'da aynı anahtar varsa en yeni zamanı al
+  for(const k in (cloud||{})){ if(local && local[k]){ r[k] = Math.max(local[k], cloud[k]); } }
+  return r;
+}
+
 function mergeEntries(local, cloud){
   function entryKey(e){
     const mnpSuffix = (e.mnp === true) ? '_MNP' : '_TES';
@@ -3675,15 +3707,37 @@ async function pushToCloud(){
     // Push öncesi lokal orphan'ları temizle
     entryLog = entryLog.filter(l => logHasEntry(l));
     localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
-    // Cloud'u çek - SADECE entries merge et
+    // Cloud'u çek - v181: entries + entryLog + müşteri + kampanya + tombstone hepsini merge et
+    // (önceden sadece entries merge ediliyordu; diğerleri ezilip başka cihazın eklediği kayıtlar kayboluyordu)
     const res0 = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if(res0.ok){
       const cloudData = await res0.json();
       if(cloudData && cloudData.data !== 'init'){
+        // tombstone birleştir (önce — filtrelerde kullanılacak)
+        if(cloudData.tombstones){ tombstones = mergeTombstones(tombstones, cloudData.tombstones); saveTombstones(); }
         entries = mergeEntries(entries, cloudData.entries||[]);
         localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries));
+        // entryLog: cloud'daki yeni id'leri ekle, tombstone'ları çıkar
+        if(cloudData.entryLog){
+          const lids = new Set(entryLog.map(l=>l.id));
+          const yeni = cloudData.entryLog.filter(l=> !lids.has(l.id) && !isDeleted('log', l.id));
+          entryLog = [...entryLog, ...yeni].filter(l=> !isDeleted('log', l.id));
+          localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
+        }
+        // müşteriler
+        if(cloudData.musteriler){
+          const mids = new Set(musteriler.map(m=>m.id));
+          const yeni = cloudData.musteriler.filter(m=> !mids.has(m.id) && !isDeleted('mus', m.id));
+          musteriler = [...musteriler, ...yeni].filter(m=> !isDeleted('mus', m.id));
+          try{ localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler)); }catch(e){}
+        }
+        // kampanyalar
+        if(cloudData.kampanyaData){
+          const kids = new Set(kampanyaData.map(k=>k.id));
+          const yeni = cloudData.kampanyaData.filter(k=> k.id && !kids.has(k.id) && !isDeleted('kmp', k.id));
+          kampanyaData = [...kampanyaData, ...yeni].filter(k=> !k.id || !isDeleted('kmp', k.id));
+        }
         // lastSyncedEntries burda GÜNCELLENMİYOR — sadece başarılı push sonrası güncellenir
-        // Aksi hâlde push başarısız olunca lastSyncedEntries yanlış base ile retry'da veri siliniyor
       }
     }
     const payload = getBackupData();
@@ -3725,25 +3779,31 @@ async function pullFromCloud(){
     if(hash === lastCloudHash){ updateCloudIndicator('saved'); return false; }
     lastCloudHash = hash;
     if(data.pin) localStorage.setItem('vf_pin', data.pin);
+    // v181: buluttan gelen tombstone'ları kendiminkiyle birleştir (silme işaretleri korunur)
+    if(data.tombstones){ tombstones = mergeTombstones(tombstones, data.tombstones); saveTombstones(); }
     // entries: merge yap (direkt ezme değil)
     if(data.entries){
       entries = mergeEntries(entries, data.entries);
       lastSyncedEntries = JSON.parse(JSON.stringify(entries));
     }
-    // entryLog: yeni olanları ekle (direkt ezme değil)
+    // v181: entryLog — kayıt bazlı birleştir, ama tombstone'daki (silinmiş) id'leri ASLA geri ekleme
     if(data.entryLog){
       const localLogIds = new Set(entryLog.map(l=>l.id));
-      const yeniLogs = data.entryLog.filter(l=>!localLogIds.has(l.id));
+      const yeniLogs = data.entryLog.filter(l=> !localLogIds.has(l.id) && !isDeleted('log', l.id));
       entryLog = [...entryLog, ...yeniLogs];
+      // Bende olup buluttan gelen ama başka cihazda silinmiş (tombstone) olanları temizle
+      entryLog = entryLog.filter(l => !isDeleted('log', l.id));
     }
-    // musteriler: yeni olanları ekle (direkt ezme değil)
+    // v181: müşteriler — kayıt bazlı birleştir + tombstone
     if(data.musteriler){
       const localMIds = new Set(musteriler.map(m=>m.id));
-      const yeniMusteriler = data.musteriler.filter(m=>!localMIds.has(m.id));
+      const yeniMusteriler = data.musteriler.filter(m=> !localMIds.has(m.id) && !isDeleted('mus', m.id));
       musteriler = [...musteriler, ...yeniMusteriler];
-      // Gelen müşterilerin logId'leri local entryLog'da yoksa ekle
+      // silinmiş müşterileri temizle
+      musteriler = musteriler.filter(m => !isDeleted('mus', m.id));
+      // Gelen müşterilerin logId'leri local entryLog'da yoksa ekle (silinmemişse)
       musteriler.forEach(m=>{
-        if(m.logId && !entryLog.find(l=>l.id===m.logId)){
+        if(m.logId && !isDeleted('log', m.logId) && !entryLog.find(l=>l.id===m.logId)){
           const cloudLog = (data.entryLog||[]).find(l=>l.id===m.logId);
           if(cloudLog) entryLog.push(cloudLog);
         }
@@ -3756,7 +3816,12 @@ async function pullFromCloud(){
     if(data.finansData) finansData = data.finansData;
     if(data.gelirData)  gelirData  = data.gelirData;
     if(data.notlarData) notlarData = data.notlarData;
-    if(data.kampanyaData) kampanyaData = data.kampanyaData;
+    // v181: kampanyaData — kayıt bazlı birleştir + tombstone (direkt ezme yerine)
+    if(data.kampanyaData){
+      const localKIds = new Set(kampanyaData.map(k=>k.id));
+      const yeniK = data.kampanyaData.filter(k=> k.id && !localKIds.has(k.id) && !isDeleted('kmp', k.id));
+      kampanyaData = [...kampanyaData, ...yeniK].filter(k=> !k.id || !isDeleted('kmp', k.id));
+    }
     if(data.tarifeData) tarifeData = data.tarifeData;
     if(data.finansTrash) finansTrash = data.finansTrash;
     // v151: kasaData — id bazlı merge (silme değil ekleme/güncelleme; updatedAt yeni olan kazanır)
@@ -4199,11 +4264,12 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
       const silinecekLogId = entryLog[logIdx].id;
       const musteriIdx = musteriler.findIndex(m => m.logId === silinecekLogId);
       if(musteriIdx >= 0){
+        markDeleted('mus', musteriler[musteriIdx].id); // v181
         musteriler.splice(musteriIdx, 1);
         saveMusteriStore();
       }
     }
-    if(logIdx >= 0) entryLog.splice(logIdx, 1);
+    if(logIdx >= 0){ markDeleted('log', entryLog[logIdx].id); entryLog.splice(logIdx, 1); } // v181
     if(e && e.count > 0){
       e.count--;
       if(e.count === 0) entries = entries.filter(x => x !== e);
@@ -4588,7 +4654,7 @@ function exportActivityListToExcel(){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, kasaData: (typeof kasaData!=='undefined'?kasaData:[]), pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, tombstones, kasaData: (typeof kasaData!=='undefined'?kasaData:[]), pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
 }
 function timeStr(){
   const d = new Date();
@@ -9418,6 +9484,7 @@ async function deleteEntryDirect(cat, date, isMnp, btn){
     (MNP_CATS.includes(cat) ? m.tip===(mnpFlag?'mnp':'tesis') : true)
   );
   if(silinecekMusteri){
+    markDeleted('mus', silinecekMusteri.id); // v181
     musteriler = musteriler.filter(m => m.id !== silinecekMusteri.id);
     saveMusteriStore();
   }
@@ -9481,7 +9548,7 @@ function deleteIslemLog(logRef, cat, date, isMnp){
 
   // Silinen logun tarifesini al - dogru entry'den dussun
   const silinenTarife2 = (logIdx >= 0) ? (entryLog[logIdx].tarife || '') : '';
-  if(logIdx >= 0) entryLog.splice(logIdx, 1);
+  if(logIdx >= 0){ markDeleted('log', entryLog[logIdx].id); entryLog.splice(logIdx, 1); } // v181
 
   // ── 2. ENTRIES SAYISINI AZALT (TARIFE eslesmesiyle) ──
   let e;
@@ -9518,6 +9585,7 @@ function deleteIslemLog(logRef, cat, date, isMnp){
   }
 
   if(silinecekMusteri){
+    markDeleted('mus', silinecekMusteri.id); // v181
     musteriler = musteriler.filter(m => m.id !== silinecekMusteri.id);
     saveMusteriStore();
   }
@@ -10232,6 +10300,7 @@ async function deleteKampanya(id){
     return;
   }
   if(!await appConfirm('Bu kampanyayı silmek istiyor musunuz?')) return;
+  markDeleted('kmp', id); // v181: silme işareti
   kampanyaData = kampanyaData.filter(x=>x.id!==id);
   saveKampanyaStore();
   renderKampanyaList();
@@ -10812,7 +10881,7 @@ function setMusteriDurum(durum){
       // EntryLog'dan da sil - logId varsa onunla, yoksa genel
       let logIdx = m.logId ? entryLog.findIndex(l=>l.id===m.logId) : -1;
       if(logIdx<0) logIdx = entryLog.findLastIndex(l=>l.date===m.entryDate&&l.cat===m.cat&&!!l.mnp===isMnp);
-      if(logIdx>=0) entryLog.splice(logIdx,1);
+      if(logIdx>=0){ markDeleted('log', entryLog[logIdx].id); entryLog.splice(logIdx,1); } // v181
       saveEntries();
       saveEntryLog();
       render();
@@ -10891,6 +10960,7 @@ async function deleteMusteriKayit(id){
   if(!await appConfirm('Bu müşteri kaydını ve ilgili prim kaydını silmek istiyor musunuz?')) return;
 
   // Müşteriyi sil
+  markDeleted('mus', id); // v181
   musteriler = musteriler.filter(x=>x.id!==id);
   saveMusteriStore();
 
@@ -10925,7 +10995,7 @@ async function deleteMusteriKayit(id){
         }
       }
     }
-    if(logIdx>=0) entryLog.splice(logIdx,1);
+    if(logIdx>=0){ markDeleted('log', entryLog[logIdx].id); entryLog.splice(logIdx,1); } // v181
 
     saveEntries();
     saveEntryLog();
@@ -13508,6 +13578,7 @@ setTimeout(()=>{
 }, 3000);
 setTimeout(renderDash, 100);
 restoreBackupFolderHandle();
+try{ cleanupTombstones(); }catch(e){}
 setTimeout(checkBackupReminder, 1200);
 setTimeout(adjustStickyOffsets, 50);
 runStartupNotifCheck();
@@ -14911,6 +14982,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v181',
+    date: '04.07.2026',
+    items: [
+      { type: 'new', text: 'SENKRON YENIDEN YAZILDI (kayit-bazli + silme isareti). Artik iki cihazdan da ekleyip silebilirsin: HER IKI cihazda eklediklerin BIRLESIR (biri digerini silmez), ve bir cihazda SILDIGIN diger cihazdan da silinir, geri GELMEZ. "Sildikce geri geliyor" sorunu cozuldu. (Ayni kaydi iki cihaz ayni anda degistirmezsen veri kaybi olmaz.)' },
+      { type: 'fix', text: 'Push (buluta yazma) artik once buluttaki diger cihazin eklediklerini birlestiriyor — onceden sadece prim ozetini birlestirip log/musteri/kampanyayi eziyordu, bu yuzden diger cihazin kayitlari kaybolabiliyordu.' },
+    ]
+  },
   {
     version: 'v180',
     date: '04.07.2026',
