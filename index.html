@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v176';
+const CACHE_VER = 'finansal-v177';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -1596,7 +1596,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <!-- Prim Araç Çubuğu: modal pencereler + alt sayfa erişimi -->
     <div id="primToolBar" style="background:var(--bg);padding:4px 20px 8px;flex-shrink:0;display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none;z-index:39;-webkit-overflow-scrolling:touch">
       <button class="prim-tool-pill" onclick="openPrimAraModal()" style="background:rgba(63,208,255,0.12);border-color:rgba(63,208,255,0.35);color:var(--accent)">🔍 Müşteri Ara</button>
-      <button class="prim-tool-pill" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:var(--gold)">🎯 Kampanyalar</button>
+      <button class="prim-tool-pill" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:var(--gold)">🎯 Kampanyalar <span id="kampanyaSayiBadge" style="display:none;background:var(--gold);color:#1a1a1a;border-radius:10px;padding:0 6px;font-size:10px;margin-left:2px;font-weight:800"></span></button>
       <button class="prim-tool-pill" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent)">👥 Müşteri Takibi <span id="musteriTakipBadgeTop" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:9px;margin-left:2px"></span></button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
       <button class="prim-tool-pill" onclick="openCmpModal()">📊 Ay Karşılaştırma</button>
@@ -1614,7 +1614,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- v151: Mobil araç çubuğu -->
       <div style="display:flex;gap:5px;align-items:center;overflow-x:auto;scrollbar-width:none;margin-bottom:5px;-webkit-overflow-scrolling:touch">
         <button class="prim-tool-pill" onclick="openPrimAraModal()" style="background:rgba(63,208,255,0.12);border-color:rgba(63,208,255,0.35);color:var(--accent);font-size:10px;padding:4px 10px">🔍 Ara</button>
-        <button class="prim-tool-pill" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:var(--gold);font-size:10px;padding:4px 10px">🎯 Kampanya</button>
+        <button class="prim-tool-pill" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:var(--gold);font-size:10px;padding:4px 10px">🎯 Kampanya <span id="kampanyaSayiBadgeMob" style="display:none;background:var(--gold);color:#1a1a1a;border-radius:9px;padding:0 5px;font-size:9px;font-weight:800"></span></button>
         <button class="prim-tool-pill" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent);font-size:10px;padding:4px 10px">👥 Müşteri</button>
         <button class="prim-tool-pill" onclick="openCmpModal()" style="font-size:10px;padding:4px 10px">📊 Karşılaştır</button>
         <button class="prim-tool-pill" onclick="openTablolarModal()" style="font-size:10px;padding:4px 10px">📋 Tablolar</button>
@@ -2763,7 +2763,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v176';
+const APP_VERSION = 'v177';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2877,7 +2877,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 18:45'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 19:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -2943,10 +2943,12 @@ const STORE_KEY_MUSTERILER = 'vf_musteriler_v1'; // Müşteri kayıtları
 let musteriler = [];
 function saveKampanyaStore(){
   try{ localStorage.setItem(STORE_KEY_KAMPANYA, JSON.stringify(kampanyaData)); }catch(e){}
+  if(typeof scheduleAutoBackup==='function') scheduleAutoBackup();
   scheduleCloudSync();
 }
 function saveTarifeStore(){
   try{ localStorage.setItem(STORE_KEY_TARIFE, JSON.stringify(tarifeData)); }catch(e){}
+  if(typeof scheduleAutoBackup==='function') scheduleAutoBackup();
   scheduleCloudSync();
 }
 // Tarife bazli fiyat - entry.tarife varsa tarifeData'dan fiyati al, yoksa null doner
@@ -4686,9 +4688,11 @@ async function restoreBackupFolderHandle(){
     const perm = await handle.queryPermission({mode:'readwrite'});
     if(perm === 'granted'){
       updateAutoBackupUI();
+      // v177: izin hâlâ geçerliyse AÇILIŞTA otomatik bir yedek al (her açılışta yedeklensin)
+      setTimeout(()=>{ writeAutoBackup(); }, 2500);
     } else {
-      // izin "prompt" durumunda: kullanıcı bir işlem yapana kadar bekleriz,
-      // ama klasörü "seçilmiş" olarak gösterelim ki tekrar seçmesi gerekmesin
+      // izin "prompt" durumunda: klasör hatırlanıyor ama tarayıcı güvenliği izni sıfırlamış.
+      // Kullanıcının bir kez tıklaması gerekiyor (tarayıcı kısıtı, tekrar klasör SEÇMESİ gerekmez).
       updateAutoBackupUI('needs-permission');
     }
   }catch(e){ /* sessizce yoksay */ }
@@ -4948,6 +4952,7 @@ function setQuickRange(type){
 function render(){
   const dEl = document.getElementById('activeDate');
   if(!dEl.value) dEl.value = todayStr();
+  try{ guncelleKampanyaSayiBadge(); }catch(e){}
   const activeDate = activeDateVal();
   const activeYm = ymKey(activeDate);
 
@@ -7088,7 +7093,7 @@ function renderDash(){
     <div style="display:flex;gap:10px;margin-bottom:8px;align-items:stretch;flex-wrap:wrap">
 
       <!-- Sol: Ana Prim Kartı -->
-      <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;flex:1.1;min-width:min(320px,100%);overflow:hidden;display:flex;flex-direction:column">
+      <div style="background:linear-gradient(145deg,#0e2217,#163220);border:1px solid rgba(76,217,100,0.25);border-radius:12px;padding:13px;flex:1 1 340px;min-width:min(320px,100%);overflow:hidden;display:flex;flex-direction:column">
         <div style="font-size:10px;color:#8fe3a8;margin-bottom:4px;font-weight:600">Toplam Prim (KDV Dahil)</div>
         <div style="font-size:22px;font-weight:900;color:#4cd964;letter-spacing:-.5px;line-height:1">${fmtF(curKdv)}</div>
         ${dashBonusToplam>0 ? (()=>{
@@ -7188,7 +7193,7 @@ function renderDash(){
       </div>
 
       <!-- Sağ sütun: Bugün + Ay Sonu yan yana, altında Hedef -->
-      <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:min(300px,100%)">
+      <div style="display:flex;flex-direction:column;gap:8px;flex:1 1 340px;min-width:min(300px,100%)">
 
         <!-- Bugün + Ay Sonu yan yana -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -10164,6 +10169,15 @@ async function deleteKampanya(id){
 // v170: Kampanya listesi filtreleri
 let _kampFiltre = { tip:'hepsi', cat:'hepsi' };
 function setKampFiltre(alan, deger){ _kampFiltre[alan] = deger; renderKampanyaList(); }
+// v177: Kampanyalar butonundaki sayı rozeti — bu aya ait kampanya adedi
+function guncelleKampanyaSayiBadge(){
+  const buAy = thisMonthKey();
+  const sayi = (kampanyaData||[]).filter(k=>k.ym===buAy).length;
+  ['kampanyaSayiBadge','kampanyaSayiBadgeMob'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ el.textContent = sayi>0?sayi:''; el.style.display = sayi>0?'inline-block':'none'; }
+  });
+}
 function renderKampFiltreCatBar(){
   const bar = document.getElementById('kampFiltreCatBar');
   if(!bar) return;
@@ -10273,6 +10287,7 @@ let _durumEditId = null;
 
 function saveMusteriStore(){
   try{ localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler)); }catch(e){}
+  if(typeof scheduleAutoBackup==='function') scheduleAutoBackup();
   scheduleCloudSync();
 }
 
@@ -14798,6 +14813,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v177',
+    date: '04.07.2026',
+    items: [
+      { type: 'ui', text: 'Kampanyalar butonuna sayi rozeti eklendi (Musteri Takibi gibi): bu aya ait kampanya adedini gosterir.' },
+      { type: 'ui', text: 'Anasayfa ana prim kartlari (sol Toplam Prim + sag Bugun/Ay Sonu/Hedef) esit genislige getirildi, daha dengeli duruyor.' },
+      { type: 'fix', text: 'Otomatik yedekleme guclendirildi: 1) Acilista izin hala geceliyse otomatik bir yedek aliniyor (her acilista yedeklenir). 2) Kampanya, tarife ve musteri degisikliklerinde de otomatik yedek tetikleniyor (onceden sadece prim/fiyat/finans degisikliklerinde aliniyordu). Klasor secimi IndexedDB de hatirlaniyor; tarayici guvenligi geregi izin bazen tek tik ister ama klasoru YENIDEN secmen gerekmez.' },
+    ]
+  },
   {
     version: 'v176',
     date: '04.07.2026',
