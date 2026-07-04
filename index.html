@@ -12,12 +12,40 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <script>
   // SW — offline destek, PWA
-  // v163: Service Worker YALNIZCA gerçek http(s) sunucusunda ve ayrı sw.js dosyası varsa kaydedilir.
-  // blob:/file:/data: gibi protokollerde tarayıcı SW kaydına izin vermez; bu yüzden sessizce atlanır
-  // (eskiden blob: URL'inden kayıt deneniyor ve "URL protocol not supported" hatası veriyordu).
+  // v166: SW kodu tekrar index İÇİNDE (tek dosya — GitHub'a tek dosya atılır, eski çalışan düzen).
+  // blob: yöntemi GitHub Pages gibi gerçek https adreslerinde sorunsuz çalışır.
+  // file:// (localde çift tıklama) protokolü SW'ye izin vermez → o durumda hiç denenmez,
+  // böylece localde gördüğün "URL protocol not supported" hatası da çıkmaz.
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
-    navigator.serviceWorker.register('./sw.js')
-      .catch(e=>console.warn('SW kaydı atlandı:',e && e.message));
+    const swKod = `
+const CACHE_VER = 'finansal-v166';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE_VER).map(k=>caches.delete(k))))
+    // clients.claim YOK — mevcut sayfayı rahatsız etmez
+  );
+});
+self.addEventListener('fetch', e => {
+  if(e.request.mode==='navigate'){
+    e.respondWith(fetch(e.request,{cache:'no-store'}).catch(()=>caches.match('./index.html')));
+    return;
+  }
+  e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{
+    if(r&&r.status===200&&r.type==='basic'){
+      caches.open(CACHE_VER).then(c=>c.put(e.request,r.clone()));
+    }
+    return r;
+  })));
+});`;
+    try{
+      const blob = new Blob([swKod],{type:'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(blob))
+        .catch(e=>console.warn('SW:',e && e.message));
+    }catch(e){ /* blob desteklenmiyorsa sessizce geç */ }
     // controllerchange reload YOK — veri silinmesini önler
   }
   // PWA kurulum butonu
@@ -2697,7 +2725,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v165';
+const APP_VERSION = 'v166';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2811,7 +2839,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 10:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 10:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14453,6 +14481,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v166',
+    date: '04.07.2026',
+    items: [
+      { type: 'fix', text: 'Service Worker tekrar index.html İÇİNE alindi — tek dosya duzenine donuldu (GitHub\'a tek dosya yeterli, ayri sw.js gerekmiyor). GitHub Pages gibi gercek https adreslerinde eskisi gibi calisir. Localde (file://) SW hic denenmez, o yuzden "URL protocol not supported" hatasi da cikmaz.' },
+    ]
+  },
   {
     version: 'v165',
     date: '04.07.2026',
