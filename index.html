@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v179';
+const CACHE_VER = 'finansal-v180';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -1394,8 +1394,24 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="lock-footer">Korumalı erişim · PIN ile kilitli</div>
   </div>
 </div>
-<!-- Giriş Logları Modalı -->
-<div id="girisLogModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2100;align-items:center;justify-content:center">
+<!-- v180: Gizli mod PIN doğrulama modalı (tutarları göstermek için) -->
+<div id="gizliPinModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:6000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:340px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+    <div style="padding:18px 20px 14px;text-align:center;border-bottom:1px solid var(--line)">
+      <div style="font-size:32px;margin-bottom:6px">🔒</div>
+      <div style="font-size:15px;font-weight:800;color:var(--txt)">Tutarları Göster</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Gizli tutarları açmak için PIN girin</div>
+    </div>
+    <div style="padding:16px 20px 20px">
+      <input type="text" id="gizliPinInput" inputmode="numeric" placeholder="PIN giriniz..." autocomplete="off" onkeydown="if(event.key==='Enter')gizliPinOnayla()" style="width:100%;padding:12px 16px;font-size:15px;text-align:center;letter-spacing:4px;background:var(--panel2);border:2px solid var(--line);border-radius:10px;color:var(--txt);box-sizing:border-box;outline:none;margin-bottom:6px;-webkit-text-security:disc">
+      <div id="gizliPinMsg" style="font-size:11px;color:#ff5252;text-align:center;min-height:16px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeGizliPinModal()" style="flex:1;padding:11px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">İptal</button>
+        <button onclick="gizliPinOnayla()" style="flex:2;padding:11px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#1a1a1a;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer">🔓 Göster</button>
+      </div>
+    </div>
+  </div>
+</div>
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;width:92vw;max-width:400px;overflow:hidden">
     <div style="background:linear-gradient(135deg,#1a1c20,#26282b);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)">
       <div style="display:flex;align-items:center;gap:10px">
@@ -2781,7 +2797,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v179';
+const APP_VERSION = 'v180';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2895,7 +2911,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 21:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 21:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3190,21 +3206,44 @@ try{ gizliMod = localStorage.getItem('vf_gizli_mod')==='1'; }catch(e){}
 const PARA_MASKE = '\u2217\u2217\u2217\u2217,\u2217\u2217 \u20ba'; // ****,** ₺
 function toggleGizliMod(){
   if(gizliMod){
-    // AÇMAK isteniyor → PIN doğrulaması gerek
+    // AÇMAK isteniyor → PIN doğrulaması gerek (modal ile)
     const kayitliPin = (typeof getPin==='function') ? getPin() : '';
     if(kayitliPin){
-      const girilen = prompt('🔒 Tutarları göstermek için PIN girin:');
-      if(girilen===null) return;              // vazgeçti
-      if(girilen.trim() !== kayitliPin){
-        alert('❌ Yanlış PIN. Tutarlar gizli kalıyor.');
-        return;
+      const modal = document.getElementById('gizliPinModal');
+      const inp = document.getElementById('gizliPinInput');
+      const msg = document.getElementById('gizliPinMsg');
+      if(modal && inp){
+        msg.textContent=''; inp.value='';
+        modal.style.display='flex';
+        setTimeout(()=>inp.focus(), 100);
+        return; // onay gizliPinOnayla()'da
       }
     }
-    gizliMod = false;
+    // PIN yoksa doğrudan aç
+    _setGizliMod(false);
   } else {
     // GİZLEMEK isteniyor → serbest, PIN sorma
-    gizliMod = true;
+    _setGizliMod(true);
   }
+}
+function gizliPinOnayla(){
+  const inp = document.getElementById('gizliPinInput');
+  const msg = document.getElementById('gizliPinMsg');
+  const kayitliPin = (typeof getPin==='function') ? getPin() : '';
+  if((inp.value||'').trim() === kayitliPin){
+    closeGizliPinModal();
+    _setGizliMod(false);
+  } else {
+    msg.textContent = '❌ Yanlış PIN';
+    inp.value=''; inp.focus();
+  }
+}
+function closeGizliPinModal(){
+  const modal = document.getElementById('gizliPinModal');
+  if(modal) modal.style.display='none';
+}
+function _setGizliMod(deger){
+  gizliMod = deger;
   try{ localStorage.setItem('vf_gizli_mod', gizliMod?'1':'0'); }catch(e){}
   guncelleGizliModButon();
   try{ render(); }catch(e){}
@@ -14872,6 +14911,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v180',
+    date: '04.07.2026',
+    items: [
+      { type: 'ui', text: 'Gizli mod PIN girisi artik duzgun bir modal pencere ile (onceki prompt kutusu parolayi acik gosteriyordu). Girilen PIN noktalarla gizli, "Goster/Iptal" butonlu.' },
+    ]
+  },
   {
     version: 'v179',
     date: '04.07.2026',
