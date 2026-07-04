@@ -12,34 +12,12 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <script>
   // SW — offline destek, PWA
-  if('serviceWorker' in navigator){
-    const swKod = `
-const CACHE_VER = 'finansal-v162';
-self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE_VER).map(k=>caches.delete(k))))
-    // clients.claim YOK — mevcut sayfayı rahatsız etmez
-  );
-});
-self.addEventListener('fetch', e => {
-  if(e.request.mode==='navigate'){
-    e.respondWith(fetch(e.request,{cache:'no-store'}).catch(()=>caches.match('./index.html')));
-    return;
-  }
-  e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{
-    if(r&&r.status===200&&r.type==='basic'){
-      caches.open(CACHE_VER).then(c=>c.put(e.request,r.clone()));
-    }
-    return r;
-  })));
-});`;
-    const blob = new Blob([swKod],{type:'application/javascript'});
-    navigator.serviceWorker.register(URL.createObjectURL(blob))
-      .catch(e=>console.warn('SW:',e));
+  // v163: Service Worker YALNIZCA gerçek http(s) sunucusunda ve ayrı sw.js dosyası varsa kaydedilir.
+  // blob:/file:/data: gibi protokollerde tarayıcı SW kaydına izin vermez; bu yüzden sessizce atlanır
+  // (eskiden blob: URL'inden kayıt deneniyor ve "URL protocol not supported" hatası veriyordu).
+  if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
+    navigator.serviceWorker.register('./sw.js')
+      .catch(e=>console.warn('SW kaydı atlandı:',e && e.message));
     // controllerchange reload YOK — veri silinmesini önler
   }
   // PWA kurulum butonu
@@ -2719,7 +2697,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v162';
+const APP_VERSION = 'v165';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2833,7 +2811,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '03.07.2026 15:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 10:15'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -2955,14 +2933,72 @@ function kampanyaFiyatFor(date, cat, normalFiyat){
   const k = aktif[aktif.length-1];
   return k.kdvDahil ? k.deger / (1 + KDV_ORANI) : k.deger;
 }
+// v162: Eşik bonusu artık tarih aralığı bazlı sayar (startDate/endDate).
+// totalAdet parametresi geriye dönük uyumluluk için duruyor ama KULLANILMIYOR —
+// adet, kampanyanın kendi tarih penceresindeki entries'ten yeniden sayılır.
+// Ayrıca aynı kategoride üst üste binen (çakışan) eşik kampanyalarında EN YÜKSEK
+// eşiği karşılanan kampanya kazanır; düşük eşikliler devreden çıkar.
+function adetInWindow(cat, ym, startDate, endDate, tipFiltre){
+  let t = 0;
+  entries.forEach(e=>{
+    if(e.cat !== cat) return;
+    if(effectiveYm(e) !== ym) return;
+    if(startDate && e.date < startDate) return;
+    if(endDate && e.date > endDate) return;
+    if(tipFiltre === 'mnp' && !e.mnp) return;
+    if(tipFiltre === 'tesis' && e.mnp) return;
+    t += e.count;
+  });
+  return t;
+}
+// İki tarih penceresi çakışıyor mu? (boş = sınırsız)
+function pencereCakisir(aS, aE, bS, bE){
+  if(aE && bS && aE < bS) return false;
+  if(bE && aS && bE < aS) return false;
+  return true;
+}
 function kampanyaBonusFor(ym, cat, totalAdet){
   if(!kampanyaData || !kampanyaData.length) return 0;
-  let bonus = 0;
-  // Eşik bazlı bonus (X adede ulaşınca tek seferlik bonus) - sadece tek kategorili (eski tip)
-  kampanyaData
-    .filter(k=> k.cat===cat && k.tip==='bonus' && k.ym===ym && (!k.catList || k.catList.length<=1))
-    .forEach(k=>{ if(totalAdet>=(k.minAdet||0)) bonus += k.deger; });
-  return bonus;
+  // Bu kategoriye ait, bu aya düşen tek-kategorili eşik kampanyaları
+  const esikler = kampanyaData.filter(k=>
+    k.cat===cat && k.tip==='bonus' && k.ym===ym && (!k.catList || k.catList.length<=1)
+  );
+  if(!esikler.length) return 0;
+
+  // Her kampanya için: kendi tarih penceresindeki adet eşiği karşılıyor mu?
+  const karsilananlar = esikler
+    .map(k=>({
+      k,
+      adet: adetInWindow(cat, ym, k.startDate, k.endDate, k.tipFiltre),
+      esik: k.minAdet||0
+    }))
+    .filter(x=> x.esik>0 && x.adet >= x.esik);
+
+  if(!karsilananlar.length) return 0;
+
+  // Çakışan kampanyalarda EN YÜKSEK eşik kazanır (düşük eşik devreden çıkar).
+  // Çakışmayan (farklı dönem) kampanyalar birbirini etkilemez, ayrı ayrı ödenir.
+  const secili = [];
+  const kullanildi = new Array(karsilananlar.length).fill(false);
+  for(let i=0;i<karsilananlar.length;i++){
+    if(kullanildi[i]) continue;
+    const grup = [i];
+    kullanildi[i]=true;
+    for(let j=0;j<karsilananlar.length;j++){
+      if(kullanildi[j]) continue;
+      const a=karsilananlar[i].k, b=karsilananlar[j].k;
+      if(pencereCakisir(a.startDate,a.endDate,b.startDate,b.endDate)){
+        grup.push(j); kullanildi[j]=true;
+      }
+    }
+    let best = karsilananlar[grup[0]];
+    grup.forEach(gi=>{
+      const c = karsilananlar[gi];
+      if(c.esik > best.esik || (c.esik===best.esik && c.k.deger>best.k.deger)) best = c;
+    });
+    secili.push(best);
+  }
+  return secili.reduce((a,x)=>a + x.k.deger, 0);
 }
 
 // Tekrarlayan bonuslari TUM ay icin bir kez hesaplar (coklu kategori + MNP/Tesis filtresi destekli)
@@ -5055,7 +5091,7 @@ function render(){
     hPanel.style.flexDirection = 'column';
     const hWrapper = document.getElementById('hakedisStatsRow');
     if(hWrapper) hWrapper.style.display = 'flex';
-    hToplamRakam.textContent = fmt(genelHakedis);
+    hToplamRakam.innerHTML = fmtCiftHtml(genelHakedis);
     hAralikLabel.textContent = rStart + ' – ' + rEnd;
     hAdetLabel.textContent = rangeCount + ' adet' + (bonusMonths.length > 1 ? ' · ' + bonusMonths.map(m=>monthLabel(m)).join('+') + ' kampanyaları' : '');
 
@@ -5064,8 +5100,8 @@ function render(){
     // Prim (kampanyasız baz)
     const primBaz = rangeAmt - fiyatKampToplam;
     detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px">
-      <span style="opacity:.75;font-weight:500">Prim (baz · KDV hariç)</span>
-      <span style="font-weight:700;color:#fff">${fmt(primBaz)}</span>
+      <span style="opacity:.75;font-weight:500">Prim (baz)</span>
+      <span style="font-weight:700;color:#fff">${fmtCiftHtml(primBaz,'sm')}</span>
     </div>`;
 
     // Fiyat kampanyası etkisi
@@ -5073,12 +5109,12 @@ function render(){
       detayHTML += `<div style="background:rgba(255,211,122,0.07);border:1px solid rgba(255,211,122,0.15);border-radius:8px;padding:7px 9px;margin-bottom:5px">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px">
           <span style="font-size:10px;color:#ffd27a;font-weight:700">💰 Fiyat Kampanyası Etkisi</span>
-          <span style="font-size:11px;font-weight:800;color:#ffd27a">+${fmt(fiyatKampToplam)}</span>
+          <span style="font-size:11px;font-weight:800;color:#ffd27a">+${fmtCiftHtml(fiyatKampToplam,'sm')}</span>
         </div>
         ${fiyatKampDetay.map(b=>`
         <div style="display:flex;justify-content:space-between;font-size:9px;padding:2px 0;border-top:1px solid rgba(255,211,122,0.1)">
           <span style="color:rgba(255,255,255,0.5)">↳ ${b.label}</span>
-          <span style="color:#a3f0b5;font-weight:700">+${fmt(b.tutar)}</span>
+          <span style="color:#a3f0b5;font-weight:700">+${fmt(kdvBrut(b.tutar))}</span>
         </div>`).join('')}
       </div>`;
     }
@@ -5088,7 +5124,7 @@ function render(){
       detayHTML += `<div style="background:rgba(163,240,181,0.06);border:1px solid rgba(163,240,181,0.15);border-radius:8px;padding:7px 9px;margin-bottom:5px">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px">
           <span style="font-size:10px;color:#a3f0b5;font-weight:700">🎁 Ekstra Bonus</span>
-          <span style="font-size:11px;font-weight:800;color:#a3f0b5">+${fmt(tumBonusToplam)}</span>
+          <span style="font-size:11px;font-weight:800;color:#a3f0b5">+${fmtCiftHtml(tumBonusToplam,'sm')}</span>
         </div>
         ${tumBonusDetay.map(b=>{
           const srcKamp = kampanyaData.find(k=>{
@@ -5104,7 +5140,7 @@ function render(){
           return `<div style="padding:4px 0;border-top:1px solid rgba(163,240,181,0.1)">
             <div style="display:flex;justify-content:space-between;font-size:9.5px">
               <span style="color:rgba(255,255,255,0.55)">${tipIcon} ${b.label}${tarihStr}</span>
-              <span style="color:#a3f0b5;font-weight:700;flex-shrink:0;margin-left:6px">+${fmt(b.tutar)}</span>
+              <span style="color:#a3f0b5;font-weight:700;flex-shrink:0;margin-left:6px">+${fmt(kdvBrut(b.tutar))}</span>
             </div>
             ${aciklama?`<div style="font-size:8.5px;color:rgba(255,255,255,0.3);margin-top:1px">${aciklama}</div>`:''}
           </div>`;
@@ -5115,12 +5151,12 @@ function render(){
       detayHTML += `<div style="height:1px;background:rgba(255,255,255,0.1);margin:4px 0"></div>`;
       detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11px">
         <span style="opacity:.7">✅ Onaylanan (${onaylananAdet} müşteri)</span>
-        <span style="font-weight:600;color:#a3f0b5">${fmt(onaylananTutar)}</span>
+        <span style="font-weight:600;color:#a3f0b5">${fmtCiftHtml(onaylananTutar,'sm')}</span>
       </div>`;
       if(bekleyenAdet > 0){
         detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11px">
           <span style="opacity:.7">⏳ Bekleyen (${bekleyenAdet} müşteri)</span>
-          <span style="font-weight:600;color:#ffd27a">${fmt(bekleyenTutar)}</span>
+          <span style="font-weight:600;color:#ffd27a">${fmtCiftHtml(bekleyenTutar,'sm')}</span>
         </div>`;
       }
     }
@@ -6733,10 +6769,10 @@ function renderDash(){
       dashBonusYaklas.push({cats:cats.join('+'), kalan, bonus:k.deger, mevcut:tot, hedef:k.minAdet*(kume+1)});
     }
   });
-  // Eşik bazlı bonus yaklaşma
+  // Eşik bazlı bonus yaklaşma — v162: adet kampanyanın tarih penceresinden sayılır
   CATS.forEach(c=>{
-    const mevAdet=adetMapNow[c]||0;
     kampanyaData.filter(k=>k.tip==='bonus'&&k.ym===now&&k.cat===c&&(k.minAdet||0)>0).forEach(k=>{
+      const mevAdet = adetInWindow(c, now, k.startDate, k.endDate, k.tipFiltre);
       if(mevAdet<k.minAdet){ dashBonusYaklas.push({cats:c, kalan:k.minAdet-mevAdet, bonus:k.deger, mevcut:mevAdet, hedef:k.minAdet}); }
     });
   });
@@ -9000,43 +9036,8 @@ function renderIslemList(cat, date){
       <span style="font-size:18px;font-weight:800;color:var(--accent)">${toplam} adet</span>
     </div>`;
 
-  if(!logs.length){
-    // Log yok ama entries'te kayıt var - direkt entries'ten sil butonu göster
-    let noLogHtml = '';
-    if(MNP_CATS.includes(cat)){
-      if(tesisCnt > 0){
-        noLogHtml += `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
-          <div style="flex:1">
-            <span style="font-size:13px;font-weight:700;color:var(--txt)">🆕 Yeni Tesis</span>
-            <span style="font-size:11px;color:var(--muted);margin-left:8px">${tesisCnt} adet · Log kaydı yok</span>
-          </div>
-          <button onclick="deleteEntryDirect('${cat}','${date}',false,this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer">1 Sil</button>
-        </div>`;
-      }
-      if(mnpCnt > 0){
-        noLogHtml += `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
-          <div style="flex:1">
-            <span style="font-size:13px;font-weight:700;color:#c084fc">🔄 MNP</span>
-            <span style="font-size:11px;color:var(--muted);margin-left:8px">${mnpCnt} adet · Log kaydı yok</span>
-          </div>
-          <button onclick="deleteEntryDirect('${cat}','${date}',true,this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer">1 Sil</button>
-        </div>`;
-      }
-    } else {
-      if(digerCnt > 0){
-        noLogHtml += `<div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
-          <div style="flex:1">
-            <span style="font-size:13px;font-weight:700;color:var(--txt)">${cat}</span>
-            <span style="font-size:11px;color:var(--muted);margin-left:8px">${digerCnt} adet · Log kaydı yok</span>
-          </div>
-          <button onclick="deleteEntryDirect('${cat}','${date}',false,this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer">1 Sil</button>
-        </div>`;
-      }
-    }
-    if(!noLogHtml) noLogHtml = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:12px">Bu tarihte işlem yok.</div>';
-    list.innerHTML = ozet + '<div style="padding:10px 16px;background:rgba(255,183,77,0.08);border-bottom:1px solid var(--line)"><span style="font-size:11px;color:#ffb74d">⚠️ Log kaydı bulunamadı — eski girişlerde log olmayabilir. Entries üzerinden silebilirsiniz.</span></div>' + noLogHtml;
-    return;
-  }
+  // v165: Eski "log yok → ayrı ekran + return" dalı kaldırıldı. Artık log satırları ile
+  // entries'ten türeyen log'suz satırlar TEK listede birleşiyor (aşağıda ekSatirlar).
 
   const satirlar = logs.map((l, displayIdx) => {
     const isMnp = !!l.mnp;
@@ -9091,7 +9092,31 @@ function renderIslemList(cat, date){
     </div>`;
   }).join('');
 
-  list.innerHTML = ozet + satirlar;
+  // v165: LOG-ENTRIES SENKRON — bazı girişler log'suz kaydedilmiş olabilir (eski/Firebase/senkron kaybı).
+  // Soldaki panel entries'e bakar, bu modal ise log'a bakıyordu → sayı uyuşmuyor, "log yok" görünüyordu.
+  // Çözüm: tip bazında log adedi < entries adedi ise, farkı "log kaydı yok" satırlarıyla tamamla.
+  let ekSatirlar = '';
+  const tipler = MNP_CATS.includes(cat)
+    ? [{mnp:true, cnt:mnpCnt, lbl:'🔄 MNP', renk:'#c084fc'}, {mnp:false, cnt:tesisCnt, lbl:'🆕 Tesis', renk:'#4cd964'}]
+    : [{mnp:false, cnt:digerCnt, lbl:cat, renk:'var(--txt)'}];
+  tipler.forEach(t=>{
+    const logAdet = logs.filter(l => (!!l.mnp)===t.mnp).length;
+    const eksik = t.cnt - logAdet;
+    for(let n=0; n<eksik; n++){
+      ekSatirlar += `<div data-logtype="${t.mnp?'mnp':'tesis'}" style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:rgba(255,183,77,0.04)">
+        <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">•</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:700;color:${t.renk}">${t.lbl}</span>
+            <span style="font-size:10px;color:var(--muted)">saat kaydı yok</span>
+          </div>
+        </div>
+        <button onclick="deleteEntryDirect('${cat}','${date}',${t.mnp},this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="1 sil">🗑</button>
+      </div>`;
+    }
+  });
+
+  list.innerHTML = ozet + satirlar + ekSatirlar;
 }
 
 
@@ -9539,7 +9564,11 @@ function openTarifeDonemModal(cat, ad){
   const t = (tarifeData[cat]||[]).find(x=>x.ad===ad);
   if(!t) return;
   document.getElementById('tdBaslik').textContent = '📅 ' + ad + ' — Dönem Fiyatları';
-  document.getElementById('tdBazFiyat').textContent = t.fiyat.toLocaleString('tr-TR') + ' ₺';
+  // v165: temel fiyat boş (null) olabilir — .toLocaleString çağrısı null'da patlıyordu, modal hiç açılmıyordu
+  document.getElementById('tdBazFiyat').textContent =
+    (t.fiyat == null || isNaN(t.fiyat))
+      ? 'kategori fiyatı'
+      : (t.kdvDahil ? t.fiyat : t.fiyat*(1+KDV_ORANI)).toLocaleString('tr-TR',{maximumFractionDigits:2}) + ' ₺ KDV dahil';
   document.getElementById('tdStart').value = '';
   document.getElementById('tdEnd').value = '';
   document.getElementById('tdFiyat').value = '';
@@ -12070,7 +12099,7 @@ function renderRaporYillik(monthNames) {
     bars: rows.map(r=>({ label:String(r.year), sublabel:r.months.size+' ay', value:r.amount, pct:Math.round(r.amount/maxAmt*100) })),
     avgAmt,
     kpis: [
-      { t:'Toplam Yıl', v: rows.length+' yıl', sub:'Kayıtlı dönem' },
+      { t:'Toplam İşlem', v: totCount+' adet', sub: rows.length+' yıl' },
       { t:'Genel Toplam', v: fmt(totAmount), sub:'KDV Dahil' },
       { t:'Toplam Beklenen', v: totBek>0?fmt(totBek):'—', sub:'Tüm yıllar' },
       { t:'Toplam Yatırılan', v: totYat>0?fmt(totYat):'—', sub:'Tüm yıllar' }
@@ -12170,7 +12199,7 @@ function renderRaporAylik(yil, monthNames) {
     bars: rows.map(r=>({ label:r.ayAd.slice(0,3), sublabel:r.count+' işlem', value:r.amount, pct:Math.round(r.amount/maxAmt*100) })),
     avgAmt,
     kpis: [
-      { t:'Toplam Ay', v: rows.filter(r=>r.amount>0).length+' ay', sub:'Aktif ay sayısı' },
+      { t:'Toplam İşlem', v: totCount+' adet', sub: rows.filter(r=>r.amount>0).length+' aktif ay' },
       { t:'Yıllık Toplam', v: fmt(totAmount), sub:'KDV Dahil' },
       { t:'Toplam Beklenen', v: totBek>0?fmt(totBek):'—', sub:'Yıl geneli' },
       { t:'Toplam Yatırılan', v: totYat>0?fmt(totYat):'—', sub:'Yıl geneli' }
@@ -14424,6 +14453,32 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v165',
+    date: '04.07.2026',
+    items: [
+      { type: 'fix', text: 'Dönem fiyatı (📅 takvim) butonu: temel fiyati BOS birakilan tarifelerde acilmiyordu (null.toLocaleString hatasi fonksiyonu cokertyordu). Artik fiyati bos tarifelerde de dönem penceresi normal aciliyor, baz fiyat "kategori fiyati" olarak gosteriliyor.' },
+      { type: 'fix', text: 'Islem Listesi (📋 modal) ile sol panel artik AYNI adedi gosteriyor. Log kaydi olmayan girisler (eski/senkron kaynakli) "log yok" hatasi veriyordu; artik log satirlari ile entries\'ten turetilen log-suz satirlar tek listede birlesiyor, her biri tek tek silinebiliyor.' },
+      { type: 'fix', text: 'Haftalik/Aylik/Yillik raporlarda ust ozet kartina TOPLAM ISLEM ADEDI eklendi. Aylikta "7 ay", yillikta "2 yil" yaziyordu ama adet gorunmuyordu — artik "X adet · N ay/yil" olarak birlikte gosteriliyor.' },
+      { type: 'fix', text: 'Prim sayfasi yesil hakedis karti KDV standardina uyduruldu: buyuk toplam ve tum alt satirlar (Prim baz, Onaylanan, Bekleyen, fiyat kampanyasi, ekstra bonus) artik KDV DAHIL (yaninda kucuk "haric").' },
+    ]
+  },
+  {
+    version: 'v164',
+    date: '04.07.2026',
+    items: [
+      { type: 'fix', text: 'Service Worker artik blob: URL yerine ayri sw.js dosyasindan kaydediliyor. blob:/file: ortaminda "URL protocol not supported" uyarisi veriyordu — artik SW yalnizca gercek http(s) sunucusunda kaydediliyor, diger ortamlarda sessizce atlaniyor (uygulama yine tam calisir).' },
+    ]
+  },
+  {
+    version: 'v163',
+    date: '04.07.2026',
+    items: [
+      { type: 'fix', text: 'KRITIK kampanya hatasi: Esik bonusu (X adede ulasinca ekstra) kampanyanin tarih araligini (baslangic/bitis) HIC dikkate almiyor, ayin tum adedine bakiyordu. Bu yuzden 05-07 Temmuz kampanyasi 03 Temmuz satislarinda da tetikleniyordu. Artik her kampanya YALNIZCA kendi tarih penceresindeki satislari sayiyor.' },
+      { type: 'fix', text: 'Ust uste binen (cakisan) esik kampanyalarinda artik EN YUKSEK karsilanan esik kazaniyor, dusuk esik devreden cikiyor. Ornek: "2 satisa 1000, 3 satisa 2000" — 3 satilinca sadece 2000 odenir (1000 iptal). Farkli donemdeki cakismayan kampanyalar birbirini etkilemez, ayri ayri odenir.' },
+      { type: 'fix', text: 'Anasayfa "esige ne kadar kaldi" gostergesi de kampanyanin tarih penceresine gore sayiyor — ay toplamiyla karisan yanlis "kalan adet" duzeltildi.' },
+    ]
+  },
   {
     version: 'v162',
     date: '03.07.2026',
