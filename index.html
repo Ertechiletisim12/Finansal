@@ -11,52 +11,23 @@
 <meta name="theme-color" content="#e2231a">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script>
-  // SW — offline destek, PWA
-  // v171: clients.claim() eklendi — yeni SW aktifleşince acik sekmeleri HEMEN devralir,
-  // boylece "yukledim ama gelmedi / elle cache temizle" sorunu bitiyor.
-  // Otomatik reload YOK (gecmiste veri sorunu yaptigi icin); bunun yerine yeni surum gelince
-  // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
+  // SW — offline destek + PWA kurulumu
+  // v187: SW artık AYRI bir sw.js dosyası (blob yerine). Chrome bir PWA'yı "kurulabilir"
+  // saymak için same-origin, start_url'i kapsayan bir SW ister; blob URL bunu karşılamıyordu,
+  // bu yüzden "Uygulamayı Kur" butonu hiç çıkmıyordu. Ayrı dosyayla kurulum düzgün çalışır.
+  // NOT: GitHub'a index.html + sw.js + manifest.json + ikonlar BİRLİKTE yüklenmeli.
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
-    const swKod = `
-const CACHE_VER = 'finansal-v186';
-self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
-});
-self.addEventListener('activate', e => {
-  e.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k=>k!==CACHE_VER).map(k=>caches.delete(k)));
-    await self.clients.claim(); // v171: acik sekmeleri hemen devral
-  })());
-});
-self.addEventListener('fetch', e => {
-  if(e.request.mode==='navigate'){
-    e.respondWith(fetch(e.request,{cache:'no-store'}).catch(()=>caches.match('./index.html')));
-    return;
-  }
-  e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{
-    if(r&&r.status===200&&r.type==='basic'){
-      caches.open(CACHE_VER).then(c=>c.put(e.request,r.clone()));
-    }
-    return r;
-  })));
-});`;
-    try{
-      const blob = new Blob([swKod],{type:'application/javascript'});
-      navigator.serviceWorker.register(URL.createObjectURL(blob)).then(reg=>{
-        // v171: yeni surum tespiti — yeni SW kurulup beklemeye gecince kullaniciya "Yenile" cubugu goster
-        reg.addEventListener('updatefound', ()=>{
-          const yeni = reg.installing;
-          if(!yeni) return;
-          yeni.addEventListener('statechange', ()=>{
-            if(yeni.state==='installed' && navigator.serviceWorker.controller){
-              gosterYeniSurumCubugu();
-            }
-          });
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      reg.addEventListener('updatefound', ()=>{
+        const yeni = reg.installing;
+        if(!yeni) return;
+        yeni.addEventListener('statechange', ()=>{
+          if(yeni.state==='installed' && navigator.serviceWorker.controller){
+            gosterYeniSurumCubugu();
+          }
         });
-      }).catch(e=>console.warn('SW:',e && e.message));
-    }catch(e){ /* blob desteklenmiyorsa sessizce geç */ }
+      });
+    }).catch(e=>console.warn('SW:',e && e.message));
     // controllerchange reload YOK — veri silinmesini önler
   }
   // v171: "Yeni sürüm var" bildirim çubuğu (kullanıcı tıklayınca yeniler)
@@ -2788,7 +2759,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v186';
+const APP_VERSION = 'v187';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2902,7 +2873,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.07.2026 01:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.07.2026 01:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14923,6 +14894,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v187',
+    date: '05.07.2026',
+    items: [
+      { type: 'fix', text: '"Uygulamayi Kur" sorunu cozuldu: Service Worker artik ayri bir sw.js dosyasi (onceden index.html icine gomulu blob idi; Chrome blob SW ile uygulamayi kurulabilir saymiyordu, o yuzden Kur butonu hic cikmiyordu). Artik telefonda/PC de duzgun kurulabilir. ONEMLI: GitHub a yuklerken index.html YANINDA sw.js dosyasini da atmayi unutma (zip icinde ikisi de var).' },
+    ]
+  },
   {
     version: 'v186',
     date: '05.07.2026',
