@@ -134,7 +134,10 @@ body.light{
     margin-top:0!important;
   }
   #page-finans{
-    padding-top:280px!important;
+    padding-top:0!important;
+  }
+  #finansContent{
+    padding-top:210px!important;
   }
   /* Topbar: başlık sol, aksiyon butonları sağ — tek satır */
   #page-finans .topbar{
@@ -2766,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v198';
+const APP_VERSION = 'v199';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2880,7 +2883,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.07.2026 23:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.07.2026 23:35'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14911,6 +14914,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v199',
+    date: '05.07.2026',
+    items: [
+      { type: 'fix', text: 'Finansal Analiz ust boslugu neden degismedigi bulundu: bosluk #page-finans e veriliyordu ama icerik #finansContent adli ayri bir katmanda oldugu ve #page-finans in kendi inline padding i bunu eziyordu icin etki etmiyordu. Artik bosluk dogrudan #finansContent e veriliyor — Sermaye karti asagi iniyor. sw.js DEGISMEDI.' },
+    ]
+  },
   {
     version: 'v198',
     date: '05.07.2026',
