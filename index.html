@@ -2765,7 +2765,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v192';
+const APP_VERSION = 'v193';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2879,7 +2879,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.07.2026 14:35'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3783,14 +3783,20 @@ function updateCloudIndicator(status, extra){
   else el.innerHTML = '☁️';
 }
 
-// 60 saniyede bir cloud'dan çek
+// v193: 3 saniyede bir cloud'dan çek (önceden 10sn) — cihazlar arası güncelleme çok daha hızlı.
+// Veri boyutu küçük olduğu için Firebase ücretsiz sınırını asla zorlamaz.
 function startCloudPolling(){
   if(cloudPollTimer) clearInterval(cloudPollTimer);
   cloudPollTimer = setInterval(async ()=>{
     if(cloudSyncStatus === 'saving') return;
+    if(document.hidden) return; // sekme arka plandaysa boşuna çekme (pil/veri tasarrufu)
     await pullFromCloud();
-  }, 10000);
+  }, 3000);
 }
+// Sekme tekrar öne gelince hemen bir çek (beklemeden güncel olsun)
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden){ try{ pullFromCloud(); }catch(e){} }
+});
 // ==================== FIREBASE SONU ====================
 
 function load(){
@@ -14904,6 +14910,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v193',
+    date: '05.07.2026',
+    items: [
+      { type: 'new', text: 'Cihazlar arasi senkron hizlandirildi: bulut kontrolu 10 saniyeden 3 saniyeye indirildi. Bir cihazda ekleyip/silince digeri artik ~3 sn icinde guncelleniyor. Ayrica uygulamayi tekrar acar acmaz aninda guncel veri cekiliyor, arka plandayken bosuna cekmiyor (pil/veri tasarrufu). Firebase ucretsiz sinirini asmaz.' },
+      { type: 'info', text: 'Bu surumde sw.js DEGISMEDI — GitHub a sadece index.html i yuklemen yeterli.' },
+    ]
+  },
   {
     version: 'v192',
     date: '05.07.2026',
