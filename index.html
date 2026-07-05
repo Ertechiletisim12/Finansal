@@ -602,6 +602,10 @@ html{scrollbar-gutter:stable}
   /* Mobil üst menü */
   #mobileTopBar{ display:flex!important; }
 
+  /* v188: page-prim gibi height:100vh olan sayfalar mobilde top bar'ın arkasına giriyordu.
+     Top bar yüksekliği (--topbar-h, JS ile ölçülür) kadar kısalt ki başlık+araç çubuğu görünsün. */
+  #page-prim{ height:calc(100vh - var(--topbar-h,0px))!important; }
+
   /* Butonlar */
   .btn-hero{ font-size:12px!important;padding:9px 12px!important; }
 
@@ -2759,7 +2763,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v187';
+const APP_VERSION = 'v188';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2873,7 +2877,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.07.2026 01:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.07.2026 12:45'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13444,7 +13448,11 @@ function ayarlaTopbarBoslugu(){
   if(!tb || !main) return;
   // top bar görünür mü (mobil modda display:flex, PC'de none)
   const gorunur = getComputedStyle(tb).display !== 'none';
-  main.style.paddingTop = gorunur ? (tb.offsetHeight + 'px') : '';
+  const h = gorunur ? tb.offsetHeight : 0;
+  main.style.paddingTop = gorunur ? (h + 'px') : '';
+  // v188: sayfa-içi sticky başlıklar/araç çubukları mobileTopBar'ın ALTINA yapışsın (arkasına girmesin)
+  // CSS değişkenine gerçek yüksekliği yaz — sabit sayı değil, top bar 1/2 satır olabiliyor
+  document.documentElement.style.setProperty('--topbar-h', h + 'px');
 }
 window.addEventListener('resize', ()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} });
 window.addEventListener('orientationchange', ()=>{ setTimeout(()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} }, 200); });
@@ -14894,6 +14902,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v188',
+    date: '05.07.2026',
+    items: [
+      { type: 'fix', text: 'Mobilde ust menu/arac cubugu (Ara, Kampanya, Musteri, Yatirilan Prim) sabit ust barin arkasinda kalip kesiliyordu — TUM sayfalarda. Prim sayfasi ust bar yuksekligi kadar kisaltildi (JS ile gercek yukseklik olculerek), artik hepsi tam gorunuyor. Saha verisine dokunulmadi, sadece gorunum.' },
+      { type: 'fix', text: '"Uygulamayi Kur" butonunun asil engeli bulundu: ikon dosyalari aslinda JPEG formatinda ve yanlis boyuttaydi (manifest PNG 192x192 diyordu ama gercekte JPEG 196x196 idi). Chrome tam eslesme istedigi icin uygulamayi kurulabilir saymiyordu. Ikonlar gercek PNG ve dogru boyuta cevrildi. Artik kurulum secenegi cikmali.' },
+    ]
+  },
   {
     version: 'v187',
     date: '05.07.2026',
