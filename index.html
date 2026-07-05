@@ -134,7 +134,7 @@ body.light{
     margin-top:0!important;
   }
   #page-finans{
-    padding-top:230px!important;
+    padding-top:242px!important;
   }
   /* Topbar: başlık sol, aksiyon butonları sağ — tek satır */
   #page-finans .topbar{
@@ -312,7 +312,7 @@ html{scrollbar-gutter:stable}
     padding:6px 10px!important;
   }
   /* Sabit barların yüksekliği kadar içeriği aşağı it */
-  #page-prim{ padding-top:190px!important; }
+  #page-prim{ padding-top:215px!important; }
   #raporHeader{
     position:fixed!important;
     top:52px!important;
@@ -2766,7 +2766,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v195';
+const APP_VERSION = 'v196';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2880,7 +2880,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.07.2026 22:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.07.2026 22:55'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14911,6 +14911,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v196',
+    date: '05.07.2026',
+    items: [
+      { type: 'fix', text: 'Prim sayfasi daha asagi alindi (islem kartlari filtre butonlarinin altina tam otursun), Finansal Analiz de biraz daha indirildi. Kart yapisina dokunulmadi. sw.js DEGISMEDI.' },
+    ]
+  },
   {
     version: 'v195',
     date: '05.07.2026',
