@@ -374,15 +374,13 @@ html{scrollbar-gutter:stable}
   .range-summary{ flex-direction:column!important; }
 
   /* Tablolar scroll */
-  /* Mobil topbar sabit — v184: fixed (viewport'a çivili, kaydırınca sabit kalır).
-     Altındaki boşluk JS ile top bar'ın GERÇEK yüksekliği ölçülerek verilir (sabit 52px değil,
-     çünkü top bar 1 veya 2 satır olabiliyor). Bkz. ayarlaTopbarBoslugu(). */
+  /* v190: Top bar artık SABİT DEĞİL — normal akışta (static). Fixed/sticky iken içeriğin
+     üstüne biniyordu ve hiçbir boşluk ayarı bunu düzeltemedi (çünkü asıl scroll eden katman
+     farklıydı). Static yapınca top bar sayfanın normal bir parçası olur, hiçbir şeyin üstüne
+     BİNEMEZ. Bedeli: kaydırınca yukarı kayar (tepede sabit kalmaz) — ama bindirmeden iyidir. */
   #mobileTopBar{
-    position:fixed!important;
-    top:0!important;
-    left:0!important;
-    right:0!important;
-    z-index:500!important;
+    position:static!important;
+    z-index:auto!important;
   }
 
   /* Tablolar sadece kendi içinde scroll */
@@ -1540,7 +1538,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   </div>
   <div id="managerReportPrintArea"></div>
 <!-- Mobil üst navbar - tüm sayfalarda görünür -->
-<div id="mobileTopBar" style="display:none;position:sticky;top:0;z-index:200;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px;align-items:center;justify-content:space-between;gap:8px">
+<div id="mobileTopBar" style="display:none;position:static;z-index:auto;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px;align-items:center;justify-content:space-between;gap:8px">
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
@@ -2763,7 +2761,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v189';
+const APP_VERSION = 'v190';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2877,7 +2875,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.07.2026 13:35'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.07.2026 13:50'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13444,19 +13442,13 @@ function closeMobileMenu(){
 // v184: mobil top bar fixed olduğu için, altındaki içeriğe top bar'ın GERÇEK yüksekliği kadar
 // boşluk ver (sabit 52px değil — top bar 1 veya 2 satır olabiliyor, yanlış boşluk kesilme/boşluk yaratıyordu)
 function ayarlaTopbarBoslugu(){
-  const tb = document.getElementById('mobileTopBar');
-  if(!tb) return;
-  const gorunur = getComputedStyle(tb).display !== 'none';
-  const h = gorunur ? tb.offsetHeight : 0;
-  document.documentElement.style.setProperty('--topbar-h', h + 'px');
-  // v189: .main scroll ETMİYOR — asıl scroll eden içindeki page-* (flex:1;overflow-y:auto).
-  // Bu yüzden .main'e padding vermek işe yaramıyordu; top bar içeriğin üstüne biniyordu.
-  // Doğrusu: her sayfa konteynerine top bar yüksekliği kadar üstten boşluk ver.
-  const main = document.querySelector('.app>.main') || document.querySelector('.main');
-  if(main) main.style.paddingTop = '';
-  document.querySelectorAll('.main > [id^="page-"]').forEach(p=>{
-    p.style.paddingTop = gorunur ? (h + 'px') : '';
-  });
+  // v190: top bar artık static (normal akışta) — padding/boşluk ayarına GEREK YOK.
+  // Eski padding'leri temizle ki kalıntı boşluk kalmasın.
+  try{
+    const main = document.querySelector('.app>.main') || document.querySelector('.main');
+    if(main) main.style.paddingTop = '';
+    document.querySelectorAll('.main > [id^="page-"]').forEach(p=>{ p.style.paddingTop = ''; });
+  }catch(e){}
 }
 window.addEventListener('resize', ()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} });
 window.addEventListener('orientationchange', ()=>{ setTimeout(()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} }, 200); });
@@ -14906,6 +14898,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v190',
+    date: '05.07.2026',
+    items: [
+      { type: 'fix', text: 'Ust bar bindirme sorunu icin kesin cozum: ust bar artik ekrana SABIT DEGIL, sayfanin normal bir parcasi (akista). Boylece hicbir seyin ustune BINEMEZ — bindirme fiziksel olarak imkansiz. Tek fark: kaydirinca ust bar da yukari kayar (tepede sabit kalmaz). Onceki fixed/sticky denemeleri icerigin ustune biniyordu ve duzelmiyordu; bu yaklasim garantili.' },
+    ]
+  },
   {
     version: 'v189',
     date: '05.07.2026',
