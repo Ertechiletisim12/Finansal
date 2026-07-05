@@ -602,9 +602,9 @@ html{scrollbar-gutter:stable}
   /* Mobil üst menü */
   #mobileTopBar{ display:flex!important; }
 
-  /* v188: page-prim gibi height:100vh olan sayfalar mobilde top bar'ın arkasına giriyordu.
-     Top bar yüksekliği (--topbar-h, JS ile ölçülür) kadar kısalt ki başlık+araç çubuğu görünsün. */
-  #page-prim{ height:calc(100vh - var(--topbar-h,0px))!important; }
+  /* v189: page-prim height:100vh + padding-top verilince taşıyordu. box-sizing:border-box ile
+     padding yüksekliğin İÇİNE alınır, taşma olmaz. Padding JS ile ayarlanır (ayarlaTopbarBoslugu). */
+  #page-prim{ box-sizing:border-box!important; }
 
   /* Butonlar */
   .btn-hero{ font-size:12px!important;padding:9px 12px!important; }
@@ -2763,7 +2763,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v188';
+const APP_VERSION = 'v189';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2877,7 +2877,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.07.2026 12:45'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.07.2026 13:35'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5937,6 +5937,7 @@ function switchPage(page){
     const el = document.getElementById('page-'+p);
     if(el) el.style.display = page===p ? (p==='prim'?'flex':'') : 'none';
   });
+  try{ if(typeof ayarlaTopbarBoslugu==='function') requestAnimationFrame(ayarlaTopbarBoslugu); }catch(e){}
   ['Dash','Prim','Finans','Gelir','Not','Rapor','Hedef','Trend','Kasa'].forEach(p=>{
     const el = document.getElementById('nav'+p);
     if(el) el.classList.toggle('active', page===p.toLowerCase());
@@ -13444,15 +13445,18 @@ function closeMobileMenu(){
 // boşluk ver (sabit 52px değil — top bar 1 veya 2 satır olabiliyor, yanlış boşluk kesilme/boşluk yaratıyordu)
 function ayarlaTopbarBoslugu(){
   const tb = document.getElementById('mobileTopBar');
-  const main = document.querySelector('.app>.main');
-  if(!tb || !main) return;
-  // top bar görünür mü (mobil modda display:flex, PC'de none)
+  if(!tb) return;
   const gorunur = getComputedStyle(tb).display !== 'none';
   const h = gorunur ? tb.offsetHeight : 0;
-  main.style.paddingTop = gorunur ? (h + 'px') : '';
-  // v188: sayfa-içi sticky başlıklar/araç çubukları mobileTopBar'ın ALTINA yapışsın (arkasına girmesin)
-  // CSS değişkenine gerçek yüksekliği yaz — sabit sayı değil, top bar 1/2 satır olabiliyor
   document.documentElement.style.setProperty('--topbar-h', h + 'px');
+  // v189: .main scroll ETMİYOR — asıl scroll eden içindeki page-* (flex:1;overflow-y:auto).
+  // Bu yüzden .main'e padding vermek işe yaramıyordu; top bar içeriğin üstüne biniyordu.
+  // Doğrusu: her sayfa konteynerine top bar yüksekliği kadar üstten boşluk ver.
+  const main = document.querySelector('.app>.main') || document.querySelector('.main');
+  if(main) main.style.paddingTop = '';
+  document.querySelectorAll('.main > [id^="page-"]').forEach(p=>{
+    p.style.paddingTop = gorunur ? (h + 'px') : '';
+  });
 }
 window.addEventListener('resize', ()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} });
 window.addEventListener('orientationchange', ()=>{ setTimeout(()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} }, 200); });
@@ -14902,6 +14906,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v189',
+    date: '05.07.2026',
+    items: [
+      { type: 'fix', text: 'Mobilde ust bar (baslik) ile altindaki menu/arac cubugunun ust uste binmesi NIHAYET cozuldu. Asil sebep: bosluk ".main" katmanina veriliyordu ama gercekte scroll eden o degil, icindeki sayfa katmani (page-*) idi — o yuzden bosluk hic ise yaramiyor, ust bar icerigin ustune biniyordu. Artik bosluk dogru katmana, ust barin gercek yuksekligi kadar veriliyor. Sayfa degisiminde de yeniden hesaplaniyor.' },
+    ]
+  },
   {
     version: 'v188',
     date: '05.07.2026',
