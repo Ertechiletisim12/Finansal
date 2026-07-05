@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v185';
+const CACHE_VER = 'finansal-v186';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2788,7 +2788,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v185';
+const APP_VERSION = 'v186';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2902,7 +2902,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.07.2026 00:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.07.2026 01:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14923,6 +14923,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v186',
+    date: '05.07.2026',
+    items: [
+      { type: 'fix', text: '"Uygulamayi Kur" butonu neden kaybolmustu bulundu: manifest.json ikon dosya adlarini yanlis ariyordu (icon-192.png yerine gercek ad icon192.png). Ikonlar yuklenemeyince tarayici uygulamayi "kurulabilir" saymiyor ve Kur butonu gorunmuyordu. Ikon adlari duzeltildi — buton geri gelecek (uygulama zaten kuruluysa once ana ekrandan kaldirip tekrar acman gerekebilir).' },
+    ]
+  },
   {
     version: 'v185',
     date: '05.07.2026',
