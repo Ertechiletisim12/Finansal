@@ -137,7 +137,7 @@ body.light{
     padding-top:0!important;
   }
   #finansContent{
-    padding-top:215px!important;
+    padding-top:100px!important;
   }
   /* Topbar: başlık sol, aksiyon butonları sağ — tek satır */
   #page-finans .topbar{
@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v200';
+const APP_VERSION = 'v201';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2883,7 +2883,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.07.2026 23:45'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.07.2026 23:55'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14914,6 +14914,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v201',
+    date: '05.07.2026',
+    items: [
+      { type: 'fix', text: 'Finansal Analiz ust boslugu 100 e cekildi (fazla bosluk giderildi). sw.js DEGISMEDI.' },
+    ]
+  },
   {
     version: 'v200',
     date: '05.07.2026',
