@@ -18,7 +18,7 @@
   // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
     const swKod = `
-const CACHE_VER = 'finansal-v184';
+const CACHE_VER = 'finansal-v185';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
@@ -2788,7 +2788,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v184';
+const APP_VERSION = 'v185';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2902,7 +2902,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.07.2026 23:55'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.07.2026 00:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3692,45 +3692,15 @@ async function pushToCloud(){
     if(!userChangedData) return;
     if(isPushingToCloud) return;
     isPushingToCloud = true;
-    // userChangedData'yı BURADA false yapmıyoruz — sadece başarılı push sonrası
     updateCloudIndicator('saving');
     await new Promise(r=>setTimeout(r, Math.random()*300));
-    // Push öncesi lokal orphan'ları temizle
+    // Push öncesi lokal orphan'ları temizle (karşılığında entry olmayan log satırları)
     entryLog = entryLog.filter(l => logHasEntry(l));
     localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
-    // Cloud'u çek - v181: entries + entryLog + müşteri + kampanya + tombstone hepsini merge et
-    // (önceden sadece entries merge ediliyordu; diğerleri ezilip başka cihazın eklediği kayıtlar kayboluyordu)
-    const res0 = await fetch(FIREBASE_URL, { cache: 'no-store' });
-    if(res0.ok){
-      const cloudData = await res0.json();
-      if(cloudData && cloudData.data !== 'init'){
-        // tombstone birleştir (önce — filtrelerde kullanılacak)
-        if(cloudData.tombstones){ tombstones = mergeTombstones(tombstones, cloudData.tombstones); saveTombstones(); }
-        entries = mergeEntries(entries, cloudData.entries||[]);
-        localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries));
-        // entryLog: cloud'daki yeni id'leri ekle, tombstone'ları çıkar
-        if(cloudData.entryLog){
-          const lids = new Set(entryLog.map(l=>l.id));
-          const yeni = cloudData.entryLog.filter(l=> !lids.has(l.id) && !isDeleted('log', l.id));
-          entryLog = [...entryLog, ...yeni].filter(l=> !isDeleted('log', l.id));
-          localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
-        }
-        // müşteriler
-        if(cloudData.musteriler){
-          const mids = new Set(musteriler.map(m=>m.id));
-          const yeni = cloudData.musteriler.filter(m=> !mids.has(m.id) && !isDeleted('mus', m.id));
-          musteriler = [...musteriler, ...yeni].filter(m=> !isDeleted('mus', m.id));
-          try{ localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler)); }catch(e){}
-        }
-        // kampanyalar
-        if(cloudData.kampanyaData){
-          const kids = new Set(kampanyaData.map(k=>k.id));
-          const yeni = cloudData.kampanyaData.filter(k=> k.id && !kids.has(k.id) && !isDeleted('kmp', k.id));
-          kampanyaData = [...kampanyaData, ...yeni].filter(k=> !k.id || !isDeleted('kmp', k.id));
-        }
-        // lastSyncedEntries burda GÜNCELLENMİYOR — sadece başarılı push sonrası güncellenir
-      }
-    }
+    // ═══ v185: TEK DOĞRU KAYNAK ═══
+    // Push öncesi cloud'dan çekip MERGE ETME kaldırıldı. Bu cihaz en son kaydeden = gerçek.
+    // Yerel veri olduğu gibi Firebase'e yazılır. (Sen tek kullanıcısın ve online'sın;
+    //  bu yüzden "son yazan kazanır" doğru davranış — ve silme kesin kalıcı olur.)
     const payload = getBackupData();
     const hash = quickHash(payload);
     const res = await fetch(FIREBASE_URL, {
@@ -3740,16 +3710,14 @@ async function pushToCloud(){
     });
     if(res.ok){
       userChangedData = false; // Sadece başarılı push'ta false yap
-      try{ localStorage.removeItem('vf_pending_sync'); }catch(e){} // v152: kuyruk boşaldı
+      try{ localStorage.removeItem('vf_pending_sync'); }catch(e){}
       lastCloudHash = hash;
       lastSyncedEntries = JSON.parse(JSON.stringify(entries));
       updateCloudIndicator('saved', getPlatformName() + ' · ' + nowTR().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
     } else {
-      // Push başarısız: userChangedData true kalıyor, pull engellenecek
       updateCloudIndicator('error');
     }
   } catch(e){
-    // Hata: userChangedData true kalıyor, 10sn sonra tekrar denenecek
     scheduleCloudSync();
     updateCloudIndicator('error');
   }
@@ -3769,37 +3737,15 @@ async function pullFromCloud(){
     const hash = quickHash(data);
     if(hash === lastCloudHash){ updateCloudIndicator('saved'); return false; }
     lastCloudHash = hash;
+    // ═══ v185: TEK DOĞRU KAYNAK ═══
+    // Firebase = gerçek. Gelen veriyi MERGE ETMEDEN doğrudan uygula.
+    // (Eski merge/tombstone katmanı kaldırıldı — silme artık Firebase'den doğrudan gelir,
+    //  "sildiğim geri geliyor" imkânsız çünkü ortada birleştirme yok.)
     if(data.pin) localStorage.setItem('vf_pin', data.pin);
-    // v181: buluttan gelen tombstone'ları kendiminkiyle birleştir (silme işaretleri korunur)
-    if(data.tombstones){ tombstones = mergeTombstones(tombstones, data.tombstones); saveTombstones(); }
-    // entries: merge yap (direkt ezme değil)
-    if(data.entries){
-      entries = mergeEntries(entries, data.entries);
-      lastSyncedEntries = JSON.parse(JSON.stringify(entries));
-    }
-    // v181: entryLog — kayıt bazlı birleştir, ama tombstone'daki (silinmiş) id'leri ASLA geri ekleme
-    if(data.entryLog){
-      const localLogIds = new Set(entryLog.map(l=>l.id));
-      const yeniLogs = data.entryLog.filter(l=> !localLogIds.has(l.id) && !isDeleted('log', l.id));
-      entryLog = [...entryLog, ...yeniLogs];
-      // Bende olup buluttan gelen ama başka cihazda silinmiş (tombstone) olanları temizle
-      entryLog = entryLog.filter(l => !isDeleted('log', l.id));
-    }
-    // v181: müşteriler — kayıt bazlı birleştir + tombstone
-    if(data.musteriler){
-      const localMIds = new Set(musteriler.map(m=>m.id));
-      const yeniMusteriler = data.musteriler.filter(m=> !localMIds.has(m.id) && !isDeleted('mus', m.id));
-      musteriler = [...musteriler, ...yeniMusteriler];
-      // silinmiş müşterileri temizle
-      musteriler = musteriler.filter(m => !isDeleted('mus', m.id));
-      // Gelen müşterilerin logId'leri local entryLog'da yoksa ekle (silinmemişse)
-      musteriler.forEach(m=>{
-        if(m.logId && !isDeleted('log', m.logId) && !entryLog.find(l=>l.id===m.logId)){
-          const cloudLog = (data.entryLog||[]).find(l=>l.id===m.logId);
-          if(cloudLog) entryLog.push(cloudLog);
-        }
-      });
-    }
+    if(data.entries)    entries    = data.entries;
+    if(data.entryLog)   entryLog   = data.entryLog;
+    if(data.musteriler) musteriler = data.musteriler;
+    if(data.prices)     prices     = data.prices;
     if(data.yatirilan)  yatirilan  = data.yatirilan;
     if(data.hedefler)   hedefler   = data.hedefler;
     if(data.hedefKatData) hedefKatData = data.hedefKatData;
@@ -3807,24 +3753,11 @@ async function pullFromCloud(){
     if(data.finansData) finansData = data.finansData;
     if(data.gelirData)  gelirData  = data.gelirData;
     if(data.notlarData) notlarData = data.notlarData;
-    // v181: kampanyaData — kayıt bazlı birleştir + tombstone (direkt ezme yerine)
-    if(data.kampanyaData){
-      const localKIds = new Set(kampanyaData.map(k=>k.id));
-      const yeniK = data.kampanyaData.filter(k=> k.id && !localKIds.has(k.id) && !isDeleted('kmp', k.id));
-      kampanyaData = [...kampanyaData, ...yeniK].filter(k=> !k.id || !isDeleted('kmp', k.id));
-    }
+    if(data.kampanyaData) kampanyaData = data.kampanyaData;
     if(data.tarifeData) tarifeData = data.tarifeData;
     if(data.finansTrash) finansTrash = data.finansTrash;
-    // v151: kasaData — id bazlı merge (silme değil ekleme/güncelleme; updatedAt yeni olan kazanır)
-    if(data.kasaData && typeof kasaData!=='undefined'){
-      const localKMap = {}; kasaData.forEach(k=>{ localKMap[k.id]=k; });
-      data.kasaData.forEach(ck=>{
-        const lk = localKMap[ck.id];
-        if(!lk){ kasaData.push(ck); }
-        else if((ck.updatedAt||'') > (lk.updatedAt||'')){ Object.assign(lk, ck); }
-      });
-      try{ localStorage.setItem(STORE_KEY_KASA, JSON.stringify(kasaData)); }catch(e){}
-    }
+    if(data.kasaData && typeof kasaData!=='undefined') kasaData = data.kasaData;
+    lastSyncedEntries = JSON.parse(JSON.stringify(entries));
     localStorage.setItem(STORE_KEY_ENTRIES,   JSON.stringify(entries));
     localStorage.setItem(STORE_KEY_LOG,       JSON.stringify(entryLog));
     localStorage.setItem(STORE_KEY_PRICES,    JSON.stringify(prices));
@@ -3839,6 +3772,7 @@ async function pullFromCloud(){
     localStorage.setItem(STORE_KEY_KAMPANYA,  JSON.stringify(kampanyaData));
     localStorage.setItem(STORE_KEY_TARIFE,     JSON.stringify(tarifeData));
     localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler));
+    if(typeof kasaData!=='undefined') try{ localStorage.setItem(STORE_KEY_KASA, JSON.stringify(kasaData)); }catch(e){}
     loadHedefExtra();
     recomputeAllFinans();
     const _ucd = userChangedData;
@@ -14989,6 +14923,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v185',
+    date: '05.07.2026',
+    items: [
+      { type: 'new', text: 'SENKRON TEK DOGRU KAYNAK mantigina gecti (Firebase = gercek). Artik uygulama bulutta ne varsa onu gosterir; her ekleme/silme aninda buluta yazilir, diger cihaz ~10 sn icinde kendini gunceller. Karmasik birlestirme/silme-isareti katmani KALDIRILDI. Sonuc: sildigin kesin gider ve geri GELMEZ, ekledigin kaybolmaz, iki cihaz her zaman ayni gercege bakar. (Online calisma gerekir.)' },
+    ]
+  },
   {
     version: 'v184',
     date: '04.07.2026',
