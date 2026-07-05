@@ -11,23 +11,52 @@
 <meta name="theme-color" content="#e2231a">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script>
-  // SW — offline destek + PWA kurulumu
-  // v187: SW artık AYRI bir sw.js dosyası (blob yerine). Chrome bir PWA'yı "kurulabilir"
-  // saymak için same-origin, start_url'i kapsayan bir SW ister; blob URL bunu karşılamıyordu,
-  // bu yüzden "Uygulamayı Kur" butonu hiç çıkmıyordu. Ayrı dosyayla kurulum düzgün çalışır.
-  // NOT: GitHub'a index.html + sw.js + manifest.json + ikonlar BİRLİKTE yüklenmeli.
+  // SW — offline destek, PWA
+  // v171: clients.claim() eklendi — yeni SW aktifleşince acik sekmeleri HEMEN devralir,
+  // boylece "yukledim ama gelmedi / elle cache temizle" sorunu bitiyor.
+  // Otomatik reload YOK (gecmiste veri sorunu yaptigi icin); bunun yerine yeni surum gelince
+  // sayfaya mesaj gonderilir ve kucuk bir "Yeni surum - Yenile" cubugu gosterilir (kullanici karar verir).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
-    navigator.serviceWorker.register('sw.js').then(reg=>{
-      reg.addEventListener('updatefound', ()=>{
-        const yeni = reg.installing;
-        if(!yeni) return;
-        yeni.addEventListener('statechange', ()=>{
-          if(yeni.state==='installed' && navigator.serviceWorker.controller){
-            gosterYeniSurumCubugu();
-          }
+    const swKod = `
+const CACHE_VER = 'finansal-v180';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE_VER).then(c => c.addAll(['./index.html','./manifest.json']).catch(()=>{})));
+});
+self.addEventListener('activate', e => {
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k=>k!==CACHE_VER).map(k=>caches.delete(k)));
+    await self.clients.claim(); // v171: acik sekmeleri hemen devral
+  })());
+});
+self.addEventListener('fetch', e => {
+  if(e.request.mode==='navigate'){
+    e.respondWith(fetch(e.request,{cache:'no-store'}).catch(()=>caches.match('./index.html')));
+    return;
+  }
+  e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{
+    if(r&&r.status===200&&r.type==='basic'){
+      caches.open(CACHE_VER).then(c=>c.put(e.request,r.clone()));
+    }
+    return r;
+  })));
+});`;
+    try{
+      const blob = new Blob([swKod],{type:'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).then(reg=>{
+        // v171: yeni surum tespiti — yeni SW kurulup beklemeye gecince kullaniciya "Yenile" cubugu goster
+        reg.addEventListener('updatefound', ()=>{
+          const yeni = reg.installing;
+          if(!yeni) return;
+          yeni.addEventListener('statechange', ()=>{
+            if(yeni.state==='installed' && navigator.serviceWorker.controller){
+              gosterYeniSurumCubugu();
+            }
+          });
         });
-      });
-    }).catch(e=>console.warn('SW:',e && e.message));
+      }).catch(e=>console.warn('SW:',e && e.message));
+    }catch(e){ /* blob desteklenmiyorsa sessizce geç */ }
     // controllerchange reload YOK — veri silinmesini önler
   }
   // v171: "Yeni sürüm var" bildirim çubuğu (kullanıcı tıklayınca yeniler)
@@ -374,15 +403,26 @@ html{scrollbar-gutter:stable}
   .range-summary{ flex-direction:column!important; }
 
   /* Tablolar scroll */
-  /* Mobil topbar sabit — v184: fixed (viewport'a çivili, kaydırınca sabit kalır).
-     Altındaki boşluk JS ile top bar'ın GERÇEK yüksekliği ölçülerek verilir (sabit 52px değil,
-     çünkü top bar 1 veya 2 satır olabiliyor). Bkz. ayarlaTopbarBoslugu(). */
+  /* Mobil topbar kesinlikle sabit */
   #mobileTopBar{
     position:fixed!important;
     top:0!important;
     left:0!important;
     right:0!important;
     z-index:500!important;
+  }
+  /* Topbar yüksekliği kadar padding ekle ki içerik altında kalmasın */
+  .app>.main{ padding-top:52px!important; }
+  /* v179: sayfa-içi sticky başlıklar (nav butonları dahil) fixed topbar'ın ARKASINA girmesin —
+     top:0 yerine topbar yüksekliği (52px) kadar aşağıdan yapışsınlar */
+  #page-dash > div[style*="position:sticky"],
+  #primTitleBar,
+  #gelirTitleBar,
+  #page-prim > div[style*="position:sticky"],
+  #page-hedef > div[style*="position:sticky"],
+  #page-gelir > div[style*="position:sticky"],
+  #page-finans > div[style*="position:sticky"]{
+    top:52px!important;
   }
 
   /* Tablolar sadece kendi içinde scroll */
@@ -1372,8 +1412,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     </div>
   </div>
 </div>
-<!-- Giriş Logları Modalı (v182: açılış div'i geri eklendi — v180'de yanlışlıkla silinmişti, modal sürekli görünüyordu) -->
-<div id="girisLogModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2100;align-items:center;justify-content:center">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;width:92vw;max-width:400px;overflow:hidden">
     <div style="background:linear-gradient(135deg,#1a1c20,#26282b);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)">
       <div style="display:flex;align-items:center;gap:10px">
@@ -2759,7 +2797,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v187';
+const APP_VERSION = 'v180';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2873,7 +2911,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.07.2026 01:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.07.2026 21:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3557,38 +3595,6 @@ function quickHash(obj){
 
 let lastSyncedEntries = null;
 
-// ═══════════════════════════════════════════════════════════
-// v181: KAYIT-BAZLI SENKRON — Tombstone (silme işareti) sistemi
-// Amaç: iki cihazdan da ekle/sil yapılabilsin; eklemeler birleşsin,
-// silme HER cihazdan gitsin ve geri gelmesin.
-// Her silinen kaydın id'si "silindi" olarak işaretlenir (tombstone),
-// buluta taşınır; pull sırasında tombstone'daki id'ler asla geri eklenmez.
-// ═══════════════════════════════════════════════════════════
-let tombstones = {};  // { "log:ID": zaman, "mus:ID": zaman, "kmp:ID": zaman, ... }
-try{ tombstones = JSON.parse(localStorage.getItem('vf_tombstones')||'{}'); }catch(e){ tombstones = {}; }
-function saveTombstones(){ try{ localStorage.setItem('vf_tombstones', JSON.stringify(tombstones)); }catch(e){} }
-function markDeleted(tur, id){
-  if(!id) return;
-  tombstones[tur+':'+id] = Date.now();
-  saveTombstones();
-  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
-}
-function isDeleted(tur, id){ return !!tombstones[tur+':'+id]; }
-// Tombstone'ları 90 günden eskiyse temizle (sonsuza kadar büyümesin)
-function cleanupTombstones(){
-  const esik = Date.now() - 90*24*60*60*1000;
-  let degisti = false;
-  for(const k in tombstones){ if(tombstones[k] < esik){ delete tombstones[k]; degisti = true; } }
-  if(degisti) saveTombstones();
-}
-// İki tombstone objesini birleştir (senkronda)
-function mergeTombstones(local, cloud){
-  const r = Object.assign({}, cloud||{}, local||{});
-  // local ve cloud'da aynı anahtar varsa en yeni zamanı al
-  for(const k in (cloud||{})){ if(local && local[k]){ r[k] = Math.max(local[k], cloud[k]); } }
-  return r;
-}
-
 function mergeEntries(local, cloud){
   function entryKey(e){
     const mnpSuffix = (e.mnp === true) ? '_MNP' : '_TES';
@@ -3663,15 +3669,23 @@ async function pushToCloud(){
     if(!userChangedData) return;
     if(isPushingToCloud) return;
     isPushingToCloud = true;
+    // userChangedData'yı BURADA false yapmıyoruz — sadece başarılı push sonrası
     updateCloudIndicator('saving');
     await new Promise(r=>setTimeout(r, Math.random()*300));
-    // Push öncesi lokal orphan'ları temizle (karşılığında entry olmayan log satırları)
+    // Push öncesi lokal orphan'ları temizle
     entryLog = entryLog.filter(l => logHasEntry(l));
     localStorage.setItem(STORE_KEY_LOG, JSON.stringify(entryLog));
-    // ═══ v185: TEK DOĞRU KAYNAK ═══
-    // Push öncesi cloud'dan çekip MERGE ETME kaldırıldı. Bu cihaz en son kaydeden = gerçek.
-    // Yerel veri olduğu gibi Firebase'e yazılır. (Sen tek kullanıcısın ve online'sın;
-    //  bu yüzden "son yazan kazanır" doğru davranış — ve silme kesin kalıcı olur.)
+    // Cloud'u çek - SADECE entries merge et
+    const res0 = await fetch(FIREBASE_URL, { cache: 'no-store' });
+    if(res0.ok){
+      const cloudData = await res0.json();
+      if(cloudData && cloudData.data !== 'init'){
+        entries = mergeEntries(entries, cloudData.entries||[]);
+        localStorage.setItem(STORE_KEY_ENTRIES, JSON.stringify(entries));
+        // lastSyncedEntries burda GÜNCELLENMİYOR — sadece başarılı push sonrası güncellenir
+        // Aksi hâlde push başarısız olunca lastSyncedEntries yanlış base ile retry'da veri siliniyor
+      }
+    }
     const payload = getBackupData();
     const hash = quickHash(payload);
     const res = await fetch(FIREBASE_URL, {
@@ -3681,14 +3695,16 @@ async function pushToCloud(){
     });
     if(res.ok){
       userChangedData = false; // Sadece başarılı push'ta false yap
-      try{ localStorage.removeItem('vf_pending_sync'); }catch(e){}
+      try{ localStorage.removeItem('vf_pending_sync'); }catch(e){} // v152: kuyruk boşaldı
       lastCloudHash = hash;
       lastSyncedEntries = JSON.parse(JSON.stringify(entries));
       updateCloudIndicator('saved', getPlatformName() + ' · ' + nowTR().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
     } else {
+      // Push başarısız: userChangedData true kalıyor, pull engellenecek
       updateCloudIndicator('error');
     }
   } catch(e){
+    // Hata: userChangedData true kalıyor, 10sn sonra tekrar denenecek
     scheduleCloudSync();
     updateCloudIndicator('error');
   }
@@ -3708,15 +3724,31 @@ async function pullFromCloud(){
     const hash = quickHash(data);
     if(hash === lastCloudHash){ updateCloudIndicator('saved'); return false; }
     lastCloudHash = hash;
-    // ═══ v185: TEK DOĞRU KAYNAK ═══
-    // Firebase = gerçek. Gelen veriyi MERGE ETMEDEN doğrudan uygula.
-    // (Eski merge/tombstone katmanı kaldırıldı — silme artık Firebase'den doğrudan gelir,
-    //  "sildiğim geri geliyor" imkânsız çünkü ortada birleştirme yok.)
     if(data.pin) localStorage.setItem('vf_pin', data.pin);
-    if(data.entries)    entries    = data.entries;
-    if(data.entryLog)   entryLog   = data.entryLog;
-    if(data.musteriler) musteriler = data.musteriler;
-    if(data.prices)     prices     = data.prices;
+    // entries: merge yap (direkt ezme değil)
+    if(data.entries){
+      entries = mergeEntries(entries, data.entries);
+      lastSyncedEntries = JSON.parse(JSON.stringify(entries));
+    }
+    // entryLog: yeni olanları ekle (direkt ezme değil)
+    if(data.entryLog){
+      const localLogIds = new Set(entryLog.map(l=>l.id));
+      const yeniLogs = data.entryLog.filter(l=>!localLogIds.has(l.id));
+      entryLog = [...entryLog, ...yeniLogs];
+    }
+    // musteriler: yeni olanları ekle (direkt ezme değil)
+    if(data.musteriler){
+      const localMIds = new Set(musteriler.map(m=>m.id));
+      const yeniMusteriler = data.musteriler.filter(m=>!localMIds.has(m.id));
+      musteriler = [...musteriler, ...yeniMusteriler];
+      // Gelen müşterilerin logId'leri local entryLog'da yoksa ekle
+      musteriler.forEach(m=>{
+        if(m.logId && !entryLog.find(l=>l.id===m.logId)){
+          const cloudLog = (data.entryLog||[]).find(l=>l.id===m.logId);
+          if(cloudLog) entryLog.push(cloudLog);
+        }
+      });
+    }
     if(data.yatirilan)  yatirilan  = data.yatirilan;
     if(data.hedefler)   hedefler   = data.hedefler;
     if(data.hedefKatData) hedefKatData = data.hedefKatData;
@@ -3727,8 +3759,16 @@ async function pullFromCloud(){
     if(data.kampanyaData) kampanyaData = data.kampanyaData;
     if(data.tarifeData) tarifeData = data.tarifeData;
     if(data.finansTrash) finansTrash = data.finansTrash;
-    if(data.kasaData && typeof kasaData!=='undefined') kasaData = data.kasaData;
-    lastSyncedEntries = JSON.parse(JSON.stringify(entries));
+    // v151: kasaData — id bazlı merge (silme değil ekleme/güncelleme; updatedAt yeni olan kazanır)
+    if(data.kasaData && typeof kasaData!=='undefined'){
+      const localKMap = {}; kasaData.forEach(k=>{ localKMap[k.id]=k; });
+      data.kasaData.forEach(ck=>{
+        const lk = localKMap[ck.id];
+        if(!lk){ kasaData.push(ck); }
+        else if((ck.updatedAt||'') > (lk.updatedAt||'')){ Object.assign(lk, ck); }
+      });
+      try{ localStorage.setItem(STORE_KEY_KASA, JSON.stringify(kasaData)); }catch(e){}
+    }
     localStorage.setItem(STORE_KEY_ENTRIES,   JSON.stringify(entries));
     localStorage.setItem(STORE_KEY_LOG,       JSON.stringify(entryLog));
     localStorage.setItem(STORE_KEY_PRICES,    JSON.stringify(prices));
@@ -3743,7 +3783,6 @@ async function pullFromCloud(){
     localStorage.setItem(STORE_KEY_KAMPANYA,  JSON.stringify(kampanyaData));
     localStorage.setItem(STORE_KEY_TARIFE,     JSON.stringify(tarifeData));
     localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler));
-    if(typeof kasaData!=='undefined') try{ localStorage.setItem(STORE_KEY_KASA, JSON.stringify(kasaData)); }catch(e){}
     loadHedefExtra();
     recomputeAllFinans();
     const _ucd = userChangedData;
@@ -4160,12 +4199,11 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
       const silinecekLogId = entryLog[logIdx].id;
       const musteriIdx = musteriler.findIndex(m => m.logId === silinecekLogId);
       if(musteriIdx >= 0){
-        markDeleted('mus', musteriler[musteriIdx].id); // v181
         musteriler.splice(musteriIdx, 1);
         saveMusteriStore();
       }
     }
-    if(logIdx >= 0){ markDeleted('log', entryLog[logIdx].id); entryLog.splice(logIdx, 1); } // v181
+    if(logIdx >= 0) entryLog.splice(logIdx, 1);
     if(e && e.count > 0){
       e.count--;
       if(e.count === 0) entries = entries.filter(x => x !== e);
@@ -4550,7 +4588,7 @@ function exportActivityListToExcel(){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, tombstones, kasaData: (typeof kasaData!=='undefined'?kasaData:[]), pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, kasaData: (typeof kasaData!=='undefined'?kasaData:[]), pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
 }
 function timeStr(){
   const d = new Date();
@@ -9380,7 +9418,6 @@ async function deleteEntryDirect(cat, date, isMnp, btn){
     (MNP_CATS.includes(cat) ? m.tip===(mnpFlag?'mnp':'tesis') : true)
   );
   if(silinecekMusteri){
-    markDeleted('mus', silinecekMusteri.id); // v181
     musteriler = musteriler.filter(m => m.id !== silinecekMusteri.id);
     saveMusteriStore();
   }
@@ -9444,7 +9481,7 @@ function deleteIslemLog(logRef, cat, date, isMnp){
 
   // Silinen logun tarifesini al - dogru entry'den dussun
   const silinenTarife2 = (logIdx >= 0) ? (entryLog[logIdx].tarife || '') : '';
-  if(logIdx >= 0){ markDeleted('log', entryLog[logIdx].id); entryLog.splice(logIdx, 1); } // v181
+  if(logIdx >= 0) entryLog.splice(logIdx, 1);
 
   // ── 2. ENTRIES SAYISINI AZALT (TARIFE eslesmesiyle) ──
   let e;
@@ -9481,7 +9518,6 @@ function deleteIslemLog(logRef, cat, date, isMnp){
   }
 
   if(silinecekMusteri){
-    markDeleted('mus', silinecekMusteri.id); // v181
     musteriler = musteriler.filter(m => m.id !== silinecekMusteri.id);
     saveMusteriStore();
   }
@@ -10196,7 +10232,6 @@ async function deleteKampanya(id){
     return;
   }
   if(!await appConfirm('Bu kampanyayı silmek istiyor musunuz?')) return;
-  markDeleted('kmp', id); // v181: silme işareti
   kampanyaData = kampanyaData.filter(x=>x.id!==id);
   saveKampanyaStore();
   renderKampanyaList();
@@ -10777,7 +10812,7 @@ function setMusteriDurum(durum){
       // EntryLog'dan da sil - logId varsa onunla, yoksa genel
       let logIdx = m.logId ? entryLog.findIndex(l=>l.id===m.logId) : -1;
       if(logIdx<0) logIdx = entryLog.findLastIndex(l=>l.date===m.entryDate&&l.cat===m.cat&&!!l.mnp===isMnp);
-      if(logIdx>=0){ markDeleted('log', entryLog[logIdx].id); entryLog.splice(logIdx,1); } // v181
+      if(logIdx>=0) entryLog.splice(logIdx,1);
       saveEntries();
       saveEntryLog();
       render();
@@ -10856,7 +10891,6 @@ async function deleteMusteriKayit(id){
   if(!await appConfirm('Bu müşteri kaydını ve ilgili prim kaydını silmek istiyor musunuz?')) return;
 
   // Müşteriyi sil
-  markDeleted('mus', id); // v181
   musteriler = musteriler.filter(x=>x.id!==id);
   saveMusteriStore();
 
@@ -10891,7 +10925,7 @@ async function deleteMusteriKayit(id){
         }
       }
     }
-    if(logIdx>=0){ markDeleted('log', entryLog[logIdx].id); entryLog.splice(logIdx,1); } // v181
+    if(logIdx>=0) entryLog.splice(logIdx,1);
 
     saveEntries();
     saveEntryLog();
@@ -13436,22 +13470,6 @@ function closeMobileMenu(){
 }
 // ==================== MOBİL MENÜ SONU ====================
 
-// v184: mobil top bar fixed olduğu için, altındaki içeriğe top bar'ın GERÇEK yüksekliği kadar
-// boşluk ver (sabit 52px değil — top bar 1 veya 2 satır olabiliyor, yanlış boşluk kesilme/boşluk yaratıyordu)
-function ayarlaTopbarBoslugu(){
-  const tb = document.getElementById('mobileTopBar');
-  const main = document.querySelector('.app>.main');
-  if(!tb || !main) return;
-  // top bar görünür mü (mobil modda display:flex, PC'de none)
-  const gorunur = getComputedStyle(tb).display !== 'none';
-  main.style.paddingTop = gorunur ? (tb.offsetHeight + 'px') : '';
-}
-window.addEventListener('resize', ()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} });
-window.addEventListener('orientationchange', ()=>{ setTimeout(()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} }, 200); });
-// açılışta ve kısa gecikmelerle (font/render oturduktan sonra) birkaç kez ölç
-setTimeout(()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} }, 100);
-setTimeout(()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} }, 600);
-
 loadTheme();
 guncelleGizliModButon();
 updateOfflineIndicator();
@@ -13490,7 +13508,6 @@ setTimeout(()=>{
 }, 3000);
 setTimeout(renderDash, 100);
 restoreBackupFolderHandle();
-try{ cleanupTombstones(); }catch(e){}
 setTimeout(checkBackupReminder, 1200);
 setTimeout(adjustStickyOffsets, 50);
 runStartupNotifCheck();
@@ -14894,56 +14911,6 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
-  {
-    version: 'v187',
-    date: '05.07.2026',
-    items: [
-      { type: 'fix', text: '"Uygulamayi Kur" sorunu cozuldu: Service Worker artik ayri bir sw.js dosyasi (onceden index.html icine gomulu blob idi; Chrome blob SW ile uygulamayi kurulabilir saymiyordu, o yuzden Kur butonu hic cikmiyordu). Artik telefonda/PC de duzgun kurulabilir. ONEMLI: GitHub a yuklerken index.html YANINDA sw.js dosyasini da atmayi unutma (zip icinde ikisi de var).' },
-    ]
-  },
-  {
-    version: 'v186',
-    date: '05.07.2026',
-    items: [
-      { type: 'fix', text: '"Uygulamayi Kur" butonu neden kaybolmustu bulundu: manifest.json ikon dosya adlarini yanlis ariyordu (icon-192.png yerine gercek ad icon192.png). Ikonlar yuklenemeyince tarayici uygulamayi "kurulabilir" saymiyor ve Kur butonu gorunmuyordu. Ikon adlari duzeltildi — buton geri gelecek (uygulama zaten kuruluysa once ana ekrandan kaldirip tekrar acman gerekebilir).' },
-    ]
-  },
-  {
-    version: 'v185',
-    date: '05.07.2026',
-    items: [
-      { type: 'new', text: 'SENKRON TEK DOGRU KAYNAK mantigina gecti (Firebase = gercek). Artik uygulama bulutta ne varsa onu gosterir; her ekleme/silme aninda buluta yazilir, diger cihaz ~10 sn icinde kendini gunceller. Karmasik birlestirme/silme-isareti katmani KALDIRILDI. Sonuc: sildigin kesin gider ve geri GELMEZ, ekledigin kaybolmaz, iki cihaz her zaman ayni gercege bakar. (Online calisma gerekir.)' },
-    ]
-  },
-  {
-    version: 'v184',
-    date: '04.07.2026',
-    items: [
-      { type: 'fix', text: 'Mobil ust bar duzeltmesi tamamlandi: kaydirinca ust bar (baslik + arac cubugu) yukari kayip gidiyordu (v183 te sticky yapinca sabitligini kaybetmisti). Ust bar tekrar SABIT yapildi ve altindaki boslugu JS ile ust barin GERCEK yuksekligini olcerek veriyor — boylece hem sabit kaliyor hem de bosluk/kesilme olmuyor. Ekran donunce/boyut degisince otomatik yeniden hesaplaniyor.' },
-    ]
-  },
-  {
-    version: 'v183',
-    date: '04.07.2026',
-    items: [
-      { type: 'fix', text: 'KRITIK mobil duzeltme: TUM sayfalarda (Anasayfa, Prim, Finansal, Kasa, Gelir, Not) ust basligin altinda koca bosluk olusuyor ve butonlar/icerik kesiliyor du. Sebep: mobil ust bar "fixed" yapilmis, altina yanlis hesaplanmis sabit padding eklenmisti (ust bar 2 satirli oldugu icin bosluk cift saniyordu). Ust bar "sticky" yapildi, gereksiz padding kaldirildi — bosluk ve kesilme tamamen gitti.' },
-    ]
-  },
-  {
-    version: 'v182',
-    date: '04.07.2026',
-    items: [
-      { type: 'fix', text: 'KRITIK duzeltme: Giris Loglari modali ekranin ustune yapisip tum gorunumu bozuyordu. Sebep: bir onceki surumde (v180) gizli mod PIN modali eklenirken bu modalin acilis etiketi yanlislikla silinmis, modal surekli gorunur kalmisti. Duzeltildi.' },
-    ]
-  },
-  {
-    version: 'v181',
-    date: '04.07.2026',
-    items: [
-      { type: 'new', text: 'SENKRON YENIDEN YAZILDI (kayit-bazli + silme isareti). Artik iki cihazdan da ekleyip silebilirsin: HER IKI cihazda eklediklerin BIRLESIR (biri digerini silmez), ve bir cihazda SILDIGIN diger cihazdan da silinir, geri GELMEZ. "Sildikce geri geliyor" sorunu cozuldu. (Ayni kaydi iki cihaz ayni anda degistirmezsen veri kaybi olmaz.)' },
-      { type: 'fix', text: 'Push (buluta yazma) artik once buluttaki diger cihazin eklediklerini birlestiriyor — onceden sadece prim ozetini birlestirip log/musteri/kampanyayi eziyordu, bu yuzden diger cihazin kayitlari kaybolabiliyordu.' },
-    ]
-  },
   {
     version: 'v180',
     date: '04.07.2026',
