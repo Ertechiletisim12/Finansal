@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v222';
+const APP_VERSION = 'v223';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 03:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 03:50'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5220,7 +5220,7 @@ function showPrimGrupDetay(tip){
       + '<div style="font-size:10.5px;color:var(--muted);margin-top:2px">'+tarihStr+'</div>'
       + '</div>';
   };
-  const grupBaslik = (t,n) => '<div style="padding:8px 14px;background:var(--panel2);font-size:11px;font-weight:800;color:var(--txt);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">'+t+' <span style="color:var(--muted);font-weight:600">('+n+')</span></div>';
+  const grupBaslik = (t,n,renk) => { const c = renk||'var(--txt)'; return '<div style="padding:8px 14px;background:linear-gradient(90deg,'+c+'22,transparent);font-size:11px;font-weight:800;color:'+c+';border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-left:3px solid '+c+'">'+t+' <span style="color:var(--muted);font-weight:600">('+n+')</span></div>'; };
   const srt = arr => arr.slice().sort((a,b)=> a.entryDate<b.entryDate ? -1 : (a.entryDate>b.entryDate ? 1 : 0));
 
   let baslik = '', ic = '', toplam = 0;
@@ -5230,12 +5230,12 @@ function showPrimGrupDetay(tip){
     baslik = '🆕 Yeni Tesis ve Diğerleri';
     const tesisList = musteriler.filter(m=> m.tip==='tesis' && m.entryDate>=rStart && m.entryDate<=rEnd);
     toplam = tesisList.length;
-    const gruplar = [{ ad:'🆕 Yeni Tesis', test: m=>inMnp(m) }].concat(
-      ['P2P','Mccm','İnternet','Diğer'].map(c=>({ ad:c, test: m=>m.cat===c }))
+    const gruplar = [{ ad:'🆕 Yeni Tesis', renk:'#4cd964', test: m=>inMnp(m) }].concat(
+      ['P2P','Mccm','İnternet','Diğer'].map(c=>({ ad:c, renk:(CAT_CONFIG[c]&&CAT_CONFIG[c].color)||'var(--muted)', test: m=>m.cat===c }))
     );
     gruplar.forEach(g=>{
       const gl = srt(tesisList.filter(g.test));
-      if(gl.length){ ic += grupBaslik(g.ad, gl.length) + gl.map(satirHTML).join(''); }
+      if(gl.length){ ic += grupBaslik(g.ad, gl.length, g.renk) + gl.map(satirHTML).join(''); }
     });
   } else if(tip==='aktive'){
     baslik = '🔄 Aktive Olan MNP';
@@ -5243,8 +5243,8 @@ function showPrimGrupDetay(tip){
     toplam = aList.length;
     const buD = srt(aList.filter(m=> ymKey(m.entryDate)===ymKey(aktOf(m))));   // giriş ayı = aktivasyon ayı → bu dönem
     const dev = srt(aList.filter(m=> ymKey(m.entryDate)!==ymKey(aktOf(m))));   // farklı → devreden
-    if(buD.length) ic += grupBaslik('🔄 Bu dönem girilenler', buD.length) + buD.map(satirHTML).join('');
-    if(dev.length) ic += grupBaslik('🔁 Devreden — önceki aydan', dev.length) + dev.map(satirHTML).join('');
+    if(buD.length) ic += grupBaslik('🔄 Bu dönem girilenler', buD.length, '#4cd964') + buD.map(satirHTML).join('');
+    if(dev.length) ic += grupBaslik('🔁 Devreden — önceki aydan', dev.length, '#ffb74d') + dev.map(satirHTML).join('');
   } else {
     let list = [];
     if(tip==='ileri'){ baslik='⏳ İleride Aktive Olacak MNP'; list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.entryDate>=rStart && m.entryDate<=rEnd && aktOf(m)>rEnd); }
@@ -15296,6 +15296,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v223',
+    date: '07.07.2026',
+    items: [
+      { type: 'ui', text: 'Detay penceresindeki grup basliklari renklendirildi: 🆕 Yeni Tesis yesil, kategoriler (P2P/Mccm/Internet/Diger) kendi renkleriyle, 🔄 Bu donem yesil, 🔁 Devreden turuncu — her basligin sol kenarinda renk cizgisi ve hafif renk gecisi. Sadece index.html degisti.' },
+    ]
+  },
   {
     version: 'v222',
     date: '07.07.2026',
