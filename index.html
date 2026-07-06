@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v216';
+const APP_VERSION = 'v217';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 22:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 23:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5141,6 +5141,43 @@ function selectSingleDay(){
   if(rsm) rsm.value = gun; if(rem) rem.value = gun; if(am) am.value = gun;
   render();
 }
+
+// v217: Genel amaçlı bilgi penceresi (dinamik, tek örnek)
+function showBilgiModal(baslik, icHtml){
+  const eski = document.getElementById('bilgiModal'); if(eski) eski.remove();
+  const el = document.createElement('div');
+  el.id = 'bilgiModal';
+  el.style.cssText = 'position:fixed;inset:0;z-index:12000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px';
+  el.onclick = ev => { if(ev.target === el) el.remove(); };
+  el.innerHTML = '<div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:420px;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--panel2);border-bottom:1px solid var(--line)">'
+    +   '<span style="font-weight:800;font-size:14px;color:var(--txt)">' + esc(baslik) + '</span>'
+    +   '<button onclick="var m=document.getElementById(\'bilgiModal\');if(m)m.remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1">✕</button>'
+    + '</div>'
+    + '<div style="overflow-y:auto">' + icHtml + '</div></div>';
+  document.body.appendChild(el);
+}
+
+// v217: 'İleride aktive olacak' MNP detayı — hangi gün girildi → hangi gün aktive olacak
+function showIleriDetay(cat){
+  const rStart = document.getElementById('rangeStart').value;
+  const rEnd   = document.getElementById('rangeEnd').value;
+  const trT = iso => { const p = String(iso).slice(0,10).split('-'); return p[2]+'.'+p[1]+'.'+p[0]; };
+  const list = entries
+    .filter(e => e.cat===cat && !!e.mnp && e.date>=rStart && e.date<=rEnd && mnpActivationDate(e.date) > rEnd)
+    .map(e => ({ date:e.date, akt:mnpActivationDate(e.date), count:e.count }))
+    .sort((a,b) => a.akt<b.akt ? -1 : (a.akt>b.akt ? 1 : 0));
+  if(!list.length){ showBilgiModal(cat + ' — İleride Aktive', '<div style="padding:22px;text-align:center;color:var(--muted)">İleride aktive olacak MNP yok.</div>'); return; }
+  const toplam = list.reduce((a,x)=>a+x.count,0);
+  const rows = list.map(x =>
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)">'
+    + '<span style="color:var(--txt);font-weight:700">🔄 ' + x.count + ' MNP</span>'
+    + '<span style="color:var(--muted);font-size:12px">girildi <b style="color:var(--txt)">' + trT(x.date) + '</b> → aktive <b style="color:#5ac8fa">' + trT(x.akt) + '</b></span>'
+    + '</div>'
+  ).join('');
+  const html = '<div style="padding:12px 14px;background:var(--panel2);font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)">Toplam <b style="color:var(--txt)">' + toplam + '</b> MNP girildi, henüz aktive olmadı. Her biri aktive olduğu gün büyük sayıya eklenecek.</div>' + rows;
+  showBilgiModal(cat + ' — İleride Aktive Olacak MNP', html);
+}
 function shiftMonth(id, delta){
   const el = document.getElementById(id);
   const val = el.value || todayStr();
@@ -5313,6 +5350,10 @@ function render(){
       const rCat   = rEntriesForCards.filter(e=>e.cat===cat);
       const rTesis = rCat.filter(e=>!e.mnp).reduce((a,e)=>a+e.count,0);
       const rMnp   = rCat.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
+      // v217: Bu aralıkta GİRİLEN ama aktivasyonu aralığın SONRASINA düşen MNP'ler (henüz açılmadı, büyük sayıya dahil DEĞİL)
+      const ileriMnp = entries
+        .filter(e=>e.cat===cat && !!e.mnp && e.date>=rStart && e.date<=rEnd && mnpActivationDate(e.date) > rEnd)
+        .reduce((a,e)=>a+e.count,0);
       // Onay bekleyen MNP: aktivasyon tarihi seçili aralığa düşen bekleyenler
       const bekleyenMnpList = musteriler.filter(m=>{
         if(m.cat!==cat || m.tip!=='mnp' || m.durum!=='bekliyor' || !m.entryDate) return false;
@@ -5320,10 +5361,11 @@ function render(){
         return akt >= rStart && akt <= rEnd;
       });
       const bekleyenMnp = Math.min(bekleyenMnpList.length, rMnp);
-      if(rTesis || rMnp || bekleyenMnp){
+      if(rTesis || rMnp || bekleyenMnp || ileriMnp){
         mnpInfo = '<div style="font-size:10px;color:var(--muted);margin-top:3px;display:flex;flex-direction:column;gap:2px;align-items:flex-start">'
           + '<span>🆕 ' + rTesis + ' Yeni Tesis</span>'
-          + '<span>🔄 ' + rMnp + ' MNP' + (rMnp ? ' <span style="color:#4cd964">· devreden/aktive</span>' : '') + '</span>'
+          + '<span>🔄 ' + rMnp + ' MNP' + (rMnp ? ' <span style="color:#4cd964">· aktive/devreden</span>' : '') + '</span>'
+          + (ileriMnp ? '<span onclick="showIleriDetay(\''+cat+'\')" style="color:#5ac8fa;font-weight:700;cursor:pointer;text-decoration:underline">⏳ '+ileriMnp+' girildi · ileride aktive</span>' : '')
           + (bekleyenMnp ? '<span onclick="openMusteriRaporFiltered(\'bekliyor\',\''+cat+'\',\'hepsi\')" style="color:#ff9f0a;font-weight:700;cursor:pointer;text-decoration:underline">⏳ '+bekleyenMnp+' onay bekliyor</span>' : '')
           + '</div>';
       }
@@ -15150,6 +15192,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v217',
+    date: '06.07.2026',
+    items: [
+      { type: 'new', text: 'MNP kartlarina "⏳ X girildi · ileride aktive" satiri eklendi: Bu gun/aralikta GIRDIGIN ama aktivasyonu (giris+2) daha sonra olan MNP leri gosterir. Yani "bugun kac MNP sattim"i aninda gorursun; bunlar buyuk sayiya (aktive olanlara) dahil DEGILDIR cunku prim aktivasyonda aliniyor.' },
+      { type: 'new', text: 'Bu ⏳ satirina tiklayinca detay acilir: her grup icin "girildi GG.AA → aktive GG.AA" listesi. Boylece hangi MNP nin hangi gun acilacagini net gorursun. Sadece index.html degisti.' },
+    ]
+  },
   {
     version: 'v216',
     date: '06.07.2026',
