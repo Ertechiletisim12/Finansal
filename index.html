@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v206';
+const APP_VERSION = 'v207';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2883,7 +2883,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 09:55'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 10:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14915,6 +14915,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v207',
+    date: '06.07.2026',
+    items: [
+      { type: 'fix', text: 'Acik/koyu tema gecisinde Surum Notlari penceresindeki versiyon basliklari (orn. v207) sabit beyaz oldugu icin acik modda gorunmuyordu — tema rengine baglandi, artik iki modda da okunuyor. Baska tema gecisinde kaybolan yazi gorursen soyle, ona da bakarim.' },
+    ]
+  },
+  {
     version: 'v206',
     date: '06.07.2026',
     items: [
@@ -15971,7 +15978,7 @@ function toggleChangelog(){
   const rows = CHANGELOG_DATA.map(v => `
     <div style="margin-bottom:18px">
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">
-        <span style="font-size:15px;font-weight:800;color:#fff">${v.version}</span>
+        <span style="font-size:15px;font-weight:800;color:var(--txt)">${v.version}</span>
         <span style="font-size:11px;color:var(--muted)">${v.date}</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px">
