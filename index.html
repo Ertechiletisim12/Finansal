@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v212';
+const APP_VERSION = 'v213';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 19:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 20:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3921,20 +3921,28 @@ async function pullFromCloud(){
     if(data.finansTrash) finansTrash = data.finansTrash;
     if(data.kasaData && typeof kasaData!=='undefined') kasaData = data.kasaData;
     lastSyncedEntries = JSON.parse(JSON.stringify(entries));
-    localStorage.setItem(STORE_KEY_ENTRIES,   JSON.stringify(entries));
-    localStorage.setItem(STORE_KEY_LOG,       JSON.stringify(entryLog));
-    localStorage.setItem(STORE_KEY_PRICES,    JSON.stringify(prices));
-    localStorage.setItem(STORE_KEY_YATIRILAN, JSON.stringify(yatirilan));
-    localStorage.setItem(STORE_KEY_HEDEF,     JSON.stringify(hedefler));
-    localStorage.setItem(STORE_KEY_HEDEF_KAT, JSON.stringify(hedefKatData));
-    localStorage.setItem('vf_hedef_aciklama_v1', JSON.stringify(hedefAciklamaData));
-    localStorage.setItem(STORE_KEY_FINANS,    JSON.stringify(finansData));
-    localStorage.setItem(STORE_KEY_GELIR,     JSON.stringify(gelirData));
-    localStorage.setItem(STORE_KEY_NOTLAR,    JSON.stringify(notlarData));
-    localStorage.setItem(STORE_KEY_TRASH,     JSON.stringify(finansTrash));
-    localStorage.setItem(STORE_KEY_KAMPANYA,  JSON.stringify(kampanyaData));
-    localStorage.setItem(STORE_KEY_TARIFE,     JSON.stringify(tarifeData));
-    localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler));
+    try{
+      localStorage.setItem(STORE_KEY_ENTRIES,   JSON.stringify(entries));
+      localStorage.setItem(STORE_KEY_LOG,       JSON.stringify(entryLog));
+      localStorage.setItem(STORE_KEY_PRICES,    JSON.stringify(prices));
+      localStorage.setItem(STORE_KEY_YATIRILAN, JSON.stringify(yatirilan));
+      localStorage.setItem(STORE_KEY_HEDEF,     JSON.stringify(hedefler));
+      localStorage.setItem(STORE_KEY_HEDEF_KAT, JSON.stringify(hedefKatData));
+      localStorage.setItem('vf_hedef_aciklama_v1', JSON.stringify(hedefAciklamaData));
+      localStorage.setItem(STORE_KEY_FINANS,    JSON.stringify(finansData));
+      localStorage.setItem(STORE_KEY_GELIR,     JSON.stringify(gelirData));
+      localStorage.setItem(STORE_KEY_NOTLAR,    JSON.stringify(notlarData));
+      localStorage.setItem(STORE_KEY_TRASH,     JSON.stringify(finansTrash));
+      localStorage.setItem(STORE_KEY_KAMPANYA,  JSON.stringify(kampanyaData));
+      localStorage.setItem(STORE_KEY_TARIFE,     JSON.stringify(tarifeData));
+      localStorage.setItem(STORE_KEY_MUSTERILER, JSON.stringify(musteriler));
+    }catch(_qe){
+      // v213: Cihaz depolamasi dolabilir. Try/catch olmadan ilk tasan setItem
+      // hem yarim yazim birakir hem de sonraki render'i patlatirdi. Artik guvenli:
+      // veri hafizada + bulutta duruyor, kullanici net uyariliyor.
+      console.warn('LocalStorage yazimi basarisiz (muhtemelen dolu):', _qe);
+      try{ showNotifToast({ key:'storage_full', type:'danger', icon:'🚨', title:'Cihaz depolamasi dolu', msg:'Veriler bulutta guvende ama bu cihaza kaydedilemedi. Sol menuden yedek alip biraz yer acin.' }); }catch(e){}
+    }
     if(typeof kasaData!=='undefined') try{ localStorage.setItem(STORE_KEY_KASA, JSON.stringify(kasaData)); }catch(e){}
     loadHedefExtra();
     recomputeAllFinans();
@@ -15144,6 +15152,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v213',
+    date: '06.07.2026',
+    items: [
+      { type: 'fix', text: 'VERI GUVENLIGI: Buluttan veri gelince tum anahtarlari cihaza yazan blok artik try/catch ile korumali. Onceden cihaz depolamasi dolarsa kayit YARIDA kesilir (bazi anahtarlar yazilir, bazilari yazilmaz = tutarsiz veri) ve ekran render i patlayabilirdi. Artik depolama dolsa bile: veri hafizada ve bulutta guvende kalir, akis kesilmez, kullaniciya net "depolama dolu, yer ac" uyarisi gosterilir.' },
+      { type: 'info', text: 'Sadece index.html degisti; sw.js ayni.' },
+    ]
+  },
   {
     version: 'v212',
     date: '06.07.2026',
