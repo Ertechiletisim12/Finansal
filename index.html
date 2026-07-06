@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v208';
+const APP_VERSION = 'v209';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 16:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 17:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3611,7 +3611,8 @@ function showLoginScreen(){
     +   '<input id="fbPass" type="password" autocomplete="current-password" placeholder="••••••••" style="width:100%;padding:11px 12px;background:var(--bg,#26282b);border:1px solid var(--line,#46494e);border-radius:10px;color:var(--txt,#eef0f2);font-size:14px;box-sizing:border-box;margin-bottom:6px">'
     +   '<div id="fbLoginMsg" style="font-size:12px;min-height:16px;margin:4px 2px 10px;color:var(--muted,#9aa0a6)"></div>'
     +   '<button id="fbLoginBtn" onclick="fbLoginSubmit()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--red,#e2231a),var(--red-d,#b81b14));border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:800;cursor:pointer">Giriş Yap</button>'
-    +   '<div style="text-align:center;margin-top:14px"><button onclick="fbSkipLogin()" style="background:transparent;border:none;color:var(--muted,#9aa0a6);font-size:12px;text-decoration:underline;cursor:pointer">Çevrimdışı devam et (bulut kapalı)</button></div>'
+    +   '<div style="text-align:center;margin-top:10px"><button onclick="fbPasswordReset()" style="background:transparent;border:none;color:var(--accent,#3fd0ff);font-size:12px;text-decoration:underline;cursor:pointer">Şifremi unuttum?</button></div>'
+    +   '<div style="text-align:center;margin-top:8px"><button onclick="fbSkipLogin()" style="background:transparent;border:none;color:var(--muted,#9aa0a6);font-size:12px;text-decoration:underline;cursor:pointer">Çevrimdışı devam et (bulut kapalı)</button></div>'
     + '</div>'
     + '</div>';
   document.body.appendChild(el);
@@ -3623,7 +3624,27 @@ function showLoginScreen(){
   setTimeout(()=>{ if(email) email.focus(); }, 100);
 }
 function hideLoginScreen(){ const el = document.getElementById('fbLoginScreen'); if(el) el.style.display = 'none'; }
-function fbSkipLogin(){ hideLoginScreen(); updateCloudIndicator('idle'); }
+function fbSkipLogin(){ hideLoginScreen(); updateCloudIndicator('idle'); if(typeof checkLock==='function') checkLock(); }
+async function fbPasswordReset(){
+  const email = (document.getElementById('fbEmail').value||'').trim();
+  const msg = document.getElementById('fbLoginMsg');
+  if(!email){ msg.style.color='#ff5252'; msg.textContent='Önce e-posta kutusunu doldur, sonra "Şifremi unuttum"a bas'; return; }
+  if(_fbKeyMissing()){ msg.style.color='#ff5252'; msg.textContent='API Key ayarlı değil'; return; }
+  msg.style.color='var(--muted,#9aa0a6)'; msg.textContent='Sıfırlama e-postası gönderiliyor...';
+  try{
+    const r = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=' + FIREBASE_API_KEY, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ requestType:'PASSWORD_RESET', email:email })
+    });
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok){
+      const m = (d.error && d.error.message) || '';
+      if(/EMAIL_NOT_FOUND/.test(m)){ msg.style.color='#ff5252'; msg.textContent='Bu e-posta kayıtlı değil'; return; }
+      throw new Error(m);
+    }
+    msg.style.color='var(--green,#2fae4e)'; msg.textContent='✓ Sıfırlama bağlantısı e-postana gönderildi (gerçek e-posta ise). Spam klasörüne de bak.';
+  }catch(e){ msg.style.color='#ff5252'; msg.textContent='Gönderilemedi: ' + (e.message||''); }
+}
 
 async function fbLoginSubmit(){
   const email = (document.getElementById('fbEmail').value||'').trim();
@@ -3636,6 +3657,10 @@ async function fbLoginSubmit(){
   try{
     await fbLogin(email, pass);
     hideLoginScreen();
+    // Giris yapan kisi zaten sifreyle dogrulandi — ayni oturumda tekrar PIN sorma
+    try{ sessionStorage.setItem('unlocked','1'); sessionStorage.setItem('oturumBaslangic', Date.now()); }catch(e){}
+    var _ls = document.getElementById('lockScreen'); if(_ls) _ls.style.display='none';
+    if(typeof startOturumTimer==='function') startOturumTimer();
     updateCloudIndicator('saving');
     pullFromCloud().then(()=> startCloudPolling());
   }catch(e){
@@ -15084,6 +15109,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v209',
+    date: '06.07.2026',
+    items: [
+      { type: 'fix', text: 'CIFT KILIT giderildi: bulut girisinden hemen sonra ayni oturumda artik tekrar PIN sorulmuyor (sifreyle zaten dogrulandin). Bulut girisi cihaz basina TEK SEFERLIK; sonraki gunlerde sadece hizli PIN sorulur.' },
+      { type: 'new', text: 'Giris ekranina "Sifremi unuttum?" eklendi — kayitli e-postaya sifirlama baglantisi gonderir (yalnizca gercek e-posta ise calisir).' },
+      { type: 'fix', text: 'Guvenlik: "Cevrimdisi devam et"e basilsa bile PIN kilidi devrede kalir — yani bu buton verilerini asla acikta birakmaz. (Baskasinin cihazinda zaten yerel veri yoktur ve bulut kilitlidir.)' },
+    ]
+  },
   {
     version: 'v208',
     date: '06.07.2026',
