@@ -1688,7 +1688,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
               <label>İşlem (kayıt) tarihi</label>
               <div class="date-nav">
                 <button class="nav-arrow" onclick="shiftDate('activeDate',-1)" title="Önceki gün">◀</button>
-                <input type="date" id="activeDate">
+                <input type="date" id="activeDate" onchange="selectSingleDay()">
                 <button class="nav-arrow" onclick="shiftDate('activeDate',1)" title="Sonraki gün">▶</button>
               </div>
             </div>
@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v214';
+const APP_VERSION = 'v215';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 20:45'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 22:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5129,6 +5129,16 @@ function shiftDate(id, delta){
   const d = new Date(el.value || todayStr());
   d.setDate(d.getDate() + delta);
   el.value = d.toISOString().slice(0,10);
+  if(id === 'activeDate'){ selectSingleDay(); } else { render(); }
+}
+// v215: Tek gün oku = o günü görüntüle. Aralık o güne eşitlenir, filtre butonu vurgusu söner.
+function selectSingleDay(){
+  const gun = document.getElementById('activeDate').value || todayStr();
+  currentRange = 'gun';
+  const rs=document.getElementById('rangeStart'), re=document.getElementById('rangeEnd');
+  if(rs) rs.value = gun; if(re) re.value = gun;
+  const rsm=document.getElementById('rangeStartMob'), rem=document.getElementById('rangeEndMob'), am=document.getElementById('activeDateMob');
+  if(rsm) rsm.value = gun; if(rem) rem.value = gun; if(am) am.value = gun;
   render();
 }
 function shiftMonth(id, delta){
@@ -5297,43 +5307,24 @@ function render(){
     // MNP/Yeni Tesis ayrımı
     let mnpInfo = '';
     if(MNP_CATS.includes(cat)){
-      // Bugünkü tarih için - tüm entries'ten bul (date eşleşmesi)
-      const mnpAdet   = entries.filter(e=>e.date===activeDate&&e.cat===cat&&!!e.mnp).reduce((a,e)=>a+e.count,0);
-      const tesisAdet = entries.filter(e=>e.date===activeDate&&e.cat===cat&&!e.mnp).reduce((a,e)=>a+e.count,0);
-      // Bu AYdaki tüm kayıtlar (birden fazla gün)
-      const ayMnpEntries = entries.filter(e=>ymKey(e.date)===activeYm&&e.cat===cat&&!!e.mnp);
-      const ayTesisEntries = entries.filter(e=>ymKey(e.date)===activeYm&&e.cat===cat&&!e.mnp);
-      const ayMnpToplam   = ayMnpEntries.reduce((a,e)=>a+e.count,0);
-      const ayTesisToplam = ayTesisEntries.reduce((a,e)=>a+e.count,0);
-      const sonrakiAya = ayMnpEntries.filter(e=>effectiveYm(e)!==activeYm).reduce((a,e)=>a+e.count,0);
-      // Bugün için göster (altında ay toplamı)
-      // Önceki aydan devir gelen MNP'ler (aktivasyon bu ayda ama giriş önceki ayda)
-      const prevYm = addMonths(activeYm, -1);
-      const devirGelenMnp = entries.filter(e=>
-        ymKey(e.date)===prevYm && e.cat===cat && !!e.mnp &&
-        effectiveYm(e)===activeYm
-      ).reduce((a,e)=>a+e.count, 0);
-
-      // Bu kategoride onay bekleyen MNP sayisi
-      // Bekleyen MNP: aktivasyon bu ayda olan bekleyenler - entries count'u gecemesin
-      const mnpEntryCount = entries.filter(e=>e.date&&e.cat===cat&&!!e.mnp&&effectiveYm(e)===activeYm).reduce((a,e)=>a+e.count,0);
+      // v215: Seçili aralığa (rEntriesForCards) göre kırılım. rEntriesForCards effectiveDate ile
+      // gün-hassas filtrelenir; yani MNP burada AKTİVE olduğu gün(ler) sayılır (giriş günü değil).
+      const rCat   = rEntriesForCards.filter(e=>e.cat===cat);
+      const rTesis = rCat.filter(e=>!e.mnp).reduce((a,e)=>a+e.count,0);
+      const rMnp   = rCat.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
+      // Onay bekleyen MNP: aktivasyon tarihi seçili aralığa düşen bekleyenler
       const bekleyenMnpList = musteriler.filter(m=>{
         if(m.cat!==cat || m.tip!=='mnp' || m.durum!=='bekliyor' || !m.entryDate) return false;
-        const aktYm = m.aktivasyonTarihi ? ymKey(m.aktivasyonTarihi) : ymKey(mnpActivationDate(m.entryDate));
-        return aktYm === activeYm;
+        const akt = (m.aktivasyonTarihi ? m.aktivasyonTarihi : mnpActivationDate(m.entryDate)).slice(0,10);
+        return akt >= rStart && akt <= rEnd;
       });
-      const bekleyenMnp = Math.min(bekleyenMnpList.length, mnpEntryCount);
-
-      if(mnpAdet || tesisAdet || devirGelenMnp){
-        const mnpBuAy = mnpAdet - sonrakiAya;
-        mnpInfo = '<div style="font-size:10px;color:var(--muted);margin-top:3px">'
-          + '🆕 ' + tesisAdet + ' Tesis · 🔄 ' + Math.max(0,mnpBuAy) + ' MNP'
-          + (sonrakiAya ? ' <span style="color:#ff9f0a"> · '+sonrakiAya+' sonraki aya devir</span>' : '')
-          + (devirGelenMnp ? ' <span style="color:#4cd964"> · '+devirGelenMnp+' önceki aydan devir</span>' : '')
-          + (bekleyenMnp ? ' <span onclick="openMusteriRaporFiltered(\'bekliyor\',\''+cat+'\',\'hepsi\')" style="color:#ff9f0a;font-weight:700;cursor:pointer;text-decoration:underline"> · ⏳ '+bekleyenMnp+' onay bekliyor</span>' : '')
+      const bekleyenMnp = Math.min(bekleyenMnpList.length, rMnp);
+      if(rTesis || rMnp || bekleyenMnp){
+        mnpInfo = '<div style="font-size:10px;color:var(--muted);margin-top:3px;display:flex;flex-direction:column;gap:2px;align-items:flex-start">'
+          + '<span>🆕 ' + rTesis + ' Yeni Tesis</span>'
+          + '<span>🔄 ' + rMnp + ' MNP' + (rMnp ? ' <span style="color:#4cd964">· devreden/aktive</span>' : '') + '</span>'
+          + (bekleyenMnp ? '<span onclick="openMusteriRaporFiltered(\'bekliyor\',\''+cat+'\',\'hepsi\')" style="color:#ff9f0a;font-weight:700;cursor:pointer;text-decoration:underline">⏳ '+bekleyenMnp+' onay bekliyor</span>' : '')
           + '</div>';
-      } else if(bekleyenMnp){
-        mnpInfo = '<div onclick="openMusteriRaporFiltered(\'bekliyor\',\''+cat+'\',\'hepsi\')" style="font-size:10px;color:#ff9f0a;margin-top:3px;font-weight:700;cursor:pointer">⏳ '+bekleyenMnp+' MNP onay bekliyor</div>';
       }
     }
     // İnternet: aktivasyon tarihi göster
@@ -5365,15 +5356,14 @@ function render(){
     div.innerHTML = `<div class="label" style="color:${_katRenk}">${cat}</div>
       <div class="ctrl">
         <button onclick="openIslemListModal('${cat}','${activeDate}')" style="background:rgba(226,35,26,0.15);border-color:rgba(226,35,26,0.4);color:#ff7070;font-size:14px" title="İşlem listesi / sil">📋</button>
-        <span class="cnt">${cnt}</span>
+        <span class="cnt">${raCnt(cat)}</span>
         <button onclick="changeCount('${cat}',1)" style="user-select:none" ondblclick="event.preventDefault()">+</button>
       </div>
       <div class="card-mid">
       ${lastTime ? `<div style="font-size:10.5px;color:var(--muted);margin-top:4px">🕒 ${lastTime.time}${lastTime.platform ? ` <span style="opacity:.7">${lastTime.platform}</span>` : ''}</div>` : ''}
       ${mnpInfo}${intInfo}${tarifeInfo}
       </div>
-      <div class="amt">${fmtCiftHtml(amt)}${kampanyaVar ? ` <span style="font-size:9px;background:rgba(255,183,77,0.2);color:#ffb74d;border-radius:4px;padding:1px 5px;font-weight:700">🎯 ${fmt(kdvBrut(price))}</span>` : ''}</div>
-      <div class="amt amt-range" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);font-size:11px;color:var(--accent);font-weight:700">${raCnt(cat)} <span style="opacity:.85;font-weight:600">(${fmtCiftHtml(raAmt(cat),'sm')})</span></div>`;
+      <div class="amt">${fmtCiftHtml(raAmt(cat))}${kampanyaVar ? ` <span style="font-size:9px;background:rgba(255,183,77,0.2);color:#ffb74d;border-radius:4px;padding:1px 5px;font-weight:700">🎯 ${fmt(kdvBrut(price))}</span>` : ''}</div>`;
     cardsDiv.appendChild(div);
   });
 
@@ -15159,6 +15149,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v215',
+    date: '06.07.2026',
+    items: [
+      { type: 'new', text: 'PRIM KARTLARI YENIDEN DUZENLENDI: Ustteki buyuk sayi ve tutar (TL) artik secili TARIH FILTRESINE gore geliyor (Bugun/Bu Hafta/Bu Ay...). MNP dogru mantikla sayiliyor: giris gununde degil, AKTIVE oldugu gunde (giris+2). Ornek: 29da girilen MNP ayin 1inde, 30da girilen 2sinde gorunur.' },
+      { type: 'new', text: 'Tek gun oku (sol ustteki tarih ◀ ▶) artik o TEK GUNU gosterir (gun gun bakma). Oynatinca filtre butonu vurgusu soner. [+] ile kayit yine bu okdaki gune eklenir.' },
+      { type: 'imp', text: 'Kart alt satiri (Yeni Tesis / MNP / onay bekliyor) artik secili araliga gore ve ALT ALTA hizali gosteriliyor. Karttaki tekrar eden alt ozet satiri (adet + kucuk tutar) kaldirildi — artik ust sayi zaten arali yansitiyor.' },
+      { type: 'info', text: 'Sol Islem Listesi paneli zaten aralia bagli oldugu icin ayni gorunume otomatik uyar. Sadece index.html degisti.' },
+    ]
+  },
   {
     version: 'v214',
     date: '06.07.2026',
