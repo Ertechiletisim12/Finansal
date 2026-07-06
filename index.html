@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v217';
+const APP_VERSION = 'v218';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 23:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 00:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5178,6 +5178,28 @@ function showIleriDetay(cat){
   const html = '<div style="padding:12px 14px;background:var(--panel2);font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)">Toplam <b style="color:var(--txt)">' + toplam + '</b> MNP girildi, henüz aktive olmadı. Her biri aktive olduğu gün büyük sayıya eklenecek.</div>' + rows;
   showBilgiModal(cat + ' — İleride Aktive Olacak MNP', html);
 }
+
+// v218: 'Aktive olan MNP' detayı — bu dönem girilenler vs devredenler (giriş→aktive tarihleriyle)
+function showAktiveDetay(cat){
+  const rStart = document.getElementById('rangeStart').value;
+  const rEnd   = document.getElementById('rangeEnd').value;
+  const trT = iso => { const p = String(iso).slice(0,10).split('-'); return p[2]+'.'+p[1]+'.'+p[0]; };
+  const list = entries
+    .filter(e => e.cat===cat && !!e.mnp && mnpActivationDate(e.date) >= rStart && mnpActivationDate(e.date) <= rEnd)
+    .map(e => ({ date:e.date, akt:mnpActivationDate(e.date), count:e.count, devreden: e.date < rStart }))
+    .sort((a,b) => a.akt<b.akt ? -1 : (a.akt>b.akt ? 1 : 0));
+  if(!list.length){ showBilgiModal(cat + ' — Aktive Olanlar', '<div style="padding:22px;text-align:center;color:var(--muted)">Bu aralıkta aktive olan MNP yok.</div>'); return; }
+  const donem = list.filter(x=>!x.devreden).reduce((a,x)=>a+x.count,0);
+  const devr  = list.filter(x=> x.devreden).reduce((a,x)=>a+x.count,0);
+  const rows = list.map(x =>
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)">'
+    + '<span style="color:var(--txt);font-weight:700">🔄 ' + x.count + ' MNP ' + (x.devreden ? '<span style="color:#ffb74d;font-size:11px">· devreden</span>' : '<span style="color:#4cd964;font-size:11px">· bu dönem</span>') + '</span>'
+    + '<span style="color:var(--muted);font-size:12px">girildi <b style="color:var(--txt)">' + trT(x.date) + '</b> → aktive <b style="color:#4cd964">' + trT(x.akt) + '</b></span>'
+    + '</div>'
+  ).join('');
+  const head = '<div style="padding:12px 14px;background:var(--panel2);font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)"><b style="color:#4cd964">' + donem + '</b> bu dönemde girilip aktive oldu · <b style="color:#ffb74d">' + devr + '</b> önceki dönemden devretti.</div>';
+  showBilgiModal(cat + ' — Aktive Olan MNP', head + rows);
+}
 function shiftMonth(id, delta){
   const el = document.getElementById(id);
   const val = el.value || todayStr();
@@ -5349,7 +5371,11 @@ function render(){
       // gün-hassas filtrelenir; yani MNP burada AKTİVE olduğu gün(ler) sayılır (giriş günü değil).
       const rCat   = rEntriesForCards.filter(e=>e.cat===cat);
       const rTesis = rCat.filter(e=>!e.mnp).reduce((a,e)=>a+e.count,0);
-      const rMnp   = rCat.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
+      const rMnpEntries = rCat.filter(e=>!!e.mnp);
+      const rMnp   = rMnpEntries.reduce((a,e)=>a+e.count,0);
+      // v218: aktive olan MNP'leri kaynağına göre ayır — girişi aralık başından ÖNCE ise "devreden"
+      const mnpDevreden = rMnpEntries.filter(e=>e.date < rStart).reduce((a,e)=>a+e.count,0);
+      const mnpDonem    = rMnp - mnpDevreden;
       // v217: Bu aralıkta GİRİLEN ama aktivasyonu aralığın SONRASINA düşen MNP'ler (henüz açılmadı, büyük sayıya dahil DEĞİL)
       const ileriMnp = entries
         .filter(e=>e.cat===cat && !!e.mnp && e.date>=rStart && e.date<=rEnd && mnpActivationDate(e.date) > rEnd)
@@ -5364,7 +5390,8 @@ function render(){
       if(rTesis || rMnp || bekleyenMnp || ileriMnp){
         mnpInfo = '<div style="font-size:10px;color:var(--muted);margin-top:3px;display:flex;flex-direction:column;gap:2px;align-items:flex-start">'
           + '<span>🆕 ' + rTesis + ' Yeni Tesis</span>'
-          + '<span>🔄 ' + rMnp + ' MNP' + (rMnp ? ' <span style="color:#4cd964">· aktive/devreden</span>' : '') + '</span>'
+          + '<span>🔄 ' + rMnp + ' MNP aktive</span>'
+          + (rMnp ? '<span onclick="showAktiveDetay(\''+cat+'\')" style="padding-left:12px;color:var(--muted);cursor:pointer;text-decoration:underline dotted">└ <b style="color:#4cd964">'+mnpDonem+'</b> bu dönem · <b style="color:#ffb74d">'+mnpDevreden+'</b> devreden</span>' : '')
           + (ileriMnp ? '<span onclick="showIleriDetay(\''+cat+'\')" style="color:#5ac8fa;font-weight:700;cursor:pointer;text-decoration:underline">⏳ '+ileriMnp+' girildi · ileride aktive</span>' : '')
           + (bekleyenMnp ? '<span onclick="openMusteriRaporFiltered(\'bekliyor\',\''+cat+'\',\'hepsi\')" style="color:#ff9f0a;font-weight:700;cursor:pointer;text-decoration:underline">⏳ '+bekleyenMnp+' onay bekliyor</span>' : '')
           + '</div>';
@@ -15192,6 +15219,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v218',
+    date: '07.07.2026',
+    items: [
+      { type: 'new', text: 'Aktive olan MNP sayisi artik kaynagina gore ayriliyor: "🔄 5 MNP aktive" altinda "2 bu donem · 3 devreden". Kural: MNP nin aktivasyonu secili araliga dusuyor ama GIRISI aralik basindan onceyse "devreden", degilse "bu donem" sayilir. Her filtrede (Bu Ay, tek ay, cok ay, yil) dogru calisir.' },
+      { type: 'new', text: 'Bu kirilima tiklayinca detay acilir: her grup icin "girildi GG.AA → aktive GG.AA" ve devreden/bu donem etiketi. Sadece index.html degisti.' },
+    ]
+  },
   {
     version: 'v217',
     date: '06.07.2026',
