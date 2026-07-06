@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v220';
+const APP_VERSION = 'v221';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 02:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 02:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5208,15 +5208,7 @@ function showPrimGrupDetay(tip){
   const trT = iso => { if(!iso) return '—'; const p = String(iso).slice(0,10).split('-'); return p[2]+'.'+p[1]+'.'+p[0]; };
   const aktOf = m => (m.aktivasyonTarihi ? m.aktivasyonTarihi : mnpActivationDate(m.entryDate)).slice(0,10);
   const inMnp = m => MNP_CATS.includes(m.cat);
-  let list = [], baslik = '';
-  if(tip==='tesis'){ list = musteriler.filter(m=>inMnp(m) && m.tip==='tesis' && m.entryDate>=rStart && m.entryDate<=rEnd); baslik='🆕 Yeni Tesis'; }
-  else if(tip==='aktive'){ list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && aktOf(m)>=rStart && aktOf(m)<=rEnd); baslik='🔄 Aktive Olan MNP'; }
-  else if(tip==='ileri'){ list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.entryDate>=rStart && m.entryDate<=rEnd && aktOf(m)>rEnd); baslik='⏳ İleride Aktive Olacak MNP'; }
-  else if(tip==='bekleyen'){ list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.durum==='bekliyor' && aktOf(m)>=rStart && aktOf(m)<=rEnd); baslik='⏳ Onay Bekleyen MNP'; }
-  list = list.slice().sort((a,b)=> (a.entryDate<b.entryDate ? -1 : (a.entryDate>b.entryDate ? 1 : 0)));
-  const bs = baslik + ' (' + trT(rStart) + (rStart!==rEnd ? ' – ' + trT(rEnd) : '') + ')';
-  if(!list.length){ showBilgiModal(bs, '<div style="padding:22px;text-align:center;color:var(--muted)">Kayıt yok.</div>'); return; }
-  const rows = list.map(m=>{
+  const satirHTML = m => {
     const isim = (m.ad && m.ad.trim()) ? esc(m.ad) : '<span style="color:var(--muted);font-style:italic">İsimsiz · hızlı giriş</span>';
     const tel = m.tel ? '<span style="color:var(--muted)">📞 ' + esc(m.tel) + '</span>' : '';
     const tarife = m.tarife ? '<span style="color:#c4a5f7">🏷 ' + esc(m.tarife) + '</span>' : '';
@@ -5227,9 +5219,37 @@ function showPrimGrupDetay(tip){
       + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:3px;font-size:11px">'+tel+' '+tarife+'<span style="color:var(--muted)">'+esc(m.cat)+'</span></div>'
       + '<div style="font-size:10.5px;color:var(--muted);margin-top:2px">'+tarihStr+'</div>'
       + '</div>';
-  }).join('');
-  const head = '<div style="padding:10px 14px;background:var(--panel2);font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)">Toplam <b style="color:var(--txt)">'+list.length+'</b> kayıt' + (list.some(m=>!m.ad||!m.ad.trim()) ? ' · <span style="opacity:.7">isimsizler [+] ile hızlı eklenenler</span>' : '') + '</div>';
-  showBilgiModal(bs, head + rows);
+  };
+  const grupBaslik = (t,n) => '<div style="padding:8px 14px;background:var(--panel2);font-size:11px;font-weight:800;color:var(--txt);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">'+t+' <span style="color:var(--muted);font-weight:600">('+n+')</span></div>';
+  const srt = arr => arr.slice().sort((a,b)=> a.entryDate<b.entryDate ? -1 : (a.entryDate>b.entryDate ? 1 : 0));
+
+  let baslik = '', ic = '', toplam = 0;
+  const bsRange = ' (' + trT(rStart) + (rStart!==rEnd ? ' – ' + trT(rEnd) : '') + ')';
+
+  if(tip==='tesis'){
+    baslik = '🆕 Yeni Tesis ve Diğerleri';
+    const tesisList = musteriler.filter(m=> m.tip==='tesis' && m.entryDate>=rStart && m.entryDate<=rEnd);
+    toplam = tesisList.length;
+    const gruplar = [{ ad:'🆕 Yeni Tesis', test: m=>inMnp(m) }].concat(
+      ['P2P','Mccm','İnternet','Diğer'].map(c=>({ ad:c, test: m=>m.cat===c }))
+    );
+    gruplar.forEach(g=>{
+      const gl = srt(tesisList.filter(g.test));
+      if(gl.length){ ic += grupBaslik(g.ad, gl.length) + gl.map(satirHTML).join(''); }
+    });
+  } else {
+    let list = [];
+    if(tip==='aktive'){ baslik='🔄 Aktive Olan MNP'; list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.durum!=='bekliyor' && aktOf(m)>=rStart && aktOf(m)<=rEnd); }
+    else if(tip==='ileri'){ baslik='⏳ İleride Aktive Olacak MNP'; list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.entryDate>=rStart && m.entryDate<=rEnd && aktOf(m)>rEnd); }
+    else if(tip==='bekleyen'){ baslik='⏳ Onay Bekleyen MNP'; list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.durum==='bekliyor' && aktOf(m)>=rStart && aktOf(m)<=rEnd); }
+    list = srt(list);
+    toplam = list.length;
+    ic = list.map(satirHTML).join('');
+  }
+  const bs = baslik + bsRange;
+  if(!toplam){ showBilgiModal(bs, '<div style="padding:22px;text-align:center;color:var(--muted)">Kayıt yok.</div>'); return; }
+  const head = '<div style="padding:10px 14px;background:var(--panel2);font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)">Toplam <b style="color:var(--txt)">'+toplam+'</b> kayıt</div>';
+  showBilgiModal(bs, head + ic);
 }
 function shiftMonth(id, delta){
   const el = document.getElementById(id);
@@ -5593,8 +5613,8 @@ function render(){
     // v220: ADET KIRILIMI — tüm kategorilerin toplamı, müşteri kayıtlarından (sayı ile liste birebir).
     const _aktOf = m => (m.aktivasyonTarihi ? m.aktivasyonTarihi : mnpActivationDate(m.entryDate)).slice(0,10);
     const _inMnp = m => MNP_CATS.includes(m.cat);
-    const gYeniTesis  = musteriler.filter(m=>_inMnp(m) && m.tip==='tesis' && m.entryDate>=rStart && m.entryDate<=rEnd).length;
-    const gAktiveList = musteriler.filter(m=>_inMnp(m) && m.tip==='mnp' && _aktOf(m)>=rStart && _aktOf(m)<=rEnd);
+    const gYeniTesis  = musteriler.filter(m=> m.tip==='tesis' && m.entryDate>=rStart && m.entryDate<=rEnd).length; // v221: tüm kategoriler (MNP tesis + P2P/Mccm/İnternet/Diğer)
+    const gAktiveList = musteriler.filter(m=>_inMnp(m) && m.tip==='mnp' && m.durum!=='bekliyor' && _aktOf(m)>=rStart && _aktOf(m)<=rEnd); // v221: bekleyenler hariç
     const gAktive     = gAktiveList.length;
     const gAktiveDevir= gAktiveList.filter(m=>ymKey(m.entryDate)!==ymKey(_aktOf(m))).length;
     const gAktiveDonem= gAktive - gAktiveDevir;
@@ -5603,7 +5623,7 @@ function render(){
     const _satir = (tip,ikon,etiket,sayi,renk,ekstra) => '<div onclick="showPrimGrupDetay(\''+tip+'\')" style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;padding:3px 0;cursor:pointer"><span style="opacity:.82">'+ikon+' '+etiket+(ekstra||'')+'</span><span style="font-weight:700;color:'+renk+';text-decoration:underline dotted">'+sayi+'</span></div>';
     let gAdetBlok = '<div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:9px 11px;margin-bottom:8px">'
       + '<div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:6px">Adet Kırılımı</div>'
-      + _satir('tesis','🆕','Yeni Tesis',gYeniTesis,'#4cd964')
+      + _satir('tesis','🆕','Yeni Tesis ve diğerleri',gYeniTesis,'#4cd964')
       + _satir('aktive','🔄','MNP aktive',gAktive,'#fff',' <span style="opacity:.6;font-size:10px">('+gAktiveDonem+' bu dönem · '+gAktiveDevir+' devir)</span>')
       + (gIleri ? _satir('ileri','⏳','İleride aktive',gIleri,'#5ac8fa') : '')
       + (gBekleyen ? _satir('bekleyen','⏳','Onay bekliyor',gBekleyen,'#ffd27a') : '')
@@ -15269,6 +15289,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v221',
+    date: '07.07.2026',
+    items: [
+      { type: 'imp', text: 'Toplam paneli adet kirilimi rafine edildi: (1) "🔄 MNP aktive" artik onay bekleyenleri SAYMAZ (sadece aktif/onayli); bekleyenler yalniz "⏳ onay bekliyor" satirinda. (2) P2P·Mccm·Internet·Diger, "🆕 Yeni Tesis ve digerleri" satirinda birlestirildi.' },
+      { type: 'new', text: '"Yeni Tesis ve digerleri" satirina tiklayinca detay penceresi kategoriye gore GRUPLANIR: Yeni Tesis · P2P · Mccm · Internet · Diger — her grup kendi basligi altinda musterileriyle. Sadece index.html degisti.' },
+    ]
+  },
   {
     version: 'v220',
     date: '07.07.2026',
