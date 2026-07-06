@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v215';
+const APP_VERSION = 'v216';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 22:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 22:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5197,7 +5197,8 @@ function setQuickRange(type){
     const diffMon = (day===0) ? -6 : 1-day;
     const mon = new Date(now); mon.setDate(now.getDate()+diffMon);
     s = mon.toISOString().slice(0,10);
-    e = todayStr();
+    const sunW = new Date(mon); sunW.setDate(mon.getDate()+6);
+    e = sunW.toISOString().slice(0,10); // v216: hafta sonuna kadar (ileride aktive olan MNP'ler dahil)
   } else if(type==='last_week'){
     const day = now.getDay();
     const diffMon = (day===0) ? -6 : 1-day;
@@ -5207,17 +5208,17 @@ function setQuickRange(type){
     e = sun.toISOString().slice(0,10);
   } else if(type==='this_month'){
     s = thisMonthKey()+'-01';
-    e = todayStr();
+    e = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10); // v216: ay sonuna kadar
   } else if(type==='last_month'){
     const lm = addMonths(thisMonthKey(),-1);
     s = lm+'-01';
     e = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0,10);
   } else if(type==='last_6'){
     s = addMonths(thisMonthKey(),-5)+'-01';
-    e = todayStr();
+    e = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10); // v216: bu ay sonuna kadar
   } else if(type==='this_year'){
     s = now.getFullYear()+'-01-01';
-    e = todayStr();
+    e = now.getFullYear()+'-12-31'; // v216: yıl sonuna kadar
   } else if(type==='last_year'){
     s = (now.getFullYear()-1)+'-01-01';
     e = (now.getFullYear()-1)+'-12-31';
@@ -15149,6 +15150,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v216',
+    date: '06.07.2026',
+    items: [
+      { type: 'fix', text: 'MNP DUZELTMESI: Bu Hafta / Bu Ay / Bu Yil filtreleri artik bugune kadar degil, DONEMIN SONUNA kadar kapsiyor. Onceden bugun/dun girilen MNP lerin aktivasyonu ileri bir tarihe (giris+2) dustugu icin Bu Ay araligindan taşiyor ve kartta gorunmuyordu; sadece devredenler gorunuyordu. Artik bu ay icinde girilen tum MNP ler (ileride aktive olsa da) bu ay kartinda sayilir. Gun/aralik goruntuleri aynen dogru calisir.' },
+    ]
+  },
   {
     version: 'v215',
     date: '06.07.2026',
