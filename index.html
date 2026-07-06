@@ -9,7 +9,7 @@
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#e2231a">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon192.png">
 <script>
   // SW — offline destek + PWA kurulumu
   // v187: SW artık AYRI bir sw.js dosyası (blob yerine). Chrome bir PWA'yı "kurulabilir"
@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v210';
+const APP_VERSION = 'v212';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 17:45'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 19:15'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5591,7 +5591,7 @@ function render(){
           </div>
           ${kirilimList.map(k=>`
           <div style="display:flex;justify-content:space-between;font-size:9.5px;padding:2px 0;border-top:1px solid rgba(196,165,247,0.1)">
-            <span style="color:rgba(255,255,255,0.55)">${k.cat==='Diğer'?'🎁':'📶'} ${k.cat} · ${k.ad}</span>
+            <span style="color:rgba(255,255,255,0.55)">${k.cat==='Diğer'?'🎁':'📶'} ${k.cat} · ${esc(k.ad)}</span>
             <span style="color:#c4a5f7;font-weight:700;flex-shrink:0;margin-left:6px">${k.adet} adet · ${fmt(kdvBrut(k.tutar))} <span style="font-size:8px;color:rgba(255,255,255,0.35)">KDV dahil</span></span>
           </div>`).join('')}
         </div>`;
@@ -6059,13 +6059,13 @@ function render(){
           const ilgiliMusteriler2 = (musteriler||[]).filter(m=>m.logId && dayLogs2.some(l=>l.id===m.logId) && ((m.tarife||'')===(e.tarife||'')));
           if(ilgiliMusteriler2.length > 0){
             musteriSat = ilgiliMusteriler2.map(m=>{
-              const adSoyad = `${m.ad||''} ${m.soyad||''}`.trim();
+              const adSoyad = `${esc(m.ad||'')} ${esc(m.soyad||'')}`.trim();
               const logE2 = dayLogs2.find(l=>l.id===m.logId);
               const tarife2 = m.tarife||(logE2&&logE2.tarife)||'';
               return `<div style="display:flex;align-items:center;gap:6px;font-size:9px;padding:2px 0 2px 12px;border-top:1px solid rgba(255,255,255,0.04)">
                 <span style="color:#5bc8f5;flex-shrink:0">↳</span>
                 <span style="color:var(--txt);font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${adSoyad||'—'}</span>
-                <span style="color:#8a9099;flex-shrink:0;min-width:85px">${m.tel||'—'}</span>
+                <span style="color:#8a9099;flex-shrink:0;min-width:85px">${esc(m.tel||'—')}</span>
                 ${tarife2?`<span style="color:#ffb74d;flex-shrink:0;text-align:right">${tarife2}</span>`:''}
               </div>`;
             }).filter(Boolean).join('');
@@ -6079,7 +6079,7 @@ function render(){
               <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${color};flex-shrink:0"></span>
               <span style="font-size:11.5px;font-weight:600;color:var(--txt)">${e.cat}</span>
               ${e.tarife?`<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:rgba(196,165,247,0.15);color:#c4a5f7;font-weight:700">${e.cat==='Diğer'?'🎁':'📶'} ${e.tarife}</span>`:''}
-              ${e.kaynak&&e.kaynak.ad!=='standart'?`<span style="font-size:8.5px;color:var(--muted)" title="Birim fiyat kaynağı">${e.kaynak.ikon} ${e.kaynak.ad} · birim ${fmt(kdvBrut(birimNet))}</span>`:''}
+              ${e.kaynak&&e.kaynak.ad!=='standart'?`<span style="font-size:8.5px;color:var(--muted)" title="Birim fiyat kaynağı">${e.kaynak.ikon} ${esc(e.kaynak.ad)} · birim ${fmt(kdvBrut(birimNet))}</span>`:''}
             </div>
             ${musteriSat}
           </td>
@@ -6256,11 +6256,20 @@ function openPrimAraModal(){
   renderPrimAra();
 }
 function _trLower(s){ try{ return (s||'').toLocaleLowerCase('tr-TR'); }catch(e){ return (s||'').toLowerCase(); } }
+// v211: HTML kacis (XSS + ekran bozulmasi onleme). Kullanici metni ekrana basilirken kullanilir.
+function esc(v){
+  if(v==null) return '';
+  return String(v).replace(/[&<>"']/g, function(ch){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+  });
+}
 function _araVurgula(metin, terim){
-  if(!terim || !metin) return metin || '';
-  const idx = _trLower(metin).indexOf(_trLower(terim));
+  metin = esc(metin==null ? '' : String(metin));
+  if(!terim) return metin;
+  const et = esc(String(terim));
+  const idx = _trLower(metin).indexOf(_trLower(et));
   if(idx === -1) return metin;
-  return metin.slice(0,idx) + '<mark style="background:rgba(255,183,77,0.45);color:inherit;border-radius:2px;padding:0 1px">' + metin.slice(idx, idx+terim.length) + '</mark>' + metin.slice(idx+terim.length);
+  return metin.slice(0,idx) + '<mark style="background:rgba(255,183,77,0.45);color:inherit;border-radius:2px;padding:0 1px">' + metin.slice(idx, idx+et.length) + '</mark>' + metin.slice(idx+et.length);
 }
 function renderPrimAra(){
   const list = document.getElementById('primAraList');
@@ -6319,7 +6328,7 @@ function renderPrimAra(){
               ${m.tarife?`<span style="font-size:10px;color:var(--muted)">${m.tarife}</span>`:''}
               <span style="font-size:10.5px;font-weight:700;color:${durumRenk[m.durum]||'#888'}">${durumIcon[m.durum]||'⏳'} ${durumLabel[m.durum]||m.durum||'—'}</span>
             </div>
-            <div style="font-size:10.5px;color:var(--muted)">📅 ${m.entryDate||'—'} ${m.entryTime||''}${m.aktivasyonTarihi?` · 🔓 ${m.aktivasyonTarihi}`:''}${m.not?` · 💬 ${m.not}`:''}</div>
+            <div style="font-size:10.5px;color:var(--muted)">📅 ${m.entryDate||'—'} ${m.entryTime||''}${m.aktivasyonTarihi?` · 🔓 ${m.aktivasyonTarihi}`:''}${m.not?` · 💬 ${esc(m.not)}`:''}</div>
           </div>
           <div style="display:flex;gap:5px;flex-shrink:0">
             <button onclick="closePrimModal('primAraModal');openMusteriDurum('${m.id}')" style="padding:5px 9px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">📋 Durum</button>
@@ -6672,7 +6681,7 @@ function renderAyKapatStep() {
       </div>
       <div style="margin-bottom:10px">
         <label style="font-size:10.5px;color:var(--muted);display:block;margin-bottom:3px">Açıklama</label>
-        <input type="text" id="akAciklama" placeholder="Bu ay için not..." value="${mevFinans?mevFinans.aciklama||'':''}"
+        <input type="text" id="akAciklama" placeholder="Bu ay için not..." value="${esc(mevFinans?mevFinans.aciklama||'':'')}"
           style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);box-sizing:border-box">
       </div>
       <div id="akOzetDiv" style="background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:10px;font-size:12px;color:var(--muted)">Değerleri girin, özet otomatik hesaplanır.</div>`;
@@ -7008,7 +7017,7 @@ function openAnomaliPopup(){
             <span>%100 (ort.)</span><span style="color:#ffb74d">%150 eşik</span><span style="color:#ff5252">%${pctAnom}</span>
           </div>
         </div>
-        ${d.aciklama?`<div style="margin-top:8px;font-size:11px;color:var(--muted);font-style:italic;border-top:1px solid var(--line);padding-top:6px">"${d.aciklama}"</div>`:`<div style="margin-top:8px;font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:6px">📝 Açıklama girilmemiş</div>`}
+        ${d.aciklama?`<div style="margin-top:8px;font-size:11px;color:var(--muted);font-style:italic;border-top:1px solid var(--line);padding-top:6px">"${esc(d.aciklama)}"</div>`:`<div style="margin-top:8px;font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:6px">📝 Açıklama girilmemiş</div>`}
       </div>`;
     }).join('');
     const ortPct  = Math.round(yilOrt/maxMasraf*100);
@@ -7298,10 +7307,10 @@ function renderDash(){
           const gec=Math.round((new Date(today)-new Date(m.aktivasyonTarihi))/(1000*60*60*24));
           return `<div style="padding:3px 0;border-top:1px solid rgba(226,35,26,0.12)">
             <div style="display:flex;justify-content:space-between;font-size:9px">
-              <span style="color:var(--txt);font-weight:600">${m.ad||'?'}${m.soyad?' '+m.soyad.charAt(0)+'.':''}</span>
+              <span style="color:var(--txt);font-weight:600">${esc(m.ad||'?')}${esc(m.soyad?' '+m.soyad.charAt(0)+'.':'')}</span>
               <span style="color:#ff5252;font-weight:700;flex-shrink:0">${gec}g</span>
             </div>
-            ${m.tel||m.tarife?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
+            ${m.tel||m.tarife?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${esc([m.tarife,m.tel].filter(Boolean).join(' · '))}</div>`:''}
           </div>`;
         }).join('')}
         ${mnpGecikmus.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:3px">+${mnpGecikmus.length-2} daha</div>`:''}
@@ -7315,8 +7324,8 @@ function renderDash(){
         <div style="flex:1">
         ${mnpBugun.slice(0,2).map(m=>`
           <div style="padding:3px 0;border-top:1px solid rgba(255,183,77,0.12)">
-            <div style="font-size:9px;color:var(--txt);font-weight:600">${m.ad||'?'}${m.soyad?' '+m.soyad.charAt(0)+'.':''}</div>
-            ${m.tel||m.tarife?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
+            <div style="font-size:9px;color:var(--txt);font-weight:600">${esc(m.ad||'?')}${esc(m.soyad?' '+m.soyad.charAt(0)+'.':'')}</div>
+            ${m.tel||m.tarife?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${esc([m.tarife,m.tel].filter(Boolean).join(' · '))}</div>`:''}
           </div>
         `).join('')}
         ${mnpBugun.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:3px">+${mnpBugun.length-2} daha</div>`:''}
@@ -7332,10 +7341,10 @@ function renderDash(){
           const kalan=Math.round((new Date(m.aktivasyonTarihi)-new Date(today))/(1000*60*60*24));
           return `<div style="padding:3px 0;border-top:1px solid rgba(76,217,100,0.1)">
             <div style="display:flex;justify-content:space-between;font-size:9px">
-              <span style="color:var(--txt);font-weight:600">${m.ad||'?'}${m.soyad?' '+m.soyad.charAt(0)+'.':''}</span>
+              <span style="color:var(--txt);font-weight:600">${esc(m.ad||'?')}${esc(m.soyad?' '+m.soyad.charAt(0)+'.':'')}</span>
               <span style="color:#4cd964;font-weight:700;flex-shrink:0">${kalan===1?'Yarın':kalan+'g sonra'}</span>
             </div>
-            ${m.tel||m.tarife?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${[m.tarife,m.tel].filter(Boolean).join(' · ')}</div>`:''}
+            ${m.tel||m.tarife?`<div style="font-size:8px;color:var(--muted);margin-top:1px">${esc([m.tarife,m.tel].filter(Boolean).join(' · '))}</div>`:''}
           </div>`;
         }).join('')}
         ${mnpYakinda.length>2?`<div style="font-size:8.5px;color:var(--muted);margin-top:3px">+${mnpYakinda.length-2} daha</div>`:''}
@@ -7402,7 +7411,7 @@ function renderDash(){
             </div>
             ${kl.map(k=>`
             <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-top:1px solid rgba(196,165,247,0.1)">
-              <span style="font-size:8.5px;color:rgba(255,255,255,0.5)">${k.cat==='Diğer'?'🎁':'📶'} ${k.cat} · ${k.ad}</span>
+              <span style="font-size:8.5px;color:rgba(255,255,255,0.5)">${k.cat==='Diğer'?'🎁':'📶'} ${k.cat} · ${esc(k.ad)}</span>
               <span style="font-size:9px;font-weight:700;color:#c4a5f7;flex-shrink:0;margin-left:6px">${k.adet} adet · ${fmtF(k.tutar*(1+KDV_ORANI))}</span>
             </div>`).join('')}
           </div>`;
@@ -7622,7 +7631,7 @@ function renderDash(){
               <span style="font-size:8px;color:var(--muted)">toplama dahil · ayrıca eklenmez</span>
             </div>
             ${kl.map(k=>`<div style="display:flex;justify-content:space-between;font-size:9.5px;padding:2px 0;border-top:1px solid rgba(196,165,247,0.08)">
-              <span style="color:var(--muted)">${k.cat==='Diğer'?'🎁':'📶'} ${k.cat} · ${k.ad}</span>
+              <span style="color:var(--muted)">${k.cat==='Diğer'?'🎁':'📶'} ${k.cat} · ${esc(k.ad)}</span>
               <span style="color:#c4a5f7;font-weight:700;margin-left:6px;white-space:nowrap">${k.adet} adet · ${fmtF(k.tutar*(1+KDV_ORANI))}</span>
             </div>`).join('')}
           </div>`;
@@ -8425,7 +8434,7 @@ function renderKarZararBars(periodData){
     return `<div class="bar-col">
       <div class="n" style="font-size:9.5px">${d.aciklama?'📌':''}</div>
       <div class="v" style="font-size:10px">${fmtF(val)}</div>
-      <div class="bar" style="height:${h}px;background:${color}" title="${d.aciklama||''}"></div>
+      <div class="bar" style="height:${h}px;background:${color}" title="${esc(d.aciklama||'')}"></div>
       <div class="lbl">${d.label}</div>
     </div>`;
   }).join('');
@@ -8488,7 +8497,7 @@ function renderFinansTable(filtered){
       <td>${durumCell}</td>
       <td>%${d.vodMarj}</td>
       <td>%${d.mixyMarj}</td>
-      <td class="editable-cell" contenteditable="true" spellcheck="false" data-ym="${d.ym}" data-field="aciklama" onblur="onFinansCellEdit(this)" onkeydown="handleEditableCellKeydown(event, this)" style="text-align:left;max-width:140px;white-space:normal">${d.aciklama||''}</td>
+      <td class="editable-cell" contenteditable="true" spellcheck="false" data-ym="${d.ym}" data-field="aciklama" onblur="onFinansCellEdit(this)" onkeydown="handleEditableCellKeydown(event, this)" style="text-align:left;max-width:140px;white-space:normal">${esc(d.aciklama||'')}</td>
       <td>
         ${(()=>{
           const isAnomali = checkMasrafAnomali().some(a=>a.ym===d.ym);
@@ -9532,11 +9541,11 @@ function renderIslemList(cat, date){
         <div style="margin-top:4px;padding:5px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
           ${musteri ? `
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-              <span style="font-size:12px;font-weight:700;color:var(--txt)">👤 ${musteri.ad || 'İsimsiz Müşteri'}</span>
-              ${musteri.tel ? `<span style="font-size:11px;color:var(--accent)">📞 ${musteri.tel}</span>` : ''}
+              <span style="font-size:12px;font-weight:700;color:var(--txt)">👤 ${esc(musteri.ad || 'İsimsiz Müşteri')}</span>
+              ${musteri.tel ? `<span style="font-size:11px;color:var(--accent)">📞 ${esc(musteri.tel)}</span>` : ''}
               <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${musteri.durum==='aktif'?'rgba(76,217,100,0.2)':musteri.durum==='bekliyor'?'rgba(255,159,10,0.2)':'rgba(255,82,82,0.2)'};color:${musteri.durum==='aktif'?'#4cd964':musteri.durum==='bekliyor'?'#ff9f0a':'#ff5252'};font-weight:700">${musteri.durum==='aktif'?'✅ Aktif':musteri.durum==='bekliyor'?'⏳ Bekliyor':'❌ '+musteri.durum}</span>
             </div>
-            ${musteri.not ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">📝 ${musteri.not}</div>` : ''}
+            ${musteri.not ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">📝 ${esc(musteri.not)}</div>` : ''}
           ` : `<span style="font-size:10px;color:var(--muted);font-style:italic">👤 Müşteri kaydı yok</span>`}
         </div>
       </div>
@@ -10519,7 +10528,7 @@ function renderKampanyaList(){
                 ${(k.catList && k.catList.length>1) ? k.catList.join(' + ') : k.cat} <span style="font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;${k.tip==='fiyat'?'background:rgba(76,217,100,0.15);color:#4cd964':k.tip==='tekrarli'?'background:rgba(192,132,252,0.15);color:#c084fc':'background:rgba(255,183,77,0.15);color:#ffb74d'}">${k.tip==='fiyat'?'💰 Fiyat':k.tip==='tekrarli'?'🔁 Tekrarlı':'🎁 Bonus'}</span>
               </div>
               <div style="font-size:11px;color:var(--muted)">${detay}</div>
-              ${k.aciklama?`<div style="font-size:10px;color:var(--muted);margin-top:3px;font-style:italic">${k.aciklama}</div>`:''}
+              ${k.aciklama?`<div style="font-size:10px;color:var(--muted);margin-top:3px;font-style:italic">${esc(k.aciklama)}</div>`:''}
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0">
               <button onclick="editKampanya('${k.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:6px;width:30px;height:30px;font-size:13px;cursor:pointer">✏️</button>
@@ -10903,8 +10912,8 @@ function renderMusteriRapor(){
       <div style="display:flex;align-items:flex-start;gap:10px">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="font-size:12px;font-weight:800;color:var(--txt)">${m.ad||'İsimsiz Müşteri'}</span>
-            ${m.tel?`<span style="font-size:11px;color:var(--accent)">${m.tel}</span>`:''}
+            <span style="font-size:12px;font-weight:800;color:var(--txt)">${esc(m.ad||'İsimsiz Müşteri')}</span>
+            ${m.tel?`<span style="font-size:11px;color:var(--accent)">${esc(m.tel)}</span>`:''}
             <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:rgba(${m.tip==='mnp'?'155,89,182':'76,217,100'},0.15);color:${m.tip==='mnp'?'#c084fc':'#4cd964'};font-weight:700">${m.tip==='mnp'?'🔄 MNP':'🆕 Tesis'}</span>
             <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--panel2);color:var(--muted)">${m.cat}</span>
             ${m.tarife?`<span style="font-size:10px;padding:1px 7px;border-radius:10px;background:rgba(124,58,237,0.18);color:#c4a5f7;font-weight:700">${m.cat==='Diğer'?'🎁':'📶'} ${m.tarife}</span>`:''}
@@ -10917,7 +10926,7 @@ function renderMusteriRapor(){
             <span style="font-size:11px;font-weight:700;color:${renk}">${durumIcon[m.durum]||'⏳'} ${durumLabel[m.durum]||m.durum}</span>
             <span style="font-size:10px;color:${m._gecikti?'#ff5252':'var(--muted)'}">📆 Takip: ${m.takipTarihi} (${kalan})</span>
           </div>
-          ${m.not?`<div style="font-size:10px;color:var(--muted);margin-top:4px;font-style:italic">💬 ${m.not}</div>`:''}
+          ${m.not?`<div style="font-size:10px;color:var(--muted);margin-top:4px;font-style:italic">💬 ${esc(m.not)}</div>`:''}
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:flex-end">
           <div style="display:flex;align-items:center;gap:6px;height:32px">
@@ -11654,7 +11663,7 @@ function renderKasa(){
         <td style="text-align:right;font-variant-numeric:tabular-nums">${k.beklenen!=null?fmtTL(k.beklenen):'—'}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums">${farkHtml}</td>
         <td style="font-size:10px;color:var(--muted);max-width:200px">${kupurOzet(k)}</td>
-        <td style="font-size:11px;color:var(--muted)">${k.not||''}</td>
+        <td style="font-size:11px;color:var(--muted)">${esc(k.not||'')}</td>
         <td style="white-space:nowrap">
           <button onclick="openKasaSayimModal('${k.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.25);color:var(--accent);border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer">✏️</button>
           <button onclick="deleteKasaSayim('${k.id}')" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer">🗑</button>
@@ -12058,7 +12067,7 @@ function renderGelir() {
                   <span style="color:var(--muted)">${k.tarih}</span>
                   <span style="font-weight:600">${k.kategori}</span>
                   <span style="color:${k.tip==='gelir'?'#4cd964':'#ff5252'};font-weight:700">${k.tip==='gelir'?'+':'−'}${fmt(k.tutar)}</span>
-                  ${k.aciklama ? `<span style="color:var(--muted);font-style:italic;overflow:hidden;text-overflow:ellipsis;max-width:80px">${k.aciklama}</span>` : ''}
+                  ${k.aciklama ? `<span style="color:var(--muted);font-style:italic;overflow:hidden;text-overflow:ellipsis;max-width:80px">${esc(k.aciklama)}</span>` : ''}
                 </div>`
               ).join('')}
             </div>
@@ -12355,7 +12364,7 @@ function renderNotifHistorySection(){
       <div style="flex:1;min-width:0">
         <div style="font-size:11px;font-weight:700;color:var(--txt)">${h.title}</div>
         <div style="font-size:10.5px;color:var(--muted);margin-top:1px">${h.msg}</div>
-        ${h.note?`<div style="font-size:10.5px;color:#ffb74d;margin-top:2px;font-style:italic">📝 ${h.note}</div>`:''}
+        ${h.note?`<div style="font-size:10.5px;color:#ffb74d;margin-top:2px;font-style:italic">📝 ${esc(h.note)}</div>`:''}
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:9px;color:var(--muted)">${dt}</div>
@@ -13590,7 +13599,7 @@ function renderFinansTrash(){
           <button onclick="permanentDeleteTrash(${i})" style="background:#3a1010;color:#ff5252;border:1px solid #7a1f1f;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" title="Kalıcı olarak sil">✕</button>
         </div>
       </div>
-      ${d.aciklama?`<div style="margin-top:6px;font-size:11.5px;color:var(--muted);font-style:italic">"${d.aciklama}"</div>`:''}
+      ${d.aciklama?`<div style="margin-top:6px;font-size:11.5px;color:var(--muted);font-style:italic">"${esc(d.aciklama)}"</div>`:''}
     </div>`;
   }).join('');
   el.innerHTML += `<div style="margin-top:8px;text-align:right">
@@ -14416,7 +14425,7 @@ function showCatDetail(cat, rStart, rEnd){
         const tarife=m.tarife||(logE&&logE.tarife)||'—';
         musteriSatirlari.push({
           date: i===0?e.date:'',
-          ad:`${m.ad||''} ${m.soyad||''}`.trim()||'—',
+          ad:`${esc(m.ad||'')} ${esc(m.soyad||'')}`.trim()||'—',
           tel:m.tel||'—',
           tarife,
           count:i===0?e.count:'',
@@ -14901,7 +14910,7 @@ function openGithubGuncelleModal(){
           <div id="ghRow_${d.dosya.replace(/\./g,'_')}" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:${d.degisti?'rgba(76,217,100,0.04)':'rgba(255,255,255,0.02)'};border:1px solid ${d.degisti?'rgba(76,217,100,0.15)':'rgba(255,255,255,0.05)'};margin-bottom:4px">
             <div id="ghRowIkon_${d.dosya.replace(/\./g,'_')}" style="font-size:14px;width:18px;text-align:center">${d.degisti?'🟡':'⬜'}</div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:11px;font-weight:${d.degisti?'700':'400'};color:${d.degisti?'var(--txt)':'var(--muted)'}">${d.etiket}</div>
+              <div style="font-size:11px;font-weight:${d.degisti?'700':'400'};color:${d.degisti?'var(--txt)':'var(--muted)'}">${esc(d.etiket)}</div>
               <div id="ghRowAlt_${d.dosya.replace(/\./g,'_')}" style="font-size:9px;color:var(--muted)">${d.degisti?'⏳ Dosya bekleniyor...':'değişmedi — atlanacak'}</div>
             </div>
           </div>`).join('')}
@@ -15135,6 +15144,23 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v212',
+    date: '06.07.2026',
+    items: [
+      { type: 'ui', text: 'Uygulama ikonundaki arka plandaki BEYAZ zemin kaldirildi — ikon artik bastan basa koyu (marka rengi), logo aynen korundu. Masaustu/ana ekran kisayolunda cirkin beyaz cerceve gitti.' },
+      { type: 'fix', text: 'iOS ikon yolu hatasi duzeltildi (apple-touch-icon "icon-192.png" -> "icon192.png"). Iphone/iPad ana ekran ikonu artik dogru yukleniyor.' },
+      { type: 'info', text: 'sw.js cache surumu v212. Ikonlar degistigi icin GitHub a index.html + sw.js + icon192.png + icon512.png HEPSI yuklenmeli.' },
+    ]
+  },
+  {
+    version: 'v211',
+    date: '06.07.2026',
+    items: [
+      { type: 'fix', text: 'GUVENLIK/SAGLAMLASTIRMA: Kullanici metinleri (musteri adi, telefon, not, aciklama, etiket, kampanya aciklamasi) ekrana basilirken artik HTML kacisindan geciyor. Boylece bir metin icinde <, >, & gibi ozel karakterler olsa bile (1) ekran/tablo bozulmuyor, (2) metin yanlislikla kod olarak calistirilamiyor (XSS onlemi). Arama vurgulama da guvenli hale getirildi.' },
+      { type: 'info', text: 'Tarife adi gibi buton islevine (onclick) giden alanlar, islevi bozmamak icin kendi ozel kacislariyla birakildi. sw.js DEGISMEDI — sadece index.html yeterli.' },
+    ]
+  },
   {
     version: 'v210',
     date: '06.07.2026',
