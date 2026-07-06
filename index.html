@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v218';
+const APP_VERSION = 'v219';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 00:10'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 01:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5186,7 +5186,7 @@ function showAktiveDetay(cat){
   const trT = iso => { const p = String(iso).slice(0,10).split('-'); return p[2]+'.'+p[1]+'.'+p[0]; };
   const list = entries
     .filter(e => e.cat===cat && !!e.mnp && mnpActivationDate(e.date) >= rStart && mnpActivationDate(e.date) <= rEnd)
-    .map(e => ({ date:e.date, akt:mnpActivationDate(e.date), count:e.count, devreden: e.date < rStart }))
+    .map(e => ({ date:e.date, akt:mnpActivationDate(e.date), count:e.count, devreden: ymKey(e.date) !== ymKey(mnpActivationDate(e.date)) }))
     .sort((a,b) => a.akt<b.akt ? -1 : (a.akt>b.akt ? 1 : 0));
   if(!list.length){ showBilgiModal(cat + ' — Aktive Olanlar', '<div style="padding:22px;text-align:center;color:var(--muted)">Bu aralıkta aktive olan MNP yok.</div>'); return; }
   const donem = list.filter(x=>!x.devreden).reduce((a,x)=>a+x.count,0);
@@ -5374,7 +5374,7 @@ function render(){
       const rMnpEntries = rCat.filter(e=>!!e.mnp);
       const rMnp   = rMnpEntries.reduce((a,e)=>a+e.count,0);
       // v218: aktive olan MNP'leri kaynağına göre ayır — girişi aralık başından ÖNCE ise "devreden"
-      const mnpDevreden = rMnpEntries.filter(e=>e.date < rStart).reduce((a,e)=>a+e.count,0);
+      const mnpDevreden = rMnpEntries.filter(e=>ymKey(e.date) !== ymKey(mnpActivationDate(e.date))).reduce((a,e)=>a+e.count,0);
       const mnpDonem    = rMnp - mnpDevreden;
       // v217: Bu aralıkta GİRİLEN ama aktivasyonu aralığın SONRASINA düşen MNP'ler (henüz açılmadı, büyük sayıya dahil DEĞİL)
       const ileriMnp = entries
@@ -15219,6 +15219,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v219',
+    date: '07.07.2026',
+    items: [
+      { type: 'fix', text: '"Devreden" tanimi duzeltildi: artik GIRIS AYI ile AKTIVASYON AYI farkliysa devreden sayilir (gercekten bir onceki aydan tasmis olanlar). Onceden aralik basina gore bakiyordu; bu yuzden gunluk bakista ayni ay icinde 2 gun kayan MNP (or. 3 Tem girilip 5 Tem aktive) yanlislikla "devreden" gorunuyordu. Artik 3 Tem->5 Tem ayni ay oldugu icin "bu donem"; sadece 29-30 Haz gibi gercek onceki-ay girisleri "devreden".' },
+    ]
+  },
   {
     version: 'v218',
     date: '07.07.2026',
