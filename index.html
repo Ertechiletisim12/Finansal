@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v206';
+const APP_VERSION = 'v207';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2883,7 +2883,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 09:55'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 10:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5354,12 +5354,12 @@ function render(){
     if(toplamMusteriAdet > 0){
       detayHTML += `<div style="height:1px;background:rgba(255,255,255,0.1);margin:4px 0"></div>`;
       detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11px">
-        <span style="opacity:.7">✅ Onaylanan (${onaylananAdet} müşteri)</span>
+        <span style="opacity:.75"><span style="color:#4ade80;font-weight:800">●</span> Onaylanan (${onaylananAdet} müşteri)</span>
         <span style="font-weight:600;color:#d1d5db">${fmtCiftHtml(onaylananTutar,'sm')}</span>
       </div>`;
       if(bekleyenAdet > 0){
         detayHTML += `<div style="display:flex;justify-content:space-between;font-size:11px">
-          <span style="opacity:.7">⏳ Bekleyen (${bekleyenAdet} müşteri)</span>
+          <span style="opacity:.75"><span style="color:#fbbf24;font-weight:800">●</span> Bekleyen (${bekleyenAdet} müşteri)</span>
           <span style="font-weight:600;color:#ffd27a">${fmtCiftHtml(bekleyenTutar,'sm')}</span>
         </div>`;
       }
@@ -7145,7 +7145,7 @@ function renderDash(){
       <!-- Sol: Ana Prim Kartı -->
       <div style="background:linear-gradient(145deg,#2a3f5f,#34507a 55%,#3d5c8c);border:1px solid rgba(96,140,200,0.35);border-radius:16px;padding:15px;flex:1 1 340px;min-width:min(320px,100%);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(20,40,70,0.4)">
         <div style="font-size:10px;color:#bcd3f0;margin-bottom:5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Toplam Prim (KDV Dahil)</div>
-        <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,0.2)">${fmtF(curKdv)}</div>
+        <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1">${fmtF(curKdv)}</div>
         ${dashBonusToplam>0 ? (()=>{
           // v172: denklem KDV DAHİL tutarlı — dashBonusToplam net, KDV dahile çevrilir; prim sayfasıyla birebir
           const kampBrut = kdvBrut(dashBonusToplam);
@@ -14914,6 +14914,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v207',
+    date: '06.07.2026',
+    items: [
+      { type: 'ui', text: 'Hakedis panelindeki Onaylanan/Bekleyen isaretlerinin beyaz gollgeli gorunumu giderildi: renkli emoji (tik/kum saati) yerine sade renkli nokta kullanildi (yesil=onaylanan, sari=bekleyen). Kart rakamindaki golge de kaldirildi.' },
+    ]
+  },
   {
     version: 'v206',
     date: '06.07.2026',
