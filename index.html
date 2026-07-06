@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v207';
+const APP_VERSION = 'v208';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 15:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 16:15'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3527,7 +3527,7 @@ const FIREBASE_URL = 'https://finansal-analiz-f85ef-default-rtdb.europe-west1.fi
 // Uygulama Firebase SDK degil ham REST kullaniyor; bu yuzden giris de REST ile yapiliyor.
 // >>> ASAGIDAKI SATIRA Firebase Web API Key'ini yapistir (Console > Proje Ayarlari > Genel > Web API Key).
 //     Bu anahtar gizli DEGILDIR, her Firebase web uygulamasinda aciktir; sorun yok.
-const FIREBASE_API_KEY = 'BURAYA_WEB_API_KEY_YAPISTIR';
+const FIREBASE_API_KEY = 'AIzaSyBa2eWG7ZnlDetje4jZtf51oIAF5LrMlp0';
 
 let _fbIdToken = '';
 let _fbTokenExp = 0;
@@ -3926,7 +3926,7 @@ function startCloudPolling(){
     if(cloudSyncStatus === 'saving') return;
     if(document.hidden) return; // sekme arka plandaysa boşuna çekme (pil/veri tasarrufu)
     await pullFromCloud();
-  }, 3000);
+  }, 15000);
 }
 // Sekme tekrar öne gelince hemen bir çek (beklemeden güncel olsun)
 document.addEventListener('visibilitychange', ()=>{
@@ -15084,6 +15084,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v208',
+    date: '06.07.2026',
+    items: [
+      { type: 'new', text: 'Firebase Web API Key koda gomuldu — bulut girisi artik aktif. Uygulamayi acinca e-posta/sifre ile giris yapman gerekir. Veritabani kurallari senin hesabina kilitlendi; artik disaridan kimse veriye erisemez.' },
+      { type: 'imp', text: 'INDIRME AZALTMA (ilk onlem): bulut yoklama araligi 3 saniyeden 15 saniyeye cikarildi. Bu, Firebase indirme kullanimini yaklasik 5 kat dusurur (ucretsiz planin 10 GB/ay limitini asma riskine karsi). Asil buyuk optimizasyon (sadece degisiklik kontrolu) bir sonraki surumde gelecek.' },
+      { type: 'info', text: 'sw.js cache surumu v208. GitHub a index.html + sw.js BIRLIKTE yuklenmeli.' },
+    ]
+  },
   {
     version: 'v207',
     date: '06.07.2026',
