@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v206';
+const APP_VERSION = 'v207';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 14:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 15:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3523,6 +3523,129 @@ function renderEntryLogCharts(){
 // ==================== FIREBASE BULUT SENKRON ====================
 const FIREBASE_URL = 'https://finansal-analiz-f85ef-default-rtdb.europe-west1.firebasedatabase.app/data.json';
 
+// ==================== FIREBASE E-POSTA/SIFRE GIRISI (v207) ====================
+// Uygulama Firebase SDK degil ham REST kullaniyor; bu yuzden giris de REST ile yapiliyor.
+// >>> ASAGIDAKI SATIRA Firebase Web API Key'ini yapistir (Console > Proje Ayarlari > Genel > Web API Key).
+//     Bu anahtar gizli DEGILDIR, her Firebase web uygulamasinda aciktir; sorun yok.
+const FIREBASE_API_KEY = 'BURAYA_WEB_API_KEY_YAPISTIR';
+
+let _fbIdToken = '';
+let _fbTokenExp = 0;
+function _fbRefreshToken(){ try{ return localStorage.getItem('vf_fb_refresh') || ''; }catch(e){ return ''; } }
+function fbIsLoggedIn(){ return !!_fbRefreshToken(); }
+function _fbKeyMissing(){ return !FIREBASE_API_KEY || FIREBASE_API_KEY.indexOf('BURAYA') === 0; }
+function fbUrl(token){ return FIREBASE_URL + '?auth=' + encodeURIComponent(token); }
+
+async function fbLogin(email, password){
+  if(_fbKeyMissing()) throw new Error('Web API Key koda yapistirilmamis (FIREBASE_API_KEY).');
+  const r = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + FIREBASE_API_KEY, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ email:email, password:password, returnSecureToken:true })
+  });
+  const d = await r.json().catch(()=>({}));
+  if(!r.ok){
+    const m = (d.error && d.error.message) || 'GIRIS_BASARISIZ';
+    if(/EMAIL_NOT_FOUND|INVALID_PASSWORD|INVALID_LOGIN_CREDENTIALS/.test(m)) throw new Error('E-posta veya sifre hatali');
+    if(/EMAIL_EXISTS/.test(m)) throw new Error('Bu e-posta zaten kayitli');
+    throw new Error(m);
+  }
+  _fbIdToken = d.idToken;
+  _fbTokenExp = Date.now() + (parseInt(d.expiresIn||'3600',10)*1000) - 60000;
+  try{ localStorage.setItem('vf_fb_refresh', d.refreshToken); }catch(e){}
+  return true;
+}
+
+async function _fbRefresh(){
+  const rt = _fbRefreshToken();
+  if(!rt || _fbKeyMissing()) return false;
+  try{
+    const r = await fetch('https://securetoken.googleapis.com/v1/token?key=' + FIREBASE_API_KEY, {
+      method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(rt)
+    });
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok || !d.id_token){
+      // Refresh token gecersiz (sifre degisti / hesap silindi) → oturumu dusur
+      if(d.error){ fbLogout(true); }
+      return false;
+    }
+    _fbIdToken = d.id_token;
+    _fbTokenExp = Date.now() + (parseInt(d.expires_in||'3600',10)*1000) - 60000;
+    if(d.refresh_token){ try{ localStorage.setItem('vf_fb_refresh', d.refresh_token); }catch(e){} }
+    return true;
+  }catch(e){ return false; }
+}
+
+async function fbGetToken(){
+  if(_fbIdToken && Date.now() < _fbTokenExp) return _fbIdToken;
+  const ok = await _fbRefresh();
+  return ok ? _fbIdToken : '';
+}
+
+function fbLogout(silent){
+  _fbIdToken = ''; _fbTokenExp = 0;
+  try{ localStorage.removeItem('vf_fb_refresh'); }catch(e){}
+  if(typeof cloudPollTimer !== 'undefined' && cloudPollTimer){ clearInterval(cloudPollTimer); cloudPollTimer = null; }
+  if(!silent) showLoginScreen();
+}
+
+function showLoginScreen(){
+  let el = document.getElementById('fbLoginScreen');
+  if(el){ el.style.display='flex'; return; }
+  const keyMissing = _fbKeyMissing();
+  el = document.createElement('div');
+  el.id = 'fbLoginScreen';
+  el.style.cssText = 'position:fixed;inset:0;z-index:100000;background:var(--bg,#26282b);display:flex;align-items:center;justify-content:center;padding:20px';
+  el.innerHTML =
+    '<div style="width:100%;max-width:340px;background:var(--panel,#323539);border:1px solid var(--line,#46494e);border-radius:18px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.5)">'
+    + '<div style="background:linear-gradient(135deg,var(--red,#e2231a),var(--red-d,#b81b14));padding:22px 20px;text-align:center">'
+    +   '<div style="font-size:30px;margin-bottom:4px">🔐</div>'
+    +   '<div style="font-size:16px;font-weight:800;color:#fff">Er-Tech İletişim</div>'
+    +   '<div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:2px">Bulut hesabı girişi</div>'
+    + '</div>'
+    + '<div style="padding:20px">'
+    + (keyMissing ? '<div style="background:rgba(255,159,10,0.12);border:1px solid rgba(255,159,10,0.4);color:#ff9f5a;font-size:11px;padding:9px 11px;border-radius:9px;margin-bottom:14px;line-height:1.4">⚠️ Kurulum tamamlanmamış: koda Web API Key yapıştırılmamış. Bulut girişi çalışmaz. Aşağıdan çevrimdışı devam edebilirsin.</div>' : '')
+    +   '<label style="font-size:11px;color:var(--muted,#9aa0a6);font-weight:700;display:block;margin-bottom:5px">E-POSTA</label>'
+    +   '<input id="fbEmail" type="email" autocomplete="username" inputmode="email" placeholder="ornek@eposta.com" style="width:100%;padding:11px 12px;background:var(--bg,#26282b);border:1px solid var(--line,#46494e);border-radius:10px;color:var(--txt,#eef0f2);font-size:14px;box-sizing:border-box;margin-bottom:12px">'
+    +   '<label style="font-size:11px;color:var(--muted,#9aa0a6);font-weight:700;display:block;margin-bottom:5px">ŞİFRE</label>'
+    +   '<input id="fbPass" type="password" autocomplete="current-password" placeholder="••••••••" style="width:100%;padding:11px 12px;background:var(--bg,#26282b);border:1px solid var(--line,#46494e);border-radius:10px;color:var(--txt,#eef0f2);font-size:14px;box-sizing:border-box;margin-bottom:6px">'
+    +   '<div id="fbLoginMsg" style="font-size:12px;min-height:16px;margin:4px 2px 10px;color:var(--muted,#9aa0a6)"></div>'
+    +   '<button id="fbLoginBtn" onclick="fbLoginSubmit()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--red,#e2231a),var(--red-d,#b81b14));border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:800;cursor:pointer">Giriş Yap</button>'
+    +   '<div style="text-align:center;margin-top:14px"><button onclick="fbSkipLogin()" style="background:transparent;border:none;color:var(--muted,#9aa0a6);font-size:12px;text-decoration:underline;cursor:pointer">Çevrimdışı devam et (bulut kapalı)</button></div>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(el);
+  const pass = document.getElementById('fbPass');
+  const email = document.getElementById('fbEmail');
+  const onEnter = e => { if(e.key === 'Enter') fbLoginSubmit(); };
+  if(pass) pass.addEventListener('keydown', onEnter);
+  if(email) email.addEventListener('keydown', onEnter);
+  setTimeout(()=>{ if(email) email.focus(); }, 100);
+}
+function hideLoginScreen(){ const el = document.getElementById('fbLoginScreen'); if(el) el.style.display = 'none'; }
+function fbSkipLogin(){ hideLoginScreen(); updateCloudIndicator('idle'); }
+
+async function fbLoginSubmit(){
+  const email = (document.getElementById('fbEmail').value||'').trim();
+  const pass = document.getElementById('fbPass').value||'';
+  const msg = document.getElementById('fbLoginMsg');
+  const btn = document.getElementById('fbLoginBtn');
+  if(!email || !pass){ msg.style.color='#ff5252'; msg.textContent='E-posta ve şifre gir'; return; }
+  msg.style.color='var(--muted,#9aa0a6)'; msg.textContent='Giriş yapılıyor...';
+  if(btn){ btn.disabled = true; btn.style.opacity='0.6'; }
+  try{
+    await fbLogin(email, pass);
+    hideLoginScreen();
+    updateCloudIndicator('saving');
+    pullFromCloud().then(()=> startCloudPolling());
+  }catch(e){
+    msg.style.color='#ff5252'; msg.textContent='❌ ' + (e.message||'Giriş başarısız');
+  }finally{
+    if(btn){ btn.disabled = false; btn.style.opacity='1'; }
+  }
+}
+// ==================== FIREBASE GIRISI SONU ====================
+
 let cloudSyncTimer = null;
 let cloudSyncStatus = 'idle';
 let lastCloudHash = '';
@@ -3681,11 +3804,19 @@ async function pushToCloud(){
     //  bu yüzden "son yazan kazanır" doğru davranış — ve silme kesin kalıcı olur.)
     const payload = getBackupData();
     const hash = quickHash(payload);
-    const res = await fetch(FIREBASE_URL, {
+    const _tok = await fbGetToken();
+    if(!_tok){
+      isPushingToCloud = false;
+      updateCloudIndicator(fbIsLoggedIn() ? 'error' : 'queued');
+      if(!fbIsLoggedIn()) showLoginScreen();
+      return;
+    }
+    const res = await fetch(fbUrl(_tok), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
+    if(res.status === 401 || res.status === 403){ isPushingToCloud = false; fbLogout(); return; }
     if(res.ok){
       userChangedData = false; // Sadece başarılı push'ta false yap
       try{ localStorage.removeItem('vf_pending_sync'); }catch(e){}
@@ -3708,7 +3839,10 @@ async function pullFromCloud(){
   if(userChangedData) return false;
   if(Date.now() - lastPushTime < 8000) return false; // Push sonrası 8sn bekle
   try{
-    const res = await fetch(FIREBASE_URL, { cache: 'no-store' });
+    const _tok = await fbGetToken();
+    if(!_tok){ if(!fbIsLoggedIn()) showLoginScreen(); return false; }
+    const res = await fetch(fbUrl(_tok), { cache: 'no-store' });
+    if(res.status === 401 || res.status === 403){ fbLogout(); return false; }
     if(!res.ok){ updateCloudIndicator('error'); return false; }
     const data = await res.json();
     if(!data || data.data === 'init'){ updateCloudIndicator('saved'); return false; }
@@ -13505,7 +13639,24 @@ if(localStorage.getItem('vf_pending_sync')==='1'){
   else updateCloudIndicator('queued');
 }
 // Buluttan veri çek — localStorage'dan daha yeni veri varsa uygula
-setTimeout(()=>{ pullFromCloud().then(()=>startCloudPolling()); }, 800);
+setTimeout(()=>{
+  // v207: Bulut senkronu artik girise bagli. Giris yoksa once giris ekrani gosterilir.
+  if(fbIsLoggedIn()){ pullFromCloud().then(()=>startCloudPolling()); }
+  else { showLoginScreen(); }
+  // Bulut gostergesine dokununca hesap cikisi (uzun surekli goruntude pratik)
+  try{
+    const _ci = document.getElementById('cloudSyncIndicator');
+    if(_ci && !_ci._authWired){
+      _ci._authWired = true;
+      _ci.style.cursor = 'pointer';
+      _ci.title = 'Bulut hesabi — cikis icin dokun';
+      _ci.addEventListener('click', async ()=>{
+        if(!fbIsLoggedIn()){ showLoginScreen(); return; }
+        if(await appConfirm('Bulut hesabindan cikis yapilsin mi?\n\nVeriler cihazda kalir; tekrar giris yapman gerekir.')) fbLogout();
+      });
+    }
+  }catch(e){}
+}, 800);
 // Orphan log temizleme - entries ile eslesmeyenleri kaldir
 setTimeout(()=>{
   let changed = false;
@@ -14933,6 +15084,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v207',
+    date: '06.07.2026',
+    items: [
+      { type: 'new', text: 'GUVENLIK (buyuk): Firebase artik HERKESE ACIK degil — e-posta/sifre ile giris eklendi. Uygulama ilk acilista bir kez giris ekrani gosterir; her bulut istegine kimlik dogrulama tokeni eklenir. Token 1 saatte bir otomatik yenilenir, cihazda hatirlanir. Giris yapmadan da cevrimdisi (yerel veriyle) devam edilebilir; bulut senkronu sadece giris sonrasi calisir. Bulut gostergesine dokununca hesaptan cikis yapilir.' },
+      { type: 'info', text: 'KURULUM SIRASI ONEMLI: (1) Firebase Console dan e-posta/sifre saglayicisini ac ve bir kullanici olustur, (2) Realtime Database kurallarini o kullanicinin UID sine kilitle, (3) koda Web API Key i yapistir (FIREBASE_API_KEY), (4) ondan sonra yukle. Adimlar tamamlanmadan yuklersen bulut senkronu durur (veri cihazda guvende kalir).' },
+      { type: 'info', text: 'sw.js cache surumu v207 ye alindi. GitHub a index.html + sw.js BIRLIKTE yuklenmeli.' },
+    ]
+  },
   {
     version: 'v206',
     date: '06.07.2026',
