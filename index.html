@@ -1716,7 +1716,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch;flex-wrap:wrap">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
-        <div id="hakedisPanel" style="display:none;flex:1 1 380px;width:100%;min-width:min(300px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#2a3f5f,#34507a 55%,#3d5c8c);border:1px solid rgba(96,140,200,0.35);box-shadow:0 8px 24px rgba(20,40,70,0.4)">
+        <div id="hakedisPanel" style="display:none;flex:1 1 380px;width:100%;max-width:560px;min-width:min(300px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
           <!-- Üst: büyük hakediş rakamı -->
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v207';
+const APP_VERSION = 'v206';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2843,8 +2843,7 @@ function _dlgNext(){
 // v162: Genel PIN onay penceresi — PIN kayıtlıysa doğrulama ister, Promise<boolean>
 function appPinConfirm(baslik, aciklama){
   return new Promise(res=>{
-    const pin = getPin();
-    if(!pin){ res(true); return; }
+    if(!hasPinSet()){ res(true); return; }
     const id = 'appPinModal_'+Date.now();
     const m = document.createElement('div');
     m.id = id;
@@ -2867,8 +2866,8 @@ function appPinConfirm(baslik, aciklama){
     setTimeout(()=>inp.focus(), 80);
     const bitir = ok => { m.remove(); res(ok); };
     m.querySelector('.pinNo').onclick = ()=>bitir(false);
-    m.querySelector('.pinYes').onclick = ()=>{
-      if(inp.value === pin) bitir(true);
+    m.querySelector('.pinYes').onclick = async ()=>{
+      if(await verifyPin(inp.value)) bitir(true);
       else { m.querySelector('.pinErr').textContent = '❌ Yanlış PIN'; inp.value=''; inp.focus(); }
     };
     inp.onkeydown = e => { if(e.key==='Enter') m.querySelector('.pinYes').click(); if(e.key==='Escape') bitir(false); };
@@ -2883,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 10:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 14:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3179,8 +3178,7 @@ const PARA_MASKE = '\u2217\u2217\u2217\u2217,\u2217\u2217 \u20ba'; // ****,** �
 function toggleGizliMod(){
   if(gizliMod){
     // AÇMAK isteniyor → PIN doğrulaması gerek (modal ile)
-    const kayitliPin = (typeof getPin==='function') ? getPin() : '';
-    if(kayitliPin){
+    if(hasPinSet()){
       const modal = document.getElementById('gizliPinModal');
       const inp = document.getElementById('gizliPinInput');
       const msg = document.getElementById('gizliPinMsg');
@@ -3198,11 +3196,10 @@ function toggleGizliMod(){
     _setGizliMod(true);
   }
 }
-function gizliPinOnayla(){
+async function gizliPinOnayla(){
   const inp = document.getElementById('gizliPinInput');
   const msg = document.getElementById('gizliPinMsg');
-  const kayitliPin = (typeof getPin==='function') ? getPin() : '';
-  if((inp.value||'').trim() === kayitliPin){
+  if(await verifyPin((inp.value||'').trim())){
     closeGizliPinModal();
     _setGizliMod(false);
   } else {
@@ -3709,7 +3706,7 @@ async function pushToCloud(){
 async function pullFromCloud(){
   if(isPushingToCloud) return false;
   if(userChangedData) return false;
-  if(Date.now() - lastPushTime < 3000) return false; // Push sonrası 3sn bekle (v206: 8sn'den indirildi, senkron hızlansın)
+  if(Date.now() - lastPushTime < 8000) return false; // Push sonrası 8sn bekle
   try{
     const res = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if(!res.ok){ updateCloudIndicator('error'); return false; }
@@ -3722,7 +3719,7 @@ async function pullFromCloud(){
     // Firebase = gerçek. Gelen veriyi MERGE ETMEDEN doğrudan uygula.
     // (Eski merge/tombstone katmanı kaldırıldı — silme artık Firebase'den doğrudan gelir,
     //  "sildiğim geri geliyor" imkânsız çünkü ortada birleştirme yok.)
-    if(data.pin) localStorage.setItem('vf_pin', data.pin);
+    if(data.pinHash){ try{ localStorage.setItem('vf_pin_hash', data.pinHash); localStorage.removeItem('vf_pin'); }catch(e){} } else if(data.pin){ await setPinHash(data.pin); }
     if(data.entries)    entries    = data.entries;
     if(data.entryLog)   entryLog   = data.entryLog;
     if(data.musteriler) musteriler = data.musteriler;
@@ -4293,10 +4290,37 @@ function raporPaylasim(){
 function togglePinPanel(){
   openPinModal();
 }
-function getPin(){ try{ return localStorage.getItem('vf_pin') || ''; }catch(e){ return ''; } }
+// v200: PIN artik duz metin saklanmiyor - salt'li SHA-256 hash olarak tutulur.
+// Duz metin PIN artik ne localStorage'da kalici tutulur, ne Firebase'e ne de yedek dosyasina yazilir.
+const PIN_SALT = 'ertech_pin_v1::';
+async function _sha256Hex(v){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(v)));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function getPinHash(){ try{ return localStorage.getItem('vf_pin_hash') || ''; }catch(e){ return ''; } }
+function _legacyPin(){ try{ return localStorage.getItem('vf_pin') || ''; }catch(e){ return ''; } }
+function hasPinSet(){ return !!(getPinHash() || _legacyPin()); }
+async function setPinHash(pin){
+  try{
+    const h = await _sha256Hex(PIN_SALT + String(pin));
+    localStorage.setItem('vf_pin_hash', h);
+    localStorage.removeItem('vf_pin');
+  }catch(e){}
+}
+async function verifyPin(input){
+  const inp = String(input==null?'':input).trim();
+  const stored = getPinHash();
+  if(stored){ try{ return (await _sha256Hex(PIN_SALT + inp)) === stored; }catch(e){ return false; } }
+  // Gecis donemi: eski duz metin PIN varsa onunla dogrula, dogruysa hash'e tasi
+  const legacy = _legacyPin();
+  if(legacy){ if(inp === legacy){ await setPinHash(inp); return true; } return false; }
+  return false;
+}
+// Tek seferlik gocus: eski duz metin PIN -> hash (varsa)
+(async()=>{ try{ const lp = localStorage.getItem('vf_pin'); if(lp && !localStorage.getItem('vf_pin_hash')){ await setPinHash(lp); } }catch(e){} })();
 
 function openPinModal(){
-  const hasPin = !!getPin();
+  const hasPin = hasPinSet();
   document.getElementById('pinModalStatus').textContent = hasPin ? '🔒 Kilit aktif — değiştir veya kaldır' : '🔓 Kilit yok — yeni PIN belirle';
   document.getElementById('pinCurrentRow').style.display = hasPin ? 'block' : 'none';
   document.getElementById('pinRemoveBtn').style.display = hasPin ? '' : 'none';
@@ -4310,14 +4334,14 @@ function openPinModal(){
 function closePinModal(){
   document.getElementById('pinModal').style.display = 'none';
 }
-function savePinModal(){
-  const hasPin = !!getPin();
+async function savePinModal(){
+  const hasPin = hasPinSet();
   const current = document.getElementById('pinCurrentInput').value.trim();
   const newPin = document.getElementById('pinNewInput').value.trim();
   const confirm = document.getElementById('pinConfirmInput').value.trim();
   const msg = document.getElementById('pinModalMsg');
 
-  if(hasPin && current !== getPin()){
+  if(hasPin && !(await verifyPin(current))){
     msg.textContent = '❌ Mevcut PIN yanlış';
     msg.style.color = '#ff5252';
     return;
@@ -4337,14 +4361,14 @@ function savePinModal(){
     msg.style.color = '#ff5252';
     return;
   }
-  try{ localStorage.setItem('vf_pin', newPin); }catch(e){}
+  await setPinHash(newPin);
   msg.textContent = '✓ PIN kaydedildi!';
   msg.style.color = '#4cd964';
   scheduleCloudSync();
   setTimeout(()=> closePinModal(), 1200);
 }
 function removePinModal(){
-  try{ localStorage.removeItem('vf_pin'); }catch(e){}
+  try{ localStorage.removeItem('vf_pin_hash'); localStorage.removeItem('vf_pin'); }catch(e){}
   const msg = document.getElementById('pinModalMsg');
   msg.textContent = '✓ Kilit kaldırıldı';
   msg.style.color = '#4cd964';
@@ -4369,8 +4393,7 @@ document.addEventListener('keydown', function(e){
   document.addEventListener(ev, ()=>{ if(sessionStorage.getItem('unlocked')==='1') resetOtoKilit(); }, {passive:true});
 });
 function checkLock(){
-  const pin = getPin();
-  if(!pin){ return; }
+  if(!hasPinSet()){ return; }
   if(sessionStorage.getItem('unlocked') === '1'){
     startOturumTimer();
     return;
@@ -4384,7 +4407,7 @@ let _otoKilitTimeout = null;
 const OTO_KILIT_DK = 10; // dakika
 
 function resetOtoKilit(){
-  if(!getPin() || sessionStorage.getItem('unlocked')!=='1') return;
+  if(!hasPinSet() || sessionStorage.getItem('unlocked')!=='1') return;
   sessionStorage.setItem('lastActivity', Date.now());
 }
 
@@ -4484,10 +4507,10 @@ function logGiris(basarili){
   }catch(e){}
 }
 
-function tryUnlock(){
+async function tryUnlock(){
   const val = document.getElementById('lockPinInput').value.trim();
   const lockMsg = document.getElementById('lockMsg');
-  if(val === getPin()){
+  if(await verifyPin(val)){
     logGiris(true);
     if(window._lockObserver){ window._lockObserver.disconnect(); window._lockObserver = null; }
     sessionStorage.setItem('unlocked','1');
@@ -4566,7 +4589,7 @@ function exportActivityListToExcel(){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, tombstones, kasaData: (typeof kasaData!=='undefined'?kasaData:[]), pin: getPin(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, tombstones, kasaData: (typeof kasaData!=='undefined'?kasaData:[]), pinHash: getPinHash(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
 }
 function timeStr(){
   const d = new Date();
@@ -4834,8 +4857,7 @@ setInterval(clock,1000); clock();
 
 async function clearAllData(){
   // PIN varsa önce PIN sor
-  const pin = getPin();
-  if(pin){
+  if(hasPinSet()){
     const modal = document.createElement('div');
     modal.id = 'clearDataPinModal';
     modal.style.cssText = 'position:fixed;z-index:9999;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:16px';
@@ -4864,9 +4886,8 @@ async function clearAllData(){
 async function confirmClearWithPin(){
   const input = document.getElementById('clearPinInput');
   const err = document.getElementById('clearPinErr');
-  const pin = getPin();
   if(!input || !err) return;
-  if(input.value !== pin){
+  if(!(await verifyPin(input.value))){
     err.textContent = '❌ Yanlış PIN';
     input.value = '';
     input.focus();
@@ -7143,8 +7164,8 @@ function renderDash(){
     <div style="display:flex;gap:10px;margin-bottom:8px;align-items:stretch;flex-wrap:wrap">
 
       <!-- Sol: Ana Prim Kartı -->
-      <div style="background:linear-gradient(145deg,#2a3f5f,#34507a 55%,#3d5c8c);border:1px solid rgba(96,140,200,0.35);border-radius:16px;padding:15px;flex:1 1 340px;min-width:min(320px,100%);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(20,40,70,0.4)">
-        <div style="font-size:10px;color:#bcd3f0;margin-bottom:5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Toplam Prim (KDV Dahil)</div>
+      <div style="background:linear-gradient(145deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);border-radius:16px;padding:15px;flex:1 1 340px;min-width:min(320px,100%);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+        <div style="font-size:10px;color:#d1d5db;margin-bottom:5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Toplam Prim (KDV Dahil)</div>
         <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,0.2)">${fmtF(curKdv)}</div>
         ${dashBonusToplam>0 ? (()=>{
           // v172: denklem KDV DAHİL tutarlı — dashBonusToplam net, KDV dahile çevrilir; prim sayfasıyla birebir
@@ -8888,8 +8909,7 @@ async function deleteFinansRow(ym){
 }
 async function resetFinansData(){
   // v151: PIN korumalı — PIN kayıtlıysa onaysız çalışmaz
-  const pin = getPin();
-  if(pin){
+  if(hasPinSet()){
     const modal = document.createElement('div');
     modal.id = 'resetFinansPinModal';
     modal.style.cssText = 'position:fixed;z-index:9999;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:16px';
@@ -8918,9 +8938,8 @@ async function resetFinansData(){
 async function confirmResetFinansWithPin(){
   const input = document.getElementById('resetFinansPinInput');
   const err = document.getElementById('resetFinansPinErr');
-  const pin = getPin();
   if(!input || !err) return;
-  if(input.value !== pin){
+  if(!(await verifyPin(input.value))){
     err.textContent = '❌ Yanlış PIN';
     input.value = '';
     input.focus();
@@ -14915,19 +14934,12 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
-    version: 'v207',
-    date: '06.07.2026',
-    items: [
-      { type: 'fix', text: 'Acik/koyu tema gecisinde Surum Notlari penceresindeki versiyon basliklari (orn. v207) sabit beyaz oldugu icin acik modda gorunmuyordu — tema rengine baglandi, artik iki modda da okunuyor. Baska tema gecisinde kaybolan yazi gorursen soyle, ona da bakarim.' },
-    ]
-  },
-  {
     version: 'v206',
     date: '06.07.2026',
     items: [
-      { type: 'ui', text: 'Prim sayfasi hakedis paneli artik ekrani TAM kapliyor (kenardaki bosluklar gitti — 560px genislik siniri kaldirildi).' },
-      { type: 'ui', text: 'Kart rengi degistirildi: bogук gri yerine canli koyu celik mavisi (mavi-slate) — daha sik ve okunur.' },
-      { type: 'fix', text: 'Senkron gecikmesi kisaltildi: veri girildikten sonraki bulut bekleme suresi 8 saniyeden 3 saniyeye indirildi. Cihazlar arasi guncelleme artik ~3 sn (onceden 6-7 sn suruyordu).' },
+      { type: 'fix', text: 'GUVENLIK: PIN artik duz metin olarak saklanmiyor. Eskiden PIN hem Firebase bulutuna hem de indirilen her yedek dosyasina ACIK METIN yaziliyordu; artik yerine salt-li SHA-256 hash tutuluyor ve buluta/yedege sadece hash gidiyor. Mevcut PIN otomatik hash-e tasinir, kullanici hicbir sey yapmaz, eski PIN calismaya devam eder. Kilit ekrani, gizli mod ve veri sifirlama onaylari hash dogrulamasina gecti.' },
+      { type: 'info', text: 'sw.js DEGISTI (cache surumu v192 -> v206). GitHub a index.html + sw.js BIRLIKTE yuklenmeli. NOT: PIN dogrulama icin https (guvenli baglam) gerekir — GitHub Pages zaten https, sorun yok.' },
+      { type: 'info', text: 'HATIRLATMA: Verinin asil korunmasi icin Firebase Console dan veritabani kurallarini kilitlemek gerekir (Auth + rules). PIN hash-i sadece ek katmandir.' },
     ]
   },
   {
@@ -15978,7 +15990,7 @@ function toggleChangelog(){
   const rows = CHANGELOG_DATA.map(v => `
     <div style="margin-bottom:18px">
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">
-        <span style="font-size:15px;font-weight:800;color:var(--txt)">${v.version}</span>
+        <span style="font-size:15px;font-weight:800;color:#fff">${v.version}</span>
         <span style="font-size:11px;color:var(--muted)">${v.date}</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px">
