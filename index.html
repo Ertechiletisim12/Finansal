@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v221';
+const APP_VERSION = 'v222';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 02:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 03:15'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5237,10 +5237,17 @@ function showPrimGrupDetay(tip){
       const gl = srt(tesisList.filter(g.test));
       if(gl.length){ ic += grupBaslik(g.ad, gl.length) + gl.map(satirHTML).join(''); }
     });
+  } else if(tip==='aktive'){
+    baslik = '🔄 Aktive Olan MNP';
+    const aList = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.durum!=='bekliyor' && aktOf(m)>=rStart && aktOf(m)<=rEnd);
+    toplam = aList.length;
+    const buD = srt(aList.filter(m=> ymKey(m.entryDate)===ymKey(aktOf(m))));   // giriş ayı = aktivasyon ayı → bu dönem
+    const dev = srt(aList.filter(m=> ymKey(m.entryDate)!==ymKey(aktOf(m))));   // farklı → devreden
+    if(buD.length) ic += grupBaslik('🔄 Bu dönem girilenler', buD.length) + buD.map(satirHTML).join('');
+    if(dev.length) ic += grupBaslik('🔁 Devreden — önceki aydan', dev.length) + dev.map(satirHTML).join('');
   } else {
     let list = [];
-    if(tip==='aktive'){ baslik='🔄 Aktive Olan MNP'; list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.durum!=='bekliyor' && aktOf(m)>=rStart && aktOf(m)<=rEnd); }
-    else if(tip==='ileri'){ baslik='⏳ İleride Aktive Olacak MNP'; list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.entryDate>=rStart && m.entryDate<=rEnd && aktOf(m)>rEnd); }
+    if(tip==='ileri'){ baslik='⏳ İleride Aktive Olacak MNP'; list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.entryDate>=rStart && m.entryDate<=rEnd && aktOf(m)>rEnd); }
     else if(tip==='bekleyen'){ baslik='⏳ Onay Bekleyen MNP'; list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.durum==='bekliyor' && aktOf(m)>=rStart && aktOf(m)<=rEnd); }
     list = srt(list);
     toplam = list.length;
@@ -15289,6 +15296,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v222',
+    date: '07.07.2026',
+    items: [
+      { type: 'imp', text: 'Toplam panelindeki "🔄 MNP aktive" detayi tiklaninca artik iki grup altinda listeleniyor: "🔄 Bu donem girilenler" ve "🔁 Devreden — onceki aydan". Her musteri kendi girildi→aktive tarihiyle. Sadece index.html degisti.' },
+    ]
+  },
   {
     version: 'v221',
     date: '07.07.2026',
