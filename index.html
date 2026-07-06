@@ -1716,7 +1716,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch;flex-wrap:wrap">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
-        <div id="hakedisPanel" style="display:none;flex:1 1 380px;width:100%;max-width:560px;min-width:min(300px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+        <div id="hakedisPanel" style="display:none;flex:1 1 380px;width:100%;min-width:min(300px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#2a3f5f,#34507a 55%,#3d5c8c);border:1px solid rgba(96,140,200,0.35);box-shadow:0 8px 24px rgba(20,40,70,0.4)">
           <!-- Üst: büyük hakediş rakamı -->
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v205';
+const APP_VERSION = 'v206';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2883,7 +2883,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 01:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 09:55'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3709,7 +3709,7 @@ async function pushToCloud(){
 async function pullFromCloud(){
   if(isPushingToCloud) return false;
   if(userChangedData) return false;
-  if(Date.now() - lastPushTime < 8000) return false; // Push sonrası 8sn bekle
+  if(Date.now() - lastPushTime < 3000) return false; // Push sonrası 3sn bekle (v206: 8sn'den indirildi, senkron hızlansın)
   try{
     const res = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if(!res.ok){ updateCloudIndicator('error'); return false; }
@@ -7143,8 +7143,8 @@ function renderDash(){
     <div style="display:flex;gap:10px;margin-bottom:8px;align-items:stretch;flex-wrap:wrap">
 
       <!-- Sol: Ana Prim Kartı -->
-      <div style="background:linear-gradient(145deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);border-radius:16px;padding:15px;flex:1 1 340px;min-width:min(320px,100%);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(0,0,0,0.35)">
-        <div style="font-size:10px;color:#d1d5db;margin-bottom:5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Toplam Prim (KDV Dahil)</div>
+      <div style="background:linear-gradient(145deg,#2a3f5f,#34507a 55%,#3d5c8c);border:1px solid rgba(96,140,200,0.35);border-radius:16px;padding:15px;flex:1 1 340px;min-width:min(320px,100%);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(20,40,70,0.4)">
+        <div style="font-size:10px;color:#bcd3f0;margin-bottom:5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Toplam Prim (KDV Dahil)</div>
         <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,0.2)">${fmtF(curKdv)}</div>
         ${dashBonusToplam>0 ? (()=>{
           // v172: denklem KDV DAHİL tutarlı — dashBonusToplam net, KDV dahile çevrilir; prim sayfasıyla birebir
@@ -14914,6 +14914,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v206',
+    date: '06.07.2026',
+    items: [
+      { type: 'ui', text: 'Prim sayfasi hakedis paneli artik ekrani TAM kapliyor (kenardaki bosluklar gitti — 560px genislik siniri kaldirildi).' },
+      { type: 'ui', text: 'Kart rengi degistirildi: bogук gri yerine canli koyu celik mavisi (mavi-slate) — daha sik ve okunur.' },
+      { type: 'fix', text: 'Senkron gecikmesi kisaltildi: veri girildikten sonraki bulut bekleme suresi 8 saniyeden 3 saniyeye indirildi. Cihazlar arasi guncelleme artik ~3 sn (onceden 6-7 sn suruyordu).' },
+    ]
+  },
   {
     version: 'v205',
     date: '06.07.2026',
