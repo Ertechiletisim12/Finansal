@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v225';
+const APP_VERSION = 'v226';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 05:10'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 06:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -4392,62 +4392,6 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
   saveEntryLog();
   render();
   vibrate(delta > 0 ? [30] : [10, 50, 10]);
-}
-
-// v224: Müşteri düzenlenince (tarih/kategori/tip/tarife değişimi) entries + entryLog'u da güncelle.
-// Aksi halde müşteri kaydı değişir ama adet/kart/prim eski tarihte kalır ("yarım güncelleme").
-function propagateMusteriEdit(m, eski){
-  const oldMnp = eski.tip==='mnp', newMnp = m.tip==='mnp';
-  const oldTar = eski.tarife||'', newTar = m.tarife||'';
-  const degisti = (eski.entryDate!==m.entryDate) || (eski.cat!==m.cat) || (oldMnp!==newMnp) || (oldTar!==newTar);
-  if(!degisti) return false;
-  const oldUseSub = MNP_CATS.includes(eski.cat);
-  const newUseSub = MNP_CATS.includes(m.cat);
-
-  // Bağlı log kaydı (logId üzerinden; yoksa eski değerlerle ara)
-  let log = m.logId ? entryLog.find(l=>l.id===m.logId) : null;
-  if(!log){
-    log = entryLog.find(l=> l.date===eski.entryDate && l.cat===eski.cat && (!oldUseSub || (!!l.mnp)===oldMnp) && (l.tarife||'')===oldTar);
-  }
-
-  // Eski entries kovasından 1 düş
-  let oldE = (log && log.entryId) ? entries.find(x=>x.id===log.entryId) : null;
-  if(!oldE){
-    oldE = oldUseSub
-      ? entries.find(x=>x.date===eski.entryDate && x.cat===eski.cat && (!!x.mnp)===oldMnp && (x.tarife||'')===oldTar)
-      : entries.find(x=>x.date===eski.entryDate && x.cat===eski.cat && (x.tarife||'')===oldTar);
-  }
-  if(oldE && oldE.count>0){ oldE.count--; if(oldE.count===0) entries = entries.filter(x=>x!==oldE); }
-
-  // Yeni entries kovasına 1 ekle (yoksa oluştur)
-  let newE = newUseSub
-    ? entries.find(x=>x.date===m.entryDate && x.cat===m.cat && (!!x.mnp)===newMnp && (x.tarife||'')===newTar)
-    : entries.find(x=>x.date===m.entryDate && x.cat===m.cat && (x.tarife||'')===newTar);
-  if(!newE){
-    newE = {id:'ent_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,5), date:m.entryDate, cat:m.cat, count:0};
-    if(newUseSub) newE.mnp = newMnp;
-    if(m.cat==='İnternet' && m.aktivasyonTarihi) newE.activationDate = m.aktivasyonTarihi;
-    if(newTar) newE.tarife = newTar;
-    entries.push(newE);
-  }
-  newE.count++;
-
-  // Log kaydını yeni değerlere taşı
-  if(log){
-    log.date = m.entryDate;
-    log.cat = m.cat;
-    log.entryId = newE.id;
-    if(newUseSub) log.mnp = newMnp; else delete log.mnp;
-    if(newMnp) log.activationDate = m.aktivasyonTarihi || mnpActivationDate(m.entryDate);
-    else if(m.cat==='İnternet' && m.aktivasyonTarihi) log.activationDate = m.aktivasyonTarihi;
-    else delete log.activationDate;
-    if(newTar) log.tarife = newTar; else delete log.tarife;
-  }
-
-  entries = entries.filter(e=>e.count>0);
-  saveEntries();
-  saveEntryLog();
-  return true;
 }
 
 // ---- tema ----
@@ -10890,9 +10834,7 @@ function saveMusteriKayit(){
     const idx = musteriler.findIndex(m=>m.id===_mkEditId);
     if(idx>=0){
       const mevcutLogId = musteriler[idx].logId; // Mevcut bağlantıyı koru
-      const eski = { entryDate: musteriler[idx].entryDate, cat: musteriler[idx].cat, tip: musteriler[idx].tip, tarife: musteriler[idx].tarife||'' }; // v224
       musteriler[idx] = {...musteriler[idx], ...kayit, id:_mkEditId, logId:mevcutLogId};
-      try{ propagateMusteriEdit(musteriler[idx], eski); }catch(e){ console.warn('propagateMusteriEdit:', e); } // v224: entries+entryLog senkronu
     }
     saveMusteriStore();
     closeMusteriKayit();
@@ -15364,18 +15306,12 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
-    version: 'v225',
+    version: 'v226',
     date: '07.07.2026',
     items: [
-      { type: 'new', text: 'Kart icindeki 📋 Islem Listesi artik SECILI FILTREYE + AKTIVASYON mantigina gore calisiyor (kartin buyuk sayisiyla birebir). Onceden sadece tek gune ve giris tarihine bakiyordu. Tek gun secince o gun, aralik secince aralik gosterilir; aralikta her satirin tarihi de yazar.' },
-      { type: 'fix', text: 'Guvenlik: Islem Listesi aralik modunda her satir KENDI gercek gununden silinir (yanlis gunden silme riski yok). Orphan-log temizligi yalniz tek gun modunda calisir. Sadece index.html degisti.' },
-    ]
-  },
-  {
-    version: 'v224',
-    date: '07.07.2026',
-    items: [
-      { type: 'fix', text: 'ONEMLI VERI BUTUNLUGU: Musteri duzenlerken giris tarihi / kategori / tip / tarife degistirince bu degisiklik artik HER YERE yansiyor. Onceden sadece musteri kaydi guncelleniyordu; adet (entries) ve islem loglari (entryLog) eski tarihte kaliyordu — bu yuzden kart/adet/prim ile musteri raporu birbirini tutmuyordu. Artik degisiklik entries kovalarina ve bagli log kaydina da tasiniyor (eski tarihten 1 dus, yeni tarihe 1 ekle + log tarihi/aktivasyonu guncelle). Sadece index.html degisti.' },
+      { type: 'new', text: 'Kart icindeki 📋 Islem Listesi artik SECILI TARIHE gore calisiyor: hem ustteki tek gun oku (giris tarihi secici) hem de Dun/Bugun/Bu Ay filtreleri listeyi belirler (ikisi birlesik). Tek gun secince o gun, aralik secince aralik gosterilir; MNP ler aktive oldugu gune gore, aralikta her satirin tarihi de yazar (kartin buyuk sayisiyla birebir).' },
+      { type: 'fix', text: 'Sil butonu guvenli: her satir KENDI gercek gununden silinir (yanlis gunden silme yok). Orphan-log temizligi yalniz tek gun modunda calisir.' },
+      { type: 'info', text: 'Not: Musteri duzenleme senkronu (giris tarihi degisince adet/log guncellemesi) bu surumde YOK — sonra ayrica ele alinacak. Sadece index.html degisti.' },
     ]
   },
   {
