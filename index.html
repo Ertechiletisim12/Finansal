@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v213';
+const APP_VERSION = 'v214';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '06.07.2026 20:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '06.07.2026 20:45'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -2920,6 +2920,13 @@ function mnpActivationDate(entryDate){
 }
 
 // Bir entry hangi aya sayılır?
+// v214: gün hassasiyetli 'geçerli tarih' — effectiveYm'nin gün versiyonu.
+// MNP: aktivasyon tarihi, İnternet: aktivasyon tarihi, diğer: giriş tarihi.
+function effectiveDate(entry){
+  if(entry.mnp){ return mnpActivationDate(entry.date); }
+  if(entry.cat==='İnternet' && entry.activationDate){ return entry.activationDate; }
+  return entry.date;
+}
 function effectiveYm(entry){
   // MNP işareti varsa 3 gün gecikme
   if(entry.mnp){
@@ -5231,11 +5238,11 @@ function render(){
 
   // ---- range summary hesapla (kategori bazında ve toplam için) ----
   // MNP ve İnternet: effectiveYm (aktivasyon tarihi) aralıkta mı kontrol et, diğerleri giriş tarihi
-  const rStartYm = rStart.slice(0,7);
-  const rEndYm   = rEnd.slice(0,7);
+  // v214 DÜZELTME: önceden sadece AY (YYYY-MM) karşılaştırılıyordu; bu yüzden
+  // Bugün/Dün/Bu Hafta tüm ayı, Geçen Hafta iki ayı gösteriyordu. Artık tam GÜN karşılaştırılıyor.
   rEntriesForCards = entries.filter(e=>{
-    const eym = effectiveYm(e); // MNP için aktivasyon ayı, diğerleri giriş ayı
-    return eym >= rStartYm && eym <= rEndYm;
+    const ed = effectiveDate(e); // tam tarih (MNP/İnternet: aktivasyon günü, diğer: giriş günü)
+    return ed >= rStart && ed <= rEnd;
   });
   let rangeCount=0, rangeAmt=0;
   rEntriesForCards.forEach(e=>{
@@ -15152,6 +15159,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v214',
+    date: '06.07.2026',
+    items: [
+      { type: 'fix', text: 'PRIM SAYFASI TARIH FILTRELERI DUZELTILDI: Bugun / Dun / Bu Hafta calismiyordu, Gecen Hafta hatali calisiyordu. Sebep: kartlar tarihleri sadece AY (YYYY-MM) olarak karsilastiriyordu, gun olarak degil — bu yuzden gun/hafta secimleri tum aya (ya da iki aya) genisliyordu. Artik tam GUN hassasiyetiyle filtreleniyor. Bu Ay / Gecen Ay / Bu Yil zaten dogruydu, aynen calisiyor.' },
+      { type: 'info', text: 'Not: MNP ve Internet kayitlari, uygulamanin mevcut mantigina uygun olarak AKTIVASYON tarihine gore aralida sayilir (giris tarihine gore degil). Sadece index.html degisti.' },
+    ]
+  },
   {
     version: 'v213',
     date: '06.07.2026',
