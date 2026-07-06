@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v223';
+const APP_VERSION = 'v225';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 03:50'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 05:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -4392,6 +4392,62 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
   saveEntryLog();
   render();
   vibrate(delta > 0 ? [30] : [10, 50, 10]);
+}
+
+// v224: Müşteri düzenlenince (tarih/kategori/tip/tarife değişimi) entries + entryLog'u da güncelle.
+// Aksi halde müşteri kaydı değişir ama adet/kart/prim eski tarihte kalır ("yarım güncelleme").
+function propagateMusteriEdit(m, eski){
+  const oldMnp = eski.tip==='mnp', newMnp = m.tip==='mnp';
+  const oldTar = eski.tarife||'', newTar = m.tarife||'';
+  const degisti = (eski.entryDate!==m.entryDate) || (eski.cat!==m.cat) || (oldMnp!==newMnp) || (oldTar!==newTar);
+  if(!degisti) return false;
+  const oldUseSub = MNP_CATS.includes(eski.cat);
+  const newUseSub = MNP_CATS.includes(m.cat);
+
+  // Bağlı log kaydı (logId üzerinden; yoksa eski değerlerle ara)
+  let log = m.logId ? entryLog.find(l=>l.id===m.logId) : null;
+  if(!log){
+    log = entryLog.find(l=> l.date===eski.entryDate && l.cat===eski.cat && (!oldUseSub || (!!l.mnp)===oldMnp) && (l.tarife||'')===oldTar);
+  }
+
+  // Eski entries kovasından 1 düş
+  let oldE = (log && log.entryId) ? entries.find(x=>x.id===log.entryId) : null;
+  if(!oldE){
+    oldE = oldUseSub
+      ? entries.find(x=>x.date===eski.entryDate && x.cat===eski.cat && (!!x.mnp)===oldMnp && (x.tarife||'')===oldTar)
+      : entries.find(x=>x.date===eski.entryDate && x.cat===eski.cat && (x.tarife||'')===oldTar);
+  }
+  if(oldE && oldE.count>0){ oldE.count--; if(oldE.count===0) entries = entries.filter(x=>x!==oldE); }
+
+  // Yeni entries kovasına 1 ekle (yoksa oluştur)
+  let newE = newUseSub
+    ? entries.find(x=>x.date===m.entryDate && x.cat===m.cat && (!!x.mnp)===newMnp && (x.tarife||'')===newTar)
+    : entries.find(x=>x.date===m.entryDate && x.cat===m.cat && (x.tarife||'')===newTar);
+  if(!newE){
+    newE = {id:'ent_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,5), date:m.entryDate, cat:m.cat, count:0};
+    if(newUseSub) newE.mnp = newMnp;
+    if(m.cat==='İnternet' && m.aktivasyonTarihi) newE.activationDate = m.aktivasyonTarihi;
+    if(newTar) newE.tarife = newTar;
+    entries.push(newE);
+  }
+  newE.count++;
+
+  // Log kaydını yeni değerlere taşı
+  if(log){
+    log.date = m.entryDate;
+    log.cat = m.cat;
+    log.entryId = newE.id;
+    if(newUseSub) log.mnp = newMnp; else delete log.mnp;
+    if(newMnp) log.activationDate = m.aktivasyonTarihi || mnpActivationDate(m.entryDate);
+    else if(m.cat==='İnternet' && m.aktivasyonTarihi) log.activationDate = m.aktivasyonTarihi;
+    else delete log.activationDate;
+    if(newTar) log.tarife = newTar; else delete log.tarife;
+  }
+
+  entries = entries.filter(e=>e.count>0);
+  saveEntries();
+  saveEntryLog();
+  return true;
 }
 
 // ---- tema ----
@@ -9598,33 +9654,38 @@ function renderIslemList(cat, date){
   _ilmDate = date;
   const list = document.getElementById('ilmList');
 
-  // entryLog'dan bu gün+kategori işlemlerini al - her biri ayrı satır
-  // Entries özeti - önce hesapla
-  const tesisE = entries.find(e=>e.date===date&&e.cat===cat&&!e.mnp);
-  const mnpE   = entries.find(e=>e.date===date&&e.cat===cat&&!!e.mnp);
-  const tesisCnt = tesisE ? tesisE.count : 0;
-  const mnpCnt   = mnpE   ? mnpE.count   : 0;
-  const diger    = entries.find(e=>e.date===date&&e.cat===cat&&!MNP_CATS.includes(cat));
-  const digerCnt = diger ? diger.count : 0;
+  // v225: Seçili tarih ARALIĞINA + AKTİVASYON mantığına göre (kartın büyük sayısıyla birebir).
+  const rStart = (document.getElementById('rangeStart') && document.getElementById('rangeStart').value) || date;
+  const rEnd   = (document.getElementById('rangeEnd')   && document.getElementById('rangeEnd').value)   || date;
+  const _logEff = l => l.mnp ? mnpActivationDate(l.date) : ((l.cat==='İnternet' && l.activationDate) ? l.activationDate : l.date);
+  const trT = iso => { if(!iso) return ''; const p=String(iso).slice(0,10).split('-'); return p[2]+'.'+p[1]+'.'+p[0]; };
+  const subEl = document.getElementById('ilmSub');
+  if(subEl) subEl.textContent = (rStart===rEnd) ? (trT(rStart)+' tarihli işlemler') : (trT(rStart)+' – '+trT(rEnd)+' arası · aktivasyona göre');
+
+  // Aralık özeti (kart mantığı: tesis=giriş günü, MNP=aktivasyon günü aralıkta mı)
+  const rangeEntries = entries.filter(e=> e.cat===cat && effectiveDate(e)>=rStart && effectiveDate(e)<=rEnd);
+  const tesisCnt = rangeEntries.filter(e=>!e.mnp).reduce((a,e)=>a+e.count,0);
+  const mnpCnt   = rangeEntries.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
+  const digerCnt = rangeEntries.reduce((a,e)=>a+e.count,0);
   const toplam   = MNP_CATS.includes(cat) ? tesisCnt + mnpCnt : digerCnt;
 
-  // Entries 0 ise logları temizle (orphan log) - Firebase'den eski log gelmis olabilir
-  if(toplam === 0){
-    const orphans = entryLog.filter(l=>l.date===date&&l.cat===cat);
+  // Orphan log temizliği YALNIZCA tek gün modunda (aralıkta yanlış silmeyi önlemek için)
+  if(rStart===rEnd && toplam === 0){
+    const orphans = entryLog.filter(l=>l.date===rStart&&l.cat===cat);
     if(orphans.length > 0){
-      entryLog = entryLog.filter(l=>!(l.date===date&&l.cat===cat));
+      entryLog = entryLog.filter(l=>!(l.date===rStart&&l.cat===cat));
       saveEntryLog();
-      scheduleCloudSync(); // Firebase'e de yaz
+      scheduleCloudSync();
     }
   }
 
   const logs = entryLog
     .map((l,i)=>({...l, _origIdx: i}))
-    .filter(l=>l.date===date && l.cat===cat)
-    .reverse(); // en son üstte
+    .filter(l=> l.cat===cat && _logEff(l)>=rStart && _logEff(l)<=rEnd)
+    .sort((a,b)=>{ const ea=_logEff(a), eb=_logEff(b); if(ea!==eb) return ea<eb?1:-1; return b._origIdx-a._origIdx; }); // aktivasyona göre yeni üstte
 
   if(!logs.length && toplam === 0){
-    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Bu tarihte işlem yok.</div>';
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Bu aralıkta işlem yok.</div>';
     return;
   }
 
@@ -9664,7 +9725,7 @@ function renderIslemList(cat, date){
     const logSaat2 = (l.time||'').slice(0,5);
     // Aday havuzu: aynı gün + kategori + tip
     const musteriAdaylar = musteriler.filter(m =>
-      m.entryDate === date && m.cat === cat && (!silTip2 || m.tip === silTip2)
+      m.entryDate === l.date && m.cat === cat && (!silTip2 || m.tip === silTip2)
     );
     const musteri =
       // 1. logId ile tam eşleştir
@@ -9686,6 +9747,7 @@ function renderIslemList(cat, date){
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
           <span style="font-size:14px;font-weight:700;color:var(--txt)">🕒 ${l.time || '--:--'}</span>
+          ${(rStart!==rEnd) ? `<span style="font-size:10px;color:var(--muted)">📅 ${trT(l.date)}${l.mnp?' → '+trT(_logEff(l)):''}</span>` : ''}
           ${tip ? `<span style="font-size:11px;font-weight:700;color:${tipRenk};padding:2px 8px;border-radius:10px;background:rgba(0,0,0,0.2)">${tip}</span>` : ''}
           ${l.platform ? `<span style="font-size:10px;color:var(--muted)">${l.platform}</span>` : ''}
         </div>
@@ -9701,30 +9763,33 @@ function renderIslemList(cat, date){
           ` : `<span style="font-size:10px;color:var(--muted);font-style:italic">👤 Müşteri kaydı yok</span>`}
         </div>
       </div>
-      <button data-logid="${deleteLogId}" data-cat="${cat}" data-date="${date}" data-mnp="${isMnp===true}" onclick="confirmDeleteIslem(this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="Sil">🗑</button>
+      <button data-logid="${deleteLogId}" data-cat="${cat}" data-date="${l.date}" data-mnp="${isMnp===true}" onclick="confirmDeleteIslem(this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="Sil">🗑</button>
     </div>`;
   }).join('');
 
   // v165: LOG-ENTRIES SENKRON — bazı girişler log'suz kaydedilmiş olabilir (eski/Firebase/senkron kaybı).
   // Soldaki panel entries'e bakar, bu modal ise log'a bakıyordu → sayı uyuşmuyor, "log yok" görünüyordu.
   // Çözüm: tip bazında log adedi < entries adedi ise, farkı "log kaydı yok" satırlarıyla tamamla.
+  // v225: log'suz entries — her biri KENDİ gerçek tarihine bağlı (aralıkta doğru günden silinsin)
   let ekSatirlar = '';
-  const tipler = MNP_CATS.includes(cat)
-    ? [{mnp:true, cnt:mnpCnt, lbl:'🔄 MNP', renk:'#c084fc'}, {mnp:false, cnt:tesisCnt, lbl:'🆕 Tesis', renk:'#4cd964'}]
-    : [{mnp:false, cnt:digerCnt, lbl:cat, renk:'var(--txt)'}];
-  tipler.forEach(t=>{
-    const logAdet = logs.filter(l => (!!l.mnp)===t.mnp).length;
-    const eksik = t.cnt - logAdet;
+  rangeEntries.forEach(e=>{
+    const isMnpE = !!e.mnp;
+    const eLogs = logs.filter(l => l.date===e.date && (!!l.mnp)===isMnpE);
+    const eksik = e.count - eLogs.length;
+    if(eksik <= 0) return;
+    const lbl = MNP_CATS.includes(cat) ? (isMnpE ? '🔄 MNP' : '🆕 Tesis') : cat;
+    const renk = isMnpE ? '#c084fc' : (MNP_CATS.includes(cat) ? '#4cd964' : 'var(--txt)');
+    const aktStr = isMnpE ? (' → aktive '+trT(mnpActivationDate(e.date))) : '';
     for(let n=0; n<eksik; n++){
-      ekSatirlar += `<div data-logtype="${t.mnp?'mnp':'tesis'}" style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:rgba(255,183,77,0.04)">
+      ekSatirlar += `<div data-logtype="${isMnpE?'mnp':'tesis'}" style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:rgba(255,183,77,0.04)">
         <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">•</div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span style="font-size:13px;font-weight:700;color:${t.renk}">${t.lbl}</span>
-            <span style="font-size:10px;color:var(--muted)">saat kaydı yok</span>
+            <span style="font-size:13px;font-weight:700;color:${renk}">${lbl}</span>
+            <span style="font-size:10px;color:var(--muted)">📅 ${trT(e.date)}${aktStr} · saat kaydı yok</span>
           </div>
         </div>
-        <button onclick="deleteEntryDirect('${cat}','${date}',${t.mnp},this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="1 sil">🗑</button>
+        <button onclick="deleteEntryDirect('${cat}','${e.date}',${isMnpE},this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="1 sil">🗑</button>
       </div>`;
     }
   });
@@ -10825,7 +10890,9 @@ function saveMusteriKayit(){
     const idx = musteriler.findIndex(m=>m.id===_mkEditId);
     if(idx>=0){
       const mevcutLogId = musteriler[idx].logId; // Mevcut bağlantıyı koru
+      const eski = { entryDate: musteriler[idx].entryDate, cat: musteriler[idx].cat, tip: musteriler[idx].tip, tarife: musteriler[idx].tarife||'' }; // v224
       musteriler[idx] = {...musteriler[idx], ...kayit, id:_mkEditId, logId:mevcutLogId};
+      try{ propagateMusteriEdit(musteriler[idx], eski); }catch(e){ console.warn('propagateMusteriEdit:', e); } // v224: entries+entryLog senkronu
     }
     saveMusteriStore();
     closeMusteriKayit();
@@ -15296,6 +15363,21 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v225',
+    date: '07.07.2026',
+    items: [
+      { type: 'new', text: 'Kart icindeki 📋 Islem Listesi artik SECILI FILTREYE + AKTIVASYON mantigina gore calisiyor (kartin buyuk sayisiyla birebir). Onceden sadece tek gune ve giris tarihine bakiyordu. Tek gun secince o gun, aralik secince aralik gosterilir; aralikta her satirin tarihi de yazar.' },
+      { type: 'fix', text: 'Guvenlik: Islem Listesi aralik modunda her satir KENDI gercek gununden silinir (yanlis gunden silme riski yok). Orphan-log temizligi yalniz tek gun modunda calisir. Sadece index.html degisti.' },
+    ]
+  },
+  {
+    version: 'v224',
+    date: '07.07.2026',
+    items: [
+      { type: 'fix', text: 'ONEMLI VERI BUTUNLUGU: Musteri duzenlerken giris tarihi / kategori / tip / tarife degistirince bu degisiklik artik HER YERE yansiyor. Onceden sadece musteri kaydi guncelleniyordu; adet (entries) ve islem loglari (entryLog) eski tarihte kaliyordu — bu yuzden kart/adet/prim ile musteri raporu birbirini tutmuyordu. Artik degisiklik entries kovalarina ve bagli log kaydina da tasiniyor (eski tarihten 1 dus, yeni tarihe 1 ekle + log tarihi/aktivasyonu guncelle). Sadece index.html degisti.' },
+    ]
+  },
   {
     version: 'v223',
     date: '07.07.2026',
