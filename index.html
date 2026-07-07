@@ -373,6 +373,8 @@ html{scrollbar-gutter:stable}
   .cards-row{ display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;box-sizing:border-box!important; }
   .card{ min-width:unset!important;padding:14px 14px!important;border-radius:12px!important; }
   #catCards{ margin:0 -14px!important;padding:0!important;box-sizing:border-box!important;width:calc(100% + 28px)!important; }
+  /* v233: Tek kalan son kategori karti (or. 'Diger') iki sutuna yayilsin — sagda bosluk kalmasin, alttaki panele hizali olsun */
+  #catCards > *:last-child:nth-child(odd){ grid-column:1 / -1!important; }
   .card.total{ grid-column:auto!important; }
   .stats-row{ flex-direction:column!important; }
   #raporKpiRow{ display:grid!important;grid-template-columns:1fr 1fr!important;flex-direction:unset!important;gap:8px!important; }
@@ -2773,7 +2775,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v232';
+const APP_VERSION = 'v233';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2886,7 +2888,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 12:10'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 12:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15345,6 +15347,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v233',
+    date: '07.07.2026',
+    items: [
+      { type: 'ui', text: 'Mobilde tek kalan son kategori karti (7 kategori oldugu icin "Diger") artik iki sutuna yayilip TAM GENISLIK oluyor — sagindaki cirkin bosluk kalkti, alttaki Hakedis paneliyle hizali/yapisik duruyor. Sadece mobili etkiler.' },
+    ]
+  },
   {
     version: 'v232',
     date: '07.07.2026',
