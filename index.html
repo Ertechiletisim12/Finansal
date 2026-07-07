@@ -291,7 +291,7 @@ html{scrollbar-gutter:stable}
   #page-prim{ flex-direction:column!important;height:auto!important; }
   #page-prim .layout{ overflow:visible!important; }
   /* v232: Mobilde Hakediş paneli ve stat alani TAM GENISLIK (sagda cirkin bosluk kalmasin) */
-  #hakedisStatsRow{ flex-direction:column!important; gap:8px!important; }
+  #hakedisStatsRow{ flex-direction:column!important; gap:8px!important; margin:0 -14px!important; width:calc(100% + 28px)!important; box-sizing:border-box!important; }
   #hakedisPanel{ max-width:none!important; width:100%!important; flex:1 1 100%!important; min-width:0!important; margin-top:0!important; }
   #statsRowTop{ width:100%!important; flex:1 1 100%!important; min-width:0!important; }
   #page-trend{ padding-top:80px!important; }
@@ -2775,7 +2775,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v233';
+const APP_VERSION = 'v234';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2888,7 +2888,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 12:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 13:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15347,6 +15347,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v234',
+    date: '07.07.2026',
+    items: [
+      { type: 'ui', text: 'Mobilde Hakedis paneli ve Gunluk Ort/Ay Sonu/Hedef kartlari da kategori kartlari gibi ekranin sol/sag KENARINA kadar dayaniyor (onceden ic tarafta bosluk birakiyorlardi). Artik tum blok butunlesik ve kenar bosluklari esit.' },
+    ]
+  },
   {
     version: 'v233',
     date: '07.07.2026',
