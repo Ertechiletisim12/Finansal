@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v229';
+const APP_VERSION = 'v230';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 10:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 10:55'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5347,9 +5347,9 @@ function setQuickRange(type){
   }
   document.getElementById('rangeStart').value = s;
   document.getElementById('rangeEnd').value = e;
-  // v229: tek gün aralıklarında (Bugün/Dün) üstteki tek gün okunu da o güne getir; mobil kutuları senkronla
-  if(s===e){ const ad=document.getElementById('activeDate'); if(ad) ad.value = s; }
-  ['activeDate','rangeStart','rangeEnd'].forEach(id=>{ const main=document.getElementById(id), mob=document.getElementById(id+'Mob'); if(main&&mob) mob.value = main.value; });
+  // v230: Filtre butonları SADECE görünüm aralığını değiştirir; üstteki giriş tarihi okuna (activeDate) DOKUNMAZ.
+  // Sadece mobil görünüm aralığı kutularını senkronla.
+  ['rangeStart','rangeEnd'].forEach(id=>{ const main=document.getElementById(id), mob=document.getElementById(id+'Mob'); if(main&&mob) mob.value = main.value; });
   render();
 }
 
@@ -15328,6 +15328,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v230',
+    date: '07.07.2026',
+    items: [
+      { type: 'fix', text: 'Geri alindi: Dun/Bugun gibi filtre butonlari artik ustteki GIRIS TARIHI okuna dokunmuyor (v229 da yanlislikla degistiriyordu). Filtreler sadece gorunumu (kartlar + Islem Listesi) degistirir; giris tarihi oku [+] ile kayit eklenecek gun olarak bagimsiz kalir — onceki gibi.' },
+    ]
+  },
   {
     version: 'v229',
     date: '07.07.2026',
