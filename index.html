@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v226';
+const APP_VERSION = 'v228';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 06:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 09:45'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -2916,7 +2916,7 @@ function mnpActivationDate(entryDate){
   // 29 girilen → 29(1), 30(2), 1(3) = 1 Temmuz
   const d = new Date(entryDate);
   d.setDate(d.getDate()+2); // +2 çünkü giriş günü dahil
-  return d.toISOString().slice(0,10);
+  return ymd(d);
 }
 
 // Bir entry hangi aya sayılır?
@@ -3252,6 +3252,9 @@ function todayStr(){
   const d = nowTR();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+// v227: Bir Date'i YEREL bileşenlerle YYYY-MM-DD yapar. toISOString() UTC verdigi icin
+// TR (UTC+3) gece yarisi/ay-sonu hesaplari 1 gun geri kayiyordu; bunun yerine bunu kullan.
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function thisMonthKey(){ return todayStr().slice(0,7); }
 function addMonths(ym, n){
   let [y,m] = ym.split('-').map(Number);
@@ -3412,9 +3415,9 @@ function renderEntryLogCharts(){
   if(saatAralik === 'all'){ rStart=''; rEnd=''; }
   else if(saatAralik === 'buay'){ rStart = thisMonthKey()+'-01'; rEnd = todayStr(); }
   else if(saatAralik === 'gecenay'){ const g = addMonths(thisMonthKey(),-1); rStart = g+'-01'; rEnd = g+'-31'; }
-  else if(saatAralik === '7g'){ const d = new Date(); d.setDate(d.getDate()-7); rStart = d.toISOString().slice(0,10); rEnd = todayStr(); }
-  else if(saatAralik === '30g'){ const d = new Date(); d.setDate(d.getDate()-30); rStart = d.toISOString().slice(0,10); rEnd = todayStr(); }
-  else if(saatAralik === '90g'){ const d = new Date(); d.setDate(d.getDate()-90); rStart = d.toISOString().slice(0,10); rEnd = todayStr(); }
+  else if(saatAralik === '7g'){ const d = new Date(); d.setDate(d.getDate()-7); rStart = ymd(d); rEnd = todayStr(); }
+  else if(saatAralik === '30g'){ const d = new Date(); d.setDate(d.getDate()-30); rStart = ymd(d); rEnd = todayStr(); }
+  else if(saatAralik === '90g'){ const d = new Date(); d.setDate(d.getDate()-90); rStart = ymd(d); rEnd = todayStr(); }
   else if(saatAralik === 'buyil'){ const y = todayStr().slice(0,4); rStart = y+'-01-01'; rEnd = todayStr(); }
   else if(saatAralik === 'gecenyil'){ const y = parseInt(todayStr().slice(0,4))-1; rStart = y+'-01-01'; rEnd = y+'-12-31'; }
   document.querySelectorAll('.saat-flt').forEach(b=>{
@@ -5128,7 +5131,7 @@ function shiftDate(id, delta){
   const el = document.getElementById(id);
   const d = new Date(el.value || todayStr());
   d.setDate(d.getDate() + delta);
-  el.value = d.toISOString().slice(0,10);
+  el.value = ymd(d);
   if(id === 'activeDate'){ selectSingleDay(); } else { render(); }
 }
 // v215: Tek gün oku = o günü görüntüle. Aralık o güne eşitlenir, filtre butonu vurgusu söner.
@@ -5308,31 +5311,31 @@ function setQuickRange(type){
     s = todayStr(); e = todayStr();
   } else if(type==='yesterday'){
     const y = new Date(now); y.setDate(y.getDate()-1);
-    s = e = y.toISOString().slice(0,10);
+    s = e = ymd(y);
   } else if(type==='this_week'){
     const day = now.getDay(); // 0=Pazar
     const diffMon = (day===0) ? -6 : 1-day;
     const mon = new Date(now); mon.setDate(now.getDate()+diffMon);
-    s = mon.toISOString().slice(0,10);
+    s = ymd(mon);
     const sunW = new Date(mon); sunW.setDate(mon.getDate()+6);
-    e = sunW.toISOString().slice(0,10); // v216: hafta sonuna kadar (ileride aktive olan MNP'ler dahil)
+    e = ymd(sunW); // v216: hafta sonuna kadar (ileride aktive olan MNP'ler dahil)
   } else if(type==='last_week'){
     const day = now.getDay();
     const diffMon = (day===0) ? -6 : 1-day;
     const mon = new Date(now); mon.setDate(now.getDate()+diffMon-7);
     const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-    s = mon.toISOString().slice(0,10);
-    e = sun.toISOString().slice(0,10);
+    s = ymd(mon);
+    e = ymd(sun);
   } else if(type==='this_month'){
     s = thisMonthKey()+'-01';
-    e = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10); // v216: ay sonuna kadar
+    e = ymd(new Date(now.getFullYear(), now.getMonth()+1, 0)); // v216: ay sonuna kadar
   } else if(type==='last_month'){
     const lm = addMonths(thisMonthKey(),-1);
     s = lm+'-01';
-    e = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0,10);
+    e = ymd(new Date(now.getFullYear(), now.getMonth(), 0));
   } else if(type==='last_6'){
     s = addMonths(thisMonthKey(),-5)+'-01';
-    e = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10); // v216: bu ay sonuna kadar
+    e = ymd(new Date(now.getFullYear(), now.getMonth()+1, 0)); // v216: bu ay sonuna kadar
   } else if(type==='this_year'){
     s = now.getFullYear()+'-01-01';
     e = now.getFullYear()+'-12-31'; // v216: yıl sonuna kadar
@@ -9714,24 +9717,40 @@ function renderIslemList(cat, date){
   // v165: LOG-ENTRIES SENKRON — bazı girişler log'suz kaydedilmiş olabilir (eski/Firebase/senkron kaybı).
   // Soldaki panel entries'e bakar, bu modal ise log'a bakıyordu → sayı uyuşmuyor, "log yok" görünüyordu.
   // Çözüm: tip bazında log adedi < entries adedi ise, farkı "log kaydı yok" satırlarıyla tamamla.
-  // v225: log'suz entries — her biri KENDİ gerçek tarihine bağlı (aralıkta doğru günden silinsin)
+  // v228: log'suz entries — her biri kendi gerçek tarihine bağlı + MÜŞTERİ bilgisi (isim/tel/durum) getirilir
+  const _bagliLogIdler = new Set(logs.map(l=>l.id));
   let ekSatirlar = '';
   rangeEntries.forEach(e=>{
     const isMnpE = !!e.mnp;
+    const eTip = isMnpE ? 'mnp' : 'tesis';
     const eLogs = logs.filter(l => l.date===e.date && (!!l.mnp)===isMnpE);
     const eksik = e.count - eLogs.length;
     if(eksik <= 0) return;
+    // Bu (tarih, kategori, tip) için log'a bağlı OLMAYAN müşteri kayıtları — isim/tel buradan gelir
+    const adaylar = musteriler.filter(m => m.entryDate===e.date && m.cat===cat && (!MNP_CATS.includes(cat) || m.tip===eTip) && !(m.logId && _bagliLogIdler.has(m.logId)));
     const lbl = MNP_CATS.includes(cat) ? (isMnpE ? '🔄 MNP' : '🆕 Tesis') : cat;
     const renk = isMnpE ? '#c084fc' : (MNP_CATS.includes(cat) ? '#4cd964' : 'var(--txt)');
     const aktStr = isMnpE ? (' → aktive '+trT(mnpActivationDate(e.date))) : '';
     for(let n=0; n<eksik; n++){
+      const m = adaylar[n];
+      const saatStr = (m && m.entryTime) ? (' · 🕒 '+esc(String(m.entryTime).slice(0,5))) : ' · saat kaydı yok';
+      const musteriHTML = m ? `
+        <div style="margin-top:4px;padding:5px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:700;color:var(--txt)">👤 ${esc(m.ad || 'İsimsiz Müşteri')}</span>
+            ${m.tel ? `<span style="font-size:11px;color:var(--accent)">📞 ${esc(m.tel)}</span>` : ''}
+            <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${m.durum==='aktif'?'rgba(76,217,100,0.2)':m.durum==='bekliyor'?'rgba(255,159,10,0.2)':'rgba(255,82,82,0.2)'};color:${m.durum==='aktif'?'#4cd964':m.durum==='bekliyor'?'#ff9f0a':'#ff5252'};font-weight:700">${m.durum==='aktif'?'✅ Aktif':m.durum==='bekliyor'?'⏳ Bekliyor':'❌ '+esc(m.durum||'')}</span>
+          </div>
+          ${m.not ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">📝 ${esc(m.not)}</div>` : ''}
+        </div>` : `<span style="font-size:10px;color:var(--muted);font-style:italic">👤 Müşteri kaydı yok</span>`;
       ekSatirlar += `<div data-logtype="${isMnpE?'mnp':'tesis'}" style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:rgba(255,183,77,0.04)">
         <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">•</div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span style="font-size:13px;font-weight:700;color:${renk}">${lbl}</span>
-            <span style="font-size:10px;color:var(--muted)">📅 ${trT(e.date)}${aktStr} · saat kaydı yok</span>
+            <span style="font-size:10px;color:var(--muted)">📅 ${trT(e.date)}${aktStr}${saatStr}</span>
           </div>
+          ${musteriHTML}
         </div>
         <button onclick="deleteEntryDirect('${cat}','${e.date}',${isMnpE},this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="1 sil">🗑</button>
       </div>`;
@@ -10816,7 +10835,7 @@ function saveMusteriKayit(){
   // Takip tarihi (3 ay sonrası)
   const takipD = new Date(aktTarih || tarih);
   takipD.setMonth(takipD.getMonth() + 3);
-  const takipTarihi = takipD.toISOString().slice(0,10);
+  const takipTarihi = ymd(takipD);
 
   const otomatikAktif = !isMnp;
   const kayit = {
@@ -10982,19 +11001,19 @@ function renderMusteriRapor(){
     const bugunStr = todayStr();
     const bugunD = new Date(bugunStr);
     const dunD = new Date(bugunD); dunD.setDate(dunD.getDate()-1);
-    const dunStr = dunD.toISOString().slice(0,10);
+    const dunStr = ymd(dunD);
 
     // Bu hafta: Pazartesi - bugün
     const gun = bugunD.getDay(); // 0=Pazar
     const pztOffset = gun===0 ? 6 : gun-1;
     const buHaftaBasD = new Date(bugunD); buHaftaBasD.setDate(buHaftaBasD.getDate()-pztOffset);
-    const buHaftaBas = buHaftaBasD.toISOString().slice(0,10);
+    const buHaftaBas = ymd(buHaftaBasD);
 
     // Geçen hafta
     const gecenHaftaBasD = new Date(buHaftaBasD); gecenHaftaBasD.setDate(gecenHaftaBasD.getDate()-7);
     const gecenHaftaBitD = new Date(buHaftaBasD); gecenHaftaBitD.setDate(gecenHaftaBitD.getDate()-1);
-    const gecenHaftaBas = gecenHaftaBasD.toISOString().slice(0,10);
-    const gecenHaftaBit = gecenHaftaBitD.toISOString().slice(0,10);
+    const gecenHaftaBas = ymd(gecenHaftaBasD);
+    const gecenHaftaBit = ymd(gecenHaftaBitD);
 
     const buayStr  = bugunStr.slice(0,7);
     const gecenAyStr = addMonths(buayStr, -1);
@@ -13083,7 +13102,7 @@ function exportRaporXls() {
   const wsData = [headers, ...data.map(row => headers.map(h => row[h] ?? ''))];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   XLSX.utils.book_append_sheet(wb, ws, title.slice(0,30));
-  XLSX.writeFile(wb, `Rapor_${title}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb, `Rapor_${title}_${ymd(new Date())}.xlsx`);
 }
 
 function exportRaporModal() {
@@ -15305,6 +15324,20 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v228',
+    date: '07.07.2026',
+    items: [
+      { type: 'fix', text: 'Islem Listesinde "saat kaydi yok" satirlari artik MUSTERI bilgisini getiriyor: (tarih+kategori+tip) ile eslesen musteri kaydini bulup isim / telefon / durum / not gosterir. Onceden bu satirlar isimsiz cikiyordu (kayit vardi ama getirilmiyordu). Islem logu olmayan (or. [+] veya senkronla gelmis) kayitlar da artik adiyla gorunur. Sadece index.html degisti.' },
+    ]
+  },
+  {
+    version: 'v227',
+    date: '07.07.2026',
+    items: [
+      { type: 'fix', text: 'SAAT/TARIH DUZELTMESI: Kod bazi yerlerde toISOString() (UTC) kullaniyordu; Turkiye UTC+3 oldugu icin tarih 1 gun geri kayabiliyordu — orn. "Bu Ay" araligi 31 yerine 30 bitiyordu, ayrica gece 00:00-03:00 arasi Dun/Bugun/Bu Hafta yanlis cikabiliyordu. Artik tum tarih hesaplari YEREL (TR) gune gore yapiliyor (ymd). Islem GIRIS saati zaten nowTR ile dogruydu.' },
+    ]
+  },
   {
     version: 'v226',
     date: '07.07.2026',
