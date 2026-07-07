@@ -1601,7 +1601,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div id="primTitleBar" style="background:var(--bg);padding:10px 20px 4px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px;z-index:40">
       <h2 style="margin:0;font-size:15px;white-space:nowrap">Prim Sayfası</h2>
       <div style="display:flex;gap:10px;align-items:center;flex-shrink:0">
-        <button class="btn-hero" onclick="openYatirilanModal()" style="background:linear-gradient(135deg,#92400e,#78350f);border:1px solid #d97706;color:#fcd34d;white-space:nowrap;font-weight:700;letter-spacing:0.03em;box-shadow:0 2px 8px rgba(217,119,6,0.3)">💰 Yatırılan Prim</button>
+        <button class="prim-tool-pill" onclick="openYatirilanModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:var(--gold);white-space:nowrap;font-weight:700">💰 Yatırılan Prim</button>
         <div id="clock" style="text-align:right;line-height:1.3;color:#8fe3a8;font-variant-numeric:tabular-nums;flex-shrink:0"></div>
       </div>
     </div>
@@ -2782,7 +2782,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v236';
+const APP_VERSION = 'v237';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2895,7 +2895,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 14:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 15:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3268,6 +3268,19 @@ function todayStr(){
 // v227: Bir Date'i YEREL bileşenlerle YYYY-MM-DD yapar. toISOString() UTC verdigi icin
 // TR (UTC+3) gece yarisi/ay-sonu hesaplari 1 gun geri kayiyordu; bunun yerine bunu kullan.
 function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// v237: Turkce-uyumlu otomatik BUYUK harf (i->I, i->I dogru). Imlec konumu korunur.
+function trUpper(el){
+  try{ const a=el.selectionStart, b=el.selectionEnd; el.value=(el.value||'').toLocaleUpperCase('tr-TR'); el.setSelectionRange(a,b); }
+  catch(_){ el.value=(el.value||'').toLocaleUpperCase('tr-TR'); }
+}
+// v237: Telefonu sadece rakam kabul edip 0532 123 45 67 formatina sokar
+function telFormat(el){
+  let d=(el.value||'').replace(/\D/g,'').slice(0,11), o=d;
+  if(d.length>4) o=d.slice(0,4)+' '+d.slice(4);
+  if(d.length>7) o=d.slice(0,4)+' '+d.slice(4,7)+' '+d.slice(7);
+  if(d.length>9) o=d.slice(0,4)+' '+d.slice(4,7)+' '+d.slice(7,9)+' '+d.slice(9);
+  el.value=o;
+}
 function thisMonthKey(){ return todayStr().slice(0,7); }
 function addMonths(ym, n){
   let [y,m] = ym.split('-').map(Number);
@@ -14497,11 +14510,11 @@ function renderHedefGecmis(){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
         <div>
           <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">AD SOYAD <span style="color:var(--line)">(opsiyonel)</span></div>
-          <input type="text" id="mkAd" placeholder="Müşteri adı..." style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
+          <input type="text" id="mkAd" placeholder="Müşteri adı..." oninput="trUpper(this)" autocapitalize="characters" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box;text-transform:uppercase">
         </div>
         <div>
           <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">TELEFON <span style="color:var(--line)">(opsiyonel)</span></div>
-          <input type="tel" id="mkTel" placeholder="05XX XXX XX XX" inputmode="numeric" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
+          <input type="tel" id="mkTel" placeholder="05XX XXX XX XX" inputmode="numeric" maxlength="14" oninput="telFormat(this)" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
         </div>
       </div>
 
@@ -15354,6 +15367,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v237',
+    date: '07.07.2026',
+    items: [
+      { type: 'new', text: 'Musteri kayit alanlari: AD alani artik Turkce-uyumlu otomatik BUYUK harf yazar (kucuk girsen bile; i->I dogru donusur). TELEFON alani sadece rakam kabul eder ve otomatik 0532 123 45 67 formatina sokar.' },
+      { type: 'ui', text: 'Masaustundeki "Yatirilan Prim" butonu diger arac-cubugu butonlari gibi sade altin pill stiline getirildi. Mobildeki tam-genislik butona DOKUNULMADI.' },
+    ]
+  },
   {
     version: 'v236',
     date: '07.07.2026',
