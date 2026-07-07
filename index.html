@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v228';
+const APP_VERSION = 'v229';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 09:45'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 10:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5347,6 +5347,9 @@ function setQuickRange(type){
   }
   document.getElementById('rangeStart').value = s;
   document.getElementById('rangeEnd').value = e;
+  // v229: tek gün aralıklarında (Bugün/Dün) üstteki tek gün okunu da o güne getir; mobil kutuları senkronla
+  if(s===e){ const ad=document.getElementById('activeDate'); if(ad) ad.value = s; }
+  ['activeDate','rangeStart','rangeEnd'].forEach(id=>{ const main=document.getElementById(id), mob=document.getElementById(id+'Mob'); if(main&&mob) mob.value = main.value; });
   render();
 }
 
@@ -9690,7 +9693,7 @@ function renderIslemList(cat, date){
     const deleteLogId = l.id;
 
     return `<div data-logtype="${isMnp?'mnp':'tesis'}" style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)">
-      <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);flex-shrink:0">${logs.length - displayIdx}</div>
+      <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);flex-shrink:0">${displayIdx + 1}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
           <span style="font-size:14px;font-weight:700;color:var(--txt)">🕒 ${l.time || '--:--'}</span>
@@ -9720,6 +9723,7 @@ function renderIslemList(cat, date){
   // v228: log'suz entries — her biri kendi gerçek tarihine bağlı + MÜŞTERİ bilgisi (isim/tel/durum) getirilir
   const _bagliLogIdler = new Set(logs.map(l=>l.id));
   let ekSatirlar = '';
+  let _ekNo = logs.length; // v229: log'suz satırlara da sıra numarası
   rangeEntries.forEach(e=>{
     const isMnpE = !!e.mnp;
     const eTip = isMnpE ? 'mnp' : 'tesis';
@@ -9744,7 +9748,7 @@ function renderIslemList(cat, date){
           ${m.not ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">📝 ${esc(m.not)}</div>` : ''}
         </div>` : `<span style="font-size:10px;color:var(--muted);font-style:italic">👤 Müşteri kaydı yok</span>`;
       ekSatirlar += `<div data-logtype="${isMnpE?'mnp':'tesis'}" style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:rgba(255,183,77,0.04)">
-        <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">•</div>
+        <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:800;color:var(--muted)">${++_ekNo}</div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span style="font-size:13px;font-weight:700;color:${renk}">${lbl}</span>
@@ -15324,6 +15328,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v229',
+    date: '07.07.2026',
+    items: [
+      { type: 'fix', text: 'Bugun/Dun gibi tek-gun filtrelerine basinca ustteki tek gun oku da o gune geliyor (onceden aralik degisiyor ama ok eski gunde kaliyordu, bu yuzden "Bugun degismiyor" gibi gorunuyordu). Mobil tarih kutulari da senkronlaniyor.' },
+      { type: 'fix', text: 'Islem Listesinde log suz satirlar artik "•" yerine gercek SIRA NUMARASI gosteriyor. Satir numaralari bastan (1) asagi dogru siralanir.' },
+    ]
+  },
   {
     version: 'v228',
     date: '07.07.2026',
