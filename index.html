@@ -2782,7 +2782,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v237';
+const APP_VERSION = 'v238';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2895,7 +2895,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 15:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 16:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3275,10 +3275,10 @@ function trUpper(el){
 }
 // v237: Telefonu sadece rakam kabul edip 0532 123 45 67 formatina sokar
 function telFormat(el){
-  let d=(el.value||'').replace(/\D/g,'').slice(0,11), o=d;
-  if(d.length>4) o=d.slice(0,4)+' '+d.slice(4);
-  if(d.length>7) o=d.slice(0,4)+' '+d.slice(4,7)+' '+d.slice(7);
-  if(d.length>9) o=d.slice(0,4)+' '+d.slice(4,7)+' '+d.slice(7,9)+' '+d.slice(9);
+  let d=(el.value||'').replace(/\D/g,'').slice(0,10), o=d;
+  if(d.length>3) o=d.slice(0,3)+' '+d.slice(3);
+  if(d.length>6) o=d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6);
+  if(d.length>8) o=d.slice(0,3)+' '+d.slice(3,6)+' '+d.slice(6,8)+' '+d.slice(8);
   el.value=o;
 }
 function thisMonthKey(){ return todayStr().slice(0,7); }
@@ -6602,7 +6602,11 @@ function openGunlukKirilimModal(){
         const hAdet = katHedefs[c];
         const gAdet = katAdet[c]||0;
         const kAdet = Math.max(0, hAdet - gAdet);
-        const gunlukAdet = Math.ceil(kAdet / h.kalanGun);
+        // v238: gunluk hedef = aylik hedef / ayin gun sayisi, YUVARLAK (kusuratsiz)
+        const _p = h.curYm.split('-'); const _gunAy = new Date(+_p[0], +_p[1], 0).getDate();
+        const gunlukHedef = Math.max(1, Math.round(hAdet / _gunAy));
+        const bugunAdet = entries.filter(e=>e.date===todayStr() && e.cat===c).reduce((a,e)=>a+e.count,0);
+        const bugunDoldu = bugunAdet >= gunlukHedef;
         const kPct = Math.min(100, Math.round(gAdet/hAdet*100));
         const renk = (CAT_CONFIG[c]&&CAT_CONFIG[c].color)||'var(--accent)';
         const tamam = kAdet===0;
@@ -6614,12 +6618,15 @@ function openGunlukKirilimModal(){
           <div style="background:var(--panel);border-radius:4px;height:8px;overflow:hidden;margin-bottom:6px">
             <div style="height:100%;width:${kPct}%;background:${renk}"></div>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;align-items:center;gap:8px">
             ${tamam
               ? '<span style="color:#4cd964;font-weight:700">✅ Kategori hedefi tamam!</span><span></span>'
-              : `<span style="color:var(--muted)">Kalan: <b style="color:var(--txt)">${kAdet} adet</b></span>
-                 <span style="color:${renk};font-weight:800">Bugün: ${gunlukAdet} adet ${gunlukAdet>0?'satmalısın':''}</span>`}
+              : bugunDoldu
+                ? `<span style="color:#4cd964;font-weight:800">🎉 Bugünkü hedefi doldurdun!</span><span style="color:var(--muted);font-size:10px">${bugunAdet}/${gunlukHedef}</span>`
+                : `<span style="color:var(--muted)">Kalan: <b style="color:var(--txt)">${kAdet} adet</b></span>
+                   <span style="color:${renk};font-weight:800">Bugün ${gunlukHedef} tane satmalısın${bugunAdet>0?' ('+bugunAdet+' oldu)':''}</span>`}
           </div>
+          ${(!tamam && bugunDoldu) ? '<div style="font-size:10px;color:#4cd964;margin-top:6px;text-align:center;font-weight:600;background:rgba(76,217,100,0.1);border-radius:6px;padding:5px">💪 Harikasın! Bugünlük görevini tamamladın — fazlası ay hedefini öne çeker 🚀</div>' : ''}
         </div>`;
       }).join('');
     } else {
@@ -14514,7 +14521,7 @@ function renderHedefGecmis(){
         </div>
         <div>
           <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">TELEFON <span style="color:var(--line)">(opsiyonel)</span></div>
-          <input type="tel" id="mkTel" placeholder="05XX XXX XX XX" inputmode="numeric" maxlength="14" oninput="telFormat(this)" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
+          <input type="tel" id="mkTel" placeholder="5XX XXX XX XX" inputmode="numeric" maxlength="13" oninput="telFormat(this)" style="width:100%;padding:9px 12px;background:var(--panel2);border:1.5px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;box-sizing:border-box">
         </div>
       </div>
 
@@ -15367,6 +15374,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v238',
+    date: '07.07.2026',
+    items: [
+      { type: 'fix', text: 'Telefon alani 10 haneye cekildi (11 degil): format 532 123 45 67.' },
+      { type: 'new', text: 'Gunluk Hedef Kirilimi: gunluk hedef artik "aylik hedef / ayin gun sayisi" formuluyle YUVARLAK sayi olarak gosteriliyor ("Bugun 2 tane satmalisin" gibi, kusuratsiz). Bugun o kadar veya daha fazla satarsan "🎉 Bugunku hedefi doldurdun!" + tesvik cumlesi (💪 Harikasin! Bugunluk gorevini tamamladin) gorunuyor.' },
+    ]
+  },
   {
     version: 'v237',
     date: '07.07.2026',
