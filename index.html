@@ -290,6 +290,10 @@ html{scrollbar-gutter:stable}
   }
   #page-prim{ flex-direction:column!important;height:auto!important; }
   #page-prim .layout{ overflow:visible!important; }
+  /* v232: Mobilde Hakediş paneli ve stat alani TAM GENISLIK (sagda cirkin bosluk kalmasin) */
+  #hakedisStatsRow{ flex-direction:column!important; gap:8px!important; }
+  #hakedisPanel{ max-width:none!important; width:100%!important; flex:1 1 100%!important; min-width:0!important; margin-top:0!important; }
+  #statsRowTop{ width:100%!important; flex:1 1 100%!important; min-width:0!important; }
   #page-trend{ padding-top:80px!important; }
   #page-kasa{ padding-top:62px!important; }
 
@@ -2769,7 +2773,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v231';
+const APP_VERSION = 'v232';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2886,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 11:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 12:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15341,6 +15345,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v232',
+    date: '07.07.2026',
+    items: [
+      { type: 'ui', text: 'Mobilde Hakedis ozet paneli ve Gunluk Ort/Ay Sonu stat kartlari artik TAM GENISLIK — sag tarafta kalan cirkin bosluk kaldirildi, ust taraftaki tarih filtresiyle ayni hizaya geldi. Sadece mobili etkiler, masaustu duzeni degismez.' },
+    ]
+  },
   {
     version: 'v231',
     date: '07.07.2026',
