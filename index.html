@@ -2769,7 +2769,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v230';
+const APP_VERSION = 'v231';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2882,7 +2882,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 10:55'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 11:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -9598,6 +9598,19 @@ function filterIslemList(tip){
   });
 }
 
+// v231: Islem Listesi satirlarina Musteri Takip'teki gibi ek detay (tarife/takip/not)
+function takipKalanStr(t){
+  if(!t) return '';
+  try{ const gun = Math.ceil((new Date(String(t).slice(0,10)+'T00:00:00') - nowTR())/86400000);
+    return gun>=0 ? (' · '+gun+' gün kaldı') : (' · '+Math.abs(gun)+' gün geçti'); }catch(e){ return ''; }
+}
+function musteriEkDetayHTML(m){
+  let h = '';
+  if(m.tarife)      h += '<div style="font-size:10.5px;color:#c4a5f7;margin-top:2px">🏷 '+esc(m.tarife)+'</div>';
+  if(m.takipTarihi) h += '<div style="font-size:10.5px;color:var(--muted);margin-top:2px">📅 Takip: '+esc(String(m.takipTarihi).slice(0,10))+takipKalanStr(m.takipTarihi)+'</div>';
+  if(m.not)         h += '<div style="font-size:10px;color:var(--muted);margin-top:2px">📝 '+esc(m.not)+'</div>';
+  return h;
+}
 function renderIslemList(cat, date){
   _ilmFilter = 'tumu';
   _ilmCat = cat;
@@ -9709,7 +9722,7 @@ function renderIslemList(cat, date){
               ${musteri.tel ? `<span style="font-size:11px;color:var(--accent)">📞 ${esc(musteri.tel)}</span>` : ''}
               <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${musteri.durum==='aktif'?'rgba(76,217,100,0.2)':musteri.durum==='bekliyor'?'rgba(255,159,10,0.2)':'rgba(255,82,82,0.2)'};color:${musteri.durum==='aktif'?'#4cd964':musteri.durum==='bekliyor'?'#ff9f0a':'#ff5252'};font-weight:700">${musteri.durum==='aktif'?'✅ Aktif':musteri.durum==='bekliyor'?'⏳ Bekliyor':'❌ '+musteri.durum}</span>
             </div>
-            ${musteri.not ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">📝 ${esc(musteri.not)}</div>` : ''}
+            ${musteriEkDetayHTML(musteri)}
           ` : `<span style="font-size:10px;color:var(--muted);font-style:italic">👤 Müşteri kaydı yok</span>`}
         </div>
       </div>
@@ -9745,7 +9758,7 @@ function renderIslemList(cat, date){
             ${m.tel ? `<span style="font-size:11px;color:var(--accent)">📞 ${esc(m.tel)}</span>` : ''}
             <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${m.durum==='aktif'?'rgba(76,217,100,0.2)':m.durum==='bekliyor'?'rgba(255,159,10,0.2)':'rgba(255,82,82,0.2)'};color:${m.durum==='aktif'?'#4cd964':m.durum==='bekliyor'?'#ff9f0a':'#ff5252'};font-weight:700">${m.durum==='aktif'?'✅ Aktif':m.durum==='bekliyor'?'⏳ Bekliyor':'❌ '+esc(m.durum||'')}</span>
           </div>
-          ${m.not ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">📝 ${esc(m.not)}</div>` : ''}
+          ${musteriEkDetayHTML(m)}
         </div>` : `<span style="font-size:10px;color:var(--muted);font-style:italic">👤 Müşteri kaydı yok</span>`;
       ekSatirlar += `<div data-logtype="${isMnpE?'mnp':'tesis'}" style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:rgba(255,183,77,0.04)">
         <div style="width:30px;height:30px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:800;color:var(--muted)">${++_ekNo}</div>
@@ -15328,6 +15341,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v231',
+    date: '07.07.2026',
+    items: [
+      { type: 'new', text: 'Islem Listesi satirlari Musteri Takip gibi detaylandi: musteri kaydi olan satirlarda artik 🏷 Tarife/urun (Diger kategorisindeki "kulaklik" gibi seyler de burada), 📅 Takip tarihi (kac gun kaldi/gecti) ve 📝 Not gosterilir. Hem log lu hem "saat kaydi yok" (log suz) satirlara uygulanir. Sadece gosterim eklendi; silme/sira/filtre/tarih mantigina dokunulmadi.' },
+    ]
+  },
   {
     version: 'v230',
     date: '07.07.2026',
