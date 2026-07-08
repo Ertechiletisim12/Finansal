@@ -294,11 +294,10 @@ html{scrollbar-gutter:stable}
   #hakedisStatsRow{ flex-direction:column!important; gap:8px!important; margin:14px -14px 0!important; width:calc(100% + 28px)!important; box-sizing:border-box!important; }
   #hakedisPanel{ max-width:none!important; width:100%!important; flex:1 1 100%!important; min-width:0!important; margin-top:0!important; }
   #statsRowTop{ width:100%!important; flex:1 1 100%!important; min-width:0!important; }
-  #page-trend{ padding-top:80px!important; }
+  #page-trend{ padding-top:150px!important; } /* v242: fixed baslik(h2+select, ~88px) + topbar(52) */
   /* v241: sayfa ici sticky basliklar mobilde sabit ust barin (52px) ALTINA yapissin — icerik artik barin arkasina girmiyor */
   #page-trend > div[style*="position:sticky"]{ top:52px!important; }
   #page-hedef > div[style*="position:sticky"]{ top:52px!important; }
-  #page-hedef{ padding-top:62px!important; }
   #page-kasa{ padding-top:62px!important; }
 
   #primTitleBar{ display:none!important; }
@@ -357,7 +356,7 @@ html{scrollbar-gutter:stable}
     white-space:nowrap!important;
     flex-shrink:0!important;
   }
-  #page-rapor{ padding-top:150px!important; } /* v241: raporHeader (2 satir, ~95px) + topbar(52) — kartlar artik altina girmiyor */
+  #page-rapor{ padding-top:138px!important; } /* v242: fazla bosluk kisildi */
   
   /* Ana scroll body'de olsun */
   body{ overflow-y:auto!important; }
@@ -1906,7 +1905,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
     <!-- ==================== HEDEF YÖNETİM SAYFASI ==================== -->
     <div id="page-hedef" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
-      <div id="hedefOzetDiv" style="margin-bottom:10px"></div>
       <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;gap:8px;flex-wrap:wrap">
         <h2 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px"><button onclick="switchPage('prim')" class="prim-tool-pill" style="padding:4px 10px" title="Prim Sayfasına dön">← Prim</button> 🎯 Hedef Yönetimi</h2>
         <div style="display:flex;gap:8px;align-items:center">
@@ -1914,6 +1912,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <button onclick="openHedefModal()" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#2fae4e,#1f7f37);border:none;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(47,174,78,0.35);transition:filter .15s" onmouseover="this.style.filter='brightness(1.12)'" onmouseout="this.style.filter='none'">➕ Yeni Hedef</button>
         </div>
       </div>
+      <div id="hedefOzetDiv" style="margin-bottom:10px"></div>
 
       <!-- Özet Kartlar -->
       <div class="stats-row" id="hedefSummaryRow" style="margin-bottom:10px"></div>
@@ -2790,7 +2789,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v241';
+const APP_VERSION = 'v242';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2903,7 +2902,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '08.07.2026 09:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '08.07.2026 10:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15436,6 +15435,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v242',
+    date: '08.07.2026',
+    items: [
+      { type: 'fix', text: 'MOBIL INCE AYAR: (1) Trend Analizi — kategori pilleri artik "Son 6 Ay" secicisinin altinda ezilmiyor (icerik boslugu sabit basliga gore duzeltildi). (2) Haftalik/Yillik Rapor — basligin altindaki fazla bosluk kisildi. (3) Hedef Yonetimi — "5 MNP onay bekliyor" bandi basligin ALTINA tasindi; eski sabit-baslik kurali yeniden dogru elemana uygulaniyor, banttaki fazla bosluk gitti.' },
+    ]
+  },
   {
     version: 'v241',
     date: '08.07.2026',
