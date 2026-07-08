@@ -2240,15 +2240,15 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
       <div class="section-title-row" style="margin-top:0">
         <div class="section-title">Aylık Kategori Dağılımı (Detay)</div>
-        <button class="preview-btn" onclick="openExportPreview('mainTable','Aylik_Kategori_Dagilimi')">📤 Dışa Aktar</button>
+        <button class="preview-btn" onclick="exportDetayTablolari()">📤 Dışa Aktar</button>
       </div>
       <div class="table-wrap" style="max-height:340px;overflow-y:auto">
         <table class="main-table" id="mainTable"></table>
       </div>
+      <table id="detayCombinedTable" style="display:none"></table>
 
       <div class="section-title-row">
         <div class="section-title">Prim Finans Özeti</div>
-        <button class="preview-btn" onclick="openExportPreview('financeTable','Prim_Finans_Ozeti')">📤 Dışa Aktar</button>
       </div>
       <div class="table-wrap" style="max-height:340px;overflow-x:auto;overflow-y:auto">
         <table class="main-table" style="width:100%" id="financeTable"></table>
@@ -2263,7 +2263,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:900px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="background:linear-gradient(135deg,#5a4fcf,#3d35a0);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <span style="font-size:14px;font-weight:700;color:#fff">⏱ Saatlik Giriş Yoğunluğu &amp; Isı Haritası</span>
-      <button onclick="closePrimModal('saatModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="exportSaatTablosu()" style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:5px 12px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap">📤 Dışa Aktar</button>
+        <button onclick="closePrimModal('saatModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+      </div>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
       <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:7px 10px;margin-bottom:10px">
@@ -2278,6 +2281,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <button class="prim-tool-pill saat-flt" data-f="gecenyil" onclick="setSaatAralik('gecenyil')" style="padding:4px 10px;font-size:10px">Geçen Yıl</button>
         <button class="prim-tool-pill saat-flt" data-f="all" onclick="setSaatAralik('all')" style="padding:4px 10px;font-size:10px">Tümü</button>
       </div>
+      <table id="saatExportTable" style="display:none"></table>
       <div class="hourly-bar-wrap">
         <h3>
           ⏱ Saatlik Giriş Yoğunluğu
@@ -2782,7 +2786,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v239';
+const APP_VERSION = 'v240';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2895,7 +2899,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 16:50'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '07.07.2026 18:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5837,8 +5841,15 @@ function render(){
   if(!gecmisAc) histYms = histYms.filter(ym => ym >= buYmF);
   const ph = document.getElementById('priceHistTable');
   if(histYms.length || gizlenen){
-    ph.innerHTML = '<tr><th>Ay</th>'+CATS.map(c=>`<th>${c}</th>`).join('')+'<th style="width:40px"></th></tr>' +
-      histYms.map(ym=>`<tr><td>${monthLabel(ym)}${ym<buYmF?' <span style="font-size:8px;color:var(--muted)">📜</span>':''}</td>${CATS.map(c=>`<td>${prices[ym][c]!=null?fmt(prices[ym][c]):'<span style=\"color:var(--muted)\">—</span>'}</td>`).join('')}<td><button onclick="fiyatAyiDuzenle('${ym}')" title="Bu ayın fiyatlarını düzenle" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button></td></tr>`).join('') +
+    ph.innerHTML = '<tr><th>Ay</th>'+CATS.map(c=>`<th style="color:${(CAT_CONFIG[c]&&CAT_CONFIG[c].color)||'var(--muted)'}">${c}</th>`).join('')+'<th style="width:40px"></th></tr>' +
+      histYms.map(ym=>{
+        const gecmis = ym < buYmF;
+        const guncel = ym === buYmF;
+        const rowStyle = gecmis ? 'opacity:.55;background:rgba(255,255,255,0.02)' : (guncel ? 'background:rgba(255,183,77,0.07)' : '');
+        const ayEtiket = gecmis ? ' <span style="font-size:8px;color:var(--muted);background:rgba(255,255,255,0.07);border-radius:4px;padding:1px 4px">📜 geçmiş</span>'
+                       : (guncel ? ' <span style="font-size:8px;color:var(--gold);background:rgba(255,183,77,0.15);border-radius:4px;padding:1px 4px;font-weight:700">● bu ay</span>' : '');
+        return `<tr style="${rowStyle}"><td style="white-space:nowrap">${monthLabel(ym)}${ayEtiket}</td>${CATS.map(c=>`<td style="white-space:nowrap">${prices[ym][c]!=null?fmt(prices[ym][c])+' <span style=\"font-size:9px;color:var(--muted)\">₺</span>':'<span style=\"color:var(--muted)\">—</span>'}</td>`).join('')}<td><button onclick="fiyatAyiDuzenle('${ym}')" title="Bu ayın fiyatlarını düzenle" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button></td></tr>`;
+      }).join('') +
       (!gecmisAc && gizlenen ? `<tr><td colspan="${CATS.length+2}" style="text-align:center;color:var(--muted);font-size:10px;padding:8px">📜 ${gizlenen} geçmiş dönem gizli — görmek için yukarıdaki anahtarı aç</td></tr>` : '');
   } else {
     ph.innerHTML = '<tr><td style="color:var(--muted)">Henüz kayıtlı fiyat geçmişi yok.</td></tr>';
@@ -14290,7 +14301,7 @@ function renderHedefGecmis(){
       <button onclick="closeKampanyaModal()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
     </div>
     <div class="kamp-modal-govde" style="display:grid;grid-template-columns:1fr;overflow:hidden;flex:1;min-height:0">
-      <div class="kamp-sol" style="padding:14px 16px;flex-shrink:0;background:var(--panel2);overflow-y:auto">
+      <div class="kamp-sol" style="padding:14px 16px;flex-shrink:0;background:var(--panel2);overflow-y:auto;border:1.5px solid rgba(226,35,26,0.35);border-radius:16px;margin:10px">
       <div style="font-size:13px;color:#ff6b60;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid rgba(226,35,26,0.25)" id="kFormTitle">➕ Yeni Kampanya Ekle</div>
       <input type="hidden" id="kEditId">
       <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">1️⃣ Ne tür kampanya?</div>
@@ -14900,12 +14911,51 @@ function closeExportModal(){
 // Mobilde window.open yerine modal kullan
 let _activeExportTable = null;
 
+// v240: Detay Tablolari — iki tabloyu tek aktarma olarak birlestir
+function exportDetayTablolari(){
+  const t1 = document.getElementById('mainTable'), t2 = document.getElementById('financeTable');
+  const comb = document.getElementById('detayCombinedTable');
+  if(!t1 || !t2 || !comb) return;
+  comb.innerHTML = '<tr><th colspan="20" style="text-align:left">📊 AYLIK KATEGORİ DAĞILIMI</th></tr>'
+    + t1.innerHTML
+    + '<tr><td colspan="20" style="height:12px;border:none"></td></tr>'
+    + '<tr><th colspan="20" style="text-align:left">💰 PRİM / FİNANS ÖZETİ</th></tr>'
+    + t2.innerHTML;
+  openExportPreview('detayCombinedTable','Detay_Tablolari');
+}
+// v240: Saatlik Giris Yogunlugu — disa aktarma tablosu
+function exportSaatTablosu(){
+  let rStart = (document.getElementById('rangeStart')?.value) || '';
+  let rEnd   = (document.getElementById('rangeEnd')?.value)   || '';
+  if(saatAralik === 'all'){ rStart=''; rEnd=''; }
+  else if(saatAralik === 'buay'){ rStart = thisMonthKey()+'-01'; rEnd = todayStr(); }
+  else if(saatAralik === 'gecenay'){ const g = addMonths(thisMonthKey(),-1); rStart = g+'-01'; rEnd = g+'-31'; }
+  else if(saatAralik === '7g'){ const d = new Date(); d.setDate(d.getDate()-7); rStart = ymd(d); rEnd = todayStr(); }
+  else if(saatAralik === '30g'){ const d = new Date(); d.setDate(d.getDate()-30); rStart = ymd(d); rEnd = todayStr(); }
+  else if(saatAralik === '90g'){ const d = new Date(); d.setDate(d.getDate()-90); rStart = ymd(d); rEnd = todayStr(); }
+  else if(saatAralik === 'buyil'){ const y = todayStr().slice(0,4); rStart = y+'-01-01'; rEnd = todayStr(); }
+  else if(saatAralik === 'gecenyil'){ const y = parseInt(todayStr().slice(0,4))-1; rStart = y+'-01-01'; rEnd = y+'-12-31'; }
+  const logs = entryLog.filter(e=>{ if(!e.date) return true; if(rStart && e.date<rStart) return false; if(rEnd && e.date>rEnd) return false; return !!e.time; });
+  const saatKat = {}; // saat -> { cat: adet }
+  logs.forEach(l=>{ const h = parseInt(String(l.time).slice(0,2),10); if(isNaN(h)) return; if(!saatKat[h]) saatKat[h]={}; saatKat[h][l.cat]=(saatKat[h][l.cat]||0)+(l.count||1); });
+  const tbl = document.getElementById('saatExportTable');
+  if(!tbl) return;
+  const satirlar = [];
+  for(let h=0; h<24; h++){
+    const row = saatKat[h]; if(!row) continue;
+    const toplam = CATS.reduce((a,c)=>a+(row[c]||0),0);
+    satirlar.push('<tr><td>'+String(h).padStart(2,'0')+':00</td>'+CATS.map(c=>'<td>'+(row[c]||'')+'</td>').join('')+'<td><b>'+toplam+'</b></td></tr>');
+  }
+  if(!satirlar.length){ alert('Bu aralıkta saat kaydı yok.'); return; }
+  tbl.innerHTML = '<tr><th>Saat</th>'+CATS.map(c=>'<th>'+c+'</th>').join('')+'<th>Toplam</th></tr>' + satirlar.join('');
+  openExportPreview('saatExportTable','Saatlik_Giris_Yogunlugu');
+}
 function openExportPreview(tableId, fileLabel){
   _activeExportTable = null;
   document.getElementById('exportModalContent').innerHTML = '';
   document.getElementById('exportModalTabs').innerHTML = '';
 
-  const modalTables = ['compareTable','mainTable','financeTable','priceHistTable','gelirTable','capitalTable','marjTable','finansDetailTable'];
+  const modalTables = ['compareTable','mainTable','financeTable','priceHistTable','gelirTable','capitalTable','marjTable','finansDetailTable','detayCombinedTable','saatExportTable'];
 
   if(modalTables.includes(tableId)){
     const table = document.getElementById(tableId);
@@ -14913,7 +14963,7 @@ function openExportPreview(tableId, fileLabel){
     const now = nowTR().toLocaleString('tr-TR');
     const stamp = xlsTimestamp();
     const modal = document.getElementById('exportFullModal');
-    const titles = {compareTable:'Ay Karşılaştırması',mainTable:'Aylık Kategori Dağılımı',financeTable:'Prim / Finans Özeti',priceHistTable:'Fiyat Geçmişi',gelirTable:'Gelir / Gider Tablosu',capitalTable:'Sermaye Gelişimi',marjTable:'Vodafone MIXY Kâr/Masraf',finansDetailTable:'Finans Detaylı Tablo'};
+    const titles = {compareTable:'Ay Karşılaştırması',mainTable:'Aylık Kategori Dağılımı',financeTable:'Prim / Finans Özeti',priceHistTable:'Fiyat Geçmişi',gelirTable:'Gelir / Gider Tablosu',capitalTable:'Sermaye Gelişimi',marjTable:'Vodafone MIXY Kâr/Masraf',finansDetailTable:'Finans Detaylı Tablo',detayCombinedTable:'Detay Tabloları',saatExportTable:'Saatlik Giriş Yoğunluğu'};
     document.getElementById('exportModalTitle').textContent = '📊 ' + (titles[tableId] || fileLabel);
     document.getElementById('exportModalSub').textContent = now;
     document.getElementById('exportModalTabs').innerHTML = `<button style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700">📋 Tablo</button>`;
@@ -15382,6 +15432,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v240',
+    date: '07.07.2026',
+    items: [
+      { type: 'ui', text: 'Kampanya modalindaki "Yeni Kampanya Ekle" bolumu artik oval (yuvarlatilmis) kirmizi cerceveli kart icinde.' },
+      { type: 'imp', text: 'Detay Tablolari: iki ayri "Disa Aktar" butonu TEKE indirildi — tek buton artik Aylik Kategori Dagilimi + Prim/Finans Ozetini BIRLIKTE tek dosyada aktarir.' },
+      { type: 'new', text: 'Saatlik Giris Yogunlugu modalina "Disa Aktar" eklendi: secili araliga gore Saat x Kategori adet tablosu olarak aktarilir.' },
+      { type: 'ui', text: 'Fiyat Gecmisi tablosu yenilendi: tutarlarin yanina TL isareti eklendi, kategori basliklari kendi renginde, GECMIS donem satirlari soluk + "📜 gecmis" rozetli, icinde bulunulan ay "● bu ay" rozetiyle vurgulu — donemler artik net ayirt ediliyor.' },
+    ]
+  },
   {
     version: 'v239',
     date: '07.07.2026',
