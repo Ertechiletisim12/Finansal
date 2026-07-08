@@ -294,7 +294,7 @@ html{scrollbar-gutter:stable}
   #hakedisStatsRow{ flex-direction:column!important; gap:8px!important; margin:14px -14px 0!important; width:calc(100% + 28px)!important; box-sizing:border-box!important; }
   #hakedisPanel{ max-width:none!important; width:100%!important; flex:1 1 100%!important; min-width:0!important; margin-top:0!important; }
   #statsRowTop{ width:100%!important; flex:1 1 100%!important; min-width:0!important; }
-  #page-trend{ padding-top:150px!important; } /* v242: fixed baslik(h2+select, ~88px) + topbar(52) */
+  #page-trend{ padding-top:112px!important; } /* v243: baslangic; gercek deger JS ile olculur */
   /* v241: sayfa ici sticky basliklar mobilde sabit ust barin (52px) ALTINA yapissin — icerik artik barin arkasina girmiyor */
   #page-trend > div[style*="position:sticky"]{ top:52px!important; }
   #page-hedef > div[style*="position:sticky"]{ top:52px!important; }
@@ -356,7 +356,7 @@ html{scrollbar-gutter:stable}
     white-space:nowrap!important;
     flex-shrink:0!important;
   }
-  #page-rapor{ padding-top:138px!important; } /* v242: fazla bosluk kisildi */
+  #page-rapor{ padding-top:108px!important; } /* v243: baslangic; gercek deger JS ile olculur */
   
   /* Ana scroll body'de olsun */
   body{ overflow-y:auto!important; }
@@ -2789,7 +2789,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v242';
+const APP_VERSION = 'v243';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2902,7 +2902,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '08.07.2026 10:10'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '08.07.2026 10:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6355,6 +6355,27 @@ function renderHedefOzet(){
     </div>` : '';
 }
 
+// v243: Mobilde sabit (fixed) sayfa basliklarinin GERCEK yuksekligini olcup icerik boslugunu
+// otomatik ayarlar. Sabit piksel tahminleri kaldirildi — her cihaz/yazi boyutunda dogru olur.
+function ayarlaTopbarBoslugu(){
+  try{
+    if(window.innerWidth > 700) return;
+    const hedefler = [
+      ['page-trend', document.querySelector('#page-trend > div:first-child')],
+      ['page-rapor', document.getElementById('raporHeader')],
+      ['page-hedef', document.querySelector('#page-hedef > div:first-child')]
+    ];
+    hedefler.forEach(pair=>{
+      const pg = document.getElementById(pair[0]);
+      const hdr = pair[1];
+      if(!pg || !hdr) return;
+      if(pg.style.display === 'none') return;
+      const r = hdr.getBoundingClientRect();
+      if(r.height > 0) pg.style.setProperty('padding-top', Math.ceil(r.bottom + 10) + 'px', 'important');
+    });
+  }catch(e){}
+}
+window.addEventListener('resize', ()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} });
 function switchPage(page){
   currentPage = page;
   ['dash','prim','finans','gelir','not','rapor','hedef','trend','kasa'].forEach(p=>{
@@ -15435,6 +15456,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v243',
+    date: '08.07.2026',
+    items: [
+      { type: 'fix', text: 'KALICI COZUM — mobil ust bosluklar artik OTOMATIK: Trend / Rapor / Hedef sayfalarinda icerik boslugu, sabit basligin GERCEK olculen yuksekligine gore ayarlanir (baslik alti + 10px). Sabit piksel tahminleri kaldirildi; ne ezilme ne fazla bosluk kalir, her cihazda dogru olur. Ekran dondurme/boyut degisiminde de kendini gunceller.' },
+    ]
+  },
   {
     version: 'v242',
     date: '08.07.2026',
