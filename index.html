@@ -2791,7 +2791,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v247';
+const APP_VERSION = 'v248';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2904,7 +2904,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '08.07.2026 14:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '08.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3288,7 +3288,7 @@ function parseTL(str){
 function fiyatKutuFormat(el){
   const n = parseTL(el.value);
   if(isNaN(n)){ el.value=''; el.dataset.raw=''; return; }
-  el.dataset.raw = n; el.value = fmt(n)+'\u20ba';
+  el.dataset.raw = n; el.value = fmt(n);
 }
 // v237: Turkce-uyumlu otomatik BUYUK harf (i->I, i->I dogru). Imlec konumu korunur.
 function trUpper(el){
@@ -5838,7 +5838,7 @@ function render(){
       const miras = !tanimli; // bu ay için tanımlı değil, önceki aydan miras
       return `<div style="display:flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid ${renk};border-radius:9px;padding:7px 9px">
         <span style="flex:1;min-width:0;font-size:11.5px;font-weight:800;color:${renk};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c}${miras?` <span title="Önceki aydan miras" style="font-size:7px;color:var(--muted);font-weight:700">·miras</span>`:''}</span>
-        <input type="text" inputmode="decimal" id="price_${c}" data-raw="${v}" value="${fmt(v)}\u20ba" onfocus="this.value=this.dataset.raw||'';this.select()" onblur="fiyatKutuFormat(this)" style="width:104px;text-align:right;background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:13px;font-weight:700;padding:6px 8px;outline:none">
+        <input type="text" inputmode="decimal" id="price_${c}" data-raw="${v}" value="${fmt(v)}" onfocus="this.value=this.dataset.raw||'';this.select()" onblur="fiyatKutuFormat(this)" style="width:104px;text-align:right;background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:13px;font-weight:700;padding:6px 8px;outline:none">
       </div>`;
     }).join('');
   priceRow.innerHTML = `
@@ -6276,11 +6276,11 @@ function render(){
               const adSoyad = `${esc(m.ad||'')} ${esc(m.soyad||'')}`.trim();
               const logE2 = dayLogs2.find(l=>l.id===m.logId);
               const tarife2 = m.tarife||(logE2&&logE2.tarife)||'';
-              return `<div style="display:flex;align-items:center;gap:6px;font-size:9px;padding:2px 0 2px 12px;border-top:1px solid rgba(255,255,255,0.04)">
+              return `<div style="display:flex;align-items:center;gap:6px;font-size:10.5px;padding:3px 0 3px 14px;border-top:1px solid rgba(255,255,255,0.04)">
                 <span style="color:#5bc8f5;flex-shrink:0">↳</span>
-                <span style="color:var(--txt);font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${adSoyad||'—'}</span>
-                <span style="color:#8a9099;flex-shrink:0;min-width:85px">${esc(m.tel||'—')}</span>
-                ${tarife2?`<span style="color:#ffb74d;flex-shrink:0;text-align:right">${tarife2}</span>`:''}
+                <span style="color:var(--txt);font-weight:700;flex:1.8;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${adSoyad||'İsimsiz'}</span>
+                <span style="color:#8a9099;flex-shrink:0;font-size:9.5px">${esc(m.tel||'—')}</span>
+                ${tarife2?`<span style="color:#ffb74d;flex-shrink:0;font-size:9.5px">${tarife2}</span>`:''}
               </div>`;
             }).filter(Boolean).join('');
           }
@@ -6302,12 +6302,11 @@ function render(){
         </tr>`;
       }).join('');
       return `<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="display:flex;align-items:center;margin-bottom:6px">
           <div style="font-size:10.5px;font-weight:700;color:var(--accent)">📅 ${date}</div>
-          <div style="font-size:10px;font-weight:700;color:var(--green)">${fmt(kdvBrut(dayTot))} <span style="font-size:8px;color:var(--muted);font-weight:600">KDV dahil</span></div>
         </div>
         <table style="width:100%;table-layout:fixed;border-collapse:collapse">
-          <colgroup><col style="width:50%"><col style="width:18%"><col style="width:32%"></colgroup>
+          <colgroup><col style="width:58%"><col style="width:14%"><col style="width:28%"></colgroup>
           <thead><tr style="border-bottom:1px solid var(--line)">
             <th style="text-align:left;color:var(--muted);font-weight:600;font-size:9.5px;padding:0 0 4px;letter-spacing:.04em">KATEGORİ</th>
             <th style="text-align:right;color:var(--muted);font-weight:600;font-size:9.5px;padding:0 0 4px">ADET</th>
@@ -15464,6 +15463,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v248',
+    date: '08.07.2026',
+    items: [
+      { type: 'fix', text: 'Fiyat kutularindaki cift TL isareti duzeltildi (v247 hatasi) — artik tek TL.' },
+      { type: 'ui', text: 'PC Islem Listesi: her gunun UST basligindaki toplam kaldirildi (alttaki "Toplam" satiri kaliyor, tek yerde). Musteri adi PC de de acik/okunakli gosteriliyor (buyutuldu, KATEGORI sutunu genisletildi, isimsizler "Isimsiz" olarak).' },
+    ]
+  },
   {
     version: 'v247',
     date: '08.07.2026',
