@@ -295,6 +295,8 @@ html{scrollbar-gutter:stable}
   #hakedisPanel{ max-width:none!important; width:100%!important; flex:1 1 100%!important; min-width:0!important; margin-top:0!important; }
   #statsRowTop{ width:100%!important; flex:1 1 100%!important; min-width:0!important; }
   #page-trend{ padding-top:112px!important; } /* v243: baslangic; gercek deger JS ile olculur */
+  /* v244: inline flex:1 mobilde kabi bos yere uzatiyordu (altta bosluk + gereksiz kaydirma) */
+  #page-trend,#page-rapor,#page-hedef{ flex:none!important; min-height:0!important; }
   /* v241: sayfa ici sticky basliklar mobilde sabit ust barin (52px) ALTINA yapissin — icerik artik barin arkasina girmiyor */
   #page-trend > div[style*="position:sticky"]{ top:52px!important; }
   #page-hedef > div[style*="position:sticky"]{ top:52px!important; }
@@ -2789,7 +2791,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v243';
+const APP_VERSION = 'v244';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2902,7 +2904,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '08.07.2026 10:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '08.07.2026 11:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15456,6 +15458,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v244',
+    date: '08.07.2026',
+    items: [
+      { type: 'fix', text: 'Trend Analizi (ve Rapor/Hedef) mobilde artik icerik bittigi yerde bitiyor: sayfa kabindaki flex:1 esnemesi mobilde kapatildi — alttaki bos alan ve gereksiz yukari kayma giderildi.' },
+    ]
+  },
   {
     version: 'v243',
     date: '08.07.2026',
