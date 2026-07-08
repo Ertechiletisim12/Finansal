@@ -295,6 +295,10 @@ html{scrollbar-gutter:stable}
   #hakedisPanel{ max-width:none!important; width:100%!important; flex:1 1 100%!important; min-width:0!important; margin-top:0!important; }
   #statsRowTop{ width:100%!important; flex:1 1 100%!important; min-width:0!important; }
   #page-trend{ padding-top:80px!important; }
+  /* v241: sayfa ici sticky basliklar mobilde sabit ust barin (52px) ALTINA yapissin — icerik artik barin arkasina girmiyor */
+  #page-trend > div[style*="position:sticky"]{ top:52px!important; }
+  #page-hedef > div[style*="position:sticky"]{ top:52px!important; }
+  #page-hedef{ padding-top:62px!important; }
   #page-kasa{ padding-top:62px!important; }
 
   #primTitleBar{ display:none!important; }
@@ -353,7 +357,7 @@ html{scrollbar-gutter:stable}
     white-space:nowrap!important;
     flex-shrink:0!important;
   }
-  #page-rapor{ padding-top:80px!important; }
+  #page-rapor{ padding-top:150px!important; } /* v241: raporHeader (2 satir, ~95px) + topbar(52) — kartlar artik altina girmiyor */
   
   /* Ana scroll body'de olsun */
   body{ overflow-y:auto!important; }
@@ -1903,7 +1907,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <!-- ==================== HEDEF YÖNETİM SAYFASI ==================== -->
     <div id="page-hedef" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
       <div id="hedefOzetDiv" style="margin-bottom:10px"></div>
-      <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;gap:8px">
+      <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;gap:8px;flex-wrap:wrap">
         <h2 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px"><button onclick="switchPage('prim')" class="prim-tool-pill" style="padding:4px 10px" title="Prim Sayfasına dön">← Prim</button> 🎯 Hedef Yönetimi</h2>
         <div style="display:flex;gap:8px;align-items:center">
           <button onclick="openHedefGecmisModal()" style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='var(--panel2)'">📋 Geçmiş Hedefler</button>
@@ -2786,7 +2790,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v240';
+const APP_VERSION = 'v241';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2899,7 +2903,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '07.07.2026 18:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '08.07.2026 09:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15432,6 +15436,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v241',
+    date: '08.07.2026',
+    items: [
+      { type: 'fix', text: 'MOBIL DUZEN: Trend Analizi, Haftalik/Yillik Rapor ve Hedef Yonetimi sayfalarinda kartlar artik ust barin ALTINDA kalmiyor. Sayfa ici yapisan basliklar sabit ust barin (52px) altina oturtuldu; Rapor sayfasinin icerik boslugu sabit basligina gore artirildi (447 adet karti gorunur); Hedef sayfasina ust bosluk eklendi (5 MNP bandi gorunur).' },
+      { type: 'fix', text: 'Hedef Yonetimi baslik satiri artik tasmiyor — dar ekranda "Gecmis Hedefler / + Yeni Hedef" butonlari alt satira sarilir.' },
+    ]
+  },
   {
     version: 'v240',
     date: '07.07.2026',
