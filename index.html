@@ -2326,7 +2326,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <span style="font-size:14px;font-weight:700;color:#fcd34d">💰 Aylık Birim Fiyatlar &amp; Veri Yönetimi</span>
       <button onclick="closePrimModal('fiyatModal')" style="background:rgba(255,255,255,0.15);border:none;color:#fcd34d;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
-    <div style="padding:14px 18px;overflow-y:auto">
+    <div style="padding:12px 9px;overflow-y:auto">
       <div class="price-panel" id="pricePanelDetails">
         <div style="font-size:13px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:4px">💰 Aylık Birim Fiyatlar</div>
         <div class="hdr" style="margin-top:8px">
@@ -2791,7 +2791,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v246';
+const APP_VERSION = 'v247';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2904,7 +2904,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '08.07.2026 14:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '08.07.2026 14:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3277,6 +3277,19 @@ function todayStr(){
 // v227: Bir Date'i YEREL bileşenlerle YYYY-MM-DD yapar. toISOString() UTC verdigi icin
 // TR (UTC+3) gece yarisi/ay-sonu hesaplari 1 gun geri kayiyordu; bunun yerine bunu kullan.
 function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// v247: TL formatli/serbest metni sayiya cevirir (1.000,00 TL -> 1000). Turkce binlik nokta + ondalik virgul.
+function parseTL(str){
+  if(str==null) return NaN;
+  let x = String(str).replace(/[^0-9.,-]/g,'');
+  if(x.indexOf(',')>-1){ x = x.replace(/\./g,'').replace(',','.'); }
+  return parseFloat(x);
+}
+// v247: Fiyat kutusunu blur'da 100,00 TL formatina sokar (data-raw ham degeri tutar)
+function fiyatKutuFormat(el){
+  const n = parseTL(el.value);
+  if(isNaN(n)){ el.value=''; el.dataset.raw=''; return; }
+  el.dataset.raw = n; el.value = fmt(n)+'\u20ba';
+}
 // v237: Turkce-uyumlu otomatik BUYUK harf (i->I, i->I dogru). Imlec konumu korunur.
 function trUpper(el){
   try{ const a=el.selectionStart, b=el.selectionEnd; el.value=(el.value||'').toLocaleUpperCase('tr-TR'); el.setSelectionRange(a,b); }
@@ -5329,7 +5342,7 @@ function savePricesFromForm(btn){
   const ym = document.getElementById('priceMonthSel').value || thisMonthKey();
   if(!prices[ym]) prices[ym] = {};
   CATS.forEach(c=>{
-    const v = parseFloat(document.getElementById('price_'+c).value);
+    const el = document.getElementById('price_'+c); const v = parseTL(el.dataset.raw!==''&&el.dataset.raw!=null ? el.dataset.raw : el.value);
     if(!isNaN(v)) prices[ym][c] = v;
   });
   savePricesStore();
@@ -5823,14 +5836,13 @@ function render(){
       const tanimli = prices[priceYm] && prices[priceYm][c]!=null;
       const v = tanimli ? prices[priceYm][c] : priceFor(priceYm,c);
       const miras = !tanimli; // bu ay için tanımlı değil, önceki aydan miras
-      return `<div style="display:flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid ${renk};border-radius:9px;padding:6px 9px">
+      return `<div style="display:flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid ${renk};border-radius:9px;padding:7px 9px">
         <span style="flex:1;min-width:0;font-size:11.5px;font-weight:800;color:${renk};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c}${miras?` <span title="Önceki aydan miras" style="font-size:7px;color:var(--muted);font-weight:700">·miras</span>`:''}</span>
-        <input type="number" step="0.01" id="price_${c}" value="${v}" style="width:74px;text-align:right;background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:13px;font-weight:700;padding:5px 7px;outline:none">
-        <span style="font-size:11px;color:var(--muted);font-weight:700">₺</span>
+        <input type="text" inputmode="decimal" id="price_${c}" data-raw="${v}" value="${fmt(v)}\u20ba" onfocus="this.value=this.dataset.raw||'';this.select()" onblur="fiyatKutuFormat(this)" style="width:104px;text-align:right;background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--txt);font-size:13px;font-weight:700;padding:6px 8px;outline:none">
       </div>`;
     }).join('');
   priceRow.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:10px">${kartlar}<button onclick="savePricesFromForm(this)" style="padding:9px 6px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:9px;color:#1a1a1a;font-size:12px;font-weight:800;cursor:pointer;${window.innerWidth>700?'grid-column:1/-1;':''}">💾 Kaydet (${monthLabel(priceYm)})</button></div>`;
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:6px;margin-bottom:10px">${kartlar}<button onclick="savePricesFromForm(this)" style="padding:9px 6px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:9px;color:#1a1a1a;font-size:12px;font-weight:800;cursor:pointer;${window.innerWidth>700?'grid-column:1/-1;':''}">💾 Kaydet (${monthLabel(priceYm)})</button></div>`;
 
   // price history table — v162: geçmiş dönemler varsayılan gizli, satırda ✏️ düzenleme
   let histYms = Object.keys(prices).sort().reverse();
@@ -15452,6 +15464,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v247',
+    date: '08.07.2026',
+    items: [
+      { type: 'ui', text: 'Fiyat kutulari artik degeri 100,00TL formatinda gosteriyor (dokununca sade sayiya donup duzenlenir, birakinca tekrar formatlanir). Girilen deger kaydedilirken guvenle sayiya cevriliyor (veri bozulmuyor).' },
+      { type: 'ui', text: 'Fiyatlar modalinin yan bosluklari daraltildi, kartlar genisletildi — icerik ekrani daha iyi dolduruyor.' },
+    ]
+  },
   {
     version: 'v246',
     date: '08.07.2026',
