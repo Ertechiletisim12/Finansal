@@ -306,6 +306,12 @@ body.light #kapanisRaporGovde [style*="color:#3fd0ff"]{ color:#0369a1!important;
 body.light #kapanisRaporGovde [style*="color:#c084fc"]{ color:#7e22ce!important; }
 body.light #kapanisRaporGovde [style*="color:#a3f0b5"]{ color:#15803d!important; }
 body.light #kapanisRaporGovde [style*="color:#fcd34d"]{ color:#a16207!important; }
+body.light #kapanisRaporGovde [style*="color:#5ac8fa"]{ color:#0369a1!important; }
+/* v260: Hakediş paneli açık modda da KOYU zeminli; içindeki tema renkleri siyaha dönüp okunmuyordu */
+body.light #hakedisPanel [style*="var(--txt)"]{ color:#ffffff!important; }
+body.light #hakedisPanel [style*="var(--muted)"]{ color:rgba(255,255,255,0.55)!important; }
+body.light #hakedisPanel{ color:#fff; }
+body.light #hakedisPanel [style*="var(--line)"]{ border-color:rgba(255,255,255,0.12)!important; }
 body.light #kapanisRaporGovde [style*="color:#d1d5db"]{ color:#374151!important; }
 body.light #kapanisRaporGovde [style*="color:#555"]{ color:#9ca3af!important; }
 body.light #kapanisRaporGovde [style*="color:#666"]{ color:#9ca3af!important; }
@@ -1131,6 +1137,10 @@ table.main-table td.editable-cell:focus{outline:2px solid var(--accent);outline-
 table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer}
 
 .bottom-row{display:flex;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+/* v260: 5 kart tek satirda; dar ekranda 2'li, mobilde alt alta */
+.bottom-row > .bottom-card{flex:1 1 175px;min-width:0}
+@media(max-width:900px){ .bottom-row > .bottom-card{flex:1 1 calc(50% - 5px)} }
+@media(max-width:520px){ .bottom-row > .bottom-card{flex:1 1 100%} }
 .bottom-card{background:var(--panel);border:none;border-radius:8px;padding:13px;flex:1;min-width:165px}
 .bottom-card .t{font-size:11.5px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
 .bottom-card .y{font-size:13px;color:var(--muted);margin:5px 0}
@@ -1753,7 +1763,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch;flex-wrap:wrap">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
-        <div id="hakedisPanel" style="display:none;flex:1 1 380px;width:100%;max-width:560px;min-width:min(300px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+        <div id="hakedisPanel" style="display:none;flex:1 1 330px;width:100%;max-width:500px;min-width:min(290px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
           <!-- Üst: büyük hakediş rakamı -->
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -1770,7 +1780,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- Sağ: Günlük Ortalama & Ay Sonu Tahmini (hakedis ile yan yana) -->
-        <div id="statsRowTop" style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:8px;justify-content:stretch"></div>
+        <div id="statsRowTop" style="flex:1 1 340px;min-width:0;display:flex;flex-direction:row;flex-wrap:wrap;align-items:stretch;gap:8px;justify-content:stretch"></div>
 
         </div><!-- /hakedisStatsRow -->
         </div>
@@ -2817,7 +2827,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v259';
+const APP_VERSION = 'v260';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3442,7 +3452,15 @@ function kapanisRaporVerisi(ym){
     kampanyaFiyatEtkisi += (gercek - referans);
     netToplam += gercek;
     toplamAdet += adet;
-    const mnp   = catEntries.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
+    // v260: MNP sayımı MÜŞTERİ kayıtlarından (prim sayfasıyla aynı kaynak).
+    // entries.mnp eski kayıtlarda boş olduğu için tek başına güvenilmez; yedek olarak kullanılır.
+    let mnp = 0;
+    if(MNP_CATS.includes(c)){
+      const _aktOfX = m => (m.aktivasyonTarihi ? m.aktivasyonTarihi : mnpActivationDate(m.entryDate)).slice(0,10);
+      mnp = musteriler.filter(m=>m.cat===c && m.tip==='mnp' && m.durum!=='bekliyor' && ymKey(_aktOfX(m))===ym).length;
+      if(mnp===0) mnp = catEntries.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0); // yedek kaynak
+      if(mnp > adet) mnp = adet;
+    }
     const tesis = adet - mnp;
     satirlar.push({cat:c, adet, mnp, tesis, birim: adet? gercek/adet : 0, tutar: gercek, mnpli: MNP_CATS.includes(c)});
   });
@@ -3473,10 +3491,11 @@ function kapanisRaporVerisi(ym){
 
   // Bu ay AKTİVE olan MNP'ler (onay bekleyenler hariç — prim sayfasıyla tutarlı)
   const aktiveList = musteriler.filter(m=>_inMnp(m) && m.durum!=='bekliyor' && ymKey(_aktOf(m))===ym);
-  const mnpAktive  = aktiveList.length;
+  // v260: Alt toplam, kategori satırlarının toplamıyla BİREBİR aynı olsun (tablo ile kırılım çelişmesin)
+  const mnpAktive  = satirlar.reduce((a,r)=>a+r.mnp,0);
   // Bunların kaçı önceki aydan devretti (giriş ayı ≠ aktivasyon ayı)
-  const mnpDevir   = aktiveList.filter(m=>ymKey(m.entryDate)!==ym).length;   // ÖNCEKİ aydan gelen
-  const mnpDonem   = mnpAktive - mnpDevir;                                    // bu ay girilip bu ay aktive
+  const mnpDevir   = Math.min(aktiveList.filter(m=>ymKey(m.entryDate)!==ym).length, mnpAktive); // ÖNCEKİ aydan gelen
+  const mnpDonem   = Math.max(0, mnpAktive - mnpDevir);                       // bu ay girilip bu ay aktive
 
   // Bu ay GİRİLEN ama aktivasyonu SONRAKİ aya düşen MNP'ler (giden devir)
   const gidenList = musteriler.filter(m=>_inMnp(m) && ymKey(m.entryDate)===ym && ymKey(_aktOf(m))>ym);
@@ -3618,7 +3637,7 @@ function renderKapanisRaporu(ym){
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px">
       ${kart('Toplam İşlem', d.toplamAdet+' adet', d.yeniTesis+' tesis · '+d.mnpAktive+' MNP', '#3fd0ff')}
       ${kart('Net Hakediş', B(d.netHakedis), 'hariç: '+P(d.netHakedis), '#4cd964')}
-      ${kart('Bu Ay Tahsil', B(d.buAyTahsil), 'hariç: '+P(d.buAyTahsil), '#fcd34d')}
+      ${kart('Beklenen Prim', B(d.buAyTahsil), 'hariç: '+P(d.buAyTahsil), '#5ac8fa')}
     </div>
 
     <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 7px">📦 Kategori Detayı</div>
@@ -3685,9 +3704,9 @@ function renderKapanisRaporu(ym){
         <div style="font-size:18px;font-weight:900;color:#3fd0ff;margin-top:3px">${B(d.geridenGelen)}</div>
         <div style="font-size:8.5px;color:var(--muted);margin-top:1px;font-weight:600">hariç: ${P(d.geridenGelen)}</div>
       </div>
-      <div class="kapanis-kart" style="flex:1;min-width:145px;background:rgba(252,211,77,0.1);border:1.5px solid rgba(252,211,77,0.45);border-radius:10px;padding:11px 13px">
-        <div style="font-size:9.5px;color:#fcd34d;font-weight:800;letter-spacing:.04em">= BU AY TAHSİL</div>
-        <div style="font-size:18px;font-weight:900;color:#fcd34d;margin-top:3px">${B(d.buAyTahsil)}</div>
+      <div class="kapanis-kart" style="flex:1;min-width:145px;background:rgba(90,200,250,0.1);border:1.5px solid rgba(90,200,250,0.45);border-radius:10px;padding:11px 13px">
+        <div style="font-size:9.5px;color:#5ac8fa;font-weight:800;letter-spacing:.04em">= BEKLENEN PRİM</div>
+        <div style="font-size:18px;font-weight:900;color:#5ac8fa;margin-top:3px">${B(d.buAyTahsil)}</div>
         <div style="font-size:8.5px;color:var(--muted);margin-top:1px;font-weight:600">hariç: ${P(d.buAyTahsil)}</div>
       </div>
     </div>
@@ -3713,9 +3732,9 @@ function renderKapanisRaporu(ym){
       <div style="display:flex;gap:9px;align-items:center;padding:10px 0 8px;border-top:1px solid var(--line);margin-top:2px">
         <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:rgba(252,211,77,0.2);color:#fcd34d;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center">=</span>
         <div style="flex:1;font-size:12px;color:var(--txt);font-weight:700;line-height:1.5">
-          Bu ay eline geçen:<br>
+          Beklenen prim (bu ay eline geçen):<br>
           <span style="font-size:11px;color:var(--muted);font-weight:600">${P(d.pesin)} + ${P(d.geridenGelen)} =</span>
-          <b style="color:#fcd34d;font-size:14px">${P(d.buAyTahsil)}</b>
+          <b style="color:#5ac8fa;font-size:14px">${P(d.buAyTahsil)}</b>
           <span style="font-size:10px;color:var(--muted);font-weight:600">(KDV dahil ${B(d.buAyTahsil)})</span>
         </div>
       </div>
@@ -3768,7 +3787,7 @@ function kapanisRaporMetni(){
   L.push(`📊 Ödeme dağılımı:`);
   L.push(`   %70 bu ayın hakedişi: ${fmt(d.pesin)}`);
   L.push(`   + %30 ${monthLabel(d.eskiYm)}'dan: ${fmt(d.geridenGelen)}`);
-  L.push(`   = BU AY TAHSİL: ${fmt(d.buAyTahsil)} (KDV dahil ${fmt(kdvBrut(d.buAyTahsil))})`);
+  L.push(`   = BEKLENEN PRİM: ${fmt(d.buAyTahsil)} (KDV dahil ${fmt(kdvBrut(d.buAyTahsil))})`);
   L.push(`   ⏭ Bu ayın %30'u (${fmt(d.kalan)}) → ${monthLabel(addMonths(ym,2))}`);
   return L.join('\n');
 }
@@ -6617,7 +6636,7 @@ function render(){
   const gundeGereken = (hedefKalan!=null && daysInCurMonth-todayNum>0) ? hedefKalan/(daysInCurMonth-todayNum) : null;
 
   statsTopDiv.innerHTML = `
-    <div style="display:flex;gap:8px;flex:1;flex-wrap:wrap">
+    <div id="ortTahminWrap" style="display:contents">
       <div class="stat" style="flex:1 1 140px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
         <div class="t" style="font-size:10px">Günlük Ort. (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
         <div class="v" style="font-size:18px;margin-top:4px">${fmt(dailyAvgCurMonth)}</div>
@@ -6629,7 +6648,7 @@ function render(){
         <div class="sub" style="font-size:9.5px">${daysInCurMonth} gün üzerinden projeksiyon</div>
       </div>
     </div>
-    <div class="stat" style="padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+    <div class="stat" style="flex:1 1 200px;min-width:0;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
       <div class="t" style="font-size:10px">🎯 ${monthLabel(realCurMonth)} Hedefi <span style="opacity:.65">KDV Dahil</span></div>
       ${curHedef ? `
         <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
@@ -6648,16 +6667,21 @@ function render(){
     </div>
   `;
 
-  statsDiv.innerHTML = `
-    <div class="stat" style="min-width:230px">
-      <div class="t">${selectedAvgYear} Yılı Aylık Ortalama <span style="font-size:9.5px;opacity:.7">KDV Dahil</span></div>
-      <div class="v" style="margin-top:6px">${fmt(yearAvgKdv)}</div>
-      <div class="sub">${yearMonths.length} ay verisi üzerinden</div>
+  // v260: Bu iki kart aşağıdaki bottomRow'a taşındı — hepsi tek satırda yan yana dursun
+  statsDiv.innerHTML = '';
+  statsDiv.style.display = 'none';
+  window._yilKartlariHtml = `
+    <div class="bottom-card">
+      <div class="t">${selectedAvgYear} Yılı Aylık Ortalama <span style="font-size:9px;opacity:.7">KDV Dahil</span></div>
+      <div class="y">${yearMonths.length} ay verisi</div>
+      <div class="v">${fmt(yearAvgKdv)}</div>
+      <div class="sub" style="font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px">Aylık ortalama</div>
     </div>
-    <div class="stat" style="min-width:200px">
-      <div class="t">${selectedAvgYear} Yılı Toplam Tutar <span style="font-size:9.5px;opacity:.7">KDV Dahil</span></div>
-      <div class="v" style="margin-top:6px">${fmt(selectedYearSum)}</div>
-      <div class="sub">${yearMonths.length} ay verisi üzerinden</div>
+    <div class="bottom-card">
+      <div class="t">${selectedAvgYear} Yılı Toplam Tutar <span style="font-size:9px;opacity:.7">KDV Dahil</span></div>
+      <div class="y">${yearMonths.length} ay verisi</div>
+      <div class="v">${fmt(selectedYearSum)}</div>
+      <div class="sub" style="font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px">Yıl toplamı</div>
     </div>
   `;
 
@@ -6723,6 +6747,7 @@ function render(){
         ${selectedAvgYear}: <b>${fmt(genelToplamYr)}</b>
       </div>
     </div>
+    ${window._yilKartlariHtml || ''}
   `;
 
   // ---- bar chart: SEÇİLİ YILIN tüm ayları (Ocak-Aralık), KDV dahil, ortalama altı için çizgi ----
@@ -16091,6 +16116,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v260',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'Kapanis Raporu: kategori tablosundaki TESIS/MNP kirilimi ve alt toplam hataliydi — tablo entries.mnp alanindan, kirilim ise musteri kayitlarindan sayiyordu. Artik ikisi de MUSTERI kayitlarindan (yedek olarak entries.mnp) sayiyor; alt toplam satirlarin toplamiyla birebir tutuyor.' },
+      { type: 'ui', text: '"Bu Ay Tahsil" -> "Beklenen Prim" olarak degistirildi, rengi maviye cevrildi (acik modda da okunur).' },
+      { type: 'fix', text: 'PRIM SAYFASI: Hakedis (Toplamlar) paneli acik modda yazilari siyaha donup okunmuyordu — koyu zemin uzerinde beyaz kaliyor. Panel biraz daraltilip sagdaki kartlarla hizalandi.' },
+      { type: 'ui', text: 'Gunluk Ort. + Ay Sonu Tahmini + Aylik Hedef kartlari artik UCLU yan yana. En Yuksek Ay + En Dusuk Ay + Genel Toplam + Yil Ortalamasi + Yil Toplami kartlari da tek satirda yan yana (dar ekranda 2li, mobilde alt alta).' },
+    ]
+  },
   {
     version: 'v259',
     date: '09.07.2026',
