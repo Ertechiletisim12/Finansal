@@ -291,38 +291,7 @@ html{scrollbar-gutter:stable}
   #page-prim{ flex-direction:column!important;height:auto!important; }
   #page-prim .layout{ overflow:visible!important; }
   /* v232: Mobilde Hakediş paneli ve stat alani TAM GENISLIK (sagda cirkin bosluk kalmasin) */
-  /* v277: hakedisStatsRow, ustteki kategori kartlari (#catCards) ile AYNI genislikte olsun */
-  #hakedisStatsRow{ flex-direction:column!important; flex-wrap:wrap!important; gap:8px!important;
-                    margin-bottom:10px!important; padding:0!important; box-sizing:border-box!important; }
-  #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; min-width:0!important; width:100%!important; box-sizing:border-box!important; }
-  #statsRowTop{ flex:1 1 100%!important; min-width:0!important; width:100%!important; box-sizing:border-box!important; }
-  #statsTopCards{ width:100%!important; box-sizing:border-box!important; }
-  #genelDurumSag{ width:100%!important; box-sizing:border-box!important; }
-  #ortTahminWrap{ width:100%!important; box-sizing:border-box!important; }
-  #hakedisStatsRow > *{ min-width:0!important; }
-  /* v280: hakedisStatsRow yeniden catCards ile ayni kapta — ozel hiza yamasi gerekmiyor */
-  #hakedisStatsRow{ margin:0 -14px 10px!important; width:calc(100% + 28px)!important; box-sizing:border-box!important; }
-  #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; }
-  #statsRowTop{ flex:1 1 100%!important; }
-  #genelDurumSag .bottom-row{ grid-template-columns:1fr 1fr!important; gap:6px!important; }
-  /* v275: tek basina kalan son kart tam genislik olsun (sagi bos kalmasin) */
-  #genelDurumSag .bottom-card:nth-child(odd):last-child{ grid-column:span 2!important; }
-  #genelDurumSag .bottom-card:nth-child(1),
-  #genelDurumSag .bottom-card:nth-child(2),
-  #genelDurumSag .bottom-card:nth-child(n+3){ grid-column:span 1!important; }
-  #genelDurumSag .bottom-card{ padding:9px 10px!important; }
-  #genelDurumSag .bottom-card .v{ font-size:14px!important; }
-  #genelDurumSag .bottom-card .t{ font-size:9px!important; }
-  #genelDurumSag .bottom-card .y,#genelDurumSag .bottom-card .sub{ font-size:9px!important; }
-  /* v273: Aylik Prim Grafigi mobilde okunakli — sikistirma yerine yatay kaydirma */
-  .chart-box{ padding:12px 10px 10px!important; }
-  .chart-box h3{ font-size:12.5px!important; margin-bottom:10px!important; }
-  .bars{ height:190px!important; gap:10px!important; padding:0 4px 6px!important; overflow-x:auto!important; -webkit-overflow-scrolling:touch; }
-  .bar-col{ min-width:52px!important; }
-  .bar-col .n{ font-size:9px!important; margin-bottom:1px!important; }
-  .bar-col .v{ font-size:9px!important; margin-bottom:3px!important; }
-  .bar-col .lbl{ font-size:9.5px!important; margin-top:5px!important; }
-  .bar{ width:70%!important; }
+  #hakedisStatsRow{ flex-direction:column!important; gap:8px!important; margin:14px -14px 0!important; width:calc(100% + 28px)!important; box-sizing:border-box!important; }
   #hakedisPanel{ max-width:none!important; width:100%!important; flex:1 1 100%!important; min-width:0!important; margin-top:0!important; }
   #statsRowTop{ width:100%!important; flex:1 1 100%!important; min-width:0!important; }
   #page-trend{ padding-top:112px!important; } /* v243: baslangic; gercek deger JS ile olculur */
@@ -1168,23 +1137,18 @@ table.main-table td.editable-cell:focus{outline:2px solid var(--accent);outline-
 table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer}
 
 .bottom-row{display:flex;gap:10px;margin-bottom:6px;flex-wrap:wrap}
-/* v270: sag sutunda 2 + 3 dizilim (ust satirda 2 genis yil karti, alt satirda 3 kart) */
-#genelDurumSag .bottom-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:0;align-content:stretch}
-#genelDurumSag .bottom-card{display:flex;flex-direction:column;justify-content:center}
-#genelDurumSag .bottom-card{flex:none;min-width:0;padding:11px 13px}
-#genelDurumSag .bottom-card:nth-child(1),
-#genelDurumSag .bottom-card:nth-child(2){grid-column:span 3}
-#genelDurumSag .bottom-card:nth-child(n+3){grid-column:span 2}
-#genelDurumSag .bottom-card .t{font-size:10px}
-#genelDurumSag .bottom-card .v{font-size:17px}
+/* v260: 5 kart tek satirda; dar ekranda 2'li, mobilde alt alta */
+.bottom-row > .bottom-card{flex:1 1 175px;min-width:0}
+@media(max-width:900px){ .bottom-row > .bottom-card{flex:1 1 calc(50% - 5px)} }
+@media(max-width:520px){ .bottom-row > .bottom-card{flex:1 1 100%} }
 .bottom-card{background:var(--panel);border:none;border-radius:8px;padding:13px;flex:1;min-width:165px}
 .bottom-card .t{font-size:11.5px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
 .bottom-card .y{font-size:13px;color:var(--muted);margin:5px 0}
 .bottom-card .v{font-size:21px;font-weight:700}
 
-.chart-box{background:var(--panel);border:none;border-radius:8px;padding:14px 16px 10px;margin-bottom:6px}
+.chart-box{background:var(--panel);border:none;border-radius:8px;padding:16px;margin-bottom:6px}
 .chart-box h3{margin:0 0 14px;font-size:13.5px;font-weight:700}
-.bars{display:flex;align-items:flex-end;gap:14px;height:200px;padding:0 10px;overflow-x:auto}
+.bars{display:flex;align-items:flex-end;gap:16px;height:300px;padding:0 10px;overflow-x:auto}
 .bar-col{flex:1;min-width:50px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
 .bar-col .n{font-size:10.5px;color:var(--muted);margin-bottom:2px}
 .bar-col .v{font-size:10.5px;font-weight:700;margin-bottom:4px}
@@ -1686,7 +1650,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button class="prim-tool-pill" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent)">👥 Müşteri Takibi <span id="musteriTakipBadgeTop" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:9px;margin-left:2px"></span></button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
       <button class="prim-tool-pill" onclick="openCmpModal()">📊 Ay Karşılaştırma</button>
-      <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Prim Detayları</button>
+      <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Detay Tabloları</button>
       <button class="prim-tool-pill" onclick="openSaatModal()">⏱ Saat Analizi</button>
       <button class="prim-tool-pill" onclick="openFiyatModal()">💰 Fiyatlar & Veri</button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
@@ -1763,9 +1727,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
 
       <!-- Sağ: üstte sabit filtre çubuğu, altında scroll eden içerik -->
-      <div id="primRightCol" style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
         <!-- Sabit filtre çubuğu -->
-        <div id="primScrollArea" style="flex:1 1 0;min-height:0;overflow-y:auto;background:var(--bg);padding:8px 14px 6px;z-index:30">
+        <div style="flex-shrink:0;background:var(--bg);padding:8px 14px 6px;z-index:30">
           <div class="filterbar">
             <div class="grp">
               <label>İşlem (kayıt) tarihi</label>
@@ -1794,10 +1758,12 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
             <div class="quick" id="quickRanges"></div>
           </div>
           <div class="cards-row" id="catCards" style="margin-bottom:10px"></div>
+
+        <!-- Genel Hakediş + Günlük Ortalama yan yana -->
         <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch;flex-wrap:wrap">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
-        <div id="hakedisPanel" style="display:none;flex:1 1 460px;width:100%;max-width:500px;min-width:min(290px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+        <div id="hakedisPanel" style="display:none;flex:1 1 330px;width:100%;max-width:500px;min-width:min(290px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
           <!-- Üst: büyük hakediş rakamı -->
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -1814,33 +1780,22 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- Sağ: Günlük Ortalama & Ay Sonu Tahmini (hakedis ile yan yana) -->
-        <div id="statsRowTop" style="flex:1 1 520px;min-width:0;display:flex;flex-direction:column;justify-content:stretch;align-items:stretch;gap:8px;justify-content:stretch">
-          <div id="statsTopCards" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div id="statsRowTop" style="flex:1 1 340px;min-width:0;display:flex;flex-direction:row;flex-wrap:wrap;align-items:stretch;gap:8px;justify-content:stretch"></div>
 
-          <div id="genelDurumSag" style="margin-top:2px;flex:1;display:flex;flex-direction:column">
-            <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:7px">
-              <span style="font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.05em;text-transform:uppercase">📊 Genel Durum &amp; Tahminler</span>
-              <span style="font-size:10px;color:var(--muted)">Yıl:</span>
-              <select id="yearAvgSel2" onchange="document.getElementById('yearAvgSel').value=this.value;render()" style="font-size:10.5px;padding:2px 6px;border-radius:6px"></select>
-            </div>
-            <div class="bottom-row" id="bottomRow" style="margin-bottom:0;flex:1"></div>
-          </div><!-- /genelDurumSag -->
-        </div><!-- /statsRowTop -->
         </div><!-- /hakedisStatsRow -->
-
-        <!-- Genel Hakediş + Günlük Ortalama yan yana -->
+        </div>
 
         <!-- Scroll eden içerik -->
-        <div class="content-col" style="overflow:visible;flex:none;padding-top:0">
+        <div class="content-col" style="overflow-y:auto;flex:1;padding-top:0">
 
-    <div class="section-title" id="genelDurumBaslik" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
+    <div class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
       <span>Genel Durum &amp; Tahminler</span>
       <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:normal">Yıl:</span>
       <select id="yearAvgSel" onchange="render()" style="font-size:11px;padding:2px 6px;text-transform:none"></select>
     </div>
     <div class="stats-row" id="statsRow"></div>
 
-    <!-- bottomRow sağ sütuna taşındı -->
+    <div class="bottom-row" id="bottomRow"></div>
 
     <div class="chart-box">
       <h3 id="chartTitle">Aylık Prim Grafiği</h3>
@@ -1851,7 +1806,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div><!-- /content-col scroll -->
       </div><!-- /sağ kolon wrapper -->
     </div><!-- /layout -->
-    </div>
     </div><!-- /page-prim -->
 
     <div id="page-finans" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
@@ -2317,7 +2271,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="tablolarModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:1100px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="background:linear-gradient(135deg,#e2231a,#b81b14);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <span style="font-size:14px;font-weight:700;color:#fff">📋 Prim Detayları</span>
+      <span style="font-size:14px;font-weight:700;color:#fff">📋 Detay Tabloları</span>
       <button onclick="closePrimModal('tablolarModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
@@ -2873,7 +2827,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v280';
+const APP_VERSION = 'v261';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3890,19 +3844,18 @@ function pdfKapanisRaporu(){
     const pdf = new jsPDF('p','mm','a4');
     const pw = pdf.internal.pageSize.getWidth();
     const ph = pdf.internal.pageSize.getHeight();
+    const iw = pw - 12;
+    const ih = canvas.height * iw / canvas.width;
+    let kalanY = ih, konum = 0;
     const img = canvas.toDataURL('image/png');
-    // v262: TEK SAYFA — görüntüyü A4'e sığacak şekilde oranı bozmadan ölçekle
-    const kenar = 6;
-    let iw = pw - kenar*2;
-    let ih = canvas.height * iw / canvas.width;
-    const maxH = ph - kenar*2;
-    if(ih > maxH){                       // yüksekse yüksekliğe göre küçült
-      const olcek = maxH / ih;
-      ih = maxH; iw = iw * olcek;
+    pdf.addImage(img, 'PNG', 6, 6, iw, ih);
+    kalanY -= (ph - 12);
+    while(kalanY > 0){
+      konum -= (ph - 12);
+      pdf.addPage();
+      pdf.addImage(img, 'PNG', 6, konum + 6, iw, ih);
+      kalanY -= (ph - 12);
     }
-    const x = (pw - iw) / 2;             // yatayda ortala
-    const y = (ih < maxH) ? (ph - ih)/2 : kenar;
-    pdf.addImage(img, 'PNG', x, y, iw, ih);
     pdf.save(`Kapanis_Raporu_${ym}.pdf`);
   }).catch(err=>{ console.error(err); alert('PDF oluşturulamadı: ' + err.message); })
   .finally(()=>{ if(btn){ btn.disabled=false; btn.textContent='📄 PDF İndir'; } });
@@ -6665,7 +6618,7 @@ function render(){
   const monthSum = k => CATS.reduce((a,c)=> a + monthAmount(k,c), 0);
 
   // ---- stats row: Günlük Ortalama, Ay Sonu Tahmini (KDV dahil), Yıllara Göre Aylık Ortalama (yıl seçimli), Yıllara Göre Toplam ----
-  const statsTopDiv = document.getElementById('statsTopCards') || document.getElementById('statsRowTop');
+  const statsTopDiv = document.getElementById('statsRowTop');
   const statsDiv = document.getElementById('statsRow');
 
   // bugünün ayı (içinde bulunulan gerçek ay - "bu ay" mantığı)
@@ -6679,19 +6632,11 @@ function render(){
   // yıl listesi (mevcut verideki yıllar)
   const allYears = [...new Set(Object.keys(monthMapAll).map(m=>m.split('-')[0]))].sort();
   const existingYrSel = document.getElementById('yearAvgSel');
-  const yrSel2 = document.getElementById('yearAvgSel2');
   let selectedAvgYear = existingYrSel ? existingYrSel.value : '';
-
   if(!selectedAvgYear || !allYears.includes(selectedAvgYear)){
     selectedAvgYear = allYears.includes(String(new Date().getFullYear()))
       ? String(new Date().getFullYear())
       : (allYears[allYears.length-1] || String(new Date().getFullYear()));
-  }
-
-  if(yrSel2){
-    const h = allYears.map(y=>`<option value="${y}">${y}</option>`).join('');
-    if(yrSel2.innerHTML !== h) yrSel2.innerHTML = h;
-    yrSel2.value = selectedAvgYear;
   }
 
   // seçili yılın aylık ortalaması (KDV dahil)
@@ -6714,7 +6659,7 @@ function render(){
   const gundeGereken = (hedefKalan!=null && daysInCurMonth-todayNum>0) ? hedefKalan/(daysInCurMonth-todayNum) : null;
 
   statsTopDiv.innerHTML = `
-    <div id="ortTahminWrap" style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch">
+    <div id="ortTahminWrap" style="display:contents">
       <div class="stat" style="flex:1 1 140px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
         <div class="t" style="font-size:10px">Günlük Ort. (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
         <div class="v" style="font-size:18px;margin-top:4px">${fmt(dailyAvgCurMonth)}</div>
@@ -6725,7 +6670,8 @@ function render(){
         <div class="v" style="font-size:18px;margin-top:4px;color:var(--gold)">${fmt(projectedMonthEnd)}</div>
         <div class="sub" style="font-size:9.5px">${daysInCurMonth} gün üzerinden projeksiyon</div>
       </div>
-    <div class="stat" style="flex:1 1 190px;min-width:0;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+    </div>
+    <div class="stat" style="flex:1 1 200px;min-width:0;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
       <div class="t" style="font-size:10px">🎯 ${monthLabel(realCurMonth)} Hedefi <span style="opacity:.65">KDV Dahil</span></div>
       ${curHedef ? `
         <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
@@ -6742,24 +6688,23 @@ function render(){
         <div style="color:var(--muted);font-size:11px;margin-top:6px">Henüz hedef girilmedi</div>
       `}
     </div>
-    </div><!-- /ortTahminWrap -->
   `;
 
+  // v260: Bu iki kart aşağıdaki bottomRow'a taşındı — hepsi tek satırda yan yana dursun
   statsDiv.innerHTML = '';
   statsDiv.style.display = 'none';
-  // Yıl kartları da sağdaki 5'li satıra eklenir
   window._yilKartlariHtml = `
     <div class="bottom-card">
       <div class="t">${selectedAvgYear} Yılı Aylık Ortalama <span style="font-size:9px;opacity:.7">KDV Dahil</span></div>
       <div class="y">${yearMonths.length} ay verisi</div>
       <div class="v">${fmt(yearAvgKdv)}</div>
-      <div class="sub" style="font-size:10px;color:var(--muted);margin-top:5px;border-top:1px solid var(--line);padding-top:5px">Aylık ortalama</div>
+      <div class="sub" style="font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px">Aylık ortalama</div>
     </div>
     <div class="bottom-card">
       <div class="t">${selectedAvgYear} Yılı Toplam Tutar <span style="font-size:9px;opacity:.7">KDV Dahil</span></div>
       <div class="y">${yearMonths.length} ay verisi</div>
       <div class="v">${fmt(selectedYearSum)}</div>
-      <div class="sub" style="font-size:10px;color:var(--muted);margin-top:5px;border-top:1px solid var(--line);padding-top:5px">Yıl toplamı</div>
+      <div class="sub" style="font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px">Yıl toplamı</div>
     </div>
   `;
 
@@ -6801,7 +6746,6 @@ function render(){
   const genelToplamYr = yearMonths.reduce((a,m)=>a+monthSumAll(m)*1.20,0);
 
   bottomDiv.innerHTML = `
-    ${window._yilKartlariHtml || ''}
     <div class="bottom-card">
       <div class="t">En Yüksek Ay <span style="font-size:9px;opacity:.7">KDV Dahil</span></div>
       <div class="y">${bestKeyAll?monthLabel(bestKeyAll):'-'}</div>
@@ -6826,6 +6770,7 @@ function render(){
         ${selectedAvgYear}: <b>${fmt(genelToplamYr)}</b>
       </div>
     </div>
+    ${window._yilKartlariHtml || ''}
   `;
 
   // ---- bar chart: SEÇİLİ YILIN tüm ayları (Ocak-Aralık), KDV dahil, ortalama altı için çizgi ----
@@ -16194,113 +16139,6 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
-  {
-    version: 'v280',
-    date: '10.07.2026',
-    items: [
-      { type: 'fix', text: 'DOGRU COZUM: Hakedis paneli kategori kartlariyla AYNI KABA geri kondu (hiza artik kendiliginden dogru). Kaydirma ise ust kapsayiciya verildi — Toplam karti buyudukce sayfa normal sekilde asagi kayiyor ve grafigin alti gorunuyor. v274-v279 arasindaki mobil hiza yamalarinin hepsi kaldirildi.' },
-    ]
-  },
-  {
-    version: 'v279',
-    date: '10.07.2026',
-    items: [
-      { type: 'fix', text: 'MOBIL HIZA: Kategori kartlarinin (catCards) bulundugu kabin yan boslugu 14px ve kartlar -14px ile bunu iptal ediyor. Ayni formul artik icerik sutunu icin de gecerli: 14px yan bosluk + bloklar -14px. Hakedis paneli, grafik ve Genel Durum kartlari kategori kartlariyla birebir ayni genislikte.' },
-    ]
-  },
-  {
-    version: 'v278',
-    date: '10.07.2026',
-    items: [
-      { type: 'fix', text: 'MOBIL HIZA KESIN COZUM: Kategori kartlari (catCards) icerik sutununun DISINDA, Hakedis paneli ise ICINDE oldugu icin ayni kenar boslugu kurali iki farkli sonuc veriyordu. Mobilde icerik sutununun yan boslugu sifirlandi ve tum bloklar (hakedis paneli, grafik, Genel Durum kartlari) ayni referansa hizalandi. Artik hepsi ustteki kategori kartlariyla tam ayni genislikte.' },
-    ]
-  },
-  {
-    version: 'v277',
-    date: '10.07.2026',
-    items: [
-      { type: 'ui', text: 'MOBIL: Hakedis (Toplam) paneli artik ustteki kategori kartlariyla (PrePaid, Diger vb.) tam ayni genislikte — kenarlardaki bosluk kalkti. Ayni negatif kenar boslugu kurali uygulandi, tasma olmamasi icin box-sizing ve min-width korumasi eklendi.' },
-    ]
-  },
-  {
-    version: 'v276',
-    date: '10.07.2026',
-    items: [
-      { type: 'fix', text: 'MOBIL: Prim sayfasindaki kartlar ekrandan tasiyordu. Sebep, hakedisStatsRow icin kalan eski kural (negatif margin + width:calc(100%+28px)) — blok artik kaydirilabilir icerik sutununun ICINDE oldugu icin bu tasma yaratiyordu. Kaldirildi; hakedis paneli, ust kartlar ve Genel Durum kartlari mobilde ekrana tam oturuyor.' },
-    ]
-  },
-  {
-    version: 'v275',
-    date: '10.07.2026',
-    items: [
-      { type: 'fix', text: 'KRITIK: v274te Prim sayfasi kapanis etiketi eksik kalmisti; bu yuzden Finansal Analiz, Kasa Sayimi, Gelir Takibi, Not & Etiket ve Rapor sayfalari Prim sayfasinin ICINE hapsolmus ve bos gorunuyordu. Duzeltildi — tum sayfalar yeniden aciliyor.' },
-      { type: 'ui', text: 'Mobilde tek basina kalan son kart (Genel Toplam) artik tam genislik — saginda bos alan kalmiyor.' },
-    ]
-  },
-  {
-    version: 'v274',
-    date: '10.07.2026',
-    items: [
-      { type: 'fix', text: 'KOK SORUN: Hakedis (Toplam) karti kaydirilabilir alanin DISINDAYDI. Buyudukce grafigi asagi itiyor, sayfa kaydirilamadigi icin grafigin alti gizli kaliyordu. Artik kaydirilabilir icerik sutununun icinde — sayfa normal kayiyor, grafik her zaman gorunuyor.' },
-      { type: 'ui', text: 'Toplam karti uzadikca yanindaki Genel Durum kartlari da ayni hizada uzuyor — sagda bos alan kalmiyor.' },
-      { type: 'ui', text: 'Aylik Prim Grafigi artik ustteki kategori kartlariyla ayni hizada (ayni kaydirma alaninda, ayni ic bosluk).' },
-    ]
-  },
-  {
-    version: 'v273',
-    date: '10.07.2026',
-    items: [
-      { type: 'fix', text: 'ONEMLI — Prim sayfasi artik AŞAĞI KAYDIRILIYOR. Icerik sutunu flex cocugu oldugu halde min-height:0 tanimlanmamisti; bu yuzden overflow-y:auto calismiyor ve grafigin alti gorulemiyordu.' },
-      { type: 'fix', text: 'Hakedis satiri dar ekranlarda yeniden sarmalaniyor (nowrap kaldirildi) — yatay tasma yok.' },
-      { type: 'ui', text: 'Mobilde Aylik Prim Grafigi kucultulmek yerine OKUNAKLI birakildi: 190px yukseklik, genis sutunlar, yatay kaydirilabilir.' },
-    ]
-  },
-  {
-    version: 'v272',
-    date: '10.07.2026',
-    items: [
-      { type: 'ui', text: 'Aylik Prim Grafigi kisaltildi (300px -> 215px): baslik ile cubuklar arasindaki bos alan kalkti, grafigin alti artik kaydirmadan gorunuyor.' },
-      { type: 'ui', text: 'MOBIL DUZEN: Aylik Prim Grafigi ekrana sigacak sekilde kucultuldu (yukseklik 165px, dar sutunlar, kucuk etiketler). Genel Durum kartlari mobilde 2li ve kompakt.' },
-    ]
-  },
-  {
-    version: 'v271',
-    date: '10.07.2026',
-    items: [
-      { type: 'fix', text: 'Prim sayfasi sag sutunu duzeldi: "Genel Durum & Tahminler" blogu her render islemin de siliniyordu (statsRowTop innerHTML ile yeniden yaziliyordu). Kartlar icin ayri bir kap olusturuldu; artik Gunluk Ort./Ay Sonu/Hedef ustte, Genel Durum blogu onlarin ALTINDA duruyor.' },
-    ]
-  },
-  {
-    version: 'v270',
-    date: '10.07.2026',
-    items: [
-      { type: 'ui', text: 'Genel Durum kartlarinin dizilimi duzeltildi: ust satirda 2 genis kart (Yil Ortalamasi + Yil Toplami), alt satirda 3 kart (En Yuksek Ay, En Dusuk Ay, Genel Toplam). Kartlar artik tek satira sikismiyor, yazilar rahat okunuyor. Mobilde 2li dizilir.' },
-    ]
-  },
-  {
-    version: 'v269',
-    date: '09.07.2026',
-    items: [
-      { type: 'ui', text: 'Prim sayfasindaki bos alan degerlendirildi: "Genel Durum & Tahminler" basligi + 5 kart (En Yuksek Ay, En Dusuk Ay, Genel Toplam, Yil Ortalamasi, Yil Toplami) Hakedis panelinin YANINDAKI bosluga tasindi ve kartlar daraltildi. Hakedis paneli sabit 480px, sag sutun kalan tum alani kullaniyor. Mobilde her sey alt alta sarmalaniyor.' },
-    ]
-  },
-  {
-    version: 'v268',
-    date: '09.07.2026',
-    items: [
-      { type: 'fix', text: 'Prim sayfasi duzeni sadelestirildi: "Genel Durum & Tahminler" basligi ve kartlari sag sutundan alinip kendi bolumune geri kondu (baslik artik bosuklukta asili durmuyor). Hakedis paneli + Gunluk Ort./Ay Sonu/Hedef ustte, Genel Durum kartlari altta normal akista.' },
-      { type: 'ui', text: '"Detay Tablolari" -> "Prim Detaylari" (buton + modal basligi).' },
-    ]
-  },
-  {
-    version: 'v262',
-    date: '09.07.2026',
-    items: [
-      { type: 'imp', text: 'Kapanis Raporu PDF artik TEK SAYFA: goruntu orani bozulmadan A4e sigacak sekilde olceklenip ortalaniyor.' },
-      { type: 'fix', text: 'Service Worker onbellek surumu guncellendi (finansal-v212 -> v262b). Onbellek adi v212den beri hic degismedigi icin yeni surumler cihaza inmiyordu; artik index.html guncellemeleri normal sekilde geliyor. NOT: sw.js dosyasini da yuklemek gerekir.' },
-      { type: 'ui', text: 'PRIM SAYFASI DUZENI: "Genel Durum & Tahminler" kartlari (En Yuksek Ay, En Dusuk Ay, Genel Toplam, Yil Ortalamasi, Yil Toplami) Hakedis panelinin YANINDAKI bos alana tasindi. Sag sutun artik iki katli: ustte Gunluk Ort. + Ay Sonu + Hedef, altta bu 5 kart. Yil secici de oraya tasindi. Mobilde kartlar alt alta dizilir.' },
-    ]
-  },
   {
     version: 'v261',
     date: '09.07.2026',
