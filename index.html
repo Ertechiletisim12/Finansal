@@ -293,24 +293,23 @@ html{scrollbar-gutter:stable}
   /* v232: Mobilde Hakediş paneli ve stat alani TAM GENISLIK (sagda cirkin bosluk kalmasin) */
   /* v277: hakedisStatsRow, ustteki kategori kartlari (#catCards) ile AYNI genislikte olsun */
   #hakedisStatsRow{ flex-direction:column!important; flex-wrap:wrap!important; gap:8px!important;
-                    margin:0 -14px 10px!important; width:calc(100% + 28px)!important;
-                    padding:0!important; box-sizing:border-box!important; }
+                    margin-bottom:10px!important; padding:0!important; box-sizing:border-box!important; }
   #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; min-width:0!important; width:100%!important; box-sizing:border-box!important; }
   #statsRowTop{ flex:1 1 100%!important; min-width:0!important; width:100%!important; box-sizing:border-box!important; }
   #statsTopCards{ width:100%!important; box-sizing:border-box!important; }
   #genelDurumSag{ width:100%!important; box-sizing:border-box!important; }
   #ortTahminWrap{ width:100%!important; box-sizing:border-box!important; }
   #hakedisStatsRow > *{ min-width:0!important; }
-  /* v278: KESIN HIZA — catCards content-col DISINDA, hakedisStatsRow ICINDE oldugu icin
-     ayni negatif margin farkli sonuc veriyordu. Mobilde content-col'un yan boslugunu sifirla,
-     hakedisStatsRow'u da catCards ile ayni sekilde -14px disari tasi. Boylece ikisi de ayni hizada. */
-  .content-col{ padding-left:0!important; padding-right:0!important; }
-  #hakedisStatsRow{ margin-left:-14px!important; margin-right:-14px!important; width:calc(100% + 28px)!important; }
-  /* content-col icindeki diger bloklar da ayni hizaya gelsin */
+  /* v279: catCards'in ebeveyni padding:8px 14px, catCards ise margin:0 -14px ile onu iptal ediyor.
+     Ayni formulu uygulamak icin content-col'a da 14px yan bosluk verip icindeki bloklari -14px cekiyoruz.
+     (v278'de content-col padding'ini 0 yapmistim; formul bozuldugu icin hiza tutmadi.) */
+  .content-col{ padding:8px 14px 14px 14px!important; }
+  #hakedisStatsRow,
   .content-col > .chart-box,
   .content-col > .section-title,
   .content-col > .bottom-row,
-  .content-col > .stats-row{ margin-left:-14px!important; margin-right:-14px!important; width:calc(100% + 28px)!important; box-sizing:border-box!important; }
+  .content-col > .stats-row{ margin-left:-14px!important; margin-right:-14px!important;
+                             width:calc(100% + 28px)!important; box-sizing:border-box!important; }
   #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; }
   #statsRowTop{ flex:1 1 100%!important; }
   #genelDurumSag .bottom-row{ grid-template-columns:1fr 1fr!important; gap:6px!important; }
@@ -2882,7 +2881,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v278';
+const APP_VERSION = 'v279';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -16203,6 +16202,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v279',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'MOBIL HIZA: Kategori kartlarinin (catCards) bulundugu kabin yan boslugu 14px ve kartlar -14px ile bunu iptal ediyor. Ayni formul artik icerik sutunu icin de gecerli: 14px yan bosluk + bloklar -14px. Hakedis paneli, grafik ve Genel Durum kartlari kategori kartlariyla birebir ayni genislikte.' },
+    ]
+  },
   {
     version: 'v278',
     date: '10.07.2026',
