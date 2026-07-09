@@ -2791,7 +2791,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v253';
+const APP_VERSION = 'v254';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -14822,29 +14822,45 @@ function showCatDetail(cat, rStart, rEnd){
     .filter(e=>e.cat===cat && e.date>=rStart && e.date<=rEnd && e.count>0)
     .sort((a,b)=>b.date.localeCompare(a.date));
 
-  // Her müşteri ayrı satır — usedIds ile çift sayım önle
+  // v254: Her musteri KENDI satirinda; adet/tutar her satirda gosterilir (onceden sadece ilki doluydu).
+  // Eslestirme Islem Listesi ile ayni esnek mantikta: logId varsa onunla, bulunamazsa gun+kategori ile.
   const musteriSatirlari = [];
   const usedMIds = new Set();
   catEntries.forEach(e => {
     const amt1 = kampanyaFiyatFor(e.date, cat, priceFor(ymKey(e.date), cat));
     const logs = (entryLog||[]).filter(l=>l.date===e.date&&l.cat===cat).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-    const ilgiliM = (musteriler||[]).filter(m=>m.logId&&!usedMIds.has(m.id)&&logs.some(l=>l.id===m.logId)).slice(0,e.count);
+    let ilgiliM = (musteriler||[]).filter(m=>{
+      if(usedMIds.has(m.id)) return false;
+      if(m.logId && logs.some(l=>l.id===m.logId)) return true;      // log ile bagli
+      if(m.entryDate===e.date && m.cat===cat) return true;          // ayni gun + kategori (logId eski/bozuk olsa da)
+      return false;
+    });
+    // MNP/tesis alt tipi ayrimi olan kategorilerde entry'nin tipiyle esles
+    if(MNP_CATS.includes(cat)){
+      const _tipli = ilgiliM.filter(m => (m.tip==='mnp') === (!!e.mnp));
+      if(_tipli.length) ilgiliM = _tipli;
+    }
+    ilgiliM = ilgiliM.slice(0, e.count);
     ilgiliM.forEach(m=>usedMIds.add(m.id));
     if(ilgiliM.length>0){
-      ilgiliM.forEach((m,i)=>{
+      ilgiliM.forEach((m)=>{
         const logE=logs.find(l=>l.id===m.logId);
         const tarife=m.tarife||(logE&&logE.tarife)||'—';
         musteriSatirlari.push({
-          date: i===0?e.date:'',
+          date: e.date,
           ad:`${esc(m.ad||'')} ${esc(m.soyad||'')}`.trim()||'—',
           tel:m.tel||'—',
           tarife,
-          count:i===0?e.count:'',
-          amt:i===0?fmt(amt1*e.count):''
+          tip: MNP_CATS.includes(cat) ? (m.tip==='mnp' ? 'MNP' : 'Yeni Tesis') : '',
+          count:1,
+          amt:fmt(amt1)
         });
       });
+      // Musterisi eslesmeyen kalan adetler
+      const kalan = e.count - ilgiliM.length;
+      if(kalan>0) musteriSatirlari.push({date:e.date,ad:'—',tel:'—',tarife:'—',tip:MNP_CATS.includes(cat)?(e.mnp?'MNP':'Yeni Tesis'):'',count:kalan,amt:fmt(amt1*kalan)});
     } else {
-      musteriSatirlari.push({date:e.date,ad:'—',tel:'—',tarife:'—',count:e.count,amt:fmt(amt1*e.count)});
+      musteriSatirlari.push({date:e.date,ad:'—',tel:'—',tarife:'—',tip:MNP_CATS.includes(cat)?(e.mnp?'MNP':'Yeni Tesis'):'',count:e.count,amt:fmt(amt1*e.count)});
     }
   });
 
@@ -14853,8 +14869,11 @@ function showCatDetail(cat, rStart, rEnd){
       <td style="padding:8px 10px;font-size:11px;color:#8896a0;white-space:nowrap;vertical-align:top">${r.date}</td>
       <td style="padding:8px 10px;vertical-align:top">
         ${r.ad && r.ad!=='—' ? `<div style="font-size:11.5px;color:#e8eaec;font-weight:600">${r.ad}</div>` : ''}
-        ${r.tel && r.tel!=='—' ? `<div style="font-size:10.5px;color:#7a8090;margin-top:1px">${r.tel}</div>` : ''}
-        ${r.tarife && r.tarife!=='—' ? `<div style="font-size:10px;color:#7ee8ff;margin-top:1px">${r.tarife}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap">
+          ${r.tel && r.tel!=='—' ? `<span style="font-size:10.5px;color:#7a8090">${r.tel}</span>` : ''}
+          ${r.tip ? `<span style="font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:5px;white-space:nowrap;background:${r.tip==='MNP'?'rgba(192,132,252,0.18)':'rgba(76,217,100,0.18)'};color:${r.tip==='MNP'?'#c084fc':'#4cd964'}">${r.tip}</span>` : ''}
+          ${r.tarife && r.tarife!=='—' ? `<span style="font-size:10px;color:#7ee8ff">🏷 ${r.tarife}</span>` : ''}
+        </div>
         ${!r.ad || r.ad==='—' ? `<div style="font-size:10.5px;color:#3e4347">Müşteri kaydı yok</div>` : ''}
       </td>
       <td style="padding:8px 10px;font-size:13px;color:#fff;font-weight:800;text-align:center;vertical-align:top">${r.count>0?r.count:''}</td>
@@ -15180,8 +15199,8 @@ function openExportPreview(tableId, fileLabel){
       const dayLogs = (entryLog||[]).filter(l=>l.date===g.date && l.cat===g.cat);
       // v253: Islem Listesi ile ayni esnek eslestirme — logId varsa onunla, yoksa gun+kategori ile
       let ilgiliM = (musteriler||[]).filter(m =>
-        (m.logId && dayLogs.some(l=>l.id===m.logId)) ||
-        (!m.logId && m.entryDate===g.date && (!m.cat || m.cat===g.cat))
+        (m.logId && dayLogs.some(l=>l.id===m.logId)) ||          // log ile bagli
+        (m.entryDate===g.date && (!m.cat || m.cat===g.cat))       // v254: logId eski/bozuk olsa da gun+kategori ile esles
       );
       ilgiliM = ilgiliM.filter((m,i,arr)=>arr.findIndex(x=>x.id===m.id)===i); // mukerrer temizle
       if(ilgiliM.length > g.count) ilgiliM = ilgiliM.slice(0, g.count);       // adedi asmasin
@@ -15612,6 +15631,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v254',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'Kategori detay penceresi (Ozet > kategoriye tiklama) duzeltildi: ayni gunde birden fazla musteri varsa artik HEPSININ adedi ve tutari gorunuyor (onceden sadece ilk satirda yaziyordu, digerleri bos kaliyordu). Tarih her satirda gosteriliyor.' },
+      { type: 'fix', text: 'Isim eslestirmesi her yerde esnetildi: logId eski/bozuk kayitlara bagliysa bile gun+kategori uzerinden musteri bulunuyor. 06.07 gibi tarihi sonradan duzenlenmis kayitlarin isim ve numaralari artik Disa Aktar ve detay pencerelerinde gorunuyor.' },
+      { type: 'new', text: 'Kategori detay penceresine TIP rozeti eklendi (MNP mor / Yeni Tesis yesil) — hangi islem oldugu artik belli. Tarife de rozetle birlikte ayni satirda.' },
+    ]
+  },
   {
     version: 'v253',
     date: '09.07.2026',
