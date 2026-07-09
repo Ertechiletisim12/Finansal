@@ -297,6 +297,28 @@ html{scrollbar-gutter:stable}
   #page-trend{ padding-top:112px!important; } /* v243: baslangic; gercek deger JS ile olculur */
   /* v244: inline flex:1 mobilde kabi bos yere uzatiyordu (altta bosluk + gereksiz kaydirma) */
   #page-trend,#page-rapor,#page-hedef{ flex:none!important; min-height:0!important; }
+}
+/* v257: ACIK MOD — Kapanis Raporundaki acik vurgu renkleri beyaz zeminde okunmuyordu; koyulastirildi */
+body.light #kapanisRaporGovde [style*="color:#4cd964"]{ color:#15803d!important; }
+body.light #kapanisRaporGovde [style*="color:#ffb74d"]{ color:#b45309!important; }
+body.light #kapanisRaporGovde [style*="color:#ffd27a"]{ color:#a16207!important; }
+body.light #kapanisRaporGovde [style*="color:#3fd0ff"]{ color:#0369a1!important; }
+body.light #kapanisRaporGovde [style*="color:#c084fc"]{ color:#7e22ce!important; }
+body.light #kapanisRaporGovde [style*="color:#a3f0b5"]{ color:#15803d!important; }
+body.light #kapanisRaporGovde [style*="color:#fcd34d"]{ color:#a16207!important; }
+body.light #kapanisRaporGovde [style*="color:#d1d5db"]{ color:#374151!important; }
+body.light #kapanisRaporGovde [style*="color:#555"]{ color:#9ca3af!important; }
+body.light #kapanisRaporGovde [style*="color:#666"]{ color:#9ca3af!important; }
+body.light #kapanisRaporGovde [style*="background:rgba(0,0,0,0.15)"]{ background:#f3f4f6!important; }
+body.light #kapanisRaporModal [style*="color:#fcd34d"]{ color:#fcd34d!important; } /* baslik cubugu koyu zeminde kalsin */
+@media (max-width:700px){
+  /* v257: Kapanis Raporu mobil uyum */
+  #kapanisRaporGovde{ padding:12px 10px!important; }
+  #kapanisKatTabloSar{ overflow-x:auto!important; -webkit-overflow-scrolling:touch; }
+  #kapanisKatTablo{ min-width:430px; }
+  #kapanisRaporModal .kapanis-kart{ min-width:calc(50% - 5px)!important; }
+  #primMobilRaporSatir{ display:flex!important; gap:5px!important; }
+  #primMobilRaporSatir > button{ flex:1!important; margin-bottom:5px!important; font-size:11px!important; padding:7px 6px!important; }
   /* v241: sayfa ici sticky basliklar mobilde sabit ust barin (52px) ALTINA yapissin — icerik artik barin arkasina girmiyor */
   #page-trend > div[style*="position:sticky"]{ top:52px!important; }
   #page-hedef > div[style*="position:sticky"]{ top:52px!important; }
@@ -1644,8 +1666,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <span id="gunlukHedefChipMob" style="display:none;flex-shrink:0;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,183,77,0.12);border:1px solid rgba(255,183,77,0.35);color:var(--gold);white-space:nowrap;cursor:pointer" onclick="openGunlukKirilimModal()"></span>
       </div>
       <!-- Yatırılan Prim butonu -->
-      <button onclick="openKapanisRaporu()" style="width:100%;margin-bottom:5px;background:linear-gradient(135deg,#b45309,#92400e);border:1px solid #fcd34d;color:#fcd34d;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.03em;box-shadow:0 2px 8px rgba(252,211,77,0.25)">📑 Aylık Kapanış Raporu</button>
-      <button onclick="openYatirilanModal()" style="width:100%;margin-bottom:5px;background:linear-gradient(135deg,#92400e,#78350f);border:1px solid #d97706;color:#fcd34d;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.03em;box-shadow:0 2px 8px rgba(217,119,6,0.3)">💰 Yatırılan Prim</button>
+      <div id="primMobilRaporSatir" style="display:flex;gap:5px">
+        <button onclick="openKapanisRaporu()" style="flex:1;margin-bottom:5px;background:linear-gradient(135deg,#b45309,#92400e);border:1px solid #fcd34d;color:#fcd34d;border-radius:8px;padding:7px 8px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(252,211,77,0.25)">📑 Kapanış Raporu</button>
+        <button onclick="openYatirilanModal()" style="flex:1;margin-bottom:5px;background:linear-gradient(135deg,#92400e,#78350f);border:1px solid #d97706;color:#fcd34d;border-radius:8px;padding:7px 8px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(217,119,6,0.3)">💰 Yatırılan Prim</button>
+      </div>
       <!-- TARİH: label + input yan yana tek satır -->
       <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 8px;margin-bottom:4px;display:flex;align-items:center;gap:6px">
         <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;flex-shrink:0">TARİH</span>
@@ -2793,7 +2817,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v256';
+const APP_VERSION = 'v257';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3511,7 +3535,7 @@ function renderKapanisRaporu(ym){
   window._kapanisYm = ym;
   const P = (n)=>fmt(n);              // KDV hariç
   const B = (n)=>fmt(kdvBrut(n));     // KDV dahil
-  const kart = (baslik, deger, alt, renk) => `<div style="flex:1;min-width:135px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid ${renk};border-radius:10px;padding:10px 12px">
+  const kart = (baslik, deger, alt, renk) => `<div class="kapanis-kart" style="flex:1;min-width:135px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid ${renk};border-radius:10px;padding:10px 12px">
       <div style="font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">${baslik}</div>
       <div style="font-size:17px;font-weight:900;color:${renk};margin-top:3px">${deger}</div>
       <div style="font-size:9.5px;color:var(--muted);margin-top:1px">${alt}</div>
@@ -3525,8 +3549,8 @@ function renderKapanisRaporu(ym){
       <td style="padding:8px 10px;text-align:center;font-size:11px;white-space:nowrap">${r.mnpli
           ? `<span style="color:#4cd964;font-weight:700">${r.tesis}</span> <span style="color:#555">/</span> <span style="color:#c084fc;font-weight:700">${r.mnp}</span>`
           : `<span style="color:#666">—</span>`}</td>
-      <td style="padding:8px 10px;text-align:right;font-size:11.5px;color:var(--muted);white-space:nowrap">${P(r.birim)}</td>
-      <td style="padding:8px 10px;text-align:right;font-size:12px;color:#4cd964;font-weight:800;white-space:nowrap">${P(r.tutar)}</td>
+      <td style="padding:8px 10px;text-align:right;font-size:11.5px;color:var(--muted);white-space:nowrap">${B(r.birim)}</td>
+      <td style="padding:8px 10px;text-align:right;white-space:nowrap"><div style="font-size:12px;color:#4cd964;font-weight:800">${B(r.tutar)}</div><div style="font-size:8.5px;color:var(--muted);font-weight:600">hariç: ${P(r.tutar)}</div></td>
     </tr>`).join('');
 
   const bonusBlok = (d.bonusToplam>0) ? `
@@ -3557,13 +3581,13 @@ function renderKapanisRaporu(ym){
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px">
       ${kart('Toplam İşlem', d.toplamAdet+' adet', d.yeniTesis+' tesis · '+d.mnpAktive+' MNP', '#3fd0ff')}
-      ${kart('Net Hakediş', P(d.netHakedis), 'KDV hariç', '#4cd964')}
-      ${kart('KDV Dahil', B(d.netHakedis), '%20 KDV ile', '#ffd27a')}
+      ${kart('Net Hakediş', B(d.netHakedis), 'hariç: '+P(d.netHakedis), '#4cd964')}
+      ${kart('Bu Ay Tahsil', B(d.buAyTahsil), 'hariç: '+P(d.buAyTahsil), '#fcd34d')}
     </div>
 
     <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 7px">📦 Kategori Detayı</div>
-    <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:13px">
-      <table style="width:100%;border-collapse:collapse">
+    <div id="kapanisKatTabloSar" style="border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:13px">
+      <table id="kapanisKatTablo" style="width:100%;border-collapse:collapse">
         <thead><tr style="background:var(--panel2)">
           <th style="padding:8px 10px;text-align:left;font-size:9.5px;color:var(--muted);letter-spacing:.05em">KATEGORİ</th>
           <th style="padding:8px 10px;text-align:center;font-size:9.5px;color:var(--muted)">ADET</th>
@@ -3577,7 +3601,7 @@ function renderKapanisRaporu(ym){
           <td style="padding:9px 10px;text-align:center;font-size:13px;font-weight:900;color:var(--txt)">${d.toplamAdet}</td>
           <td style="padding:9px 10px;text-align:center;font-size:11px;white-space:nowrap"><span style="color:#4cd964;font-weight:800">${d.yeniTesis}</span> <span style="color:#555">/</span> <span style="color:#c084fc;font-weight:800">${d.mnpAktive}</span></td>
           <td></td>
-          <td style="padding:9px 10px;text-align:right;font-size:13px;font-weight:900;color:#4cd964;white-space:nowrap">${P(d.netToplam)}</td>
+          <td style="padding:9px 10px;text-align:right;white-space:nowrap"><div style="font-size:13px;font-weight:900;color:#4cd964">${B(d.netToplam)}</div><div style="font-size:8.5px;color:var(--muted);font-weight:600">hariç: ${P(d.netToplam)}</div></td>
         </tr></tfoot>
       </table>
     </div>
@@ -3599,11 +3623,11 @@ function renderKapanisRaporu(ym){
       <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:6px 0;border-bottom:1px dashed var(--line)">
         <span style="color:var(--muted)">+ Bonuslar</span><span style="color:#a3f0b5;font-weight:700">+${P(d.bonusToplam)}</span>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:9px 0 3px">
-        <span style="color:var(--txt);font-weight:900">= NET HAKEDİŞ</span><span style="color:#4cd964;font-weight:900">${P(d.netHakedis)}</span>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:14px;padding:9px 0 2px">
+        <span style="color:var(--txt);font-weight:900">= NET HAKEDİŞ</span><span style="color:#4cd964;font-weight:900">${B(d.netHakedis)}</span>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:10.5px">
-        <span style="color:var(--muted)">KDV (%20) dahil</span><span style="color:var(--muted);font-weight:700">${B(d.netHakedis)}</span>
+      <div style="display:flex;justify-content:flex-end;font-size:9px">
+        <span style="color:var(--muted);font-weight:600">hariç: ${P(d.netHakedis)}</span>
       </div>
     </div>
 
@@ -3611,20 +3635,20 @@ function renderKapanisRaporu(ym){
 
     <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 7px">📊 Ödeme Dağılımı (%70 / %30)</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px">
-      <div style="flex:1;min-width:145px;background:rgba(76,217,100,0.08);border:1px solid rgba(76,217,100,0.28);border-radius:10px;padding:11px 13px">
+      <div class="kapanis-kart" style="flex:1;min-width:145px;background:rgba(76,217,100,0.08);border:1px solid rgba(76,217,100,0.28);border-radius:10px;padding:11px 13px">
         <div style="font-size:9.5px;color:#4cd964;font-weight:800;letter-spacing:.04em">%70 · BU AYIN HAKEDİŞİ</div>
-        <div style="font-size:18px;font-weight:900;color:#4cd964;margin-top:3px">${P(d.pesin)}</div>
-        <div style="font-size:9.5px;color:var(--muted);margin-top:1px">KDV dahil ${B(d.pesin)}</div>
+        <div style="font-size:18px;font-weight:900;color:#4cd964;margin-top:3px">${B(d.pesin)}</div>
+        <div style="font-size:8.5px;color:var(--muted);margin-top:1px;font-weight:600">hariç: ${P(d.pesin)}</div>
       </div>
-      <div style="flex:1;min-width:145px;background:rgba(63,208,255,0.08);border:1px solid rgba(63,208,255,0.28);border-radius:10px;padding:11px 13px">
+      <div class="kapanis-kart" style="flex:1;min-width:145px;background:rgba(63,208,255,0.08);border:1px solid rgba(63,208,255,0.28);border-radius:10px;padding:11px 13px">
         <div style="font-size:9.5px;color:#3fd0ff;font-weight:800;letter-spacing:.04em">+ %30 · ${monthLabel(d.eskiYm).toUpperCase()}'DAN</div>
-        <div style="font-size:18px;font-weight:900;color:#3fd0ff;margin-top:3px">${P(d.geridenGelen)}</div>
-        <div style="font-size:9.5px;color:var(--muted);margin-top:1px">KDV dahil ${B(d.geridenGelen)}</div>
+        <div style="font-size:18px;font-weight:900;color:#3fd0ff;margin-top:3px">${B(d.geridenGelen)}</div>
+        <div style="font-size:8.5px;color:var(--muted);margin-top:1px;font-weight:600">hariç: ${P(d.geridenGelen)}</div>
       </div>
-      <div style="flex:1;min-width:145px;background:rgba(252,211,77,0.1);border:1.5px solid rgba(252,211,77,0.45);border-radius:10px;padding:11px 13px">
+      <div class="kapanis-kart" style="flex:1;min-width:145px;background:rgba(252,211,77,0.1);border:1.5px solid rgba(252,211,77,0.45);border-radius:10px;padding:11px 13px">
         <div style="font-size:9.5px;color:#fcd34d;font-weight:800;letter-spacing:.04em">= BU AY TAHSİL</div>
-        <div style="font-size:18px;font-weight:900;color:#fcd34d;margin-top:3px">${P(d.buAyTahsil)}</div>
-        <div style="font-size:9.5px;color:var(--muted);margin-top:1px">KDV dahil ${B(d.buAyTahsil)}</div>
+        <div style="font-size:18px;font-weight:900;color:#fcd34d;margin-top:3px">${B(d.buAyTahsil)}</div>
+        <div style="font-size:8.5px;color:var(--muted);margin-top:1px;font-weight:600">hariç: ${P(d.buAyTahsil)}</div>
       </div>
     </div>
     <div style="background:rgba(0,0,0,0.15);border-radius:8px;padding:10px 12px;font-size:10px;color:var(--muted);line-height:1.65;margin-bottom:11px">
@@ -3703,7 +3727,8 @@ function pdfKapanisRaporu(){
     return;
   }
   const btn = event && event.target; if(btn){ btn.disabled=true; btn.textContent='⏳ Hazırlanıyor...'; }
-  html2canvas(govde, {scale:2, backgroundColor:'#1a1c20', useCORS:true}).then(canvas=>{
+  const _bg = document.body.classList.contains('light') ? '#ffffff' : '#1a1c20';
+  html2canvas(govde, {scale:2, backgroundColor:_bg, useCORS:true}).then(canvas=>{
     const {jsPDF} = window.jspdf;
     const pdf = new jsPDF('p','mm','a4');
     const pw = pdf.internal.pageSize.getWidth();
@@ -15964,6 +15989,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v257',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'ACIK MOD: Kapanis Raporundaki acik vurgu renkleri (yesil/turuncu/mavi/mor/sari) beyaz zeminde okunmuyordu — hepsi koyu tonlara cevrildi. PDF de acik modda beyaz zeminle olusuyor.' },
+      { type: 'ui', text: 'KDV hiyerarsisi duzeltildi: KDV DAHIL tutarlar buyuk fontla one cikiyor, KDV haric tutarlar altta kucuk gri yaziyla. Ozet kartlar, kategori tablosu, net hakedis ve odeme dagilimi kartlarinin hepsinde ayni duzen.' },
+      { type: 'ui', text: 'Mobilde "📑 Kapanis Raporu" ve "💰 Yatirilan Prim" butonlari YAN YANA. Kapanis Raporundaki kategori tablosu mobilde tasmiyor (yatay kaydirilabilir), ozet kartlar 2 sutuna diziliyor.' },
+      { type: 'imp', text: 'Ozet kartlarindan biri artik "Bu Ay Tahsil" (%70 + geriden gelen %30) gosteriyor — en cok merak edilen rakam ust bloka tasindi.' },
+    ]
+  },
   {
     version: 'v256',
     date: '09.07.2026',
