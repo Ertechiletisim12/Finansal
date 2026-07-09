@@ -1790,7 +1790,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- Sağ: Günlük Ortalama & Ay Sonu Tahmini (hakedis ile yan yana) -->
-        <div id="statsRowTop" style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;justify-content:stretch"></div>
+        <div id="statsRowTop" style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;justify-content:stretch">
+          <div id="statsTopCards" style="display:flex;flex-direction:column;gap:8px"></div>
 
           <div id="genelDurumSag" style="margin-top:2px">
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:7px">
@@ -1799,7 +1800,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
               <select id="yearAvgSel2" onchange="document.getElementById('yearAvgSel').value=this.value;render()" style="font-size:10.5px;padding:2px 6px;border-radius:6px"></select>
             </div>
             <div class="bottom-row" id="bottomRow" style="margin-bottom:0"></div>
-          </div>
+          </div><!-- /genelDurumSag -->
         </div><!-- /statsRowTop -->
         </div><!-- /hakedisStatsRow -->
 
@@ -2845,7 +2846,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v270';
+const APP_VERSION = 'v271';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -6637,7 +6638,7 @@ function render(){
   const monthSum = k => CATS.reduce((a,c)=> a + monthAmount(k,c), 0);
 
   // ---- stats row: Günlük Ortalama, Ay Sonu Tahmini (KDV dahil), Yıllara Göre Aylık Ortalama (yıl seçimli), Yıllara Göre Toplam ----
-  const statsTopDiv = document.getElementById('statsRowTop');
+  const statsTopDiv = document.getElementById('statsTopCards') || document.getElementById('statsRowTop');
   const statsDiv = document.getElementById('statsRow');
 
   // bugünün ayı (içinde bulunulan gerçek ay - "bu ay" mantığı)
@@ -16166,6 +16167,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v271',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'Prim sayfasi sag sutunu duzeldi: "Genel Durum & Tahminler" blogu her render islemin de siliniyordu (statsRowTop innerHTML ile yeniden yaziliyordu). Kartlar icin ayri bir kap olusturuldu; artik Gunluk Ort./Ay Sonu/Hedef ustte, Genel Durum blogu onlarin ALTINDA duruyor.' },
+    ]
+  },
   {
     version: 'v270',
     date: '10.07.2026',
