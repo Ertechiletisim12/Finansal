@@ -169,7 +169,8 @@ body.light{
   #finansEntityFilterTop{
     display:none!important;
   }
-  .finans-toolbar .btn-hero{
+  .finans-toolbar .btn-hero,
+  .finans-toolbar .btn-soft{
     font-size:11px!important;
     padding:7px 11px!important;
     white-space:nowrap!important;
@@ -1275,11 +1276,30 @@ input:focus,select:focus{outline:1px solid var(--accent)}
 .finans-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 .btn-hero{background:linear-gradient(135deg,var(--red),var(--red-d));color:#fff;border:none;border-radius:8px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 3px 10px rgba(226,35,26,0.4);white-space:nowrap;transition:filter .15s,transform .15s}
 .btn-hero:hover{filter:brightness(1.12);transform:translateY(-1px)}
+/* v263: "Ay Kapanışı" için sakin/kibar buton — .btn-hero'nun agresif kırmızı gradyanı yerine
+   yumuşak yüzey + ince çerçeve. .btn-hero başka yerlerde de kullanıldığı için ayrı sınıf. */
+.btn-soft{
+  background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+  border-radius:9px;padding:9px 16px;font-size:12.5px;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+  box-shadow:0 1px 2px rgba(0,0,0,0.10);
+  transition:background .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease;
+}
+.btn-soft:hover{
+  background:var(--hover);border-color:var(--accent);
+  transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.16);
+}
+.btn-soft:active{transform:translateY(0);box-shadow:0 1px 2px rgba(0,0,0,0.10)}
+.btn-soft .btn-soft-ico{font-size:14px;opacity:.85;line-height:1}
 /* Dash pill butonlar koyu mod */
 body:not(.light) .dash-nav-pill{background:rgba(255,255,255,0.07)!important;border-color:rgba(255,255,255,0.14)!important;color:var(--txt)!important;border-radius:10px!important}
 body:not(.light) .dash-nav-pill:hover{background:rgba(255,255,255,0.13)!important;border-color:rgba(63,208,255,0.45)!important;color:var(--accent)!important}
 .entity-filter-top{display:flex;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:3px}
 .entity-filter-top .qbtn{padding:6px 12px}
+/* v263: Masaustunde operator filtresi SADECE ust arac cubugunda (#finansEntityFilterTop) gorunur.
+   #finansYearMonthFilterTop icine enjekte edilen .finans-entity-row kopyasi gizlenir.
+   Mobilde (max-width:700px) tam tersi: toolbar'daki gizlenir, bu satir gorunur. */
+.finans-entity-row{display:none}
 
 /* sermaye yeterlilik / kapanış rozetleri */
 .badge-yeterli{background:rgba(47,174,78,0.18);color:#4cd964;border:1px solid rgba(47,174,78,0.45);border-radius:5px;padding:3px 9px;font-size:11px;font-weight:700;white-space:nowrap;display:inline-block}
@@ -1624,7 +1644,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
             <button onclick="switchPage('hedef')"  class="dash-nav-pill" style="background:#f0f4ff;border:1.5px solid #d0d8f0;color:#3a4a7a;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#e2eaff';this.style.borderColor='#a0b0e0'" onmouseout="this.style.background='#f0f4ff';this.style.borderColor='#d0d8f0'"><span style="font-size:16px">🎯</span><span>Hedef</span></button>
             <button onclick="switchPage('gelir')"  class="dash-nav-pill" style="background:#f0f4ff;border:1.5px solid #d0d8f0;color:#3a4a7a;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#e2eaff';this.style.borderColor='#a0b0e0'" onmouseout="this.style.background='#f0f4ff';this.style.borderColor='#d0d8f0'"><span style="font-size:16px">💰</span><span>Gelir</span></button>
             <button onclick="openYatirilanModal()" style="background:#e8f7ff;border:1.5px solid #b0ddf5;color:#1a6e9a;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#d0eeff';this.style.borderColor='#80c8ef'" onmouseout="this.style.background='#e8f7ff';this.style.borderColor='#b0ddf5'"><span style="font-size:16px">💳</span><span>Yatırılan</span></button>
-            <button onclick="openFinansAyModal()"  style="background:#fff0f0;border:1.5px solid #f0c0c0;color:#c0302a;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#ffe0e0';this.style.borderColor='#e89090'" onmouseout="this.style.background='#fff0f0';this.style.borderColor='#f0c0c0'"><span style="font-size:16px">➕</span><span>Yeni Ay</span></button>
+            <button onclick="openFinansAyModal()"  style="background:#f5f6f8;border:1.5px solid #dcdfe4;color:#4a5058;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#eceef1';this.style.borderColor='#b9bec6'" onmouseout="this.style.background='#f5f6f8';this.style.borderColor='#dcdfe4'"><span style="font-size:16px">🗓️</span><span>Ay Kapanışı</span></button>
             <button onclick="openAyKapat()"        style="background:#e8fdf0;border:1.5px solid #8ed8aa;color:#1a7a3a;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#d0f5e0';this.style.borderColor='#5cc48a'" onmouseout="this.style.background='#e8fdf0';this.style.borderColor='#8ed8aa'"><span style="font-size:16px">📅</span><span>Ay Kapat</span></button>
             <div id="clockDash" style="text-align:right;line-height:1.3;color:var(--txt);font-variant-numeric:tabular-nums;flex-shrink:0;margin-left:6px"></div>
           </div>
@@ -1650,7 +1670,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button class="prim-tool-pill" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent)">👥 Müşteri Takibi <span id="musteriTakipBadgeTop" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:9px;margin-left:2px"></span></button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
       <button class="prim-tool-pill" onclick="openCmpModal()">📊 Ay Karşılaştırma</button>
-      <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Detay Tabloları</button>
+      <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Prim Detayları</button>
       <button class="prim-tool-pill" onclick="openSaatModal()">⏱ Saat Analizi</button>
       <button class="prim-tool-pill" onclick="openFiyatModal()">💰 Fiyatlar & Veri</button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
@@ -1815,7 +1835,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <div class="finans-toolbar">
             <div class="entity-filter-top" id="finansEntityFilterTop"></div>
             <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
-              <button class="btn-hero" onclick="openFinansAyModal()">➕ Yeni Ay</button>
+              <button class="btn-soft" onclick="openFinansAyModal()" title="Seçilen ayın kapanış verilerini gir"><span class="btn-soft-ico">🗓️</span><span>Ay Kapanışı</span></button>
               <button onclick="openFinansTrashModal()" style="background:rgba(122,31,31,0.25);border:1px solid rgba(226,35,26,0.45);color:#ff7070;border-radius:8px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px" title="Silinen kayıtları görüntüle ve geri yükle" id="trashBtn">🗑️ <span id="trashCount" style="background:#7a1f1f;color:#fff;border-radius:10px;padding:1px 7px;font-size:10.5px;margin-left:2px;display:none">0</span></button>
             </div>
             <div class="clock" id="clockFinans"></div>
@@ -2271,7 +2291,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="tablolarModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:1100px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="background:linear-gradient(135deg,#e2231a,#b81b14);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <span style="font-size:14px;font-weight:700;color:#fff">📋 Detay Tabloları</span>
+      <span style="font-size:14px;font-weight:700;color:#fff">📋 Prim Detayları</span>
       <button onclick="closePrimModal('tablolarModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
@@ -2583,7 +2603,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="finansAyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:560px;width:96%;max-height:92vh;overflow-y:auto">
     <div id="finansAyModalHeader" style="background:linear-gradient(135deg,#e2231a,#b81b14);padding:15px 18px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
-      <span id="finansAyModalBaslik" style="font-size:15px;font-weight:700;color:#fff">💹 Yeni Ay Verisi</span>
+      <span id="finansAyModalBaslik" style="font-size:15px;font-weight:700;color:#fff">🗓️ Ay Kapanışı</span>
       <button onclick="closeFinansAyModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:18px">
@@ -2827,7 +2847,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v262';
+const APP_VERSION = 'v263';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2940,7 +2960,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '09.07.2026 21:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '10.07.2026 09:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -9554,14 +9574,14 @@ function saveYatirilanModal() {
 
 // ==================== FİNANS AY MODALI ====================
 let finansAyModalYm = null;    // edit modundan (✏️) açılınca set edilir
-let finansAyModalIsNewMode = true; // true = "Yeni Ay" butonundan açıldı
+let finansAyModalIsNewMode = true; // true = "Ay Kapanışı" butonundan açıldı (v263 öncesi adı: "Yeni Ay")
 
 function openFinansAyModal(ym) {
   const monthNames=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
   const isEdit = !!ym;
   finansAyModalYm = ym || null;
   finansAyModalIsNewMode = !isEdit;
-  document.getElementById('finansAyModalBaslik').textContent = isEdit ? `✏️ ${monthLabel(ym)} Düzenle` : '💹 Yeni Ay Verisi';
+  document.getElementById('finansAyModalBaslik').textContent = isEdit ? `✏️ ${monthLabel(ym)} Düzenle` : '🗓️ Ay Kapanışı';
   document.getElementById('finansAyModalSilBtn').style.display = isEdit ? '' : 'none';
 
   if(isEdit) {
@@ -15602,7 +15622,7 @@ function openExportPreview(tableId, fileLabel){
     const now = nowTR().toLocaleString('tr-TR');
     const stamp = xlsTimestamp();
     const modal = document.getElementById('exportFullModal');
-    const titles = {compareTable:'Ay Karşılaştırması',mainTable:'Aylık Kategori Dağılımı',financeTable:'Prim / Finans Özeti',priceHistTable:'Fiyat Geçmişi',gelirTable:'Gelir / Gider Tablosu',capitalTable:'Sermaye Gelişimi',marjTable:'Vodafone MIXY Kâr/Masraf',finansDetailTable:'Finans Detaylı Tablo',detayCombinedTable:'Detay Tabloları',saatExportTable:'Saatlik Giriş Yoğunluğu'};
+    const titles = {compareTable:'Ay Karşılaştırması',mainTable:'Aylık Kategori Dağılımı',financeTable:'Prim / Finans Özeti',priceHistTable:'Fiyat Geçmişi',gelirTable:'Gelir / Gider Tablosu',capitalTable:'Sermaye Gelişimi',marjTable:'Vodafone MIXY Kâr/Masraf',finansDetailTable:'Finans Detaylı Tablo',detayCombinedTable:'Prim Detayları',saatExportTable:'Saatlik Giriş Yoğunluğu'};
     document.getElementById('exportModalTitle').textContent = '📊 ' + (titles[tableId] || fileLabel);
     document.getElementById('exportModalSub').textContent = now;
     document.getElementById('exportModalTabs').innerHTML = `<button style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700">📋 Tablo</button>`;
@@ -16122,6 +16142,17 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v263',
+    date: '10.07.2026',
+    items: [
+      { type: 'ui', text: 'Prim sayfasindaki "Detay Tablolari" adi "PRIM DETAYLARI" olarak degistirildi (buton, pencere basligi ve disa aktarma dosya basligi).' },
+      { type: 'fix', text: 'FINANSAL ANALIZ: Masaustunde Tumu / Vodafone / MIXY operator filtresi IKI KEZ gorunuyordu — hem sag ust arac cubugunda hem de yil butonlarinin ustunde. Ayni buton grubu iki ayri kaba enjekte ediliyordu; mobil gorunumde biri CSS ile gizlendigi icin sorun fark edilmiyordu. Artik masaustunde yalnizca sag ust arac cubugunda, mobilde yalnizca yil butonlarinin ustunde gorunuyor.' },
+      { type: 'ui', text: '"Yeni Ay" butonunun adi "AY KAPANISI" olarak degistirildi (Finansal Analiz arac cubugu + ana ekran hizli erisim + acilan pencere basligi).' },
+      { type: 'ui', text: 'Ay Kapanisi butonu daha sakin bir gorunume kavustu: kirmizi gradyan ve sert golge yerine yumusak yuzey, ince cerceve ve hafif hover animasyonu (yeni .btn-soft sinifi). .btn-hero baska yerlerde kullanildigi icin o sinifa dokunulmadi.' },
+      { type: 'warn', text: 'DIKKAT: Ana ekranda "Ay Kapanisi" (finans verisi girisi) ile "Ay Kapat" (yatirilan prim / donem kapatma akisi) butonlari yan yana duruyor. Isimler benzestigi icin karistirilabilir — istersen ikinciyi farkli adlandiralim.' },
+    ]
+  },
   {
     version: 'v262',
     date: '09.07.2026',
