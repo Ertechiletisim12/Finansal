@@ -294,7 +294,10 @@ html{scrollbar-gutter:stable}
   #hakedisStatsRow{ flex-direction:column!important; flex-wrap:wrap!important; gap:8px!important; margin:14px -14px 0!important; width:calc(100% + 28px)!important; box-sizing:border-box!important; }
   #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; }
   #statsRowTop{ flex:1 1 100%!important; }
-  #genelDurumSag .bottom-card{ flex:1 1 calc(50% - 4px)!important; }
+  #genelDurumSag .bottom-row{ grid-template-columns:1fr 1fr!important; }
+  #genelDurumSag .bottom-card:nth-child(1),
+  #genelDurumSag .bottom-card:nth-child(2),
+  #genelDurumSag .bottom-card:nth-child(n+3){ grid-column:span 1!important; }
   #hakedisPanel{ max-width:none!important; width:100%!important; flex:1 1 100%!important; min-width:0!important; margin-top:0!important; }
   #statsRowTop{ width:100%!important; flex:1 1 100%!important; min-width:0!important; }
   #page-trend{ padding-top:112px!important; } /* v243: baslangic; gercek deger JS ile olculur */
@@ -1140,13 +1143,14 @@ table.main-table td.editable-cell:focus{outline:2px solid var(--accent);outline-
 table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer}
 
 .bottom-row{display:flex;gap:10px;margin-bottom:6px;flex-wrap:wrap}
-/* v269: sag sutundaki 5 kart daraltildi — bos alana sigsin */
-#genelDurumSag .bottom-row{gap:7px}
-#genelDurumSag .bottom-card{flex:1 1 0;min-width:0;padding:9px 11px}
-#genelDurumSag .bottom-card .t{font-size:9.5px}
-#genelDurumSag .bottom-card .v{font-size:15px}
-#genelDurumSag .bottom-card .y{font-size:9.5px}
-@media(max-width:1200px){ #genelDurumSag .bottom-card{flex:1 1 calc(33.333% - 5px)} }
+/* v270: sag sutunda 2 + 3 dizilim (ust satirda 2 genis yil karti, alt satirda 3 kart) */
+#genelDurumSag .bottom-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:0}
+#genelDurumSag .bottom-card{flex:none;min-width:0;padding:11px 13px}
+#genelDurumSag .bottom-card:nth-child(1),
+#genelDurumSag .bottom-card:nth-child(2){grid-column:span 3}
+#genelDurumSag .bottom-card:nth-child(n+3){grid-column:span 2}
+#genelDurumSag .bottom-card .t{font-size:10px}
+#genelDurumSag .bottom-card .v{font-size:17px}
 .bottom-card{background:var(--panel);border:none;border-radius:8px;padding:13px;flex:1;min-width:165px}
 .bottom-card .t{font-size:11.5px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
 .bottom-card .y{font-size:13px;color:var(--muted);margin:5px 0}
@@ -2841,7 +2845,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v269';
+const APP_VERSION = 'v270';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -6769,6 +6773,7 @@ function render(){
   const genelToplamYr = yearMonths.reduce((a,m)=>a+monthSumAll(m)*1.20,0);
 
   bottomDiv.innerHTML = `
+    ${window._yilKartlariHtml || ''}
     <div class="bottom-card">
       <div class="t">En Yüksek Ay <span style="font-size:9px;opacity:.7">KDV Dahil</span></div>
       <div class="y">${bestKeyAll?monthLabel(bestKeyAll):'-'}</div>
@@ -6793,7 +6798,6 @@ function render(){
         ${selectedAvgYear}: <b>${fmt(genelToplamYr)}</b>
       </div>
     </div>
-    ${window._yilKartlariHtml || ''}
   `;
 
   // ---- bar chart: SEÇİLİ YILIN tüm ayları (Ocak-Aralık), KDV dahil, ortalama altı için çizgi ----
@@ -16162,6 +16166,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v270',
+    date: '10.07.2026',
+    items: [
+      { type: 'ui', text: 'Genel Durum kartlarinin dizilimi duzeltildi: ust satirda 2 genis kart (Yil Ortalamasi + Yil Toplami), alt satirda 3 kart (En Yuksek Ay, En Dusuk Ay, Genel Toplam). Kartlar artik tek satira sikismiyor, yazilar rahat okunuyor. Mobilde 2li dizilir.' },
+    ]
+  },
   {
     version: 'v269',
     date: '09.07.2026',
