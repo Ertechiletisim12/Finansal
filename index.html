@@ -1644,6 +1644,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <span id="gunlukHedefChipMob" style="display:none;flex-shrink:0;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,183,77,0.12);border:1px solid rgba(255,183,77,0.35);color:var(--gold);white-space:nowrap;cursor:pointer" onclick="openGunlukKirilimModal()"></span>
       </div>
       <!-- Yatırılan Prim butonu -->
+      <button onclick="openKapanisRaporu()" style="width:100%;margin-bottom:5px;background:linear-gradient(135deg,#b45309,#92400e);border:1px solid #fcd34d;color:#fcd34d;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.03em;box-shadow:0 2px 8px rgba(252,211,77,0.25)">📑 Aylık Kapanış Raporu</button>
       <button onclick="openYatirilanModal()" style="width:100%;margin-bottom:5px;background:linear-gradient(135deg,#92400e,#78350f);border:1px solid #d97706;color:#fcd34d;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.03em;box-shadow:0 2px 8px rgba(217,119,6,0.3)">💰 Yatırılan Prim</button>
       <!-- TARİH: label + input yan yana tek satır -->
       <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 8px;margin-bottom:4px;display:flex;align-items:center;gap:6px">
@@ -2792,7 +2793,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v255';
+const APP_VERSION = 'v256';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3396,6 +3397,7 @@ function calcPrimWithKampanya(ym){
 // ==================== v255: AYLIK KAPANIŞ RAPORU ====================
 // Prim AKTİVASYON tarihine göre sayılır (MNP = giriş+2). Devreden MNP'ler bu aya dahildir.
 const RAPOR_PESIN_ORAN = 0.70; // hakedişin bu dönem ödenen kısmı
+const RAPOR_KALAN_ORAN = 0.30; // 2 ay sonra ödenen kısım (kayan nokta hatası olmasın diye ayrı sabit)
 function kapanisRaporVerisi(ym){
   const adetMap = effectiveCountForYm(ym);
   const satirlar = [];
@@ -3453,12 +3455,20 @@ function kapanisRaporVerisi(ym){
 
   const netHakedis = netToplam + bonusToplam;              // KDV hariç
   const brutHakedis = kdvBrut(netHakedis);                  // KDV dahil
-  const pesin = netHakedis * RAPOR_PESIN_ORAN;
-  const kalan = netHakedis - pesin;
+  const pesin = netHakedis * RAPOR_PESIN_ORAN;              // bu ayın %70'i
+  const kalan = netHakedis - pesin;                          // bu ayın %30'u → 2 ay sonra ödenir
+
+  // v256: 2 AY ÖNCEKİ hakedişin %30'u BU AY ödenir (geriden gelen bakiye)
+  const eskiYm = addMonths(ym, -2);
+  const eskiNet = calcPrimWithKampanya(eskiYm);              // o ayın net hakedişi (fiyat kamp. + bonuslar dahil)
+  const geridenGelen = eskiNet * RAPOR_KALAN_ORAN;
+  const buAyTahsil = pesin + geridenGelen;                    // bu ay eline geçecek net toplam
+
   const yatirilanTutar = (typeof yatirilan!=='undefined' && yatirilan[ym]) ? Number(yatirilan[ym])||0 : 0;
 
   return {ym, satirlar, toplamAdet, netToplam, kampanyaFiyatEtkisi, esikBonuslar, esikToplam,
           tekrarliToplam, bonusToplam, netHakedis, brutHakedis, pesin, kalan,
+          eskiYm, eskiNet, geridenGelen, buAyTahsil,
           mnpAktive, mnpDonem, mnpDevir, yeniTesis, bekleyenAdet, yatirilanTutar};
 }
 
@@ -3478,10 +3488,10 @@ function openKapanisRaporu(){
     </div>
     <div style="padding:13px 16px;background:var(--panel2);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;flex-wrap:wrap">
       <span style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">📅 Ay Seç</span>
-      <select id="kapanisAySec" style="flex:1;min-width:150px;padding:7px 10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;font-weight:600">
+      <select id="kapanisAySec" onchange="renderKapanisRaporu(this.value)" style="flex:1;min-width:150px;padding:7px 10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;font-weight:600">
         ${aylar.map(a=>`<option value="${a}">${monthLabel(a)}</option>`).join('')}
       </select>
-      <button onclick="renderKapanisRaporu(document.getElementById('kapanisAySec').value)" style="padding:8px 16px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:8px;color:#1a1a1a;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap">📊 Raporu Görüntüle</button>
+      <span style="font-size:9.5px;color:var(--muted);white-space:nowrap">↻ ay seçince otomatik güncellenir</span>
     </div>
     <div id="kapanisRaporIcerik" style="max-height:70vh;overflow-y:auto"></div>
     <div id="kapanisRaporAksiyon" style="display:none;padding:11px 16px;background:var(--panel2);border-top:1px solid var(--line);gap:8px;justify-content:flex-end">
@@ -3601,29 +3611,38 @@ function renderKapanisRaporu(ym){
 
     <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 7px">📊 Ödeme Dağılımı (%70 / %30)</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px">
-      <div style="flex:1;min-width:150px;background:rgba(76,217,100,0.08);border:1px solid rgba(76,217,100,0.28);border-radius:10px;padding:11px 13px">
-        <div style="font-size:10px;color:#4cd964;font-weight:800;letter-spacing:.04em">%70 · BU DÖNEM ÖDENECEK</div>
-        <div style="font-size:19px;font-weight:900;color:#4cd964;margin-top:3px">${P(d.pesin)}</div>
+      <div style="flex:1;min-width:145px;background:rgba(76,217,100,0.08);border:1px solid rgba(76,217,100,0.28);border-radius:10px;padding:11px 13px">
+        <div style="font-size:9.5px;color:#4cd964;font-weight:800;letter-spacing:.04em">%70 · BU AYIN HAKEDİŞİ</div>
+        <div style="font-size:18px;font-weight:900;color:#4cd964;margin-top:3px">${P(d.pesin)}</div>
         <div style="font-size:9.5px;color:var(--muted);margin-top:1px">KDV dahil ${B(d.pesin)}</div>
       </div>
-      <div style="flex:1;min-width:150px;background:rgba(255,183,77,0.08);border:1px solid rgba(255,183,77,0.28);border-radius:10px;padding:11px 13px">
-        <div style="font-size:10px;color:#ffb74d;font-weight:800;letter-spacing:.04em">%30 · SONRAKİ DÖNEME</div>
-        <div style="font-size:19px;font-weight:900;color:#ffb74d;margin-top:3px">${P(d.kalan)}</div>
-        <div style="font-size:9.5px;color:var(--muted);margin-top:1px">KDV dahil ${B(d.kalan)}</div>
+      <div style="flex:1;min-width:145px;background:rgba(63,208,255,0.08);border:1px solid rgba(63,208,255,0.28);border-radius:10px;padding:11px 13px">
+        <div style="font-size:9.5px;color:#3fd0ff;font-weight:800;letter-spacing:.04em">+ %30 · ${monthLabel(d.eskiYm).toUpperCase()}'DAN</div>
+        <div style="font-size:18px;font-weight:900;color:#3fd0ff;margin-top:3px">${P(d.geridenGelen)}</div>
+        <div style="font-size:9.5px;color:var(--muted);margin-top:1px">KDV dahil ${B(d.geridenGelen)}</div>
+      </div>
+      <div style="flex:1;min-width:145px;background:rgba(252,211,77,0.1);border:1.5px solid rgba(252,211,77,0.45);border-radius:10px;padding:11px 13px">
+        <div style="font-size:9.5px;color:#fcd34d;font-weight:800;letter-spacing:.04em">= BU AY TAHSİL</div>
+        <div style="font-size:18px;font-weight:900;color:#fcd34d;margin-top:3px">${P(d.buAyTahsil)}</div>
+        <div style="font-size:9.5px;color:var(--muted);margin-top:1px">KDV dahil ${B(d.buAyTahsil)}</div>
       </div>
     </div>
-    <div style="background:rgba(0,0,0,0.15);border-radius:8px;padding:9px 12px;font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:11px">
-      <b style="color:var(--txt)">Hesaplama:</b> Net hakediş <b>${P(d.netHakedis)}</b> (KDV hariç) üzerinden;
-      <span style="color:#4cd964">%70 = ${P(d.pesin)}</span> bu dönem ödenir,
-      <span style="color:#ffb74d">%30 = ${P(d.kalan)}</span> sonraki döneme aktarılır.
-      Oranlar bonuslar <b>dahil</b> toplam hakedişe uygulanır. KDV (%20) tutarların üzerine eklenir.
+    <div style="background:rgba(0,0,0,0.15);border-radius:8px;padding:10px 12px;font-size:10px;color:var(--muted);line-height:1.65;margin-bottom:11px">
+      <b style="color:var(--txt)">Nasıl hesaplandı?</b><br>
+      • Bu ayın net hakedişi <b style="color:var(--txt)">${P(d.netHakedis)}</b> → <span style="color:#4cd964">%70'i (${P(d.pesin)}) bu ay</span>, <span style="color:#ffb74d">%30'u (${P(d.kalan)}) 2 ay sonra</span> ödenir.<br>
+      • <b style="color:var(--txt)">${monthLabel(d.eskiYm)}</b> hakedişi ${P(d.eskiNet)} idi → <span style="color:#3fd0ff">%30'u (${P(d.geridenGelen)}) bu ay tahsil edilir</span>.<br>
+      • <b style="color:#fcd34d">Bu ay eline geçen = ${P(d.pesin)} + ${P(d.geridenGelen)} = ${P(d.buAyTahsil)}</b> (KDV hariç).<br>
+      • Oranlar bonuslar <b>dahil</b> toplam hakedişe uygulanır; KDV (%20) tutarların üzerine eklenir.
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,183,77,0.06);border:1px dashed rgba(255,183,77,0.3);border-radius:8px;padding:8px 12px;font-size:10.5px;margin-bottom:11px">
+      <span style="color:var(--muted)">⏭ Bu ayın %30'u (<b style="color:#ffb74d">${P(d.kalan)}</b>) → <b style="color:var(--txt)">${monthLabel(addMonths(ym,2))}</b> ayında ödenecek</span>
     </div>
 
     ${d.yatirilanTutar>0?`<div style="background:rgba(63,208,255,0.07);border:1px solid rgba(63,208,255,0.25);border-radius:10px;padding:10px 13px;margin-bottom:11px">
       <div style="display:flex;justify-content:space-between;font-size:11.5px"><span style="color:var(--accent);font-weight:800">💰 Bu ay yatırılan prim</span><span style="color:var(--accent);font-weight:900">${fmt(d.yatirilanTutar)}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:10.5px;margin-top:4px;padding-top:4px;border-top:1px solid rgba(63,208,255,0.15)">
-        <span style="color:var(--muted)">Beklenen (%70, KDV dahil) ile fark</span>
-        <span style="font-weight:800;color:${(d.yatirilanTutar - kdvBrut(d.pesin))>=0?'#4cd964':'#ff7070'}">${(d.yatirilanTutar - kdvBrut(d.pesin))>=0?'+':''}${fmt(d.yatirilanTutar - kdvBrut(d.pesin))}</span>
+        <span style="color:var(--muted)">Beklenen tahsilat (%70 + geriden %30, KDV dahil) ile fark</span>
+        <span style="font-weight:800;color:${(d.yatirilanTutar - kdvBrut(d.buAyTahsil))>=0?'#4cd964':'#ff7070'}">${(d.yatirilanTutar - kdvBrut(d.buAyTahsil))>=0?'+':''}${fmt(d.yatirilanTutar - kdvBrut(d.buAyTahsil))}</span>
       </div>
     </div>`:''}
 
@@ -3654,8 +3673,10 @@ function kapanisRaporMetni(){
   L.push(`✅ NET HAKEDİŞ: ${fmt(d.netHakedis)} (KDV dahil ${fmt(kdvBrut(d.netHakedis))})`);
   L.push('');
   L.push(`📊 Ödeme dağılımı:`);
-  L.push(`   %70 bu dönem: ${fmt(d.pesin)}`);
-  L.push(`   %30 sonraki döneme: ${fmt(d.kalan)}`);
+  L.push(`   %70 bu ayın hakedişi: ${fmt(d.pesin)}`);
+  L.push(`   + %30 ${monthLabel(d.eskiYm)}'dan: ${fmt(d.geridenGelen)}`);
+  L.push(`   = BU AY TAHSİL: ${fmt(d.buAyTahsil)} (KDV dahil ${fmt(kdvBrut(d.buAyTahsil))})`);
+  L.push(`   ⏭ Bu ayın %30'u (${fmt(d.kalan)}) → ${monthLabel(addMonths(ym,2))}`);
   return L.join('\n');
 }
 
@@ -15943,6 +15964,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v256',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'Kapanis Raporu odeme dagilimi duzeltildi: %30 GERIDEN GELIYOR. Artik 3 kart var — (1) %70 bu ayin hakedisi, (2) + %30 IKI AY ONCEKI aydan gelen bakiye, (3) = BU AY TAHSIL toplami. Ayrica bu ayin %30unun hangi ay odenecegi de yaziyor. Aciklama bolumu bu akisi adim adim anlatiyor.' },
+      { type: 'imp', text: 'Ay secince rapor OTOMATIK olusuyor — "Raporu Goruntule" butonuna gerek yok.' },
+      { type: 'ui', text: 'Mobilde "📑 Aylik Kapanis Raporu" butonu eklendi (Yatirilan Prim butonunun ustunde, tam genislik). PC de arac cubugunda duruyor.' },
+    ]
+  },
   {
     version: 'v255',
     date: '09.07.2026',
