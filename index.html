@@ -2791,7 +2791,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v250';
+const APP_VERSION = 'v251';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2904,7 +2904,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '08.07.2026 16:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '09.07.2026 09:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6303,15 +6303,21 @@ function render(){
         let musteriSat = '';
         try {
           const dayLogs2 = allDayLogs;
-          // v250: logId ile eslesenler + logId'si olmayanlar (tarih+kategori ile). Tarife zorunlu degil.
-          const _logluMusteriler = (musteriler||[]).filter(m=>m.logId && dayLogs2.some(l=>l.id===m.logId));
-          const _logsuzMusteriler = (musteriler||[]).filter(m=>!m.logId && m.entryDate===date && m.cat===e.cat);
-          let ilgiliMusteriler2 = _logluMusteriler.concat(_logsuzMusteriler);
-          // Ayni kategori icinde birden fazla tarife varsa tarifeye gore ayikla (yoksa hepsini goster)
+          // v251: O gun + o kategorideki TUM musteriler (logId olsun olmasin). Tarife sadece ayirici, eleyici degil.
+          let ilgiliMusteriler2 = (musteriler||[]).filter(m => {
+            // 1) Log ile bagliysa: kategori zaten log uzerinden dogru -> kabul et
+            if(m.logId && dayLogs2.some(l=>l.id===m.logId)) return true;
+            // 2) Log yoksa: ayni gun + ayni kategori (cat bos/eksikse gun yeter)
+            if(m.entryDate===date && (!m.cat || m.cat===e.cat)) return true;
+            return false;
+          });
+          // Ayni kategoride farkli tarifeler varsa tarifeye gore ayikla — eslesme yoksa hepsi kalir
           if(e.tarife){
             const _tarifeliler = ilgiliMusteriler2.filter(m=>(m.tarife||'')===(e.tarife||''));
             if(_tarifeliler.length) ilgiliMusteriler2 = _tarifeliler;
           }
+          // Tekrar edenleri temizle
+          ilgiliMusteriler2 = ilgiliMusteriler2.filter((m,i,arr)=>arr.findIndex(x=>x.id===m.id)===i);
           if(ilgiliMusteriler2.length > 0){
             musteriSat = ilgiliMusteriler2.map(m=>{
               const adSoyad = `${esc(m.ad||'')} ${esc(m.soyad||'')}`.trim();
@@ -6324,8 +6330,11 @@ function render(){
                     ${musteriNotDot(m)}
                     <span style="color:var(--txt);font-weight:700;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${adSoyad||'İsimsiz'}</span>
                   </div>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:1px;padding-left:14px">
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:1px;padding-left:14px">
                     <span style="color:#8a9099;font-size:10px">${esc(m.tel||'—')}</span>
+                    ${m.tip==='mnp'
+                      ? `<span style="font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:6px;background:rgba(192,132,252,0.18);color:#c084fc">🔄 MNP</span>`
+                      : `<span style="font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:6px;background:rgba(76,217,100,0.18);color:#4cd964">🆕 Yeni Tesis</span>`}
                     ${tarife2?`<span style="color:#ffb74d;font-size:10px">🏷 ${tarife2}</span>`:''}
                   </div>
                 </div>
@@ -15510,6 +15519,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v251',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'Islem Listesinde MNP musterilerinin (PostPaid/Red) isim-numarasi gorunmuyordu: eslestirme artik "o gun + o kategori" temelli calisiyor (logId olsun olmasin) ve tarife farki eslesmeyi ELEMIYOR. Tekrarli kayitlar da temizleniyor.' },
+      { type: 'new', text: 'Musteri satirinda telefonun yaninda tip rozeti: 🔄 MNP (mor) veya 🆕 Yeni Tesis (yesil) — hangi islem oldugu tek bakista belli.' },
+    ]
+  },
   {
     version: 'v250',
     date: '08.07.2026',
