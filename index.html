@@ -297,6 +297,18 @@ html{scrollbar-gutter:stable}
   #page-trend{ padding-top:112px!important; } /* v243: baslangic; gercek deger JS ile olculur */
   /* v244: inline flex:1 mobilde kabi bos yere uzatiyordu (altta bosluk + gereksiz kaydirma) */
   #page-trend,#page-rapor,#page-hedef{ flex:none!important; min-height:0!important; }
+  /* v266: Mobilde grafikler ekrana sigsin (tasma yok, yatay kaydirma yok) */
+  .chart-box{ overflow-x:auto!important; -webkit-overflow-scrolling:touch; }
+  #dashContent svg{ max-width:100%!important; height:auto!important; display:block; }
+  #dashContent .chart-box{ overflow-x:hidden!important; padding-left:2px!important; padding-right:2px!important; }
+  #dashContent .chart-box svg{ width:100%!important; }
+  #dashDonemSec select{ font-size:10.5px!important; padding:3px 5px!important; }
+  /* v267: mobilde hakedis satiri yeniden sarmalansin */
+  #hakedisStatsRow{ flex-wrap:wrap!important; }
+  #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; }
+  #statsRowTop{ flex:1 1 100%!important; }
+  #ortTahminWrap{ grid-template-columns:1fr 1fr!important; }
+  #statsRowTop .bottom-row{ grid-template-columns:1fr 1fr!important; }
 }
 /* v257: ACIK MOD — Kapanis Raporundaki acik vurgu renkleri beyaz zeminde okunmuyordu; koyulastirildi */
 body.light #kapanisRaporGovde [style*="color:#4cd964"]{ color:#15803d!important; }
@@ -1138,6 +1150,8 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 
 .bottom-row{display:flex;gap:10px;margin-bottom:6px;flex-wrap:wrap}
 /* v260: 5 kart tek satirda; dar ekranda 2'li, mobilde alt alta */
+#statsRowTop .bottom-row{display:grid!important;grid-template-columns:repeat(3,1fr);gap:8px}
+#statsRowTop .bottom-row > .bottom-card{flex:none;min-width:0}
 .bottom-row > .bottom-card{flex:1 1 145px;min-width:0}
 @media(max-width:900px){ .bottom-row > .bottom-card{flex:1 1 calc(50% - 5px)} }
 @media(max-width:520px){ .bottom-row > .bottom-card{flex:1 1 100%} }
@@ -1626,6 +1640,11 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
             <button onclick="openYatirilanModal()" style="background:#e8f7ff;border:1.5px solid #b0ddf5;color:#1a6e9a;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#d0eeff';this.style.borderColor='#80c8ef'" onmouseout="this.style.background='#e8f7ff';this.style.borderColor='#b0ddf5'"><span style="font-size:16px">💳</span><span>Yatırılan</span></button>
             <button onclick="openFinansAyModal()"  style="background:#fff0f0;border:1.5px solid #f0c0c0;color:#c0302a;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#ffe0e0';this.style.borderColor='#e89090'" onmouseout="this.style.background='#fff0f0';this.style.borderColor='#f0c0c0'"><span style="font-size:16px">➕</span><span>Yeni Ay</span></button>
             <button onclick="openAyKapat()"        style="background:#e8fdf0;border:1.5px solid #8ed8aa;color:#1a7a3a;border-radius:10px;padding:7px 16px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;transition:all .15s" onmouseover="this.style.background='#d0f5e0';this.style.borderColor='#5cc48a'" onmouseout="this.style.background='#e8fdf0';this.style.borderColor='#8ed8aa'"><span style="font-size:16px">📅</span><span>Ay Kapat</span></button>
+            <span id="dashDonemSec" style="display:flex;align-items:center;gap:5px">
+              <select id="dashYilSec" onchange="dashDonemDegis()" title="Yıl seç" style="font-size:11px;padding:4px 7px;border-radius:8px"></select>
+              <select id="dashAySec"  onchange="dashDonemDegis()" title="Ay seç"  style="font-size:11px;padding:4px 7px;border-radius:8px"></select>
+            </span>
+            <span id="dashUyariPills" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"></span>
             <div id="clockDash" style="text-align:right;line-height:1.3;color:var(--txt);font-variant-numeric:tabular-nums;flex-shrink:0;margin-left:6px"></div>
           </div>
         </div>
@@ -1650,7 +1669,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button class="prim-tool-pill" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent)">👥 Müşteri Takibi <span id="musteriTakipBadgeTop" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:9px;margin-left:2px"></span></button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
       <button class="prim-tool-pill" onclick="openCmpModal()">📊 Ay Karşılaştırma</button>
-      <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Detay Tabloları</button>
+      <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Prim Detayları</button>
       <button class="prim-tool-pill" onclick="openSaatModal()">⏱ Saat Analizi</button>
       <button class="prim-tool-pill" onclick="openFiyatModal()">💰 Fiyatlar & Veri</button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
@@ -1760,10 +1779,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <div class="cards-row" id="catCards" style="margin-bottom:10px"></div>
 
         <!-- Genel Hakediş + Günlük Ortalama yan yana -->
-        <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch;flex-wrap:wrap">
+        <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;flex-wrap:nowrap">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
-        <div id="hakedisPanel" style="display:none;flex:1 1 330px;width:100%;max-width:500px;min-width:min(290px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+        <div id="hakedisPanel" style="display:none;flex:0 0 500px;width:100%;max-width:500px;min-width:min(290px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
           <!-- Üst: büyük hakediş rakamı -->
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -1780,7 +1799,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- Sağ: Günlük Ortalama & Ay Sonu Tahmini (hakedis ile yan yana) -->
-        <div id="statsRowTop" style="flex:1 1 340px;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;justify-content:stretch"></div>
+        <div id="statsRowTop" style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;justify-content:stretch"></div>
 
           <!-- v262: Genel Durum kartları sağ sütuna alındı -->
           <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:2px">
@@ -2279,7 +2298,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="tablolarModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:1100px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="background:linear-gradient(135deg,#e2231a,#b81b14);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <span style="font-size:14px;font-weight:700;color:#fff">📋 Detay Tabloları</span>
+      <span style="font-size:14px;font-weight:700;color:#fff">📋 Prim Detayları</span>
       <button onclick="closePrimModal('tablolarModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
@@ -2835,7 +2854,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v262';
+const APP_VERSION = 'v267';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -6676,7 +6695,7 @@ function render(){
   const gundeGereken = (hedefKalan!=null && daysInCurMonth-todayNum>0) ? hedefKalan/(daysInCurMonth-todayNum) : null;
 
   statsTopDiv.innerHTML = `
-    <div id="ortTahminWrap" style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch">
+    <div id="ortTahminWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch">
       <div class="stat" style="flex:1 1 140px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
         <div class="t" style="font-size:10px">Günlük Ort. (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
         <div class="v" style="font-size:18px;margin-top:4px">${fmt(dailyAvgCurMonth)}</div>
@@ -6687,8 +6706,8 @@ function render(){
         <div class="v" style="font-size:18px;margin-top:4px;color:var(--gold)">${fmt(projectedMonthEnd)}</div>
         <div class="sub" style="font-size:9.5px">${daysInCurMonth} gün üzerinden projeksiyon</div>
       </div>
-    <div class="stat" style="flex:1 1 190px;min-width:0;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
-      <div class="t" style="font-size:10px">🎯 ${monthLabel(realCurMonth)} Hedefi <span style="opacity:.65">KDV Dahil</span></div>
+    <div class="stat" style="grid-column:1 / -1;min-width:0;padding:11px 15px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+      <div class="t" style="font-size:11px">🎯 ${monthLabel(realCurMonth)} Hedefi <span style="opacity:.65">KDV Dahil</span></div>
       ${curHedef ? `
         <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
           <div class="v" style="font-size:18px;color:${hedefRenk};margin:0">${hedefPctTop!=null?`%${hedefPctTop}`:''}</div>
@@ -7939,10 +7958,38 @@ function checkMasrafAnomali(){
 // ==================== MASRAF ANOMALİ SONU ====================
 
 // ==================== ANA ÖZET DASHBOARD ====================
+// v266: Anasayfa dönem seçimi — tüm kartlar bu aya göre hesaplanır
+let dashSelYm = null;
+function dashDonemDegis(){
+  const y = document.getElementById('dashYilSec');
+  const a = document.getElementById('dashAySec');
+  if(y && a && y.value && a.value){ dashSelYm = y.value + '-' + a.value; }
+  renderDash();
+}
+function dashSeciciDoldur(secili){
+  const y = document.getElementById('dashYilSec');
+  const a = document.getElementById('dashAySec');
+  if(!y || !a) return;
+  // Veri olan yıllar (yoksa bu yıl)
+  // monthMapAll yerel bir degisken oldugu icin dogrudan entries'ten yillari cikar
+  const yillar = [...new Set((entries||[]).map(e=>String(e.date).slice(0,4)).filter(Boolean))].sort();
+  const buYil = String(nowTR().getFullYear());
+  if(!yillar.length) yillar.push(buYil);
+  if(!yillar.includes(secili.slice(0,4))) yillar.push(secili.slice(0,4));
+  yillar.sort();
+  const yHtml = yillar.map(v=>`<option value="${v}">${v}</option>`).join('');
+  if(y.innerHTML !== yHtml) y.innerHTML = yHtml;
+  y.value = secili.slice(0,4);
+  const AY_ADLARI = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const aHtml = AY_ADLARI.map((ad,i)=>`<option value="${String(i+1).padStart(2,'0')}">${ad}</option>`).join('');
+  if(a.innerHTML !== aHtml) a.innerHTML = aHtml;
+  a.value = secili.slice(5,7);
+}
 function renderDash(){
   const el = document.getElementById('dashContent');
   if(!el) return;
-  const now = thisMonthKey();
+  const now = dashSelYm || thisMonthKey();   // v266: seçili dönem
+  dashSeciciDoldur(now);
   const prevYm = addMonths(now, -1);
   const today = todayStr();
   const d = nowTR();
@@ -8126,7 +8173,7 @@ function renderDash(){
 
   // Anomali
   const anomaliler = checkMasrafAnomali();
-  const anomaliBar = anomaliler.length ? `
+  const anomaliBar = false ? `
     <div onclick="openAnomaliPopup()" style="display:flex;align-items:center;gap:10px;background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.35);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(226,35,26,0.17)'" onmouseout="this.style.background='rgba(226,35,26,0.1)'">
       <span style="font-size:20px">🚨</span>
       <div style="flex:1">
@@ -8137,6 +8184,23 @@ function renderDash(){
     </div>` : '';
 
   // Kategori renkleri
+  // v265: Anomali + onay uyarıları üst araç çubuğunda kibar pill'ler olarak
+  {
+    const pillKap = document.getElementById('dashUyariPills');
+    if(pillKap){
+      const pill = (metin, adet, renk, bg, tik, ipucu) =>
+        `<button onclick="${tik}" title="${ipucu}" style="display:inline-flex;align-items:center;gap:5px;background:${bg};border:1.5px solid ${renk}66;color:${renk};border-radius:9px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:transform .12s" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+          ${metin}<span style="background:${renk};color:#fff;border-radius:20px;padding:0 6px;font-size:9.5px;font-weight:800;min-width:14px;text-align:center">${adet}</span>
+        </button>`;
+      let h = '';
+      if(anomaliler.length) h += pill('🚨 Anomali', anomaliler.length, '#ff5252', 'rgba(226,35,26,0.08)', 'openAnomaliPopup()', 'Masraf anomalilerini gör');
+      if(mnpGecikmus.length) h += pill('🔴 Gecikmiş', mnpGecikmus.length, '#ff5252', 'rgba(226,35,26,0.08)', "openMusteriRaporFiltered('bekliyor','hepsi','hepsi')", 'Aktivasyon tarihi geçmiş, hâlâ onaylanmamış');
+      if(mnpBugun.length)   h += pill('🟡 Bugün onaylanmalı', mnpBugun.length, '#e6a23c', 'rgba(255,183,77,0.10)', "openMusteriRaporFiltered('bekliyor','hepsi','bugun')", 'Bugün onaylanması gereken MNP\'ler');
+      if(mnpYakinda.length) h += pill('🟢 Onaylanacak', mnpYakinda.length, '#2e9e4f', 'rgba(76,217,100,0.10)', "openMusteriRaporFiltered('bekliyor','hepsi','hepsi')", 'Yaklaşan onaylar');
+      pillKap.innerHTML = h;
+    }
+  }
+
   const CAT_COLORS = {PostPaid:'#3fd0ff',PrePaid:'#4cd964','Red Tarife':'#ff5252',P2P:'#ffb74d',Mccm:'#c084fc',İnternet:'#fb923c'};
 
   el.innerHTML = `
@@ -8173,7 +8237,7 @@ function renderDash(){
       </div>` : ''}
 
       ${mnpBugun.length>0 ? `
-      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" style="flex:1;min-width:140px;background:rgba(255,183,77,0.07);border:1px solid rgba(255,183,77,0.3);border-radius:10px;padding:8px 10px;cursor:pointer;display:flex;flex-direction:column" onmouseover="this.style.borderColor='rgba(255,183,77,0.55)'" onmouseout="this.style.borderColor='rgba(255,183,77,0.3)'">
+      <div onclick="openMusteriRaporFiltered('bekliyor','hepsi','bugun')" style="flex:1;min-width:140px;background:rgba(255,183,77,0.07);border:1px solid rgba(255,183,77,0.3);border-radius:10px;padding:8px 10px;cursor:pointer;display:flex;flex-direction:column" onmouseover="this.style.borderColor='rgba(255,183,77,0.55)'" onmouseout="this.style.borderColor='rgba(255,183,77,0.3)'">
         <div style="font-size:9px;font-weight:700;color:#ffb74d;margin-bottom:4px">🟡 BUGÜN ONAYLANMALI</div>
         <div style="font-size:18px;font-weight:900;color:#ffb74d;line-height:1;margin-bottom:4px">${mnpBugun.length}</div>
         <div style="flex:1">
@@ -12290,12 +12354,47 @@ function renderNotPage() {
 
   // Liste
   const listDiv = document.getElementById('notListDiv');
+  // v266: Müşteri bazlı notları da bu listeye dahil et (İşlem Listesi'ndeki ● notlar)
+  const musteriNotlari = (musteriler||[])
+    .filter(m => m.not && String(m.not).trim())
+    .map(m => ({
+      id: 'mus_' + m.id,
+      tarih: m.entryDate || '',
+      baslik: (m.ad || 'Müşteri') + (m.tel ? ' · ' + m.tel : ''),
+      metin: String(m.not),
+      etiketler: [m.cat, m.tip === 'mnp' ? 'MNP' : 'Yeni Tesis'].filter(Boolean),
+      renk: 'mavi',
+      _musteriNotu: true,
+      _musteriId: m.id
+    }));
+  if(musteriNotlari.length){
+    // Aynı id ile mükerrer eklenmesin
+    const varOlan = new Set(filtered.map(n=>n.id));
+    musteriNotlari.forEach(mn=>{ if(!varOlan.has(mn.id)) filtered.push(mn); });
+    filtered.sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  }
   if (!filtered.length) {
     listDiv.innerHTML = `<div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">${ara||notTagFilter!=='all'?'Arama ile eşleşen not bulunamadı.':'Henüz not yok. "Not / Etiket Ekle" ile başlayın.'}</div>`;
     return;
   }
   listDiv.innerHTML = filtered.map(n => {
-    const renkHex = RENK_MAP[n.renk] || '#3fd0ff';
+    const renkHex = n._musteriNotu ? '#3fd0ff' : (RENK_MAP[n.renk] || '#3fd0ff');
+    if(n._musteriNotu){
+      return `<div style="background:var(--panel);border:1px solid var(--line);border-left:3px solid ${renkHex};border-radius:10px;padding:11px 13px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="font-size:12.5px;font-weight:700;color:var(--txt)">👤 ${esc(n.baslik)}</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:9px;font-weight:700;background:rgba(63,208,255,0.15);color:#3fd0ff;border-radius:5px;padding:1px 6px">MÜŞTERİ NOTU</span>
+            <button onclick="editMusteriNot('${n._musteriId}')" title="Notu düzenle" style="background:var(--panel2);border:1px solid var(--line);color:var(--accent);border-radius:6px;width:26px;height:26px;font-size:11px;cursor:pointer">✏️</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5;white-space:pre-wrap">${esc(n.metin)}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">
+          ${(n.etiketler||[]).map(t=>`<span class="tag-chip" style="background:rgba(155,89,182,0.12);color:#9b59b6;border-color:rgba(155,89,182,0.3)">${esc(t)}</span>`).join('')}
+          ${n.tarih?`<span style="font-size:9.5px;color:var(--muted);margin-left:auto;align-self:center">${esc(n.tarih)}</span>`:''}
+        </div>
+      </div>`;
+    }
     const etiketHtml = (n.etiketler||[]).map(t =>
       `<span class="tag-chip" style="background:rgba(155,89,182,0.12);color:#9b59b6;border-color:rgba(155,89,182,0.4)">${t}</span>`
     ).join('');
@@ -15753,7 +15852,8 @@ function openExportPreview(tableId, fileLabel){
       </tr></thead>
       <tbody>${musteriRows.map((r,i)=>{
         const tipRenk = r.tip==='MNP' ? '#c084fc' : (r.tip==='Yeni Tesis' ? '#4cd964' : '#666');
-        return `<tr style="background:${i%2===0?'#26282b':'#2c2f33'};border-bottom:1px solid #2a2d33">
+        const _devirBg = r.devir==='onceki' ? '#2b2620' : (r.devir==='sonraki' ? '#1f2a2e' : null);
+        return `<tr style="background:${_devirBg || (i%2===0?'#26282b':'#2c2f33')};border-bottom:1px solid #2a2d33">
         <td style="padding:8px 10px;font-size:12px;color:#eee;font-weight:600;white-space:nowrap">${r.date}</td>
         <td style="padding:8px 10px;font-size:12px;color:#ccc">${r.cat}</td>
         <td style="padding:8px 10px;font-size:11px;color:${tipRenk};font-weight:700;text-align:center;white-space:nowrap">${r.tip||'-'}</td>
@@ -15816,6 +15916,28 @@ function openExportPreview(tableId, fileLabel){
         <td style="padding:12px 14px;font-size:14px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(toplamAmt)}</td>
       </tr></tfoot>
     </table></div>`;
+    // v264: ÖNCEKİ DÖNEMDEN DEVREDENLER — girişi aralıktan önce, aktivasyonu aralık içinde olan MNP'ler.
+    // Bunlar bu dönemin primine dahil olduğu için listeye ve toplamlara eklenir.
+    {
+      const _aktOfM = m => (m.aktivasyonTarihi ? m.aktivasyonTarihi : mnpActivationDate(m.entryDate)).slice(0,10);
+      const devredenler = (musteriler||[]).filter(m =>
+        MNP_CATS.includes(m.cat) && m.tip==='mnp' &&
+        m.entryDate < rStart &&                       // giriş önceki dönemde
+        _aktOfM(m) >= rStart && _aktOfM(m) <= rEnd    // aktivasyon bu dönemde
+      );
+      devredenler.forEach(m=>{
+        const akt = _aktOfM(m);
+        const birim = kampanyaFiyatFor(m.entryDate, m.cat, priceFor(ymKey(m.entryDate), m.cat));
+        musteriRows.push({
+          date: m.entryDate, cat: m.cat, count: 1, amt: birim,
+          ad: ((m.ad||'')+' '+(m.soyad||'')).trim(), tel: m.tel||'-', tarife: m.tarife||'-',
+          tip: 'MNP', akt: akt, devir: 'onceki', bekliyor: m.durum==='bekliyor'
+        });
+      });
+      // Tarihe göre yeniden sırala (yeni satırlar araya girsin)
+      musteriRows.sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (a.cat||'').localeCompare(b.cat||''));
+    }
+
     // v259: Özet üstüne MNP devir kutusu
     const _mnpRows = musteriRows.filter(r=>r.tip==='MNP');
     const _gidenler = _mnpRows.filter(r=>r.devir==='sonraki');
@@ -15823,13 +15945,19 @@ function openExportPreview(tableId, fileLabel){
     const _bekleyenler = _mnpRows.filter(r=>r.bekliyor);
     const _katOzet = arr => { const m={}; arr.forEach(r=>{m[r.cat]=(m[r.cat]||0)+1;});
       return Object.keys(m).sort((a,b)=>m[b]-m[a]).map(c=>`${m[c]} ${c}`).join(' · ') || '—'; };
+    // v263: Kompakt tek satırlık şerit — kart yerine rozetler (PDF'te de kaybolmuyor)
+    const _rozet = (ikon, etiket, arr, renk) => !arr.length ? '' :
+      `<span style="display:inline-flex;align-items:center;gap:5px;background:${renk}1f;border:1px solid ${renk}55;border-radius:6px;padding:3px 9px;white-space:nowrap">
+         <b style="color:${renk};font-size:11px">${ikon} ${arr.length}</b>
+         <span style="color:#bbb;font-size:10px">${etiket}</span>
+         <span style="color:#888;font-size:9.5px">${_katOzet(arr)}</span>
+       </span>`;
     const devirKutu = (_gidenler.length || _oncekiler.length || _bekleyenler.length) ? `
-      <div style="background:#26282b;border:1px solid #3a3d42;border-radius:10px;padding:12px 14px;margin-bottom:12px">
-        <div style="font-size:12px;font-weight:800;color:#c084fc;margin-bottom:8px">🔄 MNP Devir Durumu <span style="font-size:10px;color:#888;font-weight:600">(seçili aralığa göre)</span></div>
-        ${_oncekiler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0"><span style="color:#ffb74d">⬅️ Önceki dönemden devreden</span><span style="color:#ddd;font-weight:700">${_oncekiler.length} <span style="color:#888;font-weight:500">(${_katOzet(_oncekiler)})</span></span></div>`:''}
-        ${_gidenler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0;border-top:1px solid #34373c"><span style="color:#3fd0ff">➡️ Sonraki döneme devrolacak</span><span style="color:#ddd;font-weight:700">${_gidenler.length} <span style="color:#888;font-weight:500">(${_katOzet(_gidenler)})</span></span></div>`:''}
-        ${_bekleyenler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0;border-top:1px solid #34373c"><span style="color:#ffd27a">⏳ Onay bekleyen</span><span style="color:#ddd;font-weight:700">${_bekleyenler.length} <span style="color:#888;font-weight:500">(${_katOzet(_bekleyenler)})</span></span></div>`:''}
-        <div style="font-size:9.5px;color:#777;margin-top:7px;line-height:1.5">Prim aktivasyon tarihinde işlenir (MNP = giriş + 2 gün). Dönem sonunda girilen MNP'ler sonraki döneme devreder.</div>
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;background:#232529;border:1px solid #34373c;border-radius:8px;padding:8px 11px;margin-bottom:10px">
+        <span style="font-size:10.5px;font-weight:800;color:#c084fc;white-space:nowrap">🔄 MNP DEVİR</span>
+        ${_rozet('⬅️','önceki dönemden',_oncekiler,'#ffb74d')}
+        ${_rozet('➡️','sonraki döneme',_gidenler,'#3fd0ff')}
+        ${_rozet('⏳','onay bekleyen',_bekleyenler,'#ffd27a')}
       </div>` : '';
     ozetHtml = devirKutu + ozetHtml;   // devir kutusu özetin en üstünde
 
@@ -16156,6 +16284,47 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v267',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'PRIM SAYFASI DUZENI DUZELTILDI: Hakedis paneli sabit genislikte, sag sutun kalan alani tam kullaniyor. Aylik Hedef karti TAM GENISLIK oldu (artik sikismiyor). En Yuksek/En Dusuk/Genel Toplam/Yil Ortalamasi/Yil Toplami kartlari sag sutundaki bos alana 3lu izgara halinde yerlesti — sayfanin altinda tasmiyor. Mobilde her sey yeniden alt alta sarmalaniyor.' },
+      { type: 'fix', text: 'Service Worker onbellek surumu guncellendi (finansal-v212 -> v267). Bu yuzden v261 sonrasi guncellemeler cihaza inmiyordu.' },
+    ]
+  },
+  {
+    version: 'v266',
+    date: '09.07.2026',
+    items: [
+      { type: 'new', text: 'ANASAYFA DONEM SECIMI: ust cubuga YIL ve AY secici eklendi. Anasayfadaki tum kartlar (gelir/gider, prim, MNP, hedef vb.) artik secilen aya gore hesaplaniyor — sadece icinde bulunulan aya sabit degil.' },
+      { type: 'new', text: 'Musteri notlari (Islem Listesindeki ● notlar) artik "Not & Etiket" sayfasinda da listeleniyor. "MUSTERI NOTU" rozetiyle isaretli, kategori ve MNP/Tesis etiketleriyle birlikte; kalem butonuyla dogrudan duzenlenebiliyor.' },
+      { type: 'fix', text: 'Anasayfadaki grafikler mobilde ekrana sigiyor (tasma ve yatay kaydirma kalkti).' },
+    ]
+  },
+  {
+    version: 'v265',
+    date: '09.07.2026',
+    items: [
+      { type: 'ui', text: 'ANASAYFA: Anomali, Gecikmis, Bugun onaylanmali ve Onaylanacak uyarilari artik ust arac cubugunda kibar rozetli butonlar olarak duruyor (diger butonlarin yaninda). Buyuk anomali bandi kaldirildi.' },
+      { type: 'new', text: '"🟡 Bugun onaylanmali" butonu Musteri Takibi ni SADECE BUGUN filtresiyle aciyor; "🔴 Gecikmis" ve "🟢 Onaylanacak" bekleyen filtresiyle aciliyor.' },
+    ]
+  },
+  {
+    version: 'v264',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'DISA AKTAR: Onceki donemden devreden MNPler artik listede. Girisi aralikten once olup aktivasyonu bu araliga dusen MNPler detayli tabloya eklendi (adet ve tutarlariyla birlikte, cunku bu donemin primine dahiller). Satirlari farkli arka planla ve "⬅️ onceki donemden" rozetiyle isaretli; ozet seridindeki devir sayilari da artik dolu geliyor.' },
+    ]
+  },
+  {
+    version: 'v263',
+    date: '09.07.2026',
+    items: [
+      { type: 'ui', text: '"Detay Tablolari" butonu ve modal basligi "Prim Detaylari" olarak degistirildi.' },
+      { type: 'ui', text: 'Disa Aktar ozetindeki "MNP Devir Durumu" kutusu kompakt tek satirlik seride donusturuldu (kartlar yerine rozetler) — cok yer kaplamiyor ve PDF ciktisinda kaybolmuyor.' },
+      { type: 'ui', text: 'Mobilde grafik alanlari yatay kaydirilabilir hale getirildi.' },
+    ]
+  },
   {
     version: 'v262',
     date: '09.07.2026',
