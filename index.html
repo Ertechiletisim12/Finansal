@@ -2791,7 +2791,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v252';
+const APP_VERSION = 'v253';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -6389,19 +6389,19 @@ function render(){
               const logE2 = dayLogs2.find(l=>l.id===m.logId);
               const tarife2 = m.tarife||(logE2&&logE2.tarife)||'';
               const _tipRozet = m.tip==='mnp'
-                ? `<span style="font-size:8px;font-weight:800;padding:1px 4px;border-radius:5px;background:rgba(192,132,252,0.18);color:#c084fc;white-space:nowrap;flex-shrink:0">🔄 MNP</span>`
-                : `<span style="font-size:8px;font-weight:800;padding:1px 4px;border-radius:5px;background:rgba(76,217,100,0.18);color:#4cd964;white-space:nowrap;flex-shrink:0">🆕 Tesis</span>`;
-              return `<div style="display:flex;align-items:flex-start;gap:5px;padding:4px 0 4px 10px;border-top:1px solid rgba(255,255,255,0.04)">
-                <span style="color:#5bc8f5;flex-shrink:0;font-size:10.5px;line-height:1.5">↳</span>
+                ? `<span style="font-size:7.5px;font-weight:800;padding:0 4px;border-radius:4px;background:rgba(192,132,252,0.18);color:#c084fc;white-space:nowrap;flex-shrink:0;line-height:1.5">MNP</span>`
+                : `<span style="font-size:7.5px;font-weight:800;padding:0 4px;border-radius:4px;background:rgba(76,217,100,0.18);color:#4cd964;white-space:nowrap;flex-shrink:0;line-height:1.5">TESİS</span>`;
+              return `<div style="display:flex;align-items:flex-start;gap:4px;padding:3px 0 3px 4px;border-top:1px solid rgba(255,255,255,0.04)">
+                <span style="color:#5bc8f5;flex-shrink:0;font-size:9px;line-height:1.6">↳</span>
                 <div style="flex:1;min-width:0">
-                  <div style="display:flex;align-items:center;gap:5px;min-width:0">
+                  <div style="display:flex;align-items:center;gap:4px;min-width:0">
                     ${musteriNotDot(m)}
-                    <span title="${esc(adSoyad||'İsimsiz')}" style="color:var(--txt);font-weight:700;font-size:11.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${adSoyad||'İsimsiz'}</span>
+                    <span title="${esc(adSoyad||'İsimsiz')}" style="color:var(--txt);font-weight:600;font-size:10px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${adSoyad||'İsimsiz'}</span>
                   </div>
-                  <div style="display:flex;gap:5px;align-items:center;margin-top:2px;padding-left:14px;min-width:0">
-                    <span style="color:#8a9099;font-size:10px;white-space:nowrap;flex-shrink:0">${esc(m.tel||'—')}</span>
+                  <div style="display:flex;gap:4px;align-items:center;margin-top:1px;padding-left:13px;min-width:0">
+                    <span style="color:#8a9099;font-size:9px;white-space:nowrap;flex-shrink:0">${esc(m.tel||'—')}</span>
                     ${_tipRozet}
-                    ${tarife2?`<span title="${esc(tarife2)}" style="color:#ffb74d;font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">🏷 ${tarife2}</span>`:''}
+                    ${tarife2?`<span title="${esc(tarife2)}" style="color:#ffb74d;font-size:8.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">🏷 ${tarife2}</span>`:''}
                   </div>
                 </div>
               </div>`;
@@ -6428,7 +6428,7 @@ function render(){
           <div style="font-size:10.5px;font-weight:700;color:var(--accent)">📅 ${date}</div>
         </div>
         <table style="width:100%;table-layout:fixed;border-collapse:collapse">
-          <colgroup><col style="width:58%"><col style="width:14%"><col style="width:28%"></colgroup>
+          <colgroup><col style="width:52%"><col style="width:13%"><col style="width:35%"></colgroup>
           <thead><tr style="border-bottom:1px solid var(--line)">
             <th style="text-align:left;color:var(--muted);font-weight:600;font-size:9.5px;padding:0 0 4px;letter-spacing:.04em">KATEGORİ</th>
             <th style="text-align:right;color:var(--muted);font-weight:600;font-size:9.5px;padding:0 0 4px">ADET</th>
@@ -15178,19 +15178,24 @@ function openExportPreview(tableId, fileLabel){
     Object.values(dateGruplari).sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat)).forEach(g=>{
       const birimAmt = kampanyaFiyatFor(g.date, g.cat, priceFor(ymKey(g.date), g.cat));
       const dayLogs = (entryLog||[]).filter(l=>l.date===g.date && l.cat===g.cat);
-      const usedIds = new Set();
-      const ilgiliM = (musteriler||[]).filter(m=>m.logId && dayLogs.some(l=>l.id===m.logId))
-                                       .filter(m=>{ if(usedIds.has(m.logId)) return false; usedIds.add(m.logId); return true; });
+      // v253: Islem Listesi ile ayni esnek eslestirme — logId varsa onunla, yoksa gun+kategori ile
+      let ilgiliM = (musteriler||[]).filter(m =>
+        (m.logId && dayLogs.some(l=>l.id===m.logId)) ||
+        (!m.logId && m.entryDate===g.date && (!m.cat || m.cat===g.cat))
+      );
+      ilgiliM = ilgiliM.filter((m,i,arr)=>arr.findIndex(x=>x.id===m.id)===i); // mukerrer temizle
+      if(ilgiliM.length > g.count) ilgiliM = ilgiliM.slice(0, g.count);       // adedi asmasin
       if(ilgiliM.length > 0){
         ilgiliM.forEach(m=>{
           const logE = dayLogs.find(l=>l.id===m.logId);
           musteriRows.push({date:g.date,cat:g.cat,count:1,amt:birimAmt,
-            ad:(m.ad||'')+' '+(m.soyad||''),tel:m.tel||'-',tarife:m.tarife||(logE&&logE.tarife)||'-'});
+            ad:((m.ad||'')+' '+(m.soyad||'')).trim(),tel:m.tel||'-',tarife:m.tarife||(logE&&logE.tarife)||'-',
+            tip: m.tip==='mnp' ? 'MNP' : 'Yeni Tesis'});
         });
         const kalan = g.count - ilgiliM.length;
-        if(kalan>0) musteriRows.push({date:g.date,cat:g.cat,count:kalan,amt:birimAmt*kalan,ad:'-',tel:'-',tarife:'-'});
+        if(kalan>0) musteriRows.push({date:g.date,cat:g.cat,count:kalan,amt:birimAmt*kalan,ad:'-',tel:'-',tarife:'-',tip:'-'});
       } else {
-        musteriRows.push({date:g.date,cat:g.cat,count:g.count,amt:birimAmt*g.count,ad:'-',tel:'-',tarife:'-'});
+        musteriRows.push({date:g.date,cat:g.cat,count:g.count,amt:birimAmt*g.count,ad:'-',tel:'-',tarife:'-',tip:'-'});
       }
     });
     const catSummary = CATS.map(c=>{
@@ -15216,28 +15221,32 @@ function openExportPreview(tableId, fileLabel){
       <button id="tabOzet" onclick="switchExportTab('ozet')" style="flex:1;padding:10px;background:#111;color:#888;border:none;font-size:12px;cursor:pointer">📊 Özet</button>`;
     const detayliHtml = `<table style="width:100%;border-collapse:collapse">
       <thead><tr style="background:#e2231a">
-        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Tarih</th>
+        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left;white-space:nowrap">Tarih</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Kategori</th>
+        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:center;white-space:nowrap">Tip</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Müşteri</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Telefon</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Tarife</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:center">Adet</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:right">Tutar</th>
       </tr></thead>
-      <tbody>${musteriRows.map((r,i)=>`<tr style="background:${i%2===0?'#26282b':'#2c2f33'};border-bottom:1px solid #2a2d33">
-        <td style="padding:8px 10px;font-size:12px;color:#eee;font-weight:600">${r.date}</td>
+      <tbody>${musteriRows.map((r,i)=>{
+        const tipRenk = r.tip==='MNP' ? '#c084fc' : (r.tip==='Yeni Tesis' ? '#4cd964' : '#666');
+        return `<tr style="background:${i%2===0?'#26282b':'#2c2f33'};border-bottom:1px solid #2a2d33">
+        <td style="padding:8px 10px;font-size:12px;color:#eee;font-weight:600;white-space:nowrap">${r.date}</td>
         <td style="padding:8px 10px;font-size:12px;color:#ccc">${r.cat}</td>
+        <td style="padding:8px 10px;font-size:11px;color:${tipRenk};font-weight:700;text-align:center;white-space:nowrap">${r.tip||'-'}</td>
         <td style="padding:8px 10px;font-size:12px;color:#fff;font-weight:600">${r.ad.trim()||'—'}</td>
-        <td style="padding:8px 10px;font-size:12px;color:#aaa">${r.tel}</td>
+        <td style="padding:8px 10px;font-size:12px;color:#aaa;white-space:nowrap">${r.tel}</td>
         <td style="padding:8px 10px;font-size:12px;color:#aaa">${r.tarife}</td>
         <td style="padding:8px 10px;font-size:12px;color:#fff;font-weight:700;text-align:center">${r.count>0?r.count:''}</td>
-        <td style="padding:8px 10px;font-size:12px;color:#4cd964;font-weight:700;text-align:right">${r.count>0?fmt(r.amt):''}</td>
-      </tr>`).join('')}
+        <td style="padding:8px 10px;font-size:12px;color:#4cd964;font-weight:700;text-align:right;white-space:nowrap">${r.count>0?fmt(r.amt):''}</td>
+      </tr>`;}).join('')}
       </tbody>
       <tfoot><tr style="background:#1a1c20;border-top:2px solid #e2231a">
-        <td colspan="5" style="padding:10px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
+        <td colspan="6" style="padding:10px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
         <td style="padding:10px;font-size:13px;color:#fff;font-weight:800;text-align:center">${musteriRows.reduce((a,r)=>a+r.count,0)}</td>
-        <td style="padding:10px;font-size:13px;color:#4cd964;font-weight:800;text-align:right">${fmt(musteriRows.reduce((a,r)=>a+r.amt,0))}</td>
+        <td style="padding:10px;font-size:13px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(musteriRows.reduce((a,r)=>a+r.amt,0))}</td>
       </tr></tfoot></table>`;
     const catSummaryRows = CATS.map(c=>{
       const catEntries = filtRows.filter(e=>e.cat===c);
@@ -15246,13 +15255,20 @@ function openExportPreview(tableId, fileLabel){
       const totalAmt = catEntries.reduce((a,e)=>a+e.count*kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c)),0);
       const aylar = [...new Set(catEntries.map(e=>ymKey(e.date)))].sort().reverse();
       const color = (typeof CAT_COLORS!=='undefined'&&CAT_COLORS[c])||'#4cd964';
+      // v253: MNP / Yeni Tesis kirilimi
+      const mnpCnt   = catEntries.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
+      const tesisCnt = totalCount - mnpCnt;
+      const kirilim = MNP_CATS.includes(c)
+        ? `<span style="color:#4cd964">${tesisCnt}</span> <span style="color:#555">/</span> <span style="color:#c084fc">${mnpCnt}</span>`
+        : `<span style="color:#666">—</span>`;
       return `<tr onclick="showCatDetail('${c}','${rStart}','${rEnd}')" style="border-bottom:1px solid #2e3035;cursor:pointer;background:#26282b" onmouseover="this.style.background='#2e3035'" onmouseout="this.style.background='#26282b'">
-        <td style="padding:12px 14px;font-size:13px;color:#e8eaec;font-weight:700">
+        <td style="padding:12px 14px;font-size:13px;color:#e8eaec;font-weight:700;white-space:nowrap">
           <span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${color};margin-right:8px;vertical-align:middle"></span>${c}
         </td>
         <td style="padding:12px 14px;font-size:14px;color:#fff;font-weight:800;text-align:center">${totalCount}</td>
-        <td style="padding:12px 14px;font-size:12px;color:#888;text-align:center">${aylar.length} ay</td>
-        <td style="padding:12px 14px;font-size:13px;color:#4cd964;font-weight:700;text-align:right">${fmt(totalAmt)}</td>
+        <td style="padding:12px 14px;font-size:12px;text-align:center;font-weight:700;white-space:nowrap">${kirilim}</td>
+        <td style="padding:12px 14px;font-size:12px;color:#888;text-align:center;white-space:nowrap">${aylar.length} ay</td>
+        <td style="padding:12px 14px;font-size:13px;color:#4cd964;font-weight:700;text-align:right;white-space:nowrap">${fmt(totalAmt)}</td>
       </tr>`;
     }).filter(Boolean).join('');
     const ozetHtml = `<div style="background:#1e2023;border-radius:8px;overflow:hidden">
@@ -15260,6 +15276,7 @@ function openExportPreview(tableId, fileLabel){
       <thead><tr style="background:#e2231a">
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:left;font-weight:700;letter-spacing:.05em">KATEGORİ</th>
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:center;font-weight:700;letter-spacing:.05em">TOPLAM ADET</th>
+        <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:center;font-weight:700;letter-spacing:.05em" title="Yeni Tesis / MNP">TESİS / MNP</th>
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:center;font-weight:700;letter-spacing:.05em">AY SAYISI</th>
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:right;font-weight:700;letter-spacing:.05em">TUTAR</th>
       </tr></thead>
@@ -15267,8 +15284,9 @@ function openExportPreview(tableId, fileLabel){
       <tfoot><tr style="background:#2a2d31;border-top:2px solid #e2231a">
         <td style="padding:12px 14px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
         <td style="padding:12px 14px;font-size:14px;color:#fff;font-weight:800;text-align:center">${toplamCount}</td>
+        <td style="padding:12px 14px;font-size:12px;font-weight:800;text-align:center;white-space:nowrap"><span style="color:#4cd964">${filtRows.filter(e=>!e.mnp&&MNP_CATS.includes(e.cat)).reduce((a,e)=>a+e.count,0)}</span> <span style="color:#555">/</span> <span style="color:#c084fc">${filtRows.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0)}</span></td>
         <td></td>
-        <td style="padding:12px 14px;font-size:14px;color:#4cd964;font-weight:800;text-align:right">${fmt(toplamAmt)}</td>
+        <td style="padding:12px 14px;font-size:14px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(toplamAmt)}</td>
       </tr></tfoot>
     </table></div>`;
     window._exportDetayliHtml = detayliHtml;
@@ -15594,6 +15612,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v253',
+    date: '09.07.2026',
+    items: [
+      { type: 'ui', text: 'PC Islem Listesi sadelestirildi: musteri isimleri kucultuldu (10px), satirlar sola kaydirildi, tip rozeti kompakt (MNP / TESIS). Sutun genislikleri dengelendi — adet ve tutar artik ic ice girmiyor.' },
+      { type: 'fix', text: 'DISA AKTAR duzeltildi: musteri isimleri artik dogru geliyor (eslestirme Islem Listesi ile ayni esnek mantiga getirildi; onceden logId olmayan kayitlar "-" cikiyordu). Mukerrer kayit ve adet asimi engellendi.' },
+      { type: 'new', text: 'Disa Aktar — Detayli tabloya TIP sutunu eklendi (MNP mor / Yeni Tesis yesil). Ozet tablosuna TESIS / MNP kirilim sutunu eklendi. Tarih, telefon ve tutar sutunlari artik satir kirilmadan hizali gorunuyor.' },
+    ]
+  },
   {
     version: 'v252',
     date: '09.07.2026',
