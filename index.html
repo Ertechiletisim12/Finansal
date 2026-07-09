@@ -2817,7 +2817,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v257';
+const APP_VERSION = 'v258';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3466,16 +3466,24 @@ function kapanisRaporVerisi(ym){
   const tekrarliToplam = kampanyaTekrarliBonusToplam(ym, adetMap, mnpDetay);
   const bonusToplam = esikToplam + tekrarliToplam;
 
-  // MNP kırılımı: bu dönem girilen vs devreden
-  const mnpEntries = entries.filter(e=>!!e.mnp && effectiveYm(e)===ym);
-  const mnpAktive  = mnpEntries.reduce((a,e)=>a+e.count,0);
-  const mnpDevir   = mnpEntries.filter(e=>ymKey(e.date)!==ym).reduce((a,e)=>a+e.count,0);
-  const mnpDonem   = mnpAktive - mnpDevir;
-  const yeniTesis  = toplamAdet - mnpAktive;
-
-  // Onay durumu (müşteri kayıtlarından)
+  // v258: MNP kırılımı MÜŞTERİ kayıtlarından hesaplanır (prim sayfasıyla birebir aynı).
+  // Önceden entries.mnp alanı okunuyordu; eski kayıtlarda bu alan boş olduğu için hep 0 çıkıyordu.
   const _aktOf = m => (m.aktivasyonTarihi ? m.aktivasyonTarihi : mnpActivationDate(m.entryDate)).slice(0,10);
-  const bekleyenAdet = musteriler.filter(m=>MNP_CATS.includes(m.cat) && m.tip==='mnp' && m.durum==='bekliyor' && ymKey(_aktOf(m))===ym).length;
+  const _inMnp = m => MNP_CATS.includes(m.cat) && m.tip==='mnp';
+
+  // Bu ay AKTİVE olan MNP'ler (onay bekleyenler hariç — prim sayfasıyla tutarlı)
+  const aktiveList = musteriler.filter(m=>_inMnp(m) && m.durum!=='bekliyor' && ymKey(_aktOf(m))===ym);
+  const mnpAktive  = aktiveList.length;
+  // Bunların kaçı önceki aydan devretti (giriş ayı ≠ aktivasyon ayı)
+  const mnpDevir   = aktiveList.filter(m=>ymKey(m.entryDate)!==ym).length;   // ÖNCEKİ aydan gelen
+  const mnpDonem   = mnpAktive - mnpDevir;                                    // bu ay girilip bu ay aktive
+
+  // Bu ay GİRİLEN ama aktivasyonu SONRAKİ aya düşen MNP'ler (giden devir)
+  const mnpGidenDevir = musteriler.filter(m=>_inMnp(m) && ymKey(m.entryDate)===ym && ymKey(_aktOf(m))>ym).length;
+  const gidenDevirAy  = addMonths(ym, 1);
+
+  const yeniTesis  = Math.max(0, toplamAdet - mnpAktive);
+  const bekleyenAdet = musteriler.filter(m=>_inMnp(m) && m.durum==='bekliyor' && ymKey(_aktOf(m))===ym).length;
 
   const netHakedis = netToplam + bonusToplam;              // KDV hariç
   const brutHakedis = kdvBrut(netHakedis);                  // KDV dahil
@@ -3493,7 +3501,7 @@ function kapanisRaporVerisi(ym){
   return {ym, satirlar, toplamAdet, netToplam, kampanyaFiyatEtkisi, esikBonuslar, esikToplam,
           tekrarliToplam, bonusToplam, netHakedis, brutHakedis, pesin, kalan,
           eskiYm, eskiNet, geridenGelen, buAyTahsil,
-          mnpAktive, mnpDonem, mnpDevir, yeniTesis, bekleyenAdet, yatirilanTutar};
+          mnpAktive, mnpDonem, mnpDevir, mnpGidenDevir, gidenDevirAy, yeniTesis, bekleyenAdet, yatirilanTutar};
 }
 
 function openKapanisRaporu(){
@@ -3606,12 +3614,16 @@ function renderKapanisRaporu(ym){
       </table>
     </div>
 
-    <div style="background:rgba(192,132,252,0.07);border:1px solid rgba(192,132,252,0.2);border-radius:10px;padding:10px 13px;margin-bottom:11px">
-      <div style="font-size:11.5px;font-weight:800;color:#c084fc;margin-bottom:5px">🔄 MNP Kırılımı</div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0"><span style="color:var(--muted)">Bu ay girilip aktive olan</span><span style="color:var(--txt);font-weight:700">${d.mnpDonem}</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0"><span style="color:var(--muted)">Önceki aydan devreden</span><span style="color:#ffb74d;font-weight:700">${d.mnpDevir}</span></div>
-      ${d.bekleyenAdet?`<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-top:1px solid rgba(192,132,252,0.15);margin-top:3px"><span style="color:var(--muted)">⏳ Onay bekleyen</span><span style="color:#ffd27a;font-weight:700">${d.bekleyenAdet}</span></div>`:''}
-      <div style="font-size:9.5px;color:var(--muted);margin-top:6px;line-height:1.5;opacity:.85">ℹ️ Prim <b>aktivasyon tarihine</b> göre sayılır (MNP = giriş + 2 gün). Bu nedenle ayın son günlerinde girilen MNP'ler <b>sonraki aya</b> devreder.</div>
+    <div style="background:rgba(192,132,252,0.07);border:1px solid rgba(192,132,252,0.22);border-radius:10px;padding:11px 13px;margin-bottom:11px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+        <span style="font-size:12px;font-weight:800;color:#c084fc">🔄 MNP Kırılımı</span>
+        <span style="font-size:12px;font-weight:900;color:#c084fc">${d.mnpAktive} aktive</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0"><span style="color:var(--muted)">🆕 Bu ay girilip bu ay aktive olan</span><span style="color:var(--txt);font-weight:800">${d.mnpDonem}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0;border-top:1px solid rgba(192,132,252,0.14)"><span style="color:var(--muted)">⬅️ Önceki aydan devreden <span style="opacity:.7">(bu ay aktive oldu)</span></span><span style="color:#ffb74d;font-weight:800">${d.mnpDevir}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0;border-top:1px solid rgba(192,132,252,0.14)"><span style="color:var(--muted)">➡️ Sonraki aya devreden <span style="opacity:.7">(${monthLabel(d.gidenDevirAy)})</span></span><span style="color:#3fd0ff;font-weight:800">${d.mnpGidenDevir}</span></div>
+      ${d.bekleyenAdet?`<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0;border-top:1px solid rgba(192,132,252,0.14)"><span style="color:var(--muted)">⏳ Onay bekleyen <span style="opacity:.7">(hakedişe dahil değil)</span></span><span style="color:#ffd27a;font-weight:800">${d.bekleyenAdet}</span></div>`:''}
+      <div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6;padding-top:7px;border-top:1px dashed rgba(192,132,252,0.2)">ℹ️ Prim <b style="color:var(--txt)">aktivasyon tarihine</b> göre sayılır (MNP = giriş + 2 gün). Ayın son 2 gününde girilen MNP'ler <b style="color:#3fd0ff">sonraki ayın</b> hakedişine yazılır.</div>
     </div>
 
     <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 7px">💵 Hakediş Hesabı</div>
@@ -3651,15 +3663,41 @@ function renderKapanisRaporu(ym){
         <div style="font-size:8.5px;color:var(--muted);margin-top:1px;font-weight:600">hariç: ${P(d.buAyTahsil)}</div>
       </div>
     </div>
-    <div style="background:rgba(0,0,0,0.15);border-radius:8px;padding:10px 12px;font-size:10px;color:var(--muted);line-height:1.65;margin-bottom:11px">
-      <b style="color:var(--txt)">Nasıl hesaplandı?</b><br>
-      • Bu ayın net hakedişi <b style="color:var(--txt)">${P(d.netHakedis)}</b> → <span style="color:#4cd964">%70'i (${P(d.pesin)}) bu ay</span>, <span style="color:#ffb74d">%30'u (${P(d.kalan)}) 2 ay sonra</span> ödenir.<br>
-      • <b style="color:var(--txt)">${monthLabel(d.eskiYm)}</b> hakedişi ${P(d.eskiNet)} idi → <span style="color:#3fd0ff">%30'u (${P(d.geridenGelen)}) bu ay tahsil edilir</span>.<br>
-      • <b style="color:#fcd34d">Bu ay eline geçen = ${P(d.pesin)} + ${P(d.geridenGelen)} = ${P(d.buAyTahsil)}</b> (KDV hariç).<br>
-      • Oranlar bonuslar <b>dahil</b> toplam hakedişe uygulanır; KDV (%20) tutarların üzerine eklenir.
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,183,77,0.06);border:1px dashed rgba(255,183,77,0.3);border-radius:8px;padding:8px 12px;font-size:10.5px;margin-bottom:11px">
-      <span style="color:var(--muted)">⏭ Bu ayın %30'u (<b style="color:#ffb74d">${P(d.kalan)}</b>) → <b style="color:var(--txt)">${monthLabel(addMonths(ym,2))}</b> ayında ödenecek</span>
+    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:11px">
+      <div style="font-size:12.5px;font-weight:800;color:var(--txt);margin-bottom:10px;display:flex;align-items:center;gap:6px">🧮 Nasıl hesaplandı?</div>
+
+      <div style="display:flex;gap:9px;align-items:flex-start;padding:8px 0">
+        <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:rgba(76,217,100,0.18);color:#4cd964;font-size:10.5px;font-weight:900;display:flex;align-items:center;justify-content:center">1</span>
+        <div style="flex:1;font-size:11.5px;color:var(--muted);line-height:1.6">
+          Bu ayın net hakedişi <b style="color:var(--txt)">${P(d.netHakedis)}</b>.<br>
+          Bunun <b style="color:#4cd964">%70'i = ${P(d.pesin)}</b> bu ay ödenir.
+        </div>
+      </div>
+
+      <div style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)">
+        <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:rgba(63,208,255,0.18);color:#3fd0ff;font-size:10.5px;font-weight:900;display:flex;align-items:center;justify-content:center">2</span>
+        <div style="flex:1;font-size:11.5px;color:var(--muted);line-height:1.6">
+          <b style="color:var(--txt)">${monthLabel(d.eskiYm)}</b> hakedişi <b style="color:var(--txt)">${P(d.eskiNet)}</b> idi.<br>
+          Onun <b style="color:#3fd0ff">%30'u = ${P(d.geridenGelen)}</b> bu ay tahsil edilir.
+        </div>
+      </div>
+
+      <div style="display:flex;gap:9px;align-items:center;padding:10px 0 8px;border-top:1px solid var(--line);margin-top:2px">
+        <span style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:rgba(252,211,77,0.2);color:#fcd34d;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center">=</span>
+        <div style="flex:1;font-size:12px;color:var(--txt);font-weight:700;line-height:1.5">
+          Bu ay eline geçen:<br>
+          <span style="font-size:11px;color:var(--muted);font-weight:600">${P(d.pesin)} + ${P(d.geridenGelen)} =</span>
+          <b style="color:#fcd34d;font-size:14px">${P(d.buAyTahsil)}</b>
+          <span style="font-size:10px;color:var(--muted);font-weight:600">(KDV dahil ${B(d.buAyTahsil)})</span>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,183,77,0.08);border:1px dashed rgba(255,183,77,0.35);border-radius:8px;padding:9px 12px;font-size:11px;color:var(--muted);margin-top:9px;line-height:1.5">
+        ⏭ Bu ayın kalan <b style="color:#ffb74d">%30'u (${P(d.kalan)})</b> → <b style="color:var(--txt)">${monthLabel(addMonths(ym,2))}</b> ayında ödenecek.
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.55;opacity:.85">
+        Oranlar bonuslar <b>dahil</b> toplam hakedişe uygulanır. KDV (%20) tutarların üzerine eklenir.
+      </div>
     </div>
 
     ${d.yatirilanTutar>0?`<div style="background:rgba(63,208,255,0.07);border:1px solid rgba(63,208,255,0.25);border-radius:10px;padding:10px 13px;margin-bottom:11px">
@@ -3686,7 +3724,8 @@ function kapanisRaporMetni(){
   L.push(`ER-TECH İLETİŞİM`);
   L.push('');
   L.push(`📦 Toplam işlem: ${d.toplamAdet} adet`);
-  L.push(`   🆕 Yeni Tesis: ${d.yeniTesis} · 🔄 MNP: ${d.mnpAktive} (${d.mnpDonem} bu ay, ${d.mnpDevir} devreden)`);
+  L.push(`   🆕 Yeni Tesis: ${d.yeniTesis} · 🔄 MNP aktive: ${d.mnpAktive}`);
+  L.push(`      ⬅️ Önceki aydan devreden: ${d.mnpDevir} · ➡️ Sonraki aya devreden: ${d.mnpGidenDevir}`);
   if(d.bekleyenAdet) L.push(`   ⏳ Onay bekleyen: ${d.bekleyenAdet}`);
   L.push('');
   d.satirlar.forEach(r=>L.push(`   • ${r.cat}: ${r.adet} adet — ${fmt(r.tutar)}`));
@@ -15989,6 +16028,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v258',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'ONEMLI: Kapanis Raporundaki MNP kirilimi hep 0 geliyordu. Sebep: sayim entries.mnp alanindan yapiliyordu, oysa prim sayfasi MUSTERI kayitlarindan (m.tip=mnp) sayiyor ve eski kayitlarda entries.mnp bos. Artik rapor da musteri kayitlarindan sayiyor — prim sayfasiyla birebir tutarli.' },
+      { type: 'new', text: 'MNP kirilimina "➡️ Sonraki aya devreden" satiri eklendi: bu ay girilen ama aktivasyonu gelecek aya dusen MNP sayisi ve hangi ay oldugu. Artik hem gelen (⬅️ onceki aydan) hem giden (➡️ sonraki aya) devir gorunuyor. Onay bekleyenler "hakedise dahil degil" notuyla belirtiliyor.' },
+      { type: 'ui', text: '"Nasil hesaplandi?" karti yeniden tasarlandi: yazilar buyutuldu, 1-2-= numarali adimlar halinde, her adim ayri satirda ve renkli rozetle. Sonuc satiri vurgulu, KDV dahil karsiligi da yaziyor.' },
+    ]
+  },
   {
     version: 'v257',
     date: '09.07.2026',
