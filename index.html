@@ -301,6 +301,16 @@ html{scrollbar-gutter:stable}
   #genelDurumSag{ width:100%!important; box-sizing:border-box!important; }
   #ortTahminWrap{ width:100%!important; box-sizing:border-box!important; }
   #hakedisStatsRow > *{ min-width:0!important; }
+  /* v278: KESIN HIZA — catCards content-col DISINDA, hakedisStatsRow ICINDE oldugu icin
+     ayni negatif margin farkli sonuc veriyordu. Mobilde content-col'un yan boslugunu sifirla,
+     hakedisStatsRow'u da catCards ile ayni sekilde -14px disari tasi. Boylece ikisi de ayni hizada. */
+  .content-col{ padding-left:0!important; padding-right:0!important; }
+  #hakedisStatsRow{ margin-left:-14px!important; margin-right:-14px!important; width:calc(100% + 28px)!important; }
+  /* content-col icindeki diger bloklar da ayni hizaya gelsin */
+  .content-col > .chart-box,
+  .content-col > .section-title,
+  .content-col > .bottom-row,
+  .content-col > .stats-row{ margin-left:-14px!important; margin-right:-14px!important; width:calc(100% + 28px)!important; box-sizing:border-box!important; }
   #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; }
   #statsRowTop{ flex:1 1 100%!important; }
   #genelDurumSag .bottom-row{ grid-template-columns:1fr 1fr!important; gap:6px!important; }
@@ -2872,7 +2882,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v277';
+const APP_VERSION = 'v278';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -16193,6 +16203,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v278',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'MOBIL HIZA KESIN COZUM: Kategori kartlari (catCards) icerik sutununun DISINDA, Hakedis paneli ise ICINDE oldugu icin ayni kenar boslugu kurali iki farkli sonuc veriyordu. Mobilde icerik sutununun yan boslugu sifirlandi ve tum bloklar (hakedis paneli, grafik, Genel Durum kartlari) ayni referansa hizalandi. Artik hepsi ustteki kategori kartlariyla tam ayni genislikte.' },
+    ]
+  },
   {
     version: 'v277',
     date: '10.07.2026',
