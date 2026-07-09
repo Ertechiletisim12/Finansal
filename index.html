@@ -2791,7 +2791,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v251';
+const APP_VERSION = 'v252';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2904,7 +2904,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '09.07.2026 09:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '09.07.2026 10:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -4384,6 +4384,71 @@ function changeCount(cat, delta, activationDate, isMnp){
 }
 
 // Gerçek kayıt işlemi - tip ayrımıyla
+// v252: MÜŞTERİ DÜZENLEME SENKRONU
+// Müşteri kaydında tarih/kategori/tip/tarife değişince entries + entryLog da taşınır.
+// Zincir: musteriler.logId -> entryLog.id -> entryLog.entryId -> entries.id
+// Yoksa (eski/hızlı kayıtlar) eski değerlerle güvenli arama yapılır. Bulunamazsa hiçbir şey bozulmaz.
+function propagateMusteriEdit(m, eski){
+  const oldMnp = eski.tip==='mnp', newMnp = m.tip==='mnp';
+  const oldTar = eski.tarife||'',  newTar = m.tarife||'';
+  const degisti = (eski.entryDate!==m.entryDate) || (eski.cat!==m.cat) || (oldMnp!==newMnp) || (oldTar!==newTar);
+  if(!degisti) return false;
+
+  const oldUseSub = MNP_CATS.includes(eski.cat);
+  const newUseSub = MNP_CATS.includes(m.cat);
+
+  // --- Bağlı log kaydını bul (önce logId, yoksa eski değerlerle) ---
+  let log = m.logId ? entryLog.find(l=>l.id===m.logId) : null;
+  if(!log){
+    log = entryLog.find(l =>
+      l.date===eski.entryDate && l.cat===eski.cat &&
+      (!oldUseSub || (!!l.mnp)===oldMnp) &&
+      (l.tarife||'')===oldTar
+    );
+  }
+
+  // --- Eski entries kovasından 1 düş ---
+  let oldE = (log && log.entryId) ? entries.find(x=>x.id===log.entryId) : null;
+  if(!oldE){
+    oldE = oldUseSub
+      ? entries.find(x=>x.date===eski.entryDate && x.cat===eski.cat && (!!x.mnp)===oldMnp && (x.tarife||'')===oldTar)
+      : entries.find(x=>x.date===eski.entryDate && x.cat===eski.cat && (x.tarife||'')===oldTar);
+  }
+  if(oldE && oldE.count>0) oldE.count--;
+
+  // --- Yeni entries kovasına 1 ekle (yoksa oluştur) ---
+  let newE = newUseSub
+    ? entries.find(x=>x.date===m.entryDate && x.cat===m.cat && (!!x.mnp)===newMnp && (x.tarife||'')===newTar)
+    : entries.find(x=>x.date===m.entryDate && x.cat===m.cat && (x.tarife||'')===newTar);
+  if(!newE){
+    newE = {id:'ent_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,5), date:m.entryDate, cat:m.cat, count:0};
+    if(newUseSub) newE.mnp = newMnp;
+    if(m.cat==='İnternet' && m.aktivasyonTarihi) newE.activationDate = m.aktivasyonTarihi;
+    if(newTar) newE.tarife = newTar;
+    entries.push(newE);
+  }
+  newE.count++;
+
+  // --- Log kaydını yeni değerlere taşı (zincir korunur) ---
+  if(log){
+    log.date = m.entryDate;
+    log.cat  = m.cat;
+    log.entryId = newE.id;
+    if(newUseSub) log.mnp = newMnp; else delete log.mnp;
+    if(newMnp) log.activationDate = m.aktivasyonTarihi || mnpActivationDate(m.entryDate);
+    else if(m.cat==='İnternet' && m.aktivasyonTarihi) log.activationDate = m.aktivasyonTarihi;
+    else delete log.activationDate;
+    if(newTar) log.tarife = newTar; else delete log.tarife;
+    if(!m.logId) m.logId = log.id; // bağı kalıcı yap
+  }
+
+  // Boşalan kovaları temizle
+  entries = entries.filter(x => x.count > 0);
+  saveEntries();
+  saveEntryLog();
+  return true;
+}
+
 function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
   const useSubtype = MNP_CATS.includes(cat);
   const mnpFlag = !!isMnp;
@@ -6323,19 +6388,20 @@ function render(){
               const adSoyad = `${esc(m.ad||'')} ${esc(m.soyad||'')}`.trim();
               const logE2 = dayLogs2.find(l=>l.id===m.logId);
               const tarife2 = m.tarife||(logE2&&logE2.tarife)||'';
-              return `<div style="display:flex;align-items:flex-start;gap:6px;padding:4px 0 4px 12px;border-top:1px solid rgba(255,255,255,0.04)">
-                <span style="color:#5bc8f5;flex-shrink:0;font-size:10.5px;line-height:1.4">↳</span>
+              const _tipRozet = m.tip==='mnp'
+                ? `<span style="font-size:8px;font-weight:800;padding:1px 4px;border-radius:5px;background:rgba(192,132,252,0.18);color:#c084fc;white-space:nowrap;flex-shrink:0">🔄 MNP</span>`
+                : `<span style="font-size:8px;font-weight:800;padding:1px 4px;border-radius:5px;background:rgba(76,217,100,0.18);color:#4cd964;white-space:nowrap;flex-shrink:0">🆕 Tesis</span>`;
+              return `<div style="display:flex;align-items:flex-start;gap:5px;padding:4px 0 4px 10px;border-top:1px solid rgba(255,255,255,0.04)">
+                <span style="color:#5bc8f5;flex-shrink:0;font-size:10.5px;line-height:1.5">↳</span>
                 <div style="flex:1;min-width:0">
-                  <div style="display:flex;align-items:center;gap:5px">
+                  <div style="display:flex;align-items:center;gap:5px;min-width:0">
                     ${musteriNotDot(m)}
-                    <span style="color:var(--txt);font-weight:700;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${adSoyad||'İsimsiz'}</span>
+                    <span title="${esc(adSoyad||'İsimsiz')}" style="color:var(--txt);font-weight:700;font-size:11.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${adSoyad||'İsimsiz'}</span>
                   </div>
-                  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:1px;padding-left:14px">
-                    <span style="color:#8a9099;font-size:10px">${esc(m.tel||'—')}</span>
-                    ${m.tip==='mnp'
-                      ? `<span style="font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:6px;background:rgba(192,132,252,0.18);color:#c084fc">🔄 MNP</span>`
-                      : `<span style="font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:6px;background:rgba(76,217,100,0.18);color:#4cd964">🆕 Yeni Tesis</span>`}
-                    ${tarife2?`<span style="color:#ffb74d;font-size:10px">🏷 ${tarife2}</span>`:''}
+                  <div style="display:flex;gap:5px;align-items:center;margin-top:2px;padding-left:14px;min-width:0">
+                    <span style="color:#8a9099;font-size:10px;white-space:nowrap;flex-shrink:0">${esc(m.tel||'—')}</span>
+                    ${_tipRozet}
+                    ${tarife2?`<span title="${esc(tarife2)}" style="color:#ffb74d;font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">🏷 ${tarife2}</span>`:''}
                   </div>
                 </div>
               </div>`;
@@ -11009,7 +11075,16 @@ function saveMusteriKayit(){
     const idx = musteriler.findIndex(m=>m.id===_mkEditId);
     if(idx>=0){
       const mevcutLogId = musteriler[idx].logId; // Mevcut bağlantıyı koru
+      // v252: eski değerleri yakala — entries/entryLog senkronu için
+      const _eski = {
+        entryDate: musteriler[idx].entryDate,
+        cat:       musteriler[idx].cat,
+        tip:       musteriler[idx].tip,
+        tarife:    musteriler[idx].tarife||''
+      };
       musteriler[idx] = {...musteriler[idx], ...kayit, id:_mkEditId, logId:mevcutLogId};
+      try{ propagateMusteriEdit(musteriler[idx], _eski); }
+      catch(err){ console.warn('propagateMusteriEdit hatası:', err); }
     }
     saveMusteriStore();
     closeMusteriKayit();
@@ -15519,6 +15594,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v252',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'KOKTEN COZUM — MUSTERI DUZENLEME SENKRONU: Musteri kaydinda giris tarihi / kategori / tip (MNP-Tesis) / tarife degistirince bu degisiklik artik entries (adet) ve entryLog (islem logu) kayitlarina da tasiniyor. Onceden sadece musteri kaydi guncelleniyordu; adet ve loglar eski tarihte kaliyordu — bu yuzden kart/prim yanlis gune yaziliyor, Islem Listesinde isim-numara kayboluyordu.' },
+      { type: 'info', text: 'Nasil calisir: musteri -> log -> entry zinciri korunarak eski tarihten 1 dusulur, yeni tarihe 1 eklenir; log tarihi/kategorisi/tarifesi ve MNP aktivasyon tarihi yeniden hesaplanir. Bagli kayit bulunamazsa hicbir sey degistirilmez (guvenli). Bundan sonraki tum duzenlemeler tutarli olur.' },
+    ]
+  },
   {
     version: 'v251',
     date: '09.07.2026',
