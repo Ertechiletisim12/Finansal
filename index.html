@@ -295,6 +295,8 @@ html{scrollbar-gutter:stable}
   #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; }
   #statsRowTop{ flex:1 1 100%!important; }
   #genelDurumSag .bottom-row{ grid-template-columns:1fr 1fr!important; gap:6px!important; }
+  /* v275: tek basina kalan son kart tam genislik olsun (sagi bos kalmasin) */
+  #genelDurumSag .bottom-card:nth-child(odd):last-child{ grid-column:span 2!important; }
   #genelDurumSag .bottom-card:nth-child(1),
   #genelDurumSag .bottom-card:nth-child(2),
   #genelDurumSag .bottom-card:nth-child(n+3){ grid-column:span 1!important; }
@@ -1157,7 +1159,8 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 
 .bottom-row{display:flex;gap:10px;margin-bottom:6px;flex-wrap:wrap}
 /* v270: sag sutunda 2 + 3 dizilim (ust satirda 2 genis yil karti, alt satirda 3 kart) */
-#genelDurumSag .bottom-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:0}
+#genelDurumSag .bottom-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:0;align-content:stretch}
+#genelDurumSag .bottom-card{display:flex;flex-direction:column;justify-content:center}
 #genelDurumSag .bottom-card{flex:none;min-width:0;padding:11px 13px}
 #genelDurumSag .bottom-card:nth-child(1),
 #genelDurumSag .bottom-card:nth-child(2){grid-column:span 3}
@@ -1783,7 +1786,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <div class="cards-row" id="catCards" style="margin-bottom:10px"></div>
 
         <!-- Genel Hakediş + Günlük Ortalama yan yana -->
-        <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;flex-wrap:wrap">
+
+        <!-- Scroll eden içerik -->
+        <div class="content-col" style="overflow-y:auto;flex:1 1 0;min-height:0;padding-top:0">
+        <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch;flex-wrap:wrap">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
         <div id="hakedisPanel" style="display:none;flex:1 1 460px;width:100%;max-width:500px;min-width:min(290px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
@@ -1803,22 +1809,19 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- Sağ: Günlük Ortalama & Ay Sonu Tahmini (hakedis ile yan yana) -->
-        <div id="statsRowTop" style="flex:1 1 520px;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;justify-content:stretch">
+        <div id="statsRowTop" style="flex:1 1 520px;min-width:0;display:flex;flex-direction:column;justify-content:stretch;align-items:stretch;gap:8px;justify-content:stretch">
           <div id="statsTopCards" style="display:flex;flex-direction:column;gap:8px"></div>
 
-          <div id="genelDurumSag" style="margin-top:2px">
+          <div id="genelDurumSag" style="margin-top:2px;flex:1;display:flex;flex-direction:column">
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:7px">
               <span style="font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.05em;text-transform:uppercase">📊 Genel Durum &amp; Tahminler</span>
               <span style="font-size:10px;color:var(--muted)">Yıl:</span>
               <select id="yearAvgSel2" onchange="document.getElementById('yearAvgSel').value=this.value;render()" style="font-size:10.5px;padding:2px 6px;border-radius:6px"></select>
             </div>
-            <div class="bottom-row" id="bottomRow" style="margin-bottom:0"></div>
+            <div class="bottom-row" id="bottomRow" style="margin-bottom:0;flex:1"></div>
           </div><!-- /genelDurumSag -->
         </div><!-- /statsRowTop -->
         </div><!-- /hakedisStatsRow -->
-
-        <!-- Scroll eden içerik -->
-        <div class="content-col" style="overflow-y:auto;flex:1 1 0;min-height:0;padding-top:0">
 
     <div class="section-title" id="genelDurumBaslik" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
       <span>Genel Durum &amp; Tahminler</span>
@@ -1838,6 +1841,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div><!-- /content-col scroll -->
       </div><!-- /sağ kolon wrapper -->
     </div><!-- /layout -->
+    </div>
     </div><!-- /page-prim -->
 
     <div id="page-finans" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
@@ -2859,7 +2863,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v273';
+const APP_VERSION = 'v275';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -16180,6 +16184,23 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v275',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'KRITIK: v274te Prim sayfasi kapanis etiketi eksik kalmisti; bu yuzden Finansal Analiz, Kasa Sayimi, Gelir Takibi, Not & Etiket ve Rapor sayfalari Prim sayfasinin ICINE hapsolmus ve bos gorunuyordu. Duzeltildi — tum sayfalar yeniden aciliyor.' },
+      { type: 'ui', text: 'Mobilde tek basina kalan son kart (Genel Toplam) artik tam genislik — saginda bos alan kalmiyor.' },
+    ]
+  },
+  {
+    version: 'v274',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'KOK SORUN: Hakedis (Toplam) karti kaydirilabilir alanin DISINDAYDI. Buyudukce grafigi asagi itiyor, sayfa kaydirilamadigi icin grafigin alti gizli kaliyordu. Artik kaydirilabilir icerik sutununun icinde — sayfa normal kayiyor, grafik her zaman gorunuyor.' },
+      { type: 'ui', text: 'Toplam karti uzadikca yanindaki Genel Durum kartlari da ayni hizada uzuyor — sagda bos alan kalmiyor.' },
+      { type: 'ui', text: 'Aylik Prim Grafigi artik ustteki kategori kartlariyla ayni hizada (ayni kaydirma alaninda, ayni ic bosluk).' },
+    ]
+  },
   {
     version: 'v273',
     date: '10.07.2026',
