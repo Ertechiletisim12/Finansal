@@ -1,6 +1,6 @@
 // Er-Tech İletişim — Service Worker (v186+)
 // Ayrı dosya olarak sunulur (same-origin) — PWA kurulabilirliği bunu gerektirir.
-const CACHE_VER = 'finansal-v267';
+const CACHE_VER = 'finansal-v262b';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
