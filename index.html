@@ -294,10 +294,23 @@ html{scrollbar-gutter:stable}
   #hakedisStatsRow{ flex-direction:column!important; flex-wrap:wrap!important; gap:8px!important; margin:14px -14px 0!important; width:calc(100% + 28px)!important; box-sizing:border-box!important; }
   #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; }
   #statsRowTop{ flex:1 1 100%!important; }
-  #genelDurumSag .bottom-row{ grid-template-columns:1fr 1fr!important; }
+  #genelDurumSag .bottom-row{ grid-template-columns:1fr 1fr!important; gap:6px!important; }
   #genelDurumSag .bottom-card:nth-child(1),
   #genelDurumSag .bottom-card:nth-child(2),
   #genelDurumSag .bottom-card:nth-child(n+3){ grid-column:span 1!important; }
+  #genelDurumSag .bottom-card{ padding:9px 10px!important; }
+  #genelDurumSag .bottom-card .v{ font-size:14px!important; }
+  #genelDurumSag .bottom-card .t{ font-size:9px!important; }
+  #genelDurumSag .bottom-card .y,#genelDurumSag .bottom-card .sub{ font-size:9px!important; }
+  /* v272: Aylik Prim Grafigi mobilde ekrana sigsin */
+  .chart-box{ padding:11px 8px 8px!important; }
+  .chart-box h3{ font-size:12px!important; margin-bottom:8px!important; }
+  .bars{ height:165px!important; gap:7px!important; padding:0 2px!important; }
+  .bar-col{ min-width:38px!important; }
+  .bar-col .n{ font-size:8.5px!important; margin-bottom:1px!important; }
+  .bar-col .v{ font-size:8.5px!important; margin-bottom:2px!important; }
+  .bar-col .lbl{ font-size:9px!important; margin-top:4px!important; }
+  .bar{ width:72%!important; }
   #hakedisPanel{ max-width:none!important; width:100%!important; flex:1 1 100%!important; min-width:0!important; margin-top:0!important; }
   #statsRowTop{ width:100%!important; flex:1 1 100%!important; min-width:0!important; }
   #page-trend{ padding-top:112px!important; } /* v243: baslangic; gercek deger JS ile olculur */
@@ -1156,9 +1169,9 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 .bottom-card .y{font-size:13px;color:var(--muted);margin:5px 0}
 .bottom-card .v{font-size:21px;font-weight:700}
 
-.chart-box{background:var(--panel);border:none;border-radius:8px;padding:16px;margin-bottom:6px}
+.chart-box{background:var(--panel);border:none;border-radius:8px;padding:14px 16px 10px;margin-bottom:6px}
 .chart-box h3{margin:0 0 14px;font-size:13.5px;font-weight:700}
-.bars{display:flex;align-items:flex-end;gap:16px;height:300px;padding:0 10px;overflow-x:auto}
+.bars{display:flex;align-items:flex-end;gap:16px;height:215px;padding:0 10px;overflow-x:auto}
 .bar-col{flex:1;min-width:50px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
 .bar-col .n{font-size:10.5px;color:var(--muted);margin-bottom:2px}
 .bar-col .v{font-size:10.5px;font-weight:700;margin-bottom:4px}
@@ -2846,7 +2859,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v271';
+const APP_VERSION = 'v272';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -16167,6 +16180,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v272',
+    date: '10.07.2026',
+    items: [
+      { type: 'ui', text: 'Aylik Prim Grafigi kisaltildi (300px -> 215px): baslik ile cubuklar arasindaki bos alan kalkti, grafigin alti artik kaydirmadan gorunuyor.' },
+      { type: 'ui', text: 'MOBIL DUZEN: Aylik Prim Grafigi ekrana sigacak sekilde kucultuldu (yukseklik 165px, dar sutunlar, kucuk etiketler). Genel Durum kartlari mobilde 2li ve kompakt.' },
+    ]
+  },
   {
     version: 'v271',
     date: '10.07.2026',
