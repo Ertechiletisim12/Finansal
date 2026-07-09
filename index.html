@@ -291,13 +291,16 @@ html{scrollbar-gutter:stable}
   #page-prim{ flex-direction:column!important;height:auto!important; }
   #page-prim .layout{ overflow:visible!important; }
   /* v232: Mobilde Hakediş paneli ve stat alani TAM GENISLIK (sagda cirkin bosluk kalmasin) */
-  /* v276: hakedisStatsRow artik content-col ICINDE — negatif margin/tasma kaldirildi */
-  #hakedisStatsRow{ flex-direction:column!important; flex-wrap:wrap!important; gap:8px!important; margin:0 0 10px!important; width:100%!important; box-sizing:border-box!important; }
+  /* v277: hakedisStatsRow, ustteki kategori kartlari (#catCards) ile AYNI genislikte olsun */
+  #hakedisStatsRow{ flex-direction:column!important; flex-wrap:wrap!important; gap:8px!important;
+                    margin:0 -14px 10px!important; width:calc(100% + 28px)!important;
+                    padding:0!important; box-sizing:border-box!important; }
   #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; min-width:0!important; width:100%!important; box-sizing:border-box!important; }
-  #statsRowTop{ flex:1 1 100%!important; min-width:0!important; width:100%!important; }
-  #statsTopCards{ width:100%!important; }
-  #genelDurumSag{ width:100%!important; }
-  #ortTahminWrap{ width:100%!important; }
+  #statsRowTop{ flex:1 1 100%!important; min-width:0!important; width:100%!important; box-sizing:border-box!important; }
+  #statsTopCards{ width:100%!important; box-sizing:border-box!important; }
+  #genelDurumSag{ width:100%!important; box-sizing:border-box!important; }
+  #ortTahminWrap{ width:100%!important; box-sizing:border-box!important; }
+  #hakedisStatsRow > *{ min-width:0!important; }
   #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; }
   #statsRowTop{ flex:1 1 100%!important; }
   #genelDurumSag .bottom-row{ grid-template-columns:1fr 1fr!important; gap:6px!important; }
@@ -2869,7 +2872,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v276';
+const APP_VERSION = 'v277';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -16190,6 +16193,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v277',
+    date: '10.07.2026',
+    items: [
+      { type: 'ui', text: 'MOBIL: Hakedis (Toplam) paneli artik ustteki kategori kartlariyla (PrePaid, Diger vb.) tam ayni genislikte — kenarlardaki bosluk kalkti. Ayni negatif kenar boslugu kurali uygulandi, tasma olmamasi icin box-sizing ve min-width korumasi eklendi.' },
+    ]
+  },
   {
     version: 'v276',
     date: '10.07.2026',
