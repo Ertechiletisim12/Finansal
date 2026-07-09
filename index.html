@@ -2827,7 +2827,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v260';
+const APP_VERSION = 'v261';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3454,15 +3454,34 @@ function kapanisRaporVerisi(ym){
     toplamAdet += adet;
     // v260: MNP sayımı MÜŞTERİ kayıtlarından (prim sayfasıyla aynı kaynak).
     // entries.mnp eski kayıtlarda boş olduğu için tek başına güvenilmez; yedek olarak kullanılır.
-    let mnp = 0;
+    // v261: MNP sayımı 3 kaynaktan sırayla aranır. Hiçbirinde bilgi yoksa "bilinmiyor" (null) döner —
+    // 0 göstermek yanıltıcı olurdu (eski kayıtlarda MNP/Tesis ayrımı hiç tutulmamış olabilir).
+    let mnp = null, kaynak = '';
     if(MNP_CATS.includes(c)){
       const _aktOfX = m => (m.aktivasyonTarihi ? m.aktivasyonTarihi : mnpActivationDate(m.entryDate)).slice(0,10);
-      mnp = musteriler.filter(m=>m.cat===c && m.tip==='mnp' && m.durum!=='bekliyor' && ymKey(_aktOfX(m))===ym).length;
-      if(mnp===0) mnp = catEntries.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0); // yedek kaynak
-      if(mnp > adet) mnp = adet;
+      // (1) Müşteri kayıtları
+      const mMus = musteriler.filter(m=>m.cat===c && m.tip==='mnp' && m.durum!=='bekliyor' && ymKey(_aktOfX(m))===ym).length;
+      // (2) entries.mnp bayrağı
+      const mEnt = catEntries.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
+      // (3) entryLog.mnp bayrağı (aktivasyona göre)
+      const mLog = (entryLog||[]).filter(l=>{
+        if(l.cat!==c || !l.mnp) return false;
+        const akt = (l.activationDate || mnpActivationDate(l.date)).slice(0,10);
+        return ymKey(akt)===ym;
+      }).length;
+      if(mMus>0){ mnp = mMus; kaynak='musteri'; }
+      else if(mEnt>0){ mnp = mEnt; kaynak='entries'; }
+      else if(mLog>0){ mnp = mLog; kaynak='log'; }
+      else {
+        // Hiç MNP bilgisi yok: bu aya ait müşteri kaydı var mı? Varsa gerçekten 0'dır.
+        const kayitVar = musteriler.some(m=>m.cat===c && ymKey(_aktOfX(m))===ym);
+        mnp = kayitVar ? 0 : null;   // null = bilinmiyor
+        kaynak = kayitVar ? 'musteri' : 'yok';
+      }
+      if(mnp!=null && mnp > adet) mnp = adet;
     }
-    const tesis = adet - mnp;
-    satirlar.push({cat:c, adet, mnp, tesis, birim: adet? gercek/adet : 0, tutar: gercek, mnpli: MNP_CATS.includes(c)});
+    const tesis = (mnp==null) ? null : adet - mnp;
+    satirlar.push({cat:c, adet, mnp, tesis, kaynak, birim: adet? gercek/adet : 0, tutar: gercek, mnpli: MNP_CATS.includes(c)});
   });
 
   // Eşik bonusları (kategori bazlı)
@@ -3492,7 +3511,8 @@ function kapanisRaporVerisi(ym){
   // Bu ay AKTİVE olan MNP'ler (onay bekleyenler hariç — prim sayfasıyla tutarlı)
   const aktiveList = musteriler.filter(m=>_inMnp(m) && m.durum!=='bekliyor' && ymKey(_aktOf(m))===ym);
   // v260: Alt toplam, kategori satırlarının toplamıyla BİREBİR aynı olsun (tablo ile kırılım çelişmesin)
-  const mnpAktive  = satirlar.reduce((a,r)=>a+r.mnp,0);
+  const mnpAktive  = satirlar.reduce((a,r)=>a+(r.mnp||0),0);
+  const mnpBilinmiyor = satirlar.some(r=>r.mnpli && r.mnp==null);   // v261: kaynak yok uyarısı için
   // Bunların kaçı önceki aydan devretti (giriş ayı ≠ aktivasyon ayı)
   const mnpDevir   = Math.min(aktiveList.filter(m=>ymKey(m.entryDate)!==ym).length, mnpAktive); // ÖNCEKİ aydan gelen
   const mnpDonem   = Math.max(0, mnpAktive - mnpDevir);                       // bu ay girilip bu ay aktive
@@ -3533,7 +3553,7 @@ function kapanisRaporVerisi(ym){
           tekrarliToplam, bonusToplam, netHakedis, brutHakedis, pesin, kalan,
           eskiYm, eskiNet, geridenGelen, buAyTahsil,
           mnpAktive, mnpDonem, mnpDevir, mnpGidenDevir, gidenDevirAy, yeniTesis, bekleyenAdet, yatirilanTutar,
-          gelenDevirKat, gidenDevirKat, bekleyenKat, donemKat};
+          gelenDevirKat, gidenDevirKat, bekleyenKat, donemKat, mnpBilinmiyor};
 }
 
 function openKapanisRaporu(){
@@ -3601,9 +3621,11 @@ function renderKapanisRaporu(ym){
         <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${(CAT_CONFIG[r.cat]&&CAT_CONFIG[r.cat].color)||'#888'};margin-right:7px"></span>${r.cat}
       </td>
       <td style="padding:8px 10px;text-align:center;font-size:12.5px;font-weight:800;color:var(--txt)">${r.adet}</td>
-      <td style="padding:8px 10px;text-align:center;font-size:11px;white-space:nowrap">${r.mnpli
-          ? `<span style="color:#4cd964;font-weight:700">${r.tesis}</span> <span style="color:#555">/</span> <span style="color:#c084fc;font-weight:700">${r.mnp}</span>`
-          : `<span style="color:#666">—</span>`}</td>
+      <td style="padding:8px 10px;text-align:center;font-size:11px;white-space:nowrap">${!r.mnpli
+          ? `<span style="color:#666">—</span>`
+          : (r.mnp==null
+            ? `<span title="Bu ay için MNP/Tesis bilgisi kayıtlı değil" style="color:#8a8f98;font-weight:700">? / ?</span>`
+            : `<span style="color:#4cd964;font-weight:700">${r.tesis}</span> <span style="color:#555">/</span> <span style="color:#c084fc;font-weight:700">${r.mnp}</span>`)}</td>
       <td style="padding:8px 10px;text-align:right;font-size:11.5px;color:var(--muted);white-space:nowrap">${B(r.birim)}</td>
       <td style="padding:8px 10px;text-align:right;white-space:nowrap"><div style="font-size:12px;color:#4cd964;font-weight:800">${B(r.tutar)}</div><div style="font-size:8.5px;color:var(--muted);font-weight:600">hariç: ${P(r.tutar)}</div></td>
     </tr>`).join('');
@@ -3635,7 +3657,7 @@ function renderKapanisRaporu(ym){
     </div>
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px">
-      ${kart('Toplam İşlem', d.toplamAdet+' adet', d.yeniTesis+' tesis · '+d.mnpAktive+' MNP', '#3fd0ff')}
+      ${kart('Toplam İşlem', d.toplamAdet+' adet', (d.mnpBilinmiyor && d.mnpAktive===0) ? 'tesis/MNP ayrımı kayıtlı değil' : (d.yeniTesis+' tesis · '+d.mnpAktive+' MNP'), '#3fd0ff')}
       ${kart('Net Hakediş', B(d.netHakedis), 'hariç: '+P(d.netHakedis), '#4cd964')}
       ${kart('Beklenen Prim', B(d.buAyTahsil), 'hariç: '+P(d.buAyTahsil), '#5ac8fa')}
     </div>
@@ -3654,7 +3676,7 @@ function renderKapanisRaporu(ym){
         <tfoot><tr style="background:var(--panel2);border-top:2px solid var(--line)">
           <td style="padding:9px 10px;font-size:12px;font-weight:900;color:var(--txt)">TOPLAM</td>
           <td style="padding:9px 10px;text-align:center;font-size:13px;font-weight:900;color:var(--txt)">${d.toplamAdet}</td>
-          <td style="padding:9px 10px;text-align:center;font-size:11px;white-space:nowrap"><span style="color:#4cd964;font-weight:800">${d.yeniTesis}</span> <span style="color:#555">/</span> <span style="color:#c084fc;font-weight:800">${d.mnpAktive}</span></td>
+          <td style="padding:9px 10px;text-align:center;font-size:11px;white-space:nowrap">${d.mnpBilinmiyor && d.mnpAktive===0 ? '<span style="color:#8a8f98;font-weight:800">? / ?</span>' : `<span style="color:#4cd964;font-weight:800">${d.yeniTesis}</span> <span style="color:#555">/</span> <span style="color:#c084fc;font-weight:800">${d.mnpAktive}</span>`}</td>
           <td></td>
           <td style="padding:9px 10px;text-align:right;white-space:nowrap"><div style="font-size:13px;font-weight:900;color:#4cd964">${B(d.netToplam)}</div><div style="font-size:8.5px;color:var(--muted);font-weight:600">hariç: ${P(d.netToplam)}</div></td>
         </tr></tfoot>
@@ -3670,6 +3692,7 @@ function renderKapanisRaporu(ym){
       ${satirKat('⬅️ Önceki aydan devreden', d.mnpDevir, d.gelenDevirKat, '#ffb74d', true, '(bu ay aktive oldu)')}
       ${satirKat('➡️ Sonraki aya devreden', d.mnpGidenDevir, d.gidenDevirKat, '#3fd0ff', true, '('+monthLabel(d.gidenDevirAy)+')')}
       ${d.bekleyenAdet?satirKat('⏳ Onay bekleyen', d.bekleyenAdet, d.bekleyenKat, '#ffd27a', true, '(hakedişe dahil değil)'):''}
+      ${d.mnpBilinmiyor && d.mnpAktive===0 ? `<div style="background:rgba(255,183,77,0.1);border:1px solid rgba(255,183,77,0.3);border-radius:8px;padding:8px 11px;font-size:10.5px;color:#ffb74d;margin-top:8px;line-height:1.55">⚠️ <b>Bu ayın MNP/Tesis ayrımı kayıtlı değil.</b> İşlemler müşteri kaydı açılmadan (yalnızca adet olarak) girilmiş; eski kayıtlarda MNP bayrağı tutulmamış. Bu yüzden kırılım "0" değil, <b>bilinmiyor</b> demektir. Toplam adet ve hakediş tutarları doğrudur.</div>` : ''}
       <div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6;padding-top:7px;border-top:1px dashed rgba(192,132,252,0.2)">ℹ️ Prim <b style="color:var(--txt)">aktivasyon tarihine</b> göre sayılır (MNP = giriş + 2 gün). Ayın son 2 gününde girilen MNP'ler <b style="color:#3fd0ff">sonraki ayın</b> hakedişine yazılır.</div>
     </div>
 
@@ -16116,6 +16139,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v261',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'Gecmis aylarda (Haziran ve oncesi) MNP kirilimi yanlis sekilde "0" gosteriyordu. Artik MNP sayisi UC kaynaktan sirayla araniyor: (1) musteri kayitlari, (2) entries.mnp bayragi, (3) entryLog.mnp bayragi. Hicbirinde bilgi yoksa "0" degil "? / ?" gosteriliyor ve uyari cikiyor — cunku o islemler musteri kaydi acilmadan, yalnizca adet olarak girilmis; MNP/Tesis ayrimi hic kaydedilmemis. Toplam adet ve hakedis tutarlari her durumda dogru.' },
+    ]
+  },
   {
     version: 'v260',
     date: '09.07.2026',
