@@ -1137,10 +1137,6 @@ table.main-table td.editable-cell:focus{outline:2px solid var(--accent);outline-
 table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer}
 
 .bottom-row{display:flex;gap:10px;margin-bottom:6px;flex-wrap:wrap}
-/* v260: 5 kart tek satirda; dar ekranda 2'li, mobilde alt alta */
-.bottom-row > .bottom-card{flex:1 1 145px;min-width:0}
-@media(max-width:900px){ .bottom-row > .bottom-card{flex:1 1 calc(50% - 5px)} }
-@media(max-width:520px){ .bottom-row > .bottom-card{flex:1 1 100%} }
 .bottom-card{background:var(--panel);border:none;border-radius:8px;padding:13px;flex:1;min-width:165px}
 .bottom-card .t{font-size:11.5px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
 .bottom-card .y{font-size:13px;color:var(--muted);margin:5px 0}
@@ -1650,7 +1646,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button class="prim-tool-pill" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent)">👥 Müşteri Takibi <span id="musteriTakipBadgeTop" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:9px;margin-left:2px"></span></button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
       <button class="prim-tool-pill" onclick="openCmpModal()">📊 Ay Karşılaştırma</button>
-      <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Detay Tabloları</button>
+      <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Prim Detayları</button>
       <button class="prim-tool-pill" onclick="openSaatModal()">⏱ Saat Analizi</button>
       <button class="prim-tool-pill" onclick="openFiyatModal()">💰 Fiyatlar & Veri</button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
@@ -1782,28 +1778,20 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <!-- Sağ: Günlük Ortalama & Ay Sonu Tahmini (hakedis ile yan yana) -->
         <div id="statsRowTop" style="flex:1 1 340px;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;justify-content:stretch"></div>
 
-          <!-- v262: Genel Durum kartları sağ sütuna alındı -->
-          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:2px">
-            <span style="font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.05em;text-transform:uppercase">Genel Durum &amp; Tahminler</span>
-            <span style="font-size:10px;color:var(--muted)">Yıl:</span>
-            <select id="yearAvgSel2" onchange="document.getElementById('yearAvgSel').value=this.value;render()" style="font-size:10.5px;padding:2px 6px"></select>
-          </div>
-          <div class="bottom-row" id="bottomRow" style="margin-bottom:0"></div>
-
         </div><!-- /statsRowTop -->
         </div><!-- /hakedisStatsRow -->
 
         <!-- Scroll eden içerik -->
         <div class="content-col" style="overflow-y:auto;flex:1;padding-top:0">
 
-    <div class="section-title" id="genelDurumBaslik" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
+    <div class="section-title" id="genelDurumBaslik" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
       <span>Genel Durum &amp; Tahminler</span>
       <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:normal">Yıl:</span>
       <select id="yearAvgSel" onchange="render()" style="font-size:11px;padding:2px 6px;text-transform:none"></select>
     </div>
     <div class="stats-row" id="statsRow"></div>
 
-    <!-- v262: bottomRow sağ sütuna taşındı (statsRowTop içinde) -->
+    <div class="bottom-row" id="bottomRow"></div>
 
     <div class="chart-box">
       <h3 id="chartTitle">Aylık Prim Grafiği</h3>
@@ -2279,7 +2267,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="tablolarModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:1100px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="background:linear-gradient(135deg,#e2231a,#b81b14);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <span style="font-size:14px;font-weight:700;color:#fff">📋 Detay Tabloları</span>
+      <span style="font-size:14px;font-weight:700;color:#fff">📋 Prim Detayları</span>
       <button onclick="closePrimModal('tablolarModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
@@ -2835,7 +2823,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v262';
+const APP_VERSION = 'v268';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -6642,18 +6630,11 @@ function render(){
   const allYears = [...new Set(Object.keys(monthMapAll).map(m=>m.split('-')[0]))].sort();
   const existingYrSel = document.getElementById('yearAvgSel');
   let selectedAvgYear = existingYrSel ? existingYrSel.value : '';
-  // v262: sağ sütundaki ikinci yıl seçicisini besle/senkronla
-  const yrSel2 = document.getElementById('yearAvgSel2');
+
   if(!selectedAvgYear || !allYears.includes(selectedAvgYear)){
     selectedAvgYear = allYears.includes(String(new Date().getFullYear()))
       ? String(new Date().getFullYear())
       : (allYears[allYears.length-1] || String(new Date().getFullYear()));
-  }
-
-  if(yrSel2){
-    const istenen = allYears.map(y=>`<option value="${y}">${y}</option>`).join('');
-    if(yrSel2.innerHTML !== istenen) yrSel2.innerHTML = istenen;
-    yrSel2.value = selectedAvgYear;
   }
 
   // seçili yılın aylık ortalaması (KDV dahil)
@@ -6707,21 +6688,17 @@ function render(){
     </div><!-- /ortTahminWrap -->
   `;
 
-  // v260: Bu iki kart aşağıdaki bottomRow'a taşındı — hepsi tek satırda yan yana dursun
-  statsDiv.innerHTML = '';
-  statsDiv.style.display = 'none';
-  window._yilKartlariHtml = `
-    <div class="bottom-card">
-      <div class="t">${selectedAvgYear} Yılı Aylık Ortalama <span style="font-size:9px;opacity:.7">KDV Dahil</span></div>
-      <div class="y">${yearMonths.length} ay verisi</div>
-      <div class="v">${fmt(yearAvgKdv)}</div>
-      <div class="sub" style="font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px">Aylık ortalama</div>
+  statsDiv.style.display = '';
+  statsDiv.innerHTML = `
+    <div class="stat" style="min-width:230px">
+      <div class="t">${selectedAvgYear} Yılı Aylık Ortalama <span style="font-size:9.5px;opacity:.7">KDV Dahil</span></div>
+      <div class="v" style="margin-top:6px">${fmt(yearAvgKdv)}</div>
+      <div class="sub">${yearMonths.length} ay verisi üzerinden</div>
     </div>
-    <div class="bottom-card">
-      <div class="t">${selectedAvgYear} Yılı Toplam Tutar <span style="font-size:9px;opacity:.7">KDV Dahil</span></div>
-      <div class="y">${yearMonths.length} ay verisi</div>
-      <div class="v">${fmt(selectedYearSum)}</div>
-      <div class="sub" style="font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px">Yıl toplamı</div>
+    <div class="stat" style="min-width:200px">
+      <div class="t">${selectedAvgYear} Yılı Toplam Tutar <span style="font-size:9.5px;opacity:.7">KDV Dahil</span></div>
+      <div class="v" style="margin-top:6px">${fmt(selectedYearSum)}</div>
+      <div class="sub">${yearMonths.length} ay verisi üzerinden</div>
     </div>
   `;
 
@@ -6787,7 +6764,6 @@ function render(){
         ${selectedAvgYear}: <b>${fmt(genelToplamYr)}</b>
       </div>
     </div>
-    ${window._yilKartlariHtml || ''}
   `;
 
   // ---- bar chart: SEÇİLİ YILIN tüm ayları (Ocak-Aralık), KDV dahil, ortalama altı için çizgi ----
@@ -16156,6 +16132,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v268',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'Prim sayfasi duzeni sadelestirildi: "Genel Durum & Tahminler" basligi ve kartlari sag sutundan alinip kendi bolumune geri kondu (baslik artik bosuklukta asili durmuyor). Hakedis paneli + Gunluk Ort./Ay Sonu/Hedef ustte, Genel Durum kartlari altta normal akista.' },
+      { type: 'ui', text: '"Detay Tablolari" -> "Prim Detaylari" (buton + modal basligi).' },
+    ]
+  },
   {
     version: 'v262',
     date: '09.07.2026',
