@@ -2791,7 +2791,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v249';
+const APP_VERSION = 'v250';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2904,7 +2904,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '08.07.2026 15:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '08.07.2026 16:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6303,7 +6303,15 @@ function render(){
         let musteriSat = '';
         try {
           const dayLogs2 = allDayLogs;
-          const ilgiliMusteriler2 = (musteriler||[]).filter(m=>m.logId && dayLogs2.some(l=>l.id===m.logId) && ((m.tarife||'')===(e.tarife||'')));
+          // v250: logId ile eslesenler + logId'si olmayanlar (tarih+kategori ile). Tarife zorunlu degil.
+          const _logluMusteriler = (musteriler||[]).filter(m=>m.logId && dayLogs2.some(l=>l.id===m.logId));
+          const _logsuzMusteriler = (musteriler||[]).filter(m=>!m.logId && m.entryDate===date && m.cat===e.cat);
+          let ilgiliMusteriler2 = _logluMusteriler.concat(_logsuzMusteriler);
+          // Ayni kategori icinde birden fazla tarife varsa tarifeye gore ayikla (yoksa hepsini goster)
+          if(e.tarife){
+            const _tarifeliler = ilgiliMusteriler2.filter(m=>(m.tarife||'')===(e.tarife||''));
+            if(_tarifeliler.length) ilgiliMusteriler2 = _tarifeliler;
+          }
           if(ilgiliMusteriler2.length > 0){
             musteriSat = ilgiliMusteriler2.map(m=>{
               const adSoyad = `${esc(m.ad||'')} ${esc(m.soyad||'')}`.trim();
@@ -15502,6 +15510,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v250',
+    date: '08.07.2026',
+    items: [
+      { type: 'fix', text: 'Sol Islem Listesi panelinde musteri isim/telefonu artik gorunuyor: onceden sadece logId ile bagli musteriler eslesiyordu, logId si olmayanlar (hizli giris / senkronla gelenler) isimsiz kaliyordu. Artik logId yoksa tarih+kategori ile eslestiriliyor ve tarife zorunlulugu kaldirildi.' },
+      { type: 'info', text: 'Sol Islem Listesi bilerek GIRIS tarihine gore listelenmeye devam ediyor ("o gun ne girdim" defteri). Kartlar ve 📋 modali ise aktivasyona gore calisir.' },
+    ]
+  },
   {
     version: 'v249',
     date: '08.07.2026',
