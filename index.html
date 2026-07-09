@@ -291,7 +291,13 @@ html{scrollbar-gutter:stable}
   #page-prim{ flex-direction:column!important;height:auto!important; }
   #page-prim .layout{ overflow:visible!important; }
   /* v232: Mobilde Hakediş paneli ve stat alani TAM GENISLIK (sagda cirkin bosluk kalmasin) */
-  #hakedisStatsRow{ flex-direction:column!important; flex-wrap:wrap!important; gap:8px!important; margin:14px -14px 0!important; width:calc(100% + 28px)!important; box-sizing:border-box!important; }
+  /* v276: hakedisStatsRow artik content-col ICINDE — negatif margin/tasma kaldirildi */
+  #hakedisStatsRow{ flex-direction:column!important; flex-wrap:wrap!important; gap:8px!important; margin:0 0 10px!important; width:100%!important; box-sizing:border-box!important; }
+  #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; min-width:0!important; width:100%!important; box-sizing:border-box!important; }
+  #statsRowTop{ flex:1 1 100%!important; min-width:0!important; width:100%!important; }
+  #statsTopCards{ width:100%!important; }
+  #genelDurumSag{ width:100%!important; }
+  #ortTahminWrap{ width:100%!important; }
   #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; }
   #statsRowTop{ flex:1 1 100%!important; }
   #genelDurumSag .bottom-row{ grid-template-columns:1fr 1fr!important; gap:6px!important; }
@@ -2863,7 +2869,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v275';
+const APP_VERSION = 'v276';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -16184,6 +16190,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v276',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'MOBIL: Prim sayfasindaki kartlar ekrandan tasiyordu. Sebep, hakedisStatsRow icin kalan eski kural (negatif margin + width:calc(100%+28px)) — blok artik kaydirilabilir icerik sutununun ICINDE oldugu icin bu tasma yaratiyordu. Kaldirildi; hakedis paneli, ust kartlar ve Genel Durum kartlari mobilde ekrana tam oturuyor.' },
+    ]
+  },
   {
     version: 'v275',
     date: '10.07.2026',
