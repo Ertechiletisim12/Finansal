@@ -2817,7 +2817,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v258';
+const APP_VERSION = 'v259';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3479,8 +3479,20 @@ function kapanisRaporVerisi(ym){
   const mnpDonem   = mnpAktive - mnpDevir;                                    // bu ay girilip bu ay aktive
 
   // Bu ay GİRİLEN ama aktivasyonu SONRAKİ aya düşen MNP'ler (giden devir)
-  const mnpGidenDevir = musteriler.filter(m=>_inMnp(m) && ymKey(m.entryDate)===ym && ymKey(_aktOf(m))>ym).length;
+  const gidenList = musteriler.filter(m=>_inMnp(m) && ymKey(m.entryDate)===ym && ymKey(_aktOf(m))>ym);
+  const mnpGidenDevir = gidenList.length;
   const gidenDevirAy  = addMonths(ym, 1);
+
+  // v259: Devirlerin KATEGORİ kırılımı — "2 Red · 1 PostPaid" gibi
+  const _katSay = list => {
+    const m = {};
+    list.forEach(x=>{ m[x.cat] = (m[x.cat]||0)+1; });
+    return Object.keys(m).sort((a,b)=>m[b]-m[a]).map(c=>({cat:c, adet:m[c]}));
+  };
+  const gelenDevirKat = _katSay(aktiveList.filter(m=>ymKey(m.entryDate)!==ym));
+  const gidenDevirKat = _katSay(gidenList);
+  const bekleyenKat   = _katSay(musteriler.filter(m=>_inMnp(m) && m.durum==='bekliyor' && ymKey(_aktOf(m))===ym));
+  const donemKat      = _katSay(aktiveList.filter(m=>ymKey(m.entryDate)===ym));
 
   const yeniTesis  = Math.max(0, toplamAdet - mnpAktive);
   const bekleyenAdet = musteriler.filter(m=>_inMnp(m) && m.durum==='bekliyor' && ymKey(_aktOf(m))===ym).length;
@@ -3501,7 +3513,8 @@ function kapanisRaporVerisi(ym){
   return {ym, satirlar, toplamAdet, netToplam, kampanyaFiyatEtkisi, esikBonuslar, esikToplam,
           tekrarliToplam, bonusToplam, netHakedis, brutHakedis, pesin, kalan,
           eskiYm, eskiNet, geridenGelen, buAyTahsil,
-          mnpAktive, mnpDonem, mnpDevir, mnpGidenDevir, gidenDevirAy, yeniTesis, bekleyenAdet, yatirilanTutar};
+          mnpAktive, mnpDonem, mnpDevir, mnpGidenDevir, gidenDevirAy, yeniTesis, bekleyenAdet, yatirilanTutar,
+          gelenDevirKat, gidenDevirKat, bekleyenKat, donemKat};
 }
 
 function openKapanisRaporu(){
@@ -3547,6 +3560,21 @@ function renderKapanisRaporu(ym){
       <div style="font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">${baslik}</div>
       <div style="font-size:17px;font-weight:900;color:${renk};margin-top:3px">${deger}</div>
       <div style="font-size:9.5px;color:var(--muted);margin-top:1px">${alt}</div>
+    </div>`;
+
+  // v259: kırılım satırı + kategori rozetleri ("2 Red · 1 PostPaid")
+  const katRozet = (liste) => !liste || !liste.length ? '' :
+    `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;padding-left:2px">${liste.map(k=>{
+      const renk = (CAT_CONFIG[k.cat]&&CAT_CONFIG[k.cat].color)||'#888';
+      return `<span style="font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:${renk}22;color:${renk};border:1px solid ${renk}44;white-space:nowrap">${k.adet} ${k.cat}</span>`;
+    }).join('')}</div>`;
+  const satirKat = (baslik, adet, liste, renk, ustCizgi, ipucu) => `
+    <div style="padding:6px 0${ustCizgi?';border-top:1px solid rgba(192,132,252,0.14)':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;gap:8px">
+        <span style="color:var(--muted)">${baslik}${ipucu?` <span style="opacity:.7">${ipucu}</span>`:''}</span>
+        <span style="color:${renk};font-weight:800;flex-shrink:0">${adet}</span>
+      </div>
+      ${adet>0?katRozet(liste):''}
     </div>`;
 
   const katSatir = d.satirlar.map(r=>`<tr style="border-bottom:1px solid var(--line)">
@@ -3619,10 +3647,10 @@ function renderKapanisRaporu(ym){
         <span style="font-size:12px;font-weight:800;color:#c084fc">🔄 MNP Kırılımı</span>
         <span style="font-size:12px;font-weight:900;color:#c084fc">${d.mnpAktive} aktive</span>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0"><span style="color:var(--muted)">🆕 Bu ay girilip bu ay aktive olan</span><span style="color:var(--txt);font-weight:800">${d.mnpDonem}</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0;border-top:1px solid rgba(192,132,252,0.14)"><span style="color:var(--muted)">⬅️ Önceki aydan devreden <span style="opacity:.7">(bu ay aktive oldu)</span></span><span style="color:#ffb74d;font-weight:800">${d.mnpDevir}</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0;border-top:1px solid rgba(192,132,252,0.14)"><span style="color:var(--muted)">➡️ Sonraki aya devreden <span style="opacity:.7">(${monthLabel(d.gidenDevirAy)})</span></span><span style="color:#3fd0ff;font-weight:800">${d.mnpGidenDevir}</span></div>
-      ${d.bekleyenAdet?`<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0;border-top:1px solid rgba(192,132,252,0.14)"><span style="color:var(--muted)">⏳ Onay bekleyen <span style="opacity:.7">(hakedişe dahil değil)</span></span><span style="color:#ffd27a;font-weight:800">${d.bekleyenAdet}</span></div>`:''}
+      ${satirKat('🆕 Bu ay girilip bu ay aktive olan', d.mnpDonem, d.donemKat, 'var(--txt)', false)}
+      ${satirKat('⬅️ Önceki aydan devreden', d.mnpDevir, d.gelenDevirKat, '#ffb74d', true, '(bu ay aktive oldu)')}
+      ${satirKat('➡️ Sonraki aya devreden', d.mnpGidenDevir, d.gidenDevirKat, '#3fd0ff', true, '('+monthLabel(d.gidenDevirAy)+')')}
+      ${d.bekleyenAdet?satirKat('⏳ Onay bekleyen', d.bekleyenAdet, d.bekleyenKat, '#ffd27a', true, '(hakedişe dahil değil)'):''}
       <div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6;padding-top:7px;border-top:1px dashed rgba(192,132,252,0.2)">ℹ️ Prim <b style="color:var(--txt)">aktivasyon tarihine</b> göre sayılır (MNP = giriş + 2 gün). Ayın son 2 gününde girilen MNP'ler <b style="color:#3fd0ff">sonraki ayın</b> hakedişine yazılır.</div>
     </div>
 
@@ -3725,7 +3753,9 @@ function kapanisRaporMetni(){
   L.push('');
   L.push(`📦 Toplam işlem: ${d.toplamAdet} adet`);
   L.push(`   🆕 Yeni Tesis: ${d.yeniTesis} · 🔄 MNP aktive: ${d.mnpAktive}`);
-  L.push(`      ⬅️ Önceki aydan devreden: ${d.mnpDevir} · ➡️ Sonraki aya devreden: ${d.mnpGidenDevir}`);
+  const _katStr = l => (l && l.length) ? ' (' + l.map(k=>k.adet+' '+k.cat).join(', ') + ')' : '';
+  L.push(`      ⬅️ Önceki aydan devreden: ${d.mnpDevir}${_katStr(d.gelenDevirKat)}`);
+  L.push(`      ➡️ Sonraki aya devreden: ${d.mnpGidenDevir}${_katStr(d.gidenDevirKat)}`);
   if(d.bekleyenAdet) L.push(`   ⏳ Onay bekleyen: ${d.bekleyenAdet}`);
   L.push('');
   d.satirlar.forEach(r=>L.push(`   • ${r.cat}: ${r.adet} adet — ${fmt(r.tutar)}`));
@@ -15604,14 +15634,23 @@ function openExportPreview(tableId, fileLabel){
       if(ilgiliM.length > 0){
         ilgiliM.forEach(m=>{
           const logE = dayLogs.find(l=>l.id===m.logId);
+          // v259: MNP aktivasyon tarihi + devir durumu (seçili aralığa göre)
+          const isMnp = m.tip==='mnp';
+          const akt = isMnp ? ((m.aktivasyonTarihi||mnpActivationDate(m.entryDate)).slice(0,10)) : '';
+          let devir = '';
+          if(isMnp && akt){
+            if(akt > rEnd)      devir = 'sonraki';   // bu dönemde girildi, sonraki döneme devrolacak
+            else if(akt < g.date) devir = 'onceki';
+          }
           musteriRows.push({date:g.date,cat:g.cat,count:1,amt:birimAmt,
             ad:((m.ad||'')+' '+(m.soyad||'')).trim(),tel:m.tel||'-',tarife:m.tarife||(logE&&logE.tarife)||'-',
-            tip: m.tip==='mnp' ? 'MNP' : 'Yeni Tesis'});
+            tip: isMnp ? 'MNP' : 'Yeni Tesis', akt: akt||'-', devir,
+            bekliyor: m.durum==='bekliyor'});
         });
         const kalan = g.count - ilgiliM.length;
-        if(kalan>0) musteriRows.push({date:g.date,cat:g.cat,count:kalan,amt:birimAmt*kalan,ad:'-',tel:'-',tarife:'-',tip:'-'});
+        if(kalan>0) musteriRows.push({date:g.date,cat:g.cat,count:kalan,amt:birimAmt*kalan,ad:'-',tel:'-',tarife:'-',tip:'-',akt:'-',devir:'',bekliyor:false});
       } else {
-        musteriRows.push({date:g.date,cat:g.cat,count:g.count,amt:birimAmt*g.count,ad:'-',tel:'-',tarife:'-',tip:'-'});
+        musteriRows.push({date:g.date,cat:g.cat,count:g.count,amt:birimAmt*g.count,ad:'-',tel:'-',tarife:'-',tip:'-',akt:'-',devir:'',bekliyor:false});
       }
     });
     const catSummary = CATS.map(c=>{
@@ -15640,6 +15679,7 @@ function openExportPreview(tableId, fileLabel){
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left;white-space:nowrap">Tarih</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Kategori</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:center;white-space:nowrap">Tip</th>
+        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:center;white-space:nowrap">Aktivasyon / Devir</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Müşteri</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Telefon</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Tarife</th>
@@ -15652,6 +15692,12 @@ function openExportPreview(tableId, fileLabel){
         <td style="padding:8px 10px;font-size:12px;color:#eee;font-weight:600;white-space:nowrap">${r.date}</td>
         <td style="padding:8px 10px;font-size:12px;color:#ccc">${r.cat}</td>
         <td style="padding:8px 10px;font-size:11px;color:${tipRenk};font-weight:700;text-align:center;white-space:nowrap">${r.tip||'-'}</td>
+        <td style="padding:8px 10px;font-size:10.5px;text-align:center;white-space:nowrap">
+          ${r.akt && r.akt!=='-' ? `<div style="color:#9aa0a6">${r.akt}</div>` : '<span style="color:#555">—</span>'}
+          ${r.devir==='sonraki' ? '<div style="color:#3fd0ff;font-weight:700;font-size:9.5px">➡️ sonraki döneme</div>' : ''}
+          ${r.devir==='onceki'  ? '<div style="color:#ffb74d;font-weight:700;font-size:9.5px">⬅️ önceki dönemden</div>' : ''}
+          ${r.bekliyor ? '<div style="color:#ffd27a;font-weight:700;font-size:9.5px">⏳ onay bekliyor</div>' : ''}
+        </td>
         <td style="padding:8px 10px;font-size:12px;color:#fff;font-weight:600">${r.ad.trim()||'—'}</td>
         <td style="padding:8px 10px;font-size:12px;color:#aaa;white-space:nowrap">${r.tel}</td>
         <td style="padding:8px 10px;font-size:12px;color:#aaa">${r.tarife}</td>
@@ -15660,7 +15706,7 @@ function openExportPreview(tableId, fileLabel){
       </tr>`;}).join('')}
       </tbody>
       <tfoot><tr style="background:#1a1c20;border-top:2px solid #e2231a">
-        <td colspan="6" style="padding:10px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
+        <td colspan="7" style="padding:10px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
         <td style="padding:10px;font-size:13px;color:#fff;font-weight:800;text-align:center">${musteriRows.reduce((a,r)=>a+r.count,0)}</td>
         <td style="padding:10px;font-size:13px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(musteriRows.reduce((a,r)=>a+r.amt,0))}</td>
       </tr></tfoot></table>`;
@@ -15687,7 +15733,7 @@ function openExportPreview(tableId, fileLabel){
         <td style="padding:12px 14px;font-size:13px;color:#4cd964;font-weight:700;text-align:right;white-space:nowrap">${fmt(totalAmt)}</td>
       </tr>`;
     }).filter(Boolean).join('');
-    const ozetHtml = `<div style="background:#1e2023;border-radius:8px;overflow:hidden">
+    let ozetHtml = `<div style="background:#1e2023;border-radius:8px;overflow:hidden">
     <table style="width:100%;border-collapse:collapse">
       <thead><tr style="background:#e2231a">
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:left;font-weight:700;letter-spacing:.05em">KATEGORİ</th>
@@ -15705,6 +15751,23 @@ function openExportPreview(tableId, fileLabel){
         <td style="padding:12px 14px;font-size:14px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(toplamAmt)}</td>
       </tr></tfoot>
     </table></div>`;
+    // v259: Özet üstüne MNP devir kutusu
+    const _mnpRows = musteriRows.filter(r=>r.tip==='MNP');
+    const _gidenler = _mnpRows.filter(r=>r.devir==='sonraki');
+    const _oncekiler = _mnpRows.filter(r=>r.devir==='onceki');
+    const _bekleyenler = _mnpRows.filter(r=>r.bekliyor);
+    const _katOzet = arr => { const m={}; arr.forEach(r=>{m[r.cat]=(m[r.cat]||0)+1;});
+      return Object.keys(m).sort((a,b)=>m[b]-m[a]).map(c=>`${m[c]} ${c}`).join(' · ') || '—'; };
+    const devirKutu = (_gidenler.length || _oncekiler.length || _bekleyenler.length) ? `
+      <div style="background:#26282b;border:1px solid #3a3d42;border-radius:10px;padding:12px 14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:800;color:#c084fc;margin-bottom:8px">🔄 MNP Devir Durumu <span style="font-size:10px;color:#888;font-weight:600">(seçili aralığa göre)</span></div>
+        ${_oncekiler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0"><span style="color:#ffb74d">⬅️ Önceki dönemden devreden</span><span style="color:#ddd;font-weight:700">${_oncekiler.length} <span style="color:#888;font-weight:500">(${_katOzet(_oncekiler)})</span></span></div>`:''}
+        ${_gidenler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0;border-top:1px solid #34373c"><span style="color:#3fd0ff">➡️ Sonraki döneme devrolacak</span><span style="color:#ddd;font-weight:700">${_gidenler.length} <span style="color:#888;font-weight:500">(${_katOzet(_gidenler)})</span></span></div>`:''}
+        ${_bekleyenler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0;border-top:1px solid #34373c"><span style="color:#ffd27a">⏳ Onay bekleyen</span><span style="color:#ddd;font-weight:700">${_bekleyenler.length} <span style="color:#888;font-weight:500">(${_katOzet(_bekleyenler)})</span></span></div>`:''}
+        <div style="font-size:9.5px;color:#777;margin-top:7px;line-height:1.5">Prim aktivasyon tarihinde işlenir (MNP = giriş + 2 gün). Dönem sonunda girilen MNP'ler sonraki döneme devreder.</div>
+      </div>` : '';
+    ozetHtml = devirKutu + ozetHtml;   // devir kutusu özetin en üstünde
+
     window._exportDetayliHtml = detayliHtml;
     window._exportOzetHtml = ozetHtml;
     window._exportFiltRows = filtRows;
@@ -16028,6 +16091,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v259',
+    date: '09.07.2026',
+    items: [
+      { type: 'new', text: 'Kapanis Raporu MNP kiriliminda artik KATEGORI kirilimi da var: her satirin altinda "2 Red · 1 PostPaid" gibi renkli rozetler. Hem devredenler, hem devrolacaklar, hem onay bekleyenler icin.' },
+      { type: 'new', text: 'DISA AKTAR — Detayli tabloya "Aktivasyon / Devir" sutunu eklendi: MNP nin aktivasyon tarihi, "➡️ sonraki doneme" veya "⬅️ onceki donemden" devir rozeti ve "⏳ onay bekliyor" durumu gorunuyor.' },
+      { type: 'new', text: 'DISA AKTAR — Ozet sekmesinin ustune "🔄 MNP Devir Durumu" kutusu eklendi: onceki donemden devreden, sonraki doneme devrolacak ve onay bekleyen sayilari, kategori kirilimlariyla birlikte.' },
+    ]
+  },
   {
     version: 'v258',
     date: '09.07.2026',
