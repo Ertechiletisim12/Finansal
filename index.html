@@ -2839,7 +2839,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v263';
+const APP_VERSION = 'v264';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -15757,7 +15757,8 @@ function openExportPreview(tableId, fileLabel){
       </tr></thead>
       <tbody>${musteriRows.map((r,i)=>{
         const tipRenk = r.tip==='MNP' ? '#c084fc' : (r.tip==='Yeni Tesis' ? '#4cd964' : '#666');
-        return `<tr style="background:${i%2===0?'#26282b':'#2c2f33'};border-bottom:1px solid #2a2d33">
+        const _devirBg = r.devir==='onceki' ? '#2b2620' : (r.devir==='sonraki' ? '#1f2a2e' : null);
+        return `<tr style="background:${_devirBg || (i%2===0?'#26282b':'#2c2f33')};border-bottom:1px solid #2a2d33">
         <td style="padding:8px 10px;font-size:12px;color:#eee;font-weight:600;white-space:nowrap">${r.date}</td>
         <td style="padding:8px 10px;font-size:12px;color:#ccc">${r.cat}</td>
         <td style="padding:8px 10px;font-size:11px;color:${tipRenk};font-weight:700;text-align:center;white-space:nowrap">${r.tip||'-'}</td>
@@ -15820,6 +15821,28 @@ function openExportPreview(tableId, fileLabel){
         <td style="padding:12px 14px;font-size:14px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(toplamAmt)}</td>
       </tr></tfoot>
     </table></div>`;
+    // v264: ÖNCEKİ DÖNEMDEN DEVREDENLER — girişi aralıktan önce, aktivasyonu aralık içinde olan MNP'ler.
+    // Bunlar bu dönemin primine dahil olduğu için listeye ve toplamlara eklenir.
+    {
+      const _aktOfM = m => (m.aktivasyonTarihi ? m.aktivasyonTarihi : mnpActivationDate(m.entryDate)).slice(0,10);
+      const devredenler = (musteriler||[]).filter(m =>
+        MNP_CATS.includes(m.cat) && m.tip==='mnp' &&
+        m.entryDate < rStart &&                       // giriş önceki dönemde
+        _aktOfM(m) >= rStart && _aktOfM(m) <= rEnd    // aktivasyon bu dönemde
+      );
+      devredenler.forEach(m=>{
+        const akt = _aktOfM(m);
+        const birim = kampanyaFiyatFor(m.entryDate, m.cat, priceFor(ymKey(m.entryDate), m.cat));
+        musteriRows.push({
+          date: m.entryDate, cat: m.cat, count: 1, amt: birim,
+          ad: ((m.ad||'')+' '+(m.soyad||'')).trim(), tel: m.tel||'-', tarife: m.tarife||'-',
+          tip: 'MNP', akt: akt, devir: 'onceki', bekliyor: m.durum==='bekliyor'
+        });
+      });
+      // Tarihe göre yeniden sırala (yeni satırlar araya girsin)
+      musteriRows.sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (a.cat||'').localeCompare(b.cat||''));
+    }
+
     // v259: Özet üstüne MNP devir kutusu
     const _mnpRows = musteriRows.filter(r=>r.tip==='MNP');
     const _gidenler = _mnpRows.filter(r=>r.devir==='sonraki');
@@ -16166,6 +16189,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v264',
+    date: '09.07.2026',
+    items: [
+      { type: 'fix', text: 'DISA AKTAR: Onceki donemden devreden MNPler artik listede. Girisi aralikten once olup aktivasyonu bu araliga dusen MNPler detayli tabloya eklendi (adet ve tutarlariyla birlikte, cunku bu donemin primine dahiller). Satirlari farkli arka planla ve "⬅️ onceki donemden" rozetiyle isaretli; ozet seridindeki devir sayilari da artik dolu geliyor.' },
+    ]
+  },
   {
     version: 'v263',
     date: '09.07.2026',
