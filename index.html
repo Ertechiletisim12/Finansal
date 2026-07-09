@@ -2791,7 +2791,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v248';
+const APP_VERSION = 'v249';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2904,7 +2904,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '08.07.2026 15:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '08.07.2026 15:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3289,6 +3289,39 @@ function fiyatKutuFormat(el){
   const n = parseTL(el.value);
   if(isNaN(n)){ el.value=''; el.dataset.raw=''; return; }
   el.dataset.raw = n; el.value = fmt(n);
+}
+// v249: Musteri bazli not — nokta + duzenleme modali (musterinin kendi 'not' alanina yazar)
+function musteriNotDot(m){
+  const has = m.not && String(m.not).trim();
+  const t = has ? esc(String(m.not)).replace(/"/g,'&quot;') : 'Not ekle';
+  return `<span onclick="event.stopPropagation();editMusteriNot('${m.id}')" title="${t}" style="width:9px;height:9px;border-radius:50%;flex-shrink:0;cursor:pointer;display:inline-block;background:${has?'#3fd0ff':'var(--line)'};opacity:${has?'1':'.4'}"></span>`;
+}
+function editMusteriNot(id){
+  const m = musteriler.find(x=>x.id===id); if(!m) return;
+  const eski = document.getElementById('musteriNotModal'); if(eski) eski.remove();
+  const el = document.createElement('div');
+  el.id = 'musteriNotModal';
+  el.style.cssText = 'position:fixed;inset:0;z-index:13000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:18px';
+  el.onclick = ev => { if(ev.target===el) el.remove(); };
+  el.innerHTML = `<div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:380px;width:100%;overflow:hidden">
+    <div style="padding:12px 16px;background:var(--panel2);border-bottom:1px solid var(--line);font-weight:800;font-size:14px;color:var(--txt)">📝 ${esc(m.ad||'Müşteri')} — Not</div>
+    <div style="padding:14px">
+      <textarea id="musteriNotInput" placeholder="Bu müşteriyle ilgili not..." style="width:100%;min-height:90px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;padding:10px;box-sizing:border-box;resize:vertical">${esc(m.not||'')}</textarea>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button onclick="document.getElementById('musteriNotModal').remove()" style="flex:1;padding:9px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-weight:700;cursor:pointer">İptal</button>
+        <button onclick="kaydetMusteriNot('${id}')" style="flex:1.4;padding:9px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:8px;color:#fff;font-weight:800;cursor:pointer">💾 Kaydet</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  setTimeout(()=>{ const t=document.getElementById('musteriNotInput'); if(t){ t.focus(); } }, 60);
+}
+function kaydetMusteriNot(id){
+  const m = musteriler.find(x=>x.id===id);
+  const t = document.getElementById('musteriNotInput');
+  if(m && t){ m.not = t.value.trim(); try{ saveMusteriStore(); }catch(e){} }
+  const el = document.getElementById('musteriNotModal'); if(el) el.remove();
+  try{ render(); }catch(e){}
 }
 // v237: Turkce-uyumlu otomatik BUYUK harf (i->I, i->I dogru). Imlec konumu korunur.
 function trUpper(el){
@@ -6276,11 +6309,18 @@ function render(){
               const adSoyad = `${esc(m.ad||'')} ${esc(m.soyad||'')}`.trim();
               const logE2 = dayLogs2.find(l=>l.id===m.logId);
               const tarife2 = m.tarife||(logE2&&logE2.tarife)||'';
-              return `<div style="display:flex;align-items:center;gap:6px;font-size:10.5px;padding:3px 0 3px 14px;border-top:1px solid rgba(255,255,255,0.04)">
-                <span style="color:#5bc8f5;flex-shrink:0">↳</span>
-                <span style="color:var(--txt);font-weight:700;flex:1.8;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${adSoyad||'İsimsiz'}</span>
-                <span style="color:#8a9099;flex-shrink:0;font-size:9.5px">${esc(m.tel||'—')}</span>
-                ${tarife2?`<span style="color:#ffb74d;flex-shrink:0;font-size:9.5px">${tarife2}</span>`:''}
+              return `<div style="display:flex;align-items:flex-start;gap:6px;padding:4px 0 4px 12px;border-top:1px solid rgba(255,255,255,0.04)">
+                <span style="color:#5bc8f5;flex-shrink:0;font-size:10.5px;line-height:1.4">↳</span>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:5px">
+                    ${musteriNotDot(m)}
+                    <span style="color:var(--txt);font-weight:700;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${adSoyad||'İsimsiz'}</span>
+                  </div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:1px;padding-left:14px">
+                    <span style="color:#8a9099;font-size:10px">${esc(m.tel||'—')}</span>
+                    ${tarife2?`<span style="color:#ffb74d;font-size:10px">🏷 ${tarife2}</span>`:''}
+                  </div>
+                </div>
               </div>`;
             }).filter(Boolean).join('');
           }
@@ -6289,7 +6329,6 @@ function render(){
         return `<tr>
           <td style="padding:4px 0">
             <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-              ${notDot}
               <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${color};flex-shrink:0"></span>
               <span style="font-size:11.5px;font-weight:600;color:var(--txt)">${e.cat}</span>
               ${e.tarife?`<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:rgba(196,165,247,0.15);color:#c4a5f7;font-weight:700">${e.cat==='Diğer'?'🎁':'📶'} ${e.tarife}</span>`:''}
@@ -15463,6 +15502,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v249',
+    date: '08.07.2026',
+    items: [
+      { type: 'ui', text: 'PC Islem Listesi musteri satiri yeniden duzenlendi: isim ustte tam genislikte (artik ezilmiyor), telefon ve tarife altta kucuk gri satirda. Dar sutunda bile isim rahat okunuyor.' },
+      { type: 'new', text: 'Notlar artik MUSTERI BAZLI: kategori satirindaki not noktasi kaldirildi; her musteri satirinin yaninda nokta var — tiklayinca o musterinin notu duzenlenir (musterinin kendi not alanina yazilir, Musteri Takip te de gorunur). Notu olan musterinin noktasi mavi yanar.' },
+    ]
+  },
   {
     version: 'v248',
     date: '08.07.2026',
