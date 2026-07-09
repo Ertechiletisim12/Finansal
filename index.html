@@ -302,15 +302,15 @@ html{scrollbar-gutter:stable}
   #genelDurumSag .bottom-card .v{ font-size:14px!important; }
   #genelDurumSag .bottom-card .t{ font-size:9px!important; }
   #genelDurumSag .bottom-card .y,#genelDurumSag .bottom-card .sub{ font-size:9px!important; }
-  /* v272: Aylik Prim Grafigi mobilde ekrana sigsin */
-  .chart-box{ padding:11px 8px 8px!important; }
-  .chart-box h3{ font-size:12px!important; margin-bottom:8px!important; }
-  .bars{ height:165px!important; gap:7px!important; padding:0 2px!important; }
-  .bar-col{ min-width:38px!important; }
-  .bar-col .n{ font-size:8.5px!important; margin-bottom:1px!important; }
-  .bar-col .v{ font-size:8.5px!important; margin-bottom:2px!important; }
-  .bar-col .lbl{ font-size:9px!important; margin-top:4px!important; }
-  .bar{ width:72%!important; }
+  /* v273: Aylik Prim Grafigi mobilde okunakli — sikistirma yerine yatay kaydirma */
+  .chart-box{ padding:12px 10px 10px!important; }
+  .chart-box h3{ font-size:12.5px!important; margin-bottom:10px!important; }
+  .bars{ height:190px!important; gap:10px!important; padding:0 4px 6px!important; overflow-x:auto!important; -webkit-overflow-scrolling:touch; }
+  .bar-col{ min-width:52px!important; }
+  .bar-col .n{ font-size:9px!important; margin-bottom:1px!important; }
+  .bar-col .v{ font-size:9px!important; margin-bottom:3px!important; }
+  .bar-col .lbl{ font-size:9.5px!important; margin-top:5px!important; }
+  .bar{ width:70%!important; }
   #hakedisPanel{ max-width:none!important; width:100%!important; flex:1 1 100%!important; min-width:0!important; margin-top:0!important; }
   #statsRowTop{ width:100%!important; flex:1 1 100%!important; min-width:0!important; }
   #page-trend{ padding-top:112px!important; } /* v243: baslangic; gercek deger JS ile olculur */
@@ -1171,7 +1171,7 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 
 .chart-box{background:var(--panel);border:none;border-radius:8px;padding:14px 16px 10px;margin-bottom:6px}
 .chart-box h3{margin:0 0 14px;font-size:13.5px;font-weight:700}
-.bars{display:flex;align-items:flex-end;gap:16px;height:215px;padding:0 10px;overflow-x:auto}
+.bars{display:flex;align-items:flex-end;gap:14px;height:200px;padding:0 10px;overflow-x:auto}
 .bar-col{flex:1;min-width:50px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
 .bar-col .n{font-size:10.5px;color:var(--muted);margin-bottom:2px}
 .bar-col .v{font-size:10.5px;font-weight:700;margin-bottom:4px}
@@ -1783,10 +1783,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <div class="cards-row" id="catCards" style="margin-bottom:10px"></div>
 
         <!-- Genel Hakediş + Günlük Ortalama yan yana -->
-        <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;flex-wrap:nowrap">
+        <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;flex-wrap:wrap">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
-        <div id="hakedisPanel" style="display:none;flex:0 0 480px;width:100%;max-width:500px;min-width:min(290px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+        <div id="hakedisPanel" style="display:none;flex:1 1 460px;width:100%;max-width:500px;min-width:min(290px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
           <!-- Üst: büyük hakediş rakamı -->
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -1803,7 +1803,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- Sağ: Günlük Ortalama & Ay Sonu Tahmini (hakedis ile yan yana) -->
-        <div id="statsRowTop" style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;justify-content:stretch">
+        <div id="statsRowTop" style="flex:1 1 520px;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;justify-content:stretch">
           <div id="statsTopCards" style="display:flex;flex-direction:column;gap:8px"></div>
 
           <div id="genelDurumSag" style="margin-top:2px">
@@ -1818,7 +1818,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div><!-- /hakedisStatsRow -->
 
         <!-- Scroll eden içerik -->
-        <div class="content-col" style="overflow-y:auto;flex:1;padding-top:0">
+        <div class="content-col" style="overflow-y:auto;flex:1 1 0;min-height:0;padding-top:0">
 
     <div class="section-title" id="genelDurumBaslik" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
       <span>Genel Durum &amp; Tahminler</span>
@@ -2859,7 +2859,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v272';
+const APP_VERSION = 'v273';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -16180,6 +16180,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v273',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'ONEMLI — Prim sayfasi artik AŞAĞI KAYDIRILIYOR. Icerik sutunu flex cocugu oldugu halde min-height:0 tanimlanmamisti; bu yuzden overflow-y:auto calismiyor ve grafigin alti gorulemiyordu.' },
+      { type: 'fix', text: 'Hakedis satiri dar ekranlarda yeniden sarmalaniyor (nowrap kaldirildi) — yatay tasma yok.' },
+      { type: 'ui', text: 'Mobilde Aylik Prim Grafigi kucultulmek yerine OKUNAKLI birakildi: 190px yukseklik, genis sutunlar, yatay kaydirilabilir.' },
+    ]
+  },
   {
     version: 'v272',
     date: '10.07.2026',
