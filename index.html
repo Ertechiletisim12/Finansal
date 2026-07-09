@@ -1138,7 +1138,7 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 
 .bottom-row{display:flex;gap:10px;margin-bottom:6px;flex-wrap:wrap}
 /* v260: 5 kart tek satirda; dar ekranda 2'li, mobilde alt alta */
-.bottom-row > .bottom-card{flex:1 1 175px;min-width:0}
+.bottom-row > .bottom-card{flex:1 1 145px;min-width:0}
 @media(max-width:900px){ .bottom-row > .bottom-card{flex:1 1 calc(50% - 5px)} }
 @media(max-width:520px){ .bottom-row > .bottom-card{flex:1 1 100%} }
 .bottom-card{background:var(--panel);border:none;border-radius:8px;padding:13px;flex:1;min-width:165px}
@@ -1780,22 +1780,30 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- Sağ: Günlük Ortalama & Ay Sonu Tahmini (hakedis ile yan yana) -->
-        <div id="statsRowTop" style="flex:1 1 340px;min-width:0;display:flex;flex-direction:row;flex-wrap:wrap;align-items:stretch;gap:8px;justify-content:stretch"></div>
+        <div id="statsRowTop" style="flex:1 1 340px;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;justify-content:stretch"></div>
 
+          <!-- v262: Genel Durum kartları sağ sütuna alındı -->
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:2px">
+            <span style="font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.05em;text-transform:uppercase">Genel Durum &amp; Tahminler</span>
+            <span style="font-size:10px;color:var(--muted)">Yıl:</span>
+            <select id="yearAvgSel2" onchange="document.getElementById('yearAvgSel').value=this.value;render()" style="font-size:10.5px;padding:2px 6px"></select>
+          </div>
+          <div class="bottom-row" id="bottomRow" style="margin-bottom:0"></div>
+
+        </div><!-- /statsRowTop -->
         </div><!-- /hakedisStatsRow -->
-        </div>
 
         <!-- Scroll eden içerik -->
         <div class="content-col" style="overflow-y:auto;flex:1;padding-top:0">
 
-    <div class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
+    <div class="section-title" id="genelDurumBaslik" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
       <span>Genel Durum &amp; Tahminler</span>
       <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:normal">Yıl:</span>
       <select id="yearAvgSel" onchange="render()" style="font-size:11px;padding:2px 6px;text-transform:none"></select>
     </div>
     <div class="stats-row" id="statsRow"></div>
 
-    <div class="bottom-row" id="bottomRow"></div>
+    <!-- v262: bottomRow sağ sütuna taşındı (statsRowTop içinde) -->
 
     <div class="chart-box">
       <h3 id="chartTitle">Aylık Prim Grafiği</h3>
@@ -2827,7 +2835,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v261';
+const APP_VERSION = 'v262';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3844,18 +3852,19 @@ function pdfKapanisRaporu(){
     const pdf = new jsPDF('p','mm','a4');
     const pw = pdf.internal.pageSize.getWidth();
     const ph = pdf.internal.pageSize.getHeight();
-    const iw = pw - 12;
-    const ih = canvas.height * iw / canvas.width;
-    let kalanY = ih, konum = 0;
     const img = canvas.toDataURL('image/png');
-    pdf.addImage(img, 'PNG', 6, 6, iw, ih);
-    kalanY -= (ph - 12);
-    while(kalanY > 0){
-      konum -= (ph - 12);
-      pdf.addPage();
-      pdf.addImage(img, 'PNG', 6, konum + 6, iw, ih);
-      kalanY -= (ph - 12);
+    // v262: TEK SAYFA — görüntüyü A4'e sığacak şekilde oranı bozmadan ölçekle
+    const kenar = 6;
+    let iw = pw - kenar*2;
+    let ih = canvas.height * iw / canvas.width;
+    const maxH = ph - kenar*2;
+    if(ih > maxH){                       // yüksekse yüksekliğe göre küçült
+      const olcek = maxH / ih;
+      ih = maxH; iw = iw * olcek;
     }
+    const x = (pw - iw) / 2;             // yatayda ortala
+    const y = (ih < maxH) ? (ph - ih)/2 : kenar;
+    pdf.addImage(img, 'PNG', x, y, iw, ih);
     pdf.save(`Kapanis_Raporu_${ym}.pdf`);
   }).catch(err=>{ console.error(err); alert('PDF oluşturulamadı: ' + err.message); })
   .finally(()=>{ if(btn){ btn.disabled=false; btn.textContent='📄 PDF İndir'; } });
@@ -6633,10 +6642,18 @@ function render(){
   const allYears = [...new Set(Object.keys(monthMapAll).map(m=>m.split('-')[0]))].sort();
   const existingYrSel = document.getElementById('yearAvgSel');
   let selectedAvgYear = existingYrSel ? existingYrSel.value : '';
+  // v262: sağ sütundaki ikinci yıl seçicisini besle/senkronla
+  const yrSel2 = document.getElementById('yearAvgSel2');
   if(!selectedAvgYear || !allYears.includes(selectedAvgYear)){
     selectedAvgYear = allYears.includes(String(new Date().getFullYear()))
       ? String(new Date().getFullYear())
       : (allYears[allYears.length-1] || String(new Date().getFullYear()));
+  }
+
+  if(yrSel2){
+    const istenen = allYears.map(y=>`<option value="${y}">${y}</option>`).join('');
+    if(yrSel2.innerHTML !== istenen) yrSel2.innerHTML = istenen;
+    yrSel2.value = selectedAvgYear;
   }
 
   // seçili yılın aylık ortalaması (KDV dahil)
@@ -6659,7 +6676,7 @@ function render(){
   const gundeGereken = (hedefKalan!=null && daysInCurMonth-todayNum>0) ? hedefKalan/(daysInCurMonth-todayNum) : null;
 
   statsTopDiv.innerHTML = `
-    <div id="ortTahminWrap" style="display:contents">
+    <div id="ortTahminWrap" style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch">
       <div class="stat" style="flex:1 1 140px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
         <div class="t" style="font-size:10px">Günlük Ort. (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
         <div class="v" style="font-size:18px;margin-top:4px">${fmt(dailyAvgCurMonth)}</div>
@@ -6670,8 +6687,7 @@ function render(){
         <div class="v" style="font-size:18px;margin-top:4px;color:var(--gold)">${fmt(projectedMonthEnd)}</div>
         <div class="sub" style="font-size:9.5px">${daysInCurMonth} gün üzerinden projeksiyon</div>
       </div>
-    </div>
-    <div class="stat" style="flex:1 1 200px;min-width:0;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+    <div class="stat" style="flex:1 1 190px;min-width:0;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
       <div class="t" style="font-size:10px">🎯 ${monthLabel(realCurMonth)} Hedefi <span style="opacity:.65">KDV Dahil</span></div>
       ${curHedef ? `
         <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
@@ -6688,6 +6704,7 @@ function render(){
         <div style="color:var(--muted);font-size:11px;margin-top:6px">Henüz hedef girilmedi</div>
       `}
     </div>
+    </div><!-- /ortTahminWrap -->
   `;
 
   // v260: Bu iki kart aşağıdaki bottomRow'a taşındı — hepsi tek satırda yan yana dursun
@@ -16139,6 +16156,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v262',
+    date: '09.07.2026',
+    items: [
+      { type: 'imp', text: 'Kapanis Raporu PDF artik TEK SAYFA: goruntu orani bozulmadan A4e sigacak sekilde olceklenip ortalaniyor.' },
+      { type: 'ui', text: 'PRIM SAYFASI DUZENI: "Genel Durum & Tahminler" kartlari (En Yuksek Ay, En Dusuk Ay, Genel Toplam, Yil Ortalamasi, Yil Toplami) Hakedis panelinin YANINDAKI bos alana tasindi. Sag sutun artik iki katli: ustte Gunluk Ort. + Ay Sonu + Hedef, altta bu 5 kart. Yil secici de oraya tasindi. Mobilde kartlar alt alta dizilir.' },
+    ]
+  },
   {
     version: 'v261',
     date: '09.07.2026',
