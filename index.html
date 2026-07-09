@@ -297,10 +297,6 @@ html{scrollbar-gutter:stable}
   #page-trend{ padding-top:112px!important; } /* v243: baslangic; gercek deger JS ile olculur */
   /* v244: inline flex:1 mobilde kabi bos yere uzatiyordu (altta bosluk + gereksiz kaydirma) */
   #page-trend,#page-rapor,#page-hedef{ flex:none!important; min-height:0!important; }
-  /* v263: Mobilde grafik sutunlari daraltildi — daha fazla ay/hafta sigsin */
-  .chart-box svg rect{ }
-  .chart-box{ overflow-x:auto!important; -webkit-overflow-scrolling:touch; }
-  .chart-box svg{ min-width:0!important; }
 }
 /* v257: ACIK MOD — Kapanis Raporundaki acik vurgu renkleri beyaz zeminde okunmuyordu; koyulastirildi */
 body.light #kapanisRaporGovde [style*="color:#4cd964"]{ color:#15803d!important; }
@@ -1654,7 +1650,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button class="prim-tool-pill" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent)">👥 Müşteri Takibi <span id="musteriTakipBadgeTop" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:9px;margin-left:2px"></span></button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
       <button class="prim-tool-pill" onclick="openCmpModal()">📊 Ay Karşılaştırma</button>
-      <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Prim Detayları</button>
+      <button class="prim-tool-pill" onclick="openTablolarModal()">📋 Detay Tabloları</button>
       <button class="prim-tool-pill" onclick="openSaatModal()">⏱ Saat Analizi</button>
       <button class="prim-tool-pill" onclick="openFiyatModal()">💰 Fiyatlar & Veri</button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
@@ -2283,7 +2279,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="tablolarModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:1100px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="background:linear-gradient(135deg,#e2231a,#b81b14);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <span style="font-size:14px;font-weight:700;color:#fff">📋 Prim Detayları</span>
+      <span style="font-size:14px;font-weight:700;color:#fff">📋 Detay Tabloları</span>
       <button onclick="closePrimModal('tablolarModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
@@ -2839,7 +2835,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v263';
+const APP_VERSION = 'v262';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -15827,19 +15823,13 @@ function openExportPreview(tableId, fileLabel){
     const _bekleyenler = _mnpRows.filter(r=>r.bekliyor);
     const _katOzet = arr => { const m={}; arr.forEach(r=>{m[r.cat]=(m[r.cat]||0)+1;});
       return Object.keys(m).sort((a,b)=>m[b]-m[a]).map(c=>`${m[c]} ${c}`).join(' · ') || '—'; };
-    // v263: Kompakt tek satırlık şerit — kart yerine rozetler (PDF'te de kaybolmuyor)
-    const _rozet = (ikon, etiket, arr, renk) => !arr.length ? '' :
-      `<span style="display:inline-flex;align-items:center;gap:5px;background:${renk}1f;border:1px solid ${renk}55;border-radius:6px;padding:3px 9px;white-space:nowrap">
-         <b style="color:${renk};font-size:11px">${ikon} ${arr.length}</b>
-         <span style="color:#bbb;font-size:10px">${etiket}</span>
-         <span style="color:#888;font-size:9.5px">${_katOzet(arr)}</span>
-       </span>`;
     const devirKutu = (_gidenler.length || _oncekiler.length || _bekleyenler.length) ? `
-      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;background:#232529;border:1px solid #34373c;border-radius:8px;padding:8px 11px;margin-bottom:10px">
-        <span style="font-size:10.5px;font-weight:800;color:#c084fc;white-space:nowrap">🔄 MNP DEVİR</span>
-        ${_rozet('⬅️','önceki dönemden',_oncekiler,'#ffb74d')}
-        ${_rozet('➡️','sonraki döneme',_gidenler,'#3fd0ff')}
-        ${_rozet('⏳','onay bekleyen',_bekleyenler,'#ffd27a')}
+      <div style="background:#26282b;border:1px solid #3a3d42;border-radius:10px;padding:12px 14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:800;color:#c084fc;margin-bottom:8px">🔄 MNP Devir Durumu <span style="font-size:10px;color:#888;font-weight:600">(seçili aralığa göre)</span></div>
+        ${_oncekiler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0"><span style="color:#ffb74d">⬅️ Önceki dönemden devreden</span><span style="color:#ddd;font-weight:700">${_oncekiler.length} <span style="color:#888;font-weight:500">(${_katOzet(_oncekiler)})</span></span></div>`:''}
+        ${_gidenler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0;border-top:1px solid #34373c"><span style="color:#3fd0ff">➡️ Sonraki döneme devrolacak</span><span style="color:#ddd;font-weight:700">${_gidenler.length} <span style="color:#888;font-weight:500">(${_katOzet(_gidenler)})</span></span></div>`:''}
+        ${_bekleyenler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0;border-top:1px solid #34373c"><span style="color:#ffd27a">⏳ Onay bekleyen</span><span style="color:#ddd;font-weight:700">${_bekleyenler.length} <span style="color:#888;font-weight:500">(${_katOzet(_bekleyenler)})</span></span></div>`:''}
+        <div style="font-size:9.5px;color:#777;margin-top:7px;line-height:1.5">Prim aktivasyon tarihinde işlenir (MNP = giriş + 2 gün). Dönem sonunda girilen MNP'ler sonraki döneme devreder.</div>
       </div>` : '';
     ozetHtml = devirKutu + ozetHtml;   // devir kutusu özetin en üstünde
 
@@ -16166,15 +16156,6 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
-  {
-    version: 'v263',
-    date: '09.07.2026',
-    items: [
-      { type: 'ui', text: '"Detay Tablolari" butonu ve modal basligi "Prim Detaylari" olarak degistirildi.' },
-      { type: 'ui', text: 'Disa Aktar ozetindeki "MNP Devir Durumu" kutusu kompakt tek satirlik seride donusturuldu (kartlar yerine rozetler) — cok yer kaplamiyor ve PDF ciktisinda kaybolmuyor.' },
-      { type: 'ui', text: 'Mobilde grafik alanlari yatay kaydirilabilir hale getirildi.' },
-    ]
-  },
   {
     version: 'v262',
     date: '09.07.2026',
