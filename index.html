@@ -300,16 +300,8 @@ html{scrollbar-gutter:stable}
   #genelDurumSag{ width:100%!important; box-sizing:border-box!important; }
   #ortTahminWrap{ width:100%!important; box-sizing:border-box!important; }
   #hakedisStatsRow > *{ min-width:0!important; }
-  /* v279: catCards'in ebeveyni padding:8px 14px, catCards ise margin:0 -14px ile onu iptal ediyor.
-     Ayni formulu uygulamak icin content-col'a da 14px yan bosluk verip icindeki bloklari -14px cekiyoruz.
-     (v278'de content-col padding'ini 0 yapmistim; formul bozuldugu icin hiza tutmadi.) */
-  .content-col{ padding:8px 14px 14px 14px!important; }
-  #hakedisStatsRow,
-  .content-col > .chart-box,
-  .content-col > .section-title,
-  .content-col > .bottom-row,
-  .content-col > .stats-row{ margin-left:-14px!important; margin-right:-14px!important;
-                             width:calc(100% + 28px)!important; box-sizing:border-box!important; }
+  /* v280: hakedisStatsRow yeniden catCards ile ayni kapta — ozel hiza yamasi gerekmiyor */
+  #hakedisStatsRow{ margin:0 -14px 10px!important; width:calc(100% + 28px)!important; box-sizing:border-box!important; }
   #hakedisPanel{ flex:1 1 100%!important; max-width:100%!important; }
   #statsRowTop{ flex:1 1 100%!important; }
   #genelDurumSag .bottom-row{ grid-template-columns:1fr 1fr!important; gap:6px!important; }
@@ -1771,9 +1763,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
 
       <!-- Sağ: üstte sabit filtre çubuğu, altında scroll eden içerik -->
-      <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+      <div id="primRightCol" style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
         <!-- Sabit filtre çubuğu -->
-        <div style="flex-shrink:0;background:var(--bg);padding:8px 14px 6px;z-index:30">
+        <div id="primScrollArea" style="flex:1 1 0;min-height:0;overflow-y:auto;background:var(--bg);padding:8px 14px 6px;z-index:30">
           <div class="filterbar">
             <div class="grp">
               <label>İşlem (kayıt) tarihi</label>
@@ -1802,11 +1794,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
             <div class="quick" id="quickRanges"></div>
           </div>
           <div class="cards-row" id="catCards" style="margin-bottom:10px"></div>
-
-        <!-- Genel Hakediş + Günlük Ortalama yan yana -->
-
-        <!-- Scroll eden içerik -->
-        <div class="content-col" style="overflow-y:auto;flex:1 1 0;min-height:0;padding-top:0">
         <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch;flex-wrap:wrap">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
@@ -1840,6 +1827,11 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           </div><!-- /genelDurumSag -->
         </div><!-- /statsRowTop -->
         </div><!-- /hakedisStatsRow -->
+
+        <!-- Genel Hakediş + Günlük Ortalama yan yana -->
+
+        <!-- Scroll eden içerik -->
+        <div class="content-col" style="overflow:visible;flex:none;padding-top:0">
 
     <div class="section-title" id="genelDurumBaslik" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
       <span>Genel Durum &amp; Tahminler</span>
@@ -2881,7 +2873,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v279';
+const APP_VERSION = 'v280';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -16202,6 +16194,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v280',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'DOGRU COZUM: Hakedis paneli kategori kartlariyla AYNI KABA geri kondu (hiza artik kendiliginden dogru). Kaydirma ise ust kapsayiciya verildi — Toplam karti buyudukce sayfa normal sekilde asagi kayiyor ve grafigin alti gorunuyor. v274-v279 arasindaki mobil hiza yamalarinin hepsi kaldirildi.' },
+    ]
+  },
   {
     version: 'v279',
     date: '10.07.2026',
