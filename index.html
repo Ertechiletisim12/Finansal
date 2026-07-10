@@ -63,7 +63,87 @@
     }
   }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- v265: SheetJS yerine xlsx-js-style (0.18.5 tabanli catal). Community surumu hucre stillerini
+     SESSIZCE yok sayiyordu; renkli/formatli Excel icin bu gerekli. Yerel dosya = offline calisir. -->
+<script src="xlsx-style.min.js"></script>
+<!-- v265: PDF icin Turkce alt-kumelenmis Roboto (42 KB). jsPDF helvetica ile gisçöü cizemiyor. -->
+<script src="pdf-font-tr.js"></script>
+<style id="yazdirmaStilleri">
+/* v265: YAZDIRMA — popup yok. Sadece #exportFullModal kagida basilir.
+   Ekranda koyu tema kalir; kagitta kurumsal beyaz belge uretilir (renkler korunur). */
+#exportPrintHeader{ display:none }
+
+@media print{
+  @page{ size:A4; margin:14mm 12mm }
+
+  html, body{ background:#fff !important; height:auto !important; overflow:visible !important }
+
+  /* Yazdirma modunda modal disindaki her sey gizlenir */
+  body.yazdirma-modu > *:not(#exportFullModal){ display:none !important }
+
+  body.yazdirma-modu #exportFullModal{
+    position:static !important; inset:auto !important;
+    display:block !important; height:auto !important;
+    background:#fff !important; color:#111 !important;
+  }
+  body.yazdirma-modu .export-toolbar,
+  body.yazdirma-modu #exportModalTabs{ display:none !important }
+
+  body.yazdirma-modu #exportModalContent{
+    overflow:visible !important; height:auto !important;
+    padding:0 !important; background:#fff !important; flex:none !important;
+  }
+  body.yazdirma-modu #exportModalContent > div{
+    overflow:visible !important; background:#fff !important; border-radius:0 !important;
+  }
+
+  /* Belge basligi */
+  body.yazdirma-modu #exportPrintHeader{
+    display:block !important; margin-bottom:10px;
+    border-bottom:3px solid #e2231a; padding-bottom:6px;
+  }
+  #exportPrintHeader .pb-marka{ font-size:9px; letter-spacing:1.4px; color:#e2231a; font-weight:800 }
+  #exportPrintHeader .pb-baslik{ font-size:16px; font-weight:800; color:#111; margin-top:2px }
+  #exportPrintHeader .pb-alt{ font-size:9px; color:#666; margin-top:2px }
+
+  /* Tablo: kurumsal beyaz belge — kirmizi baslik seridi + zebra satirlar korunur */
+  body.yazdirma-modu #exportModalContent table{
+    width:100% !important; border-collapse:collapse !important;
+    background:#fff !important; font-size:9px !important; table-layout:auto !important;
+  }
+  body.yazdirma-modu #exportModalContent th{
+    background:#e2231a !important; color:#fff !important;
+    font-size:8.5px !important; font-weight:700 !important;
+    padding:5px 6px !important; border:1px solid #c81d15 !important;
+    position:static !important; white-space:normal !important;
+    -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
+  }
+  body.yazdirma-modu #exportModalContent td{
+    color:#1a1c1e !important; padding:4px 6px !important;
+    border:1px solid #dcdfe4 !important; position:static !important;
+    white-space:normal !important; background:#fff !important;
+    -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
+  }
+  body.yazdirma-modu #exportModalContent tbody tr:nth-child(even) td,
+  body.yazdirma-modu #exportModalContent tr:nth-child(even) td{
+    background:#f6f7f9 !important;
+    -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
+  }
+  body.yazdirma-modu #exportModalContent tfoot td{
+    background:#eceef1 !important; font-weight:700 !important;
+  }
+  /* Sayfa bolunmesinde satir ortadan kesilmesin, baslik her sayfada tekrarlansin */
+  body.yazdirma-modu #exportModalContent tr{ page-break-inside:avoid !important }
+  body.yazdirma-modu #exportModalContent thead{ display:table-header-group !important }
+
+  /* Rapor grafigi (SVG/HTML) yazdirilirken beyaz zemin */
+  body.yazdirma-modu #raporChartBox,
+  body.yazdirma-modu #exportModalContent > div:first-child{
+    background:#fff !important; border:1px solid #e5e7eb !important;
+    page-break-inside:avoid !important;
+  }
+}
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -2847,7 +2927,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v264';
+const APP_VERSION = 'v265';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -2960,7 +3040,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '10.07.2026 11:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '10.07.2026 14:05'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -11429,7 +11509,6 @@ function renderKampanyaList(){
       <summary style="cursor:pointer;font-size:11px;color:var(--muted);font-weight:700;padding:4px 0">📜 Geçmiş Kampanyalar (${adet}) — geçmiş kayıtlar bu kampanyalarla hesaplanmaya devam eder</summary>
       <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px">
         <button onclick="exportGecmisKampanyalar()" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:7px;padding:5px 11px;font-size:10.5px;font-weight:700;cursor:pointer;white-space:nowrap">📤 Dışa Aktar</button>
-        <button onclick="paylasGecmisKampanyalarPdf()" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.32);color:#ff8a8a;border-radius:7px;padding:5px 11px;font-size:10.5px;font-weight:700;cursor:pointer;white-space:nowrap">📄 PDF Paylaş</button>
       </div>
       <div style="margin-top:8px;opacity:.75">${grupHtml(groupedOld)}</div>
     </details>`;
@@ -13879,129 +13958,20 @@ function exportRaporModal() {
   if (tableClone) tblWrap.appendChild(tableClone);
   contentEl.appendChild(tblWrap);
 
-  // Excel butonu
-  document.getElementById('exportModalXlsBtn').onclick = function () {
-    if (typeof XLSX === 'undefined') { alert('Excel kütüphanesi yükleniyor.'); return; }
-    const wb = XLSX.utils.book_new();
-    const wsData = [headers, ...data.map(row => headers.map(h => row[h] ?? ''))];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, title.slice(0, 30));
-    XLSX.writeFile(wb, `Rapor_${title}_${stamp}.xlsx`);
-  };
-
-  // PDF butonunu rapor için özel fonksiyona yönlendir — KALDIR, HTML onclick yeterli
-  // document.getElementById('exportModalPdfBtn').onclick = function(){ exportRaporPdf(); };
+  // v265: rapor da ayni motora baglanir. Grafik PDF'e VEKTOREL cizilir (resim degil).
+  if (srcTable) {
+    _raporAktif = raporTanimiTablodan(srcTable, title, now, (window._raporXlsData.bars || null));
+  } else {
+    _raporAktif = { baslik:title, altBilgi:now, basliklar:[headers],
+      satirlar: data.map(row => headers.map(h => String(row[h] ?? ''))),
+      sayisal: headers.map((_,i)=>i>0), para: headers.map(()=>false),
+      grafik: (window._raporXlsData.bars || null) };
+  }
+  document.getElementById('exportModalXlsBtn').onclick = raporExcel;
 
   modal.style.display = 'flex';
 }
 
-function exportRaporPdf(){
-  if(!window._raporXlsData) return;
-  const { title, headers, data, bars } = window._raporXlsData;
-  const now = nowTR().toLocaleString('tr-TR');
-  // Her zaman landscape — grafik + tablo sığsın
-  const orientation = 'landscape';
-
-  // Tablo satırları
-  const thHtml = '<tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr>';
-  const tdHtml = data.map((row,i)=>
-    `<tr class="${i%2===0?'even':'odd'}">`+headers.map(h=>`<td>${row[h]??''}</td>`).join('')+'</tr>'
-  ).join('');
-
-  // Dikey bar chart — bars dizisinden (label, value, pct)
-  let chartHtml = '';
-  if(bars && bars.length){
-    const maxVal = Math.max(...bars.map(b=>b.value),1);
-    const barW = Math.max(20, Math.min(60, Math.floor(700/bars.length)-8));
-    chartHtml = `
-    <div style="padding:16px 16px 4px">
-      <div style="font-size:11px;font-weight:700;color:#333;margin-bottom:12px">📊 Performans Grafiği</div>
-      <div style="display:flex;align-items:flex-end;gap:6px;height:160px;border-bottom:2px solid #e5e7eb;padding-bottom:0;overflow-x:auto">
-        ${bars.map(b=>{
-          const pct = Math.round(b.value/maxVal*100);
-          const color = pct>=80?'#16a34a':pct>=50?'#2563eb':'#e2231a';
-          return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:${barW}px;flex:1">
-            <div style="font-size:8px;color:#555;margin-bottom:2px;white-space:nowrap">${b.label2||fmt2(b.value)}</div>
-            <div style="width:70%;background:${color};border-radius:3px 3px 0 0;height:${Math.max(pct,2)}%;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>
-            <div style="font-size:7.5px;color:#666;margin-top:4px;text-align:center;white-space:nowrap;overflow:hidden;max-width:${barW+4}px">${b.label}</div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  }
-
-  function fmt2(n){ return (Math.round(n)).toLocaleString('tr-TR')+' ₺'; }
-
-  const win2 = window.open('','raporPdfWin_'+Date.now());
-  if(!win2){ alert('Açılır pencere engellendi.'); return; }
-
-  const raporHtmlStr = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>${title}</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"><\/script>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,Helvetica,sans-serif;background:#e8eaed;color:#1a1a1a}
-    .toolbar{position:sticky;top:0;z-index:99;background:#1a1c20;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.5);flex-wrap:wrap}
-    .tit{color:#eef0f2;font-size:13px;font-weight:700;flex:1}
-    .sub{color:#9aa0a6;font-size:10px;margin-top:1px}
-    .btn{border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
-    .btn-print{background:#e2231a;color:#fff}
-    .btn-share{background:#1a3a7a;color:#a5c8ff}
-    .btn-close{background:transparent;color:#aaa;border:1px solid #555}
-    .wrap{max-width:1020px;margin:20px auto;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
-    .cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:14px 20px;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .cover h2{font-size:15px;margin:0 0 2px}
-    .cover p{font-size:9px;opacity:.7}
-    .chart-sec{border-bottom:1px solid #e5e7eb}
-    .tbl-wrap{padding:10px}
-    table{width:100%;border-collapse:collapse;font-size:8px;table-layout:fixed}
-    th{padding:4px 5px;background:#e2231a;color:#fff;text-align:left;font-size:8px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    td{padding:3px 5px;border-bottom:1px solid #e5e7eb;color:#1a1a1a}
-    tr.even td{background:#f8f9fa;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    @media print{body{background:#fff}.toolbar{display:none}.wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}@page{margin:8mm;size:A4 landscape}}
-  </style></head><body>
-  <div class="toolbar">
-    <div class="tit"><div>${title}</div><div class="sub">${now}</div></div>
-    <div style="display:flex;gap:6px;flex-shrink:0">
-      <button class="btn btn-print" onclick="window.print()">🖨 PDF</button>
-      <button class="btn btn-share" onclick="raporPdfPaylasim()">📤 Paylaş</button>
-      <button class="btn btn-close" onclick="window.close()">✕</button>
-    </div>
-  </div>
-  <div class="wrap">
-    <div class="cover"><h2>${title}</h2><p>${now}</p></div>
-    <div class="chart-sec">${chartHtml}</div>
-    <div class="tbl-wrap">
-      <table id="raporMainTbl"><thead>${thHtml}</thead><tbody>${tdHtml}</tbody></table>
-    </div>
-  </div>
-  <script>
-  function trChar(s){return (s||'').replace(/[\u20ba₺]/g,'TL').replace(/ğ/g,'g').replace(/Ğ/g,'G').replace(/ı/g,'i').replace(/İ/g,'I').replace(/ş/g,'s').replace(/Ş/g,'S').replace(/ç/g,'c').replace(/Ç/g,'C').replace(/ö/g,'o').replace(/Ö/g,'O').replace(/ü/g,'u').replace(/Ü/g,'U').replace(/•/g,' ').replace(/–/g,'-').replace(/[^\\x00-\\x7F]/g,'');}
-  function raporPdfPaylasim(){
-    if(!window.jspdf){alert('Yukleniyor...');return;}
-    var jsPDF=window.jspdf.jsPDF;
-    var doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-    doc.setFillColor(226,35,26);doc.rect(0,0,doc.internal.pageSize.width,22,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(13);
-    doc.text(trChar('${title.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'),10,14);
-    doc.setFontSize(8);doc.setTextColor(200,200,200);
-    doc.text(trChar('${now}'),10,20);
-    var tbl=document.getElementById('raporMainTbl');
-    var head=[].slice.call(tbl.querySelectorAll('thead tr')).map(function(r){return [].slice.call(r.querySelectorAll('th')).map(function(c){return trChar(c.innerText);});});
-    var body=[].slice.call(tbl.querySelectorAll('tbody tr')).map(function(r){return [].slice.call(r.querySelectorAll('td')).map(function(c){return trChar(c.innerText);});});
-    doc.autoTable({head:head,body:body,startY:26,styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[226,35,26],textColor:255},alternateRowStyles:{fillColor:[248,249,250]}});
-    var blob=doc.output('blob');
-    var fname=trChar('${title.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')+'_${now.replace(/[/:]/g,'-')}.pdf';
-    var file=new File([blob],fname,{type:'application/pdf'});
-    if(navigator.share){navigator.share({files:[file],title:fname}).catch(function(e){if(e.name!=='AbortError'){var u=URL.createObjectURL(blob);var a=document.createElement('a');a.href=u;a.download=fname;a.click();}});}
-    else{var u=URL.createObjectURL(blob);var a=document.createElement('a');a.href=u;a.download=fname;a.click();}
-  }
-  <\/script></body></html>`;
-
-  win2.document.write(raporHtmlStr);
-  win2.document.close();
-}
 // ==================== HAFTALIK / YILLIK RAPOR SONU ====================
 
 // ==================== HAFTALIK / YILLIK RAPOR SONU ====================
@@ -15225,8 +15195,7 @@ function renderHedefGecmis(){
   <div style="background:var(--panel);border-radius:0 0 16px 16px;width:100%;max-width:560px;max-height:95vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="display:flex;align-items:center;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
       <div style="flex:1;font-size:15px;font-weight:800;color:var(--txt)">📊 Müşteri Takip Raporu</div>
-      <button onclick="exportMusteriTakip()" title="Filtrelenmiş listeyi dışa aktar" style="background:rgba(63,208,255,0.12);border:1px solid rgba(63,208,255,0.32);color:var(--accent);height:32px;padding:0 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;margin-right:6px">📤 Dışa Aktar</button>
-      <button onclick="paylasMusteriTakipPdf()" title="PDF olarak paylaş / indir" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.35);color:#ff8a8a;height:32px;padding:0 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;margin-right:6px">📄 PDF</button>
+      <button onclick="exportMusteriTakip()" title="Dışa aktar — Yazdır / PDF / Excel / Paylaş" style="background:rgba(63,208,255,0.12);border:1px solid rgba(63,208,255,0.32);color:var(--accent);height:32px;padding:0 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;margin-right:6px">📤 Dışa Aktar</button>
       <button onclick="closeMusteriRapor()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
     </div>
     <!-- Filtre -->
@@ -15287,21 +15256,29 @@ function renderHedefGecmis(){
 <table id="gecmisKampanyaTable" style="display:none"></table>
 <table id="musteriTakipTable" style="display:none"></table>
 
-<div id="exportFullModal" style="display:none;position:fixed;inset:0;z-index:2000;background:#1a1c20;flex-direction:column">
+<div id="exportFullModal" style="display:none;position:fixed;inset:0;z-index:6000;background:#1a1c20;flex-direction:column">
   <!-- Header -->
-  <div style="display:flex;align-items:center;gap:6px;padding:10px 12px;background:#111;border-bottom:1px solid #333;flex-shrink:0;min-height:52px">
+  <div class="export-toolbar" style="display:flex;align-items:center;gap:6px;padding:10px 12px;background:#111;border-bottom:1px solid #333;flex-shrink:0;min-height:52px">
     <div style="flex:1;min-width:0;overflow:hidden">
       <div id="exportModalTitle" style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
       <div id="exportModalSub" style="font-size:10px;color:#888;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
     </div>
     <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+      <button id="exportBtnYazdir" onclick="raporYazdir()" style="background:#2b3440;border:1px solid #445;color:#cbd5e1;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🖨 Yazdır</button>
+      <button id="exportBtnPdf" onclick="raporPdf(false)" style="background:#7f1d1d;border:none;color:#fca5a5;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">📄 PDF</button>
       <button id="exportModalXlsBtn" style="background:#1a7a3a;border:none;color:#fff;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">📊 Excel</button>
-      <button id="exportModalPdfBtn" onclick="exportModalPrint()" style="background:#7f1d1d;border:none;color:#fca5a5;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🖨 PDF</button>
+      <button id="exportBtnPaylas" onclick="raporPdf(true)" style="background:#1a3a7a;border:none;color:#a5c8ff;padding:7px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">📤 Paylaş</button>
       <button onclick="closeExportModal()" style="background:#333;border:none;color:#fff;width:32px;height:32px;border-radius:6px;font-size:16px;cursor:pointer;flex-shrink:0">✕</button>
     </div>
   </div>
   <!-- Tabs -->
   <div id="exportModalTabs" style="display:flex;border-bottom:1px solid #333;flex-shrink:0;background:#111"></div>
+  <!-- Yazdirma basligi: ekranda gizli, sadece kagitta gorunur -->
+  <div id="exportPrintHeader" aria-hidden="true">
+    <div class="pb-marka">ER-TECH İLETİŞİM</div>
+    <div class="pb-baslik" id="printBaslik"></div>
+    <div class="pb-alt" id="printAlt"></div>
+  </div>
   <!-- Content -->
   <div id="exportModalContent" style="flex:1;overflow:auto;padding:12px;background:#1a1c20"></div>
 </div>
@@ -15450,137 +15427,337 @@ function showDayDetail(date, cat){
   document.body.appendChild(popup);
 }
 
-function exportModalPrint(){
-  // Rapor modalı mı kontrol et
-  const modalTitle = document.getElementById('exportModalTitle').textContent;
-  if(modalTitle.startsWith('📅') && window._raporXlsData){
-    exportRaporPdf();
-    return;
-  }
-  const title = modalTitle.replace(/^📊\s*/,'');
-  const sub   = document.getElementById('exportModalSub').textContent;
-  const allTables = document.getElementById('exportModalContent').querySelectorAll('table');
-  const srcTable = _activeExportTable || (allTables.length ? allTables[0] : null);
-  if(!srcTable){ alert('Yazdırılacak tablo bulunamadı.'); return; }
 
-  const rows = Array.from(srcTable.querySelectorAll('tr'));
-  const isHead = r => r.querySelector('th') !== null;
-  const readRow = r => Array.from(r.querySelectorAll('th,td')).map(c=>(c.innerText||c.textContent||'').trim().replace(/\s+/g,' '));
 
-  const headRows = rows.filter(isHead).map(readRow);
-  const bodyRows = rows.filter(r=>!isHead(r)).map(readRow);
-  const colCount = (headRows[0]||bodyRows[0]||[]).length;
-  const orientation = colCount > 4 ? 'landscape' : 'portrait';
+// Mobilde window.open yerine modal kullan
+let _activeExportTable = null;
 
-  const thHtml = headRows.map(r=>'<tr>'+r.map(c=>`<th>${c}</th>`).join('')+'</tr>').join('');
-  const tdHtml = bodyRows.map((r,i)=>`<tr class="${i%2===0?'even':'odd'}">`+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('');
+// ==================== v265: MERKEZI RAPOR MOTORU ====================
+// Tek veri kaynagi (RaporTanimi) -> dort cikti: Yazdir / PDF / Excel / Paylas.
+// Hicbiri ekran goruntusu (html2canvas) kullanmaz; hepsi vektorel/gercek veri uretir.
+//
+// RaporTanimi = {
+//   baslik, altBilgi,
+//   basliklar: [[hucre,...]],         // th satirlari
+//   satirlar:  [[hucre,...]],         // td satirlari (metin)
+//   sayisal:   [bool,...],            // sutun sayisal mi (Excel'de gercek sayi olur)
+//   para:      [bool,...],            // sutun para birimi mi
+//   grafik:    [{label,value}] | null // PDF'e vektorel cizilir
+// }
 
-  const now = nowTR().toLocaleString('tr-TR');
+const RAPOR_KIRMIZI = [226, 35, 26];
+let _raporAktif = null;
+let _raporMesgul = false;
 
-  const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>${title}</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"><\/script>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,Helvetica,sans-serif;background:#e8eaed;color:#1a1a1a}
-    .toolbar{position:sticky;top:0;z-index:99;background:#1a1c20;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.5);flex-wrap:wrap}
-    .tit{color:#eef0f2;font-size:13px;font-weight:700;flex:1;min-width:0}
-    .sub{color:#9aa0a6;font-size:10px;margin-top:1px}
-    .btn{border:none;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
-    .btn-print{background:#e2231a;color:#fff}
-    .btn-share{background:#1a3a7a;color:#a5c8ff}
-    .btn-close{background:transparent;color:#aaa;border:1px solid #555}
-    .wrap{max-width:1020px;margin:20px auto;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
-    .cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:20px 24px;color:#fff}
-    .cover h2{font-size:18px;margin:0 0 4px}
-    .cover p{font-size:10px;opacity:.7}
-    .tbl-wrap{overflow-x:auto;padding:16px}
-    table{width:100%;border-collapse:collapse;font-size:9px}
-    th{padding:6px 7px;background:#e2231a;color:#fff;text-align:left;font-size:9px;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    td{padding:5px 7px;border-bottom:1px solid #e5e7eb;color:#1a1a1a;white-space:nowrap}
-    tr.even td{background:#f8f9fa;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    @media print{body{background:#fff}.toolbar{display:none}.wrap{box-shadow:none;margin:0;border-radius:0;max-width:100%}@page{margin:10mm;size:A4 ${orientation}}}
-  </style></head><body>
-  <div class="toolbar">
-    <div class="tit"><div>${title}</div><div class="sub">${sub}</div></div>
-    <div style="display:flex;gap:6px;flex-shrink:0">
-      <button class="btn btn-print" onclick="window.print()">🖨 PDF</button>
-      <button class="btn btn-share" onclick="pdfPaylasim()">📤 Paylaş</button>
-      <button class="btn btn-close" onclick="window.close()">✕</button>
-    </div>
-  </div>
-  <div class="wrap">
-    <div class="cover"><h2>${title}</h2><p>${sub} · ${now}</p></div>
-    <div class="tbl-wrap">
-      <table id="mainTbl"><thead>${thHtml}</thead><tbody>${tdHtml}</tbody></table>
-    </div>
-  </div>
-  <script>
-  function fixStr(s){return (s||'').replace(/[\u20ba₺]/g,'TL').replace(/ğ/g,'g').replace(/Ğ/g,'G').replace(/ı/g,'i').replace(/İ/g,'I').replace(/ş/g,'s').replace(/Ş/g,'S').replace(/ç/g,'c').replace(/Ç/g,'C').replace(/ö/g,'o').replace(/Ö/g,'O').replace(/ü/g,'u').replace(/Ü/g,'U').replace(/•/g,' ').replace(/–/g,'-').replace(/[^\\x00-\\x7F]/g,'');}
-  function pdfPaylasim(){
-    if(!window.jspdf){alert('Yukleniyor, lutfen bekleyin.');return;}
-    var jsPDF=window.jspdf.jsPDF;
-    var doc=new jsPDF({orientation:'${orientation}',unit:'mm',format:'a4'});
-    doc.setFillColor(226,35,26);doc.rect(0,0,doc.internal.pageSize.width,22,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(13);
-    doc.text(fixStr('${title.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'),10,14);
-    doc.setFontSize(8);doc.setTextColor(200,200,200);
-    doc.text(fixStr('${sub.replace(/\\/g,'\\\\').replace(/'/g,"\\'")} - ${now}'),10,20);
-    var tbl=document.getElementById('mainTbl');
-    var head=[].slice.call(tbl.querySelectorAll('thead tr')).map(function(r){return [].slice.call(r.querySelectorAll('th')).map(function(c){return fixStr(c.innerText);});});
-    var body=[].slice.call(tbl.querySelectorAll('tbody tr')).map(function(r){return [].slice.call(r.querySelectorAll('td')).map(function(c){return fixStr(c.innerText);});});
-    doc.autoTable({head:head,body:body,startY:26,styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[226,35,26],textColor:255},alternateRowStyles:{fillColor:[248,249,250]}});
-    var blob=doc.output('blob');
-    var fname=fixStr('${title.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')+'_${now.replace(/[/:]/g,'-')}.pdf';
-    var file=new File([blob],fname,{type:'application/pdf'});
-    if(navigator.share){
-      navigator.share({files:[file],title:fname}).catch(function(e){
-        if(e.name!=='AbortError'){var u=URL.createObjectURL(blob);var a=document.createElement('a');a.href=u;a.download=fname;a.click();}
-      });
-    }else{var u=URL.createObjectURL(blob);var a=document.createElement('a');a.href=u;a.download=fname;a.click();}
-  }
-  <\/script></body></html>`;
-
-  const win = window.open('', 'exportPrintWin_'+Date.now());
-  if(!win){ alert('Acilir pencere engellendi.'); return; }
-  win.document.write(html);
-  win.document.close();
+// "1.250 ₺" / "%85" / "1.250,75" -> sayi. Cozulemezse null.
+// DIKKAT: bastaki sifir korunmasi gereken degerler (telefon, hat no, musteri no)
+// asla sayiya cevrilmez — Excel'de "0555..." -> 555 olurdu.
+function trSayiCoz(metin){
+  if(metin == null) return null;
+  let t = String(metin).trim();
+  if(!t) return null;
+  const paraMi  = /₺/.test(t);
+  const yuzdeMi = /%/.test(t);
+  t = t.replace(/[₺%\s\u00a0]/g, '');
+  if(!/^-?[\d.,]+$/.test(t)) return null;
+  if(/^0\d/.test(t)) return null;             // 0555, 05xx -> telefon, metin kalsin
+  if(/^\d{10,}$/.test(t)) return null;         // 10+ hane bitisik -> numara, metin kalsin
+  // Turkce bicim: nokta binlik, virgul ondalik
+  t = t.replace(/\./g, '').replace(',', '.');
+  const n = Number(t);
+  if(!isFinite(n)) return null;
+  return { sayi: n, para: paraMi, yuzde: yuzdeMi };
 }
-function exportModalShare(){
-  const title = document.getElementById('exportModalTitle').textContent.replace(/^📊\s*/,'');
-  const sub = document.getElementById('exportModalSub').textContent;
-  const srcTable = _activeExportTable || document.getElementById('exportModalContent').querySelector('table');
-  if(!srcTable){ alert('Paylaşılacak tablo bulunamadı.'); return; }
 
-  const rows = Array.from(srcTable.querySelectorAll('tr'));
-  const isHead = r => r.querySelector('th') !== null;
-  const readRow = r => Array.from(r.querySelectorAll('th,td')).map(c=>(c.innerText||c.textContent||'').trim().replace(/\s+/g,' '));
-  const headRows = rows.filter(isHead).map(readRow);
-  const bodyRows = rows.filter(r=>!isHead(r)).map(readRow);
+// Basligina bakarak sayisal sayilmamasi gereken sutunlar
+const METIN_SUTUN_DESENI = /telefon|tel\.?$|^tel$|numara|^no$|gsm|iban|sıra|sira|^#$|tarih|saat/i;
 
-  // Metin olarak paylaş
-  const now = nowTR().toLocaleString('tr-TR');
-  let text = `📊 ${title}\n${sub} · ${now}\n\n`;
-  if(headRows.length) text += headRows.map(r=>r.join(' | ')).join('\n') + '\n' + '─'.repeat(40) + '\n';
-  text += bodyRows.map(r=>r.join(' | ')).join('\n');
+// Bir <table>'dan RaporTanimi uret. Gizli tabloda innerText bos doner -> textContent.
+function raporTanimiTablodan(tbl, baslik, altBilgi, grafik){
+  const trler = Array.from(tbl.querySelectorAll('tr'));
+  const basSatiriMi = r => r.querySelector('th') !== null;
+  const oku = r => Array.from(r.querySelectorAll('th,td'))
+    .map(c => (c.textContent || '').trim().replace(/\s+/g, ' '));
 
-  if(navigator.share){
-    navigator.share({ title, text }).catch(()=>{});
-  } else {
-    // Paylaşım yoksa PDF aç
-    exportModalPrint();
+  const basliklar = trler.filter(basSatiriMi).map(oku);
+  const satirlar  = trler.filter(r => !basSatiriMi(r)).map(oku);
+  const sutunSayisi = Math.max(...[...basliklar, ...satirlar].map(r => r.length), 0);
+
+  // Bir sutun, dolu hucrelerinin en az %60'i sayiya cozulebiliyorsa sayisaldir.
+  // Basligi telefon/no/tarih gibi bir sutun, sayiya benzese bile metin kalir.
+  const sonBaslik = basliklar.length ? basliklar[basliklar.length - 1] : [];
+  const sayisal = [], para = [];
+  for(let c = 0; c < sutunSayisi; c++){
+    const basAdi = String(sonBaslik[c] || '');
+    if(METIN_SUTUN_DESENI.test(basAdi)){ sayisal.push(false); para.push(false); continue; }
+    let dolu = 0, cozulen = 0, paraSayisi = 0;
+    satirlar.forEach(r => {
+      const h = r[c];
+      if(h == null || h === '' || h === '—' || h === '-') return;
+      dolu++;
+      const s = trSayiCoz(h);
+      if(s){ cozulen++; if(s.para) paraSayisi++; }
+    });
+    const sayisalMi = c > 0 && dolu > 0 && (cozulen / dolu) >= 0.6;
+    sayisal.push(sayisalMi);
+    para.push(sayisalMi && paraSayisi > cozulen / 2);
   }
+  return { baslik, altBilgi, basliklar, satirlar, sayisal, para, grafik: grafik || null };
+}
+
+function _raporKontrol(){
+  if(!_raporAktif || !_raporAktif.satirlar.length){ alert('Aktarılacak veri yok.'); return false; }
+  return true;
+}
+function _butonMesgul(id, mesgul, eskiMetin){
+  const b = document.getElementById(id);
+  if(!b) return '';
+  if(mesgul){ const m = b.textContent; b.disabled = true; b.style.opacity = '.55'; b.textContent = '⏳'; return m; }
+  b.disabled = false; b.style.opacity = ''; b.textContent = eskiMetin;
+  return '';
+}
+
+// ---------- 1) YAZDIR ----------
+// Popup yok. @media print kurali sadece #exportFullModal icerigini kagida basar,
+// renkler print-color-adjust:exact ile korunur.
+function raporYazdir(){
+  const modal = document.getElementById('exportFullModal');
+  if(!modal || modal.style.display === 'none'){ alert('Önce bir rapor açın.'); return; }
+  // Kagit uzerindeki belge basligini doldur (ekranda gizli)
+  const pb = document.getElementById('printBaslik'), pa = document.getElementById('printAlt');
+  if(pb) pb.textContent = _raporAktif ? _raporAktif.baslik
+        : (document.getElementById('exportModalTitle').textContent || '').replace(/^[^\w\u00c0-\u017f]+/, '');
+  if(pa) pa.textContent = _raporAktif ? (_raporAktif.altBilgi || '')
+        : (document.getElementById('exportModalSub').textContent || '');
+  document.body.classList.add('yazdirma-modu');
+  const temizle = () => {
+    document.body.classList.remove('yazdirma-modu');
+    window.removeEventListener('afterprint', temizle);
+  };
+  window.addEventListener('afterprint', temizle);
+  setTimeout(()=>{ try{ window.print(); }catch(e){ temizle(); } }, 120);
+  setTimeout(temizle, 8000); // afterprint tetiklenmezse (bazi mobil tarayicilar) yine de temizle
+}
+
+// ---------- 2) PDF (+ 4) PAYLAS) ----------
+function raporPdf(paylas){
+  if(_raporMesgul) return;
+  if(!_raporKontrol()) return;
+  if(!window.jspdf || !window.jspdf.jsPDF){ alert('PDF kütüphanesi henüz yüklenmedi. Birkaç saniye sonra tekrar deneyin.'); return; }
+
+  const btnId = paylas ? 'exportBtnPaylas' : 'exportBtnPdf';
+  const eski = _butonMesgul(btnId, true);
+  _raporMesgul = true;
+
+  // Uretimi bir kare geciktir ki buton "⏳" olarak boyansin
+  setTimeout(() => {
+    try{ _raporPdfUret(paylas); }
+    catch(err){ console.error('PDF hatası', err); alert('PDF oluşturulurken bir hata oluştu.'); }
+    finally{ _raporMesgul = false; _butonMesgul(btnId, false, eski); }
+  }, 30);
+}
+
+function _raporPdfUret(paylas){
+  const t = _raporAktif;
+  const jsPDF = window.jspdf.jsPDF;
+  const sutun = (t.basliklar[0] || t.satirlar[0] || []).length;
+  const doc = new jsPDF({ orientation: sutun > 5 ? 'landscape' : 'portrait', unit:'mm', format:'a4' });
+
+  // Turkce font — yoksa helvetica'ya duser (o zaman gisçöü bozulur ama cokme olmaz)
+  const fontVar = (typeof window.ertechFontKur === 'function') ? window.ertechFontKur(doc) : false;
+  const F = fontVar ? 'RobotoTR' : 'helvetica';
+
+  const sayfaG = doc.internal.pageSize.width;
+  const sayfaY = doc.internal.pageSize.height;
+  const olusturma = nowTR().toLocaleString('tr-TR');
+
+  const ustBant = () => {
+    doc.setFillColor(...RAPOR_KIRMIZI);
+    doc.rect(0, 0, sayfaG, 24, 'F');
+    doc.setFont(F, 'bold'); doc.setFontSize(14); doc.setTextColor(255,255,255);
+    doc.text(t.baslik, 12, 12);
+    doc.setFont(F, 'normal'); doc.setFontSize(8.5); doc.setTextColor(255, 214, 212);
+    doc.text(t.altBilgi || '', 12, 19);
+    doc.setFontSize(8); doc.setTextColor(255, 190, 188);
+    doc.text('ER-TECH İLETİŞİM', sayfaG - 12, 12, { align:'right' });
+    doc.setFontSize(7);
+    doc.text(olusturma, sayfaG - 12, 18, { align:'right' });
+  };
+  const altBant = () => {
+    const sayfa = doc.internal.getNumberOfPages();
+    doc.setDrawColor(220,220,220); doc.setLineWidth(0.2);
+    doc.line(12, sayfaY - 12, sayfaG - 12, sayfaY - 12);
+    doc.setFont(F, 'normal'); doc.setFontSize(7.5); doc.setTextColor(130,130,130);
+    doc.text('Er-Tech İletişim · ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : ''), 12, sayfaY - 7);
+    doc.text('Sayfa ' + sayfa, sayfaG - 12, sayfaY - 7, { align:'right' });
+  };
+
+  let baslangicY = 30;
+
+  // Vektorel bar grafik (varsa) — resim degil, gercek dikdortgenler
+  if(t.grafik && t.grafik.length){
+    // ustBant() burada CAGRILMAZ — autoTable'in didDrawPage'i 1. sayfada zaten cizer (v265 fix).
+    const enBuyuk = Math.max(...t.grafik.map(b => Math.abs(b.value)), 1);
+    const alanX = 14, alanY = 34, alanG = sayfaG - 28, alanYuk = 42;
+    const barSayisi = t.grafik.length;
+    const adim = alanG / barSayisi;
+    const barG = Math.max(2, Math.min(14, adim * 0.55));
+
+    doc.setFont(F, 'bold'); doc.setFontSize(9); doc.setTextColor(60,60,60);
+    doc.text('Performans grafiği', alanX, alanY - 2);
+    doc.setDrawColor(225,225,225); doc.setLineWidth(0.2);
+    doc.line(alanX, alanY + alanYuk, alanX + alanG, alanY + alanYuk);
+
+    t.grafik.forEach((b, i) => {
+      const oran = Math.abs(b.value) / enBuyuk;
+      const yuk = Math.max(0.6, oran * (alanYuk - 6));
+      const x = alanX + i * adim + (adim - barG) / 2;
+      const y = alanY + alanYuk - yuk;
+      const yuzde = oran * 100;
+      if(yuzde >= 80) doc.setFillColor(22,163,74);
+      else if(yuzde >= 50) doc.setFillColor(37,99,235);
+      else doc.setFillColor(...RAPOR_KIRMIZI);
+      doc.rect(x, y, barG, yuk, 'F');
+      doc.setFont(F,'normal'); doc.setFontSize(5.6); doc.setTextColor(110,110,110);
+      const etiket = String(b.label || '');
+      doc.text(etiket.length > 9 ? etiket.slice(0,8)+'…' : etiket,
+               alanX + i*adim + adim/2, alanY + alanYuk + 4, { align:'center' });
+    });
+    baslangicY = alanY + alanYuk + 10;
+  }
+
+  const sagaYasla = {};
+  t.sayisal.forEach((s, i) => { if(s) sagaYasla[i] = { halign:'right' }; });
+
+  doc.autoTable({
+    head: t.basliklar.length ? t.basliklar : undefined,
+    body: t.satirlar,
+    startY: baslangicY,
+    margin: { top: 30, left: 12, right: 12, bottom: 16 },
+    styles: { font:F, fontStyle:'normal', fontSize:7.6, cellPadding:1.8, overflow:'linebreak',
+              lineColor:[228,230,235], lineWidth:0.1, textColor:[40,42,46] },
+    headStyles: { font:F, fontStyle:'bold', fillColor:RAPOR_KIRMIZI, textColor:255, fontSize:7.8, halign:'left' },
+    alternateRowStyles: { fillColor:[247,248,250] },
+    columnStyles: sagaYasla,
+    didDrawPage: () => { ustBant(); altBant(); }
+  });
+
+  const zaman = olusturma.replace(/[/:]/g,'-').replace(/[,\s]+/g,'_');
+  const dosyaAdi = t.baslik.replace(/[^\wğüşıöçĞÜŞİÖÇ -]+/g,'').trim().replace(/\s+/g,'_') + '_' + zaman + '.pdf';
+  const blob = doc.output('blob');
+
+  const indir = () => {
+    const u = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = u; a.download = dosyaAdi; a.click();
+    setTimeout(()=>URL.revokeObjectURL(u), 5000);
+  };
+
+  if(paylas){
+    try{
+      const file = new File([blob], dosyaAdi, { type:'application/pdf' });
+      if(navigator.canShare && navigator.canShare({ files:[file] }) && navigator.share){
+        navigator.share({ files:[file], title: t.baslik })
+          .catch(e => { if(e && e.name !== 'AbortError') indir(); });
+        return;
+      }
+    }catch(e){ /* File API yok -> indir */ }
+  }
+  indir();
+}
+
+// ---------- 3) EXCEL ----------
+function raporExcel(){
+  if(!_raporKontrol()) return;
+  if(typeof XLSX === 'undefined'){ alert('Excel kütüphanesi henüz yüklenmedi.'); return; }
+  const t = _raporAktif;
+
+  const KENAR = { style:'thin', color:{ rgb:'FFD8DCE2' } };
+  const cerceve = { top:KENAR, bottom:KENAR, left:KENAR, right:KENAR };
+
+  const sutunSayisi = Math.max(...[...t.basliklar, ...t.satirlar].map(r => r.length), 1);
+  const aoa = [];
+  aoa.push([t.baslik]);                       // r0
+  aoa.push([t.altBilgi || '']);               // r1
+  t.basliklar.forEach(r => aoa.push(r));      // r2..
+  const basSonu = aoa.length;                 // ilk veri satirinin indeksi
+  t.satirlar.forEach(r => aoa.push(r));
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Sayisal sutunlari gercek sayiya cevir (metin degil!)
+  t.satirlar.forEach((satir, ri) => {
+    satir.forEach((hucre, ci) => {
+      if(!t.sayisal[ci]) return;
+      const s = trSayiCoz(hucre);
+      if(!s) return;
+      const adres = XLSX.utils.encode_cell({ r: basSonu + ri, c: ci });
+      const tam = Number.isInteger(s.sayi);
+      const bicim = t.para[ci] ? (tam ? '#,##0 "₺"' : '#,##0.00 "₺"')
+                  : s.yuzde   ? '0"%"'
+                  : (tam ? '#,##0' : '#,##0.00');
+      ws[adres] = { t:'n', v:s.sayi, z: bicim };
+    });
+  });
+
+  // Bicimlendirme
+  const aralik = XLSX.utils.decode_range(ws['!ref']);
+  for(let R = aralik.s.r; R <= aralik.e.r; R++){
+    for(let C = aralik.s.c; C <= aralik.e.c; C++){
+      const adres = XLSX.utils.encode_cell({ r:R, c:C });
+      if(!ws[adres]) ws[adres] = { t:'s', v:'' };
+      const h = ws[adres];
+      if(R === 0){
+        h.s = { font:{ bold:true, sz:14, color:{ rgb:'FFFFFFFF' } },
+                fill:{ patternType:'solid', fgColor:{ rgb:'FFE2231A' } },
+                alignment:{ horizontal:'left', vertical:'center' } };
+      } else if(R === 1){
+        h.s = { font:{ italic:true, sz:9, color:{ rgb:'FF6B7280' } },
+                alignment:{ horizontal:'left' } };
+      } else if(R < basSonu){
+        h.s = { font:{ bold:true, sz:10, color:{ rgb:'FFFFFFFF' } },
+                fill:{ patternType:'solid', fgColor:{ rgb:'FF3C4045' } },
+                alignment:{ horizontal:'center', vertical:'center', wrapText:true },
+                border: cerceve };
+      } else {
+        const cift = (R - basSonu) % 2 === 0;
+        h.s = { font:{ sz:10, color:{ rgb:'FF1A1C1E' } },
+                fill:{ patternType:'solid', fgColor:{ rgb: cift ? 'FFFFFFFF' : 'FFF6F7F9' } },
+                alignment:{ horizontal: t.sayisal[C] ? 'right' : 'left' },
+                border: cerceve };
+      }
+    }
+  }
+
+  // Basliklari birlestir, sutun genisliklerini icerige gore ayarla
+  ws['!merges'] = [
+    { s:{ r:0, c:0 }, e:{ r:0, c:Math.max(sutunSayisi-1, 0) } },
+    { s:{ r:1, c:0 }, e:{ r:1, c:Math.max(sutunSayisi-1, 0) } }
+  ];
+  ws['!rows'] = [{ hpt:24 }, { hpt:15 }];
+  ws['!cols'] = Array.from({ length:sutunSayisi }, (_, c) => {
+    let en = 8;
+    [...t.basliklar, ...t.satirlar].forEach(r => { en = Math.max(en, String(r[c] ?? '').length + 2); });
+    return { wch: Math.min(en, 42) };
+  });
+  if(t.basliklar.length){
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range(
+      { s:{ r:basSonu-1, c:0 }, e:{ r:aralik.e.r, c:sutunSayisi-1 } }) };
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, t.baslik.slice(0, 28).replace(/[\\/*?:[\]]/g,'-'));
+  const ad = t.baslik.replace(/[^\wğüşıöçĞÜŞİÖÇ -]+/g,'').trim().replace(/\s+/g,'_');
+  XLSX.writeFile(wb, ad + '_' + xlsTimestamp() + '.xlsx', { cellStyles:true });
 }
 
 function closeExportModal(){
   document.getElementById('exportFullModal').style.display = 'none';
   document.getElementById('exportModalContent').innerHTML = '';
   document.getElementById('exportModalTabs').innerHTML = '';
+  _raporAktif = null;
 }
-
-// Mobilde window.open yerine modal kullan
-let _activeExportTable = null;
+// ==================== RAPOR MOTORU SONU ====================
 
 // v240: Detay Tablolari — iki tabloyu tek aktarma olarak birlestir
 function exportDetayTablolari(){
@@ -15623,85 +15800,11 @@ function exportSaatTablosu(){
 }
 // ==================== v264: GECMIS KAMPANYALAR & MUSTERI TAKIBI DISA AKTARMA ====================
 // jsPDF varsayilan fontu (helvetica) Turkce karakterleri cizemez — bozuk glif yerine ASCII'ye indir.
-function pdfTrFix(s){
-  return String(s==null?'':s)
-    .replace(/[\u20ba₺]/g,'TL')
-    .replace(/ğ/g,'g').replace(/Ğ/g,'G')
-    .replace(/ı/g,'i').replace(/İ/g,'I')
-    .replace(/ş/g,'s').replace(/Ş/g,'S')
-    .replace(/ç/g,'c').replace(/Ç/g,'C')
-    .replace(/ö/g,'o').replace(/Ö/g,'O')
-    .replace(/ü/g,'u').replace(/Ü/g,'U')
-    .replace(/[–—]/g,'-').replace(/[•→]/g,' ')
-    .replace(/[^\x00-\x7F]/g,'');
-}
 
 // Sayfa icinde PDF uret → once navigator.share ile PAYLAS, olmazsa indir.
 // (Onceden PDF yalnizca acilir pencerede uretilebiliyordu; mobilde popup engelleniyordu.)
-function pdfUretPaylas(baslik, altBilgi, headRows, bodyRows){
-  if(!window.jspdf || !window.jspdf.jsPDF){
-    alert('PDF kütüphanesi henüz yüklenmedi. Birkaç saniye sonra tekrar dene.');
-    return;
-  }
-  if(!bodyRows || !bodyRows.length){ alert('Aktarılacak veri yok.'); return; }
-
-  const jsPDF = window.jspdf.jsPDF;
-  const kolon = (headRows[0] || bodyRows[0] || []).length;
-  const doc = new jsPDF({ orientation: kolon > 4 ? 'landscape' : 'portrait', unit:'mm', format:'a4' });
-
-  const genislik = doc.internal.pageSize.width;
-  doc.setFillColor(226,35,26); doc.rect(0,0,genislik,22,'F');
-  doc.setTextColor(255,255,255); doc.setFontSize(13);
-  doc.text(pdfTrFix(baslik), 10, 14);
-  doc.setFontSize(8); doc.setTextColor(210,210,210);
-  doc.text(pdfTrFix(altBilgi), 10, 20);
-
-  if(typeof doc.autoTable !== 'function'){
-    alert('PDF tablo eklentisi yüklenmedi. Sayfayı yenileyip tekrar dene.');
-    return;
-  }
-  doc.autoTable({
-    head: headRows.map(r=>r.map(pdfTrFix)),
-    body: bodyRows.map(r=>r.map(pdfTrFix)),
-    startY: 26,
-    styles:{ fontSize:8, cellPadding:2, overflow:'linebreak' },
-    headStyles:{ fillColor:[226,35,26], textColor:255 },
-    alternateRowStyles:{ fillColor:[248,249,250] }
-  });
-
-  const zaman = nowTR().toLocaleString('tr-TR').replace(/[/:]/g,'-').replace(/[,\s]+/g,'_');
-  const dosyaAdi = pdfTrFix(baslik).replace(/[^\w-]+/g,'_') + '_' + zaman + '.pdf';
-  const blob = doc.output('blob');
-
-  const indir = () => {
-    const u = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = u; a.download = dosyaAdi; a.click();
-    setTimeout(()=>URL.revokeObjectURL(u), 4000);
-  };
-
-  try{
-    const file = new File([blob], dosyaAdi, { type:'application/pdf' });
-    if(navigator.canShare && navigator.canShare({ files:[file] }) && navigator.share){
-      navigator.share({ files:[file], title: baslik })
-        .catch(e => { if(e && e.name !== 'AbortError') indir(); });
-      return;
-    }
-  }catch(e){ /* File API yoksa indirmeye dus */ }
-  indir();
-}
 
 // Bir <table>'dan head/body satirlarini oku (gizli tabloda innerText bos doner → textContent)
-function tablodanSatirlar(tbl){
-  const satirlar = Array.from(tbl.querySelectorAll('tr'));
-  const baslikMi = r => r.querySelector('th') !== null;
-  const oku = r => Array.from(r.querySelectorAll('th,td'))
-    .map(c => (c.textContent || '').trim().replace(/\s+/g,' '));
-  return {
-    head: satirlar.filter(baslikMi).map(oku),
-    body: satirlar.filter(r=>!baslikMi(r)).map(oku)
-  };
-}
 
 // ---- Gecmis Kampanyalar ----
 // renderKampanyaList icindeki "bitti" mantiginin birebir aynisi.
@@ -15759,13 +15862,9 @@ function exportGecmisKampanyalar(){
   const adet = _gecmisKampanyaTablosuDoldur();
   if(!adet){ alert('Geçmiş kampanya bulunmuyor.'); return; }
   openExportPreview('gecmisKampanyaTable','Gecmis_Kampanyalar');
-}
-
-function paylasGecmisKampanyalarPdf(){
-  const adet = _gecmisKampanyaTablosuDoldur();
-  if(!adet){ alert('Geçmiş kampanya bulunmuyor.'); return; }
-  const { head, body } = tablodanSatirlar(document.getElementById('gecmisKampanyaTable'));
-  pdfUretPaylas('Gecmis Kampanyalar', adet + ' kampanya · ' + nowTR().toLocaleString('tr-TR'), head, body);
+  const alt = adet + ' kampanya · ' + nowTR().toLocaleString('tr-TR');
+  if(_raporAktif) _raporAktif.altBilgi = alt;
+  const sub = document.getElementById('exportModalSub'); if(sub) sub.textContent = alt;
 }
 
 // ---- Musteri Takibi ----
@@ -15816,15 +15915,12 @@ function exportMusteriTakip(){
   const adet = _musteriTakipTablosuDoldur();
   if(!adet){ alert('Bu filtrede müşteri kaydı yok.'); return; }
   openExportPreview('musteriTakipTable','Musteri_Takip_Raporu');
+  // v265: hangi filtreyle aktarildigi PDF/Excel basligina yazilsin
+  const alt = _musteriFiltreOzeti() + ' · ' + adet + ' kayıt · ' + nowTR().toLocaleString('tr-TR');
+  if(_raporAktif) _raporAktif.altBilgi = alt;
+  const sub = document.getElementById('exportModalSub'); if(sub) sub.textContent = alt;
 }
 
-function paylasMusteriTakipPdf(){
-  const adet = _musteriTakipTablosuDoldur();
-  if(!adet){ alert('Bu filtrede müşteri kaydı yok.'); return; }
-  const { head, body } = tablodanSatirlar(document.getElementById('musteriTakipTable'));
-  const alt = _musteriFiltreOzeti() + ' · ' + adet + ' kayit · ' + nowTR().toLocaleString('tr-TR');
-  pdfUretPaylas('Musteri Takip Raporu', alt, head, body);
-}
 // ==================== v264 SONU ====================
 
 function openExportPreview(tableId, fileLabel){
@@ -15864,11 +15960,9 @@ function openExportPreview(tableId, fileLabel){
     });
     document.getElementById('exportModalContent').innerHTML=`<style>#exportModalContent table,#exportModalContent tr,#exportModalContent td,#exportModalContent th{background:unset!important;border-color:#2e3035!important;color:#d1d5db!important}</style><div style="overflow-x:auto;background:#26282b;border-radius:8px">${clone.outerHTML}</div>`;
     _activeExportTable=clone;
-    document.getElementById('exportModalXlsBtn').onclick=function(){
-      if(typeof XLSX==='undefined'){alert('Excel kütüphanesi yükleniyor.');return;}
-      const wb=XLSX.utils.table_to_book(table,{sheet:fileLabel.slice(0,31)});
-      XLSX.writeFile(wb,fileLabel+'_'+stamp+'.xlsx');
-    };
+    // v265: dort butonun tamami tek RaporTanimi'ndan beslenir
+    _raporAktif = raporTanimiTablodan(table, (titles[tableId] || fileLabel), now, null);
+    document.getElementById('exportModalXlsBtn').onclick = raporExcel;
     modal.style.display='flex';
     return;
   }
@@ -16360,6 +16454,23 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v265',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'KRITIK: Disa aktarma penceresi, kendisini acan Kampanyalar / Musteri Takibi pencerelerinin ALTINDA kaliyordu. Sebep: export penceresi z-index 2000, onu acan pencereler 4000. Export penceresi 6000 katmanina alindi.' },
+      { type: 'new', text: 'MERKEZI RAPOR MOTORU: Disa aktarma penceresinin ustune dort buton geldi — YAZDIR / PDF / EXCEL / PAYLAS. Dorduncusu de ayni veri kaynagindan (RaporTanimi) beslenir; hicbiri ekran goruntusu almaz.' },
+      { type: 'new', text: 'YAZDIR: Acilir pencere kaldirildi. Artik @media print kurali ile sadece rapor icerigi kagida basilir. Kagitta kurumsal beyaz belge cikar: kirmizi baslik seridi, marka satiri, zebra satirlar, cerceveler, her sayfada tekrarlanan tablo basligi ve satir ortasindan bolunmeme.' },
+      { type: 'new', text: 'PDF: Gercek vektorel metin. Kirmizi ust bant (baslik + filtre ozeti + marka + tarih), her sayfada alt bilgi ve sayfa numarasi, zebra tablo. Rapor grafigi PDF\'e RESIM olarak degil, gercek dikdortgenlerle cizilir. Dosya ~25 KB (eski html2canvas yontemi 3-5 MB idi) ve icindeki metin secilebilir/aranabilir.' },
+      { type: 'new', text: 'PDF TURKCE FONTU: pdf-font-tr.js eklendi — Roboto\'nun Turkce + Latin + para isaretlerine alt-kumelenmis hali (42 KB). jsPDF\'in varsayilan helvetica fontu g/i/s/c/o/u ve TL isaretini cizemiyordu; onceki surumlerde ASCII\'ye kirpiliyordu ("Ali Sik"). Artik "Ali Şık" dogru basiliyor.' },
+      { type: 'new', text: 'EXCEL ARTIK RENKLI VE FORMATLI: xlsx-js-style kutuphanesine gecildi. Onceki SheetJS community surumu hucre stillerini SESSIZCE yok sayiyordu. Yeni cikti: kirmizi baslik satiri, koyu sutun basliklari, zebra satirlar, ince cerceveler, icerige gore sutun genisligi, otomatik filtre, birlestirilmis baslik/alt bilgi satirlari.' },
+      { type: 'fix', text: 'EXCEL SAYILARI ARTIK GERCEK SAYI: "1.250 ₺" metin olarak gidiyordu, SUM calismiyordu. Artik hucrede 1250 sayisi durur, ekranda "1.250 ₺" gorunur (bicim kodu). Kurus korunur (980,50 ₺). Yuzdeler 0"%" bicimiyle yazilir.' },
+      { type: 'fix', text: 'EXCEL TELEFON HATASI: "05551112233" sayiya cevrilip bastaki sifir siliniyordu. Artik basi sifirla baslayan ve 10+ haneli degerler ile basligi Telefon/No/Tarih/Saat olan sutunlar metin olarak kalir.' },
+      { type: 'imp', text: 'xlsx kutuphanesi CDN yerine YEREL dosyaya alindi (xlsx-style.min.js) ve Service Worker on-onbellegine eklendi. Excel disa aktarma artik cevrimdisi de calisir.' },
+      { type: 'clean', text: 'Olu/yinelenen kod temizligi: exportModalPrint (acilir pencere), exportRaporPdf (ikinci acilir pencere), exportModalShare (hic cagrilmiyordu), pdfUretPaylas, pdfTrFix, tablodanSatirlar kaldirildi — toplam ~300 satir. exportModalXlsBtn.onclick artik tek yerden baglaniyor (onceden 3 ayri yerden yeniden ataniyordu, yanlis rapor aktarma riski vardi).' },
+      { type: 'ui', text: 'Gecmis Kampanyalar ve Musteri Takibi\'ndeki ayri "PDF Paylas" butonlari kaldirildi — dort butonun tamami artik disa aktarma penceresinin ustunde. Musteri Takibi\'nde hangi filtreyle aktarildigi PDF/Excel basligina yaziliyor.' },
+    ]
+  },
   {
     version: 'v264',
     date: '10.07.2026',
