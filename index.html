@@ -69,79 +69,90 @@
 <!-- v265: PDF icin Turkce alt-kumelenmis Roboto (42 KB). jsPDF helvetica ile gisçöü cizemiyor. -->
 <script src="pdf-font-tr.js"></script>
 <style id="yazdirmaStilleri">
-/* v265: YAZDIRMA — popup yok. Sadece #exportFullModal kagida basilir.
-   Ekranda koyu tema kalir; kagitta kurumsal beyaz belge uretilir (renkler korunur). */
-#exportPrintHeader{ display:none }
+/* v267: YAZDIRMA — popup yok, body sinif oyunu yok.
+   Onceki surumde body'ye 'yazdirma-modu' sinifi eklenip 120ms sonra print() cagriliyordu;
+   mobil tarayicilarda afterprint onizleme cizilmeden tetiklenip sinifi kaldiriyordu -> BOS SAYFA.
+   Artik icerik, DOM'da surekli duran #yazdirmaAlani icine onceden basilir. Ekranda gizli,
+   kagitta gorunur. Hicbir zamanlama yok. */
+
+#yazdirmaAlani{ display:none }
 
 @media print{
-  @page{ size:A4; margin:14mm 12mm }
+  @page{ size:A4; margin:12mm 10mm }
 
-  html, body{ background:#fff !important; height:auto !important; overflow:visible !important }
-
-  /* Yazdirma modunda modal disindaki her sey gizlenir */
-  body.yazdirma-modu > *:not(#exportFullModal){ display:none !important }
-
-  body.yazdirma-modu #exportFullModal{
-    position:static !important; inset:auto !important;
-    display:block !important; height:auto !important;
-    background:#fff !important; color:#111 !important;
+  html, body{
+    background:#fff !important; height:auto !important; overflow:visible !important;
+    margin:0 !important; padding:0 !important;
   }
-  body.yazdirma-modu .export-toolbar,
-  body.yazdirma-modu #exportModalTabs{ display:none !important }
+  /* Sadece yazdirma alani basilir */
+  body > *{ display:none !important }
+  body > #yazdirmaAlani{ display:block !important }
 
-  body.yazdirma-modu #exportModalContent{
-    overflow:visible !important; height:auto !important;
-    padding:0 !important; background:#fff !important; flex:none !important;
-  }
-  body.yazdirma-modu #exportModalContent > div{
-    overflow:visible !important; background:#fff !important; border-radius:0 !important;
+  /* Renkler kagitta korunsun */
+  #yazdirmaAlani, #yazdirmaAlani *{
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+    color-adjust:exact !important;
+    font-family:'Segoe UI', Roboto, Arial, sans-serif !important;
   }
 
-  /* Belge basligi */
-  body.yazdirma-modu #exportPrintHeader{
-    display:block !important; margin-bottom:10px;
-    border-bottom:3px solid #e2231a; padding-bottom:6px;
-  }
-  #exportPrintHeader .pb-marka{ font-size:9px; letter-spacing:1.4px; color:#e2231a; font-weight:800 }
-  #exportPrintHeader .pb-baslik{ font-size:16px; font-weight:800; color:#111; margin-top:2px }
-  #exportPrintHeader .pb-alt{ font-size:9px; color:#666; margin-top:2px }
-
-  /* Tablo: kurumsal beyaz belge — kirmizi baslik seridi + zebra satirlar korunur */
-  body.yazdirma-modu #exportModalContent table{
-    width:100% !important; border-collapse:collapse !important;
-    background:#fff !important; font-size:9px !important; table-layout:auto !important;
-  }
-  body.yazdirma-modu #exportModalContent th{
+  /* PDF ile ayni kirmizi ust bant */
+  .yz-bant{
     background:#e2231a !important; color:#fff !important;
-    font-size:8.5px !important; font-weight:700 !important;
-    padding:5px 6px !important; border:1px solid #c81d15 !important;
-    position:static !important; white-space:normal !important;
-    -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
+    padding:10px 12px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
   }
-  body.yazdirma-modu #exportModalContent td{
-    color:#1a1c1e !important; padding:4px 6px !important;
-    border:1px solid #dcdfe4 !important; position:static !important;
-    white-space:normal !important; background:#fff !important;
-    -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
-  }
-  body.yazdirma-modu #exportModalContent tbody tr:nth-child(even) td,
-  body.yazdirma-modu #exportModalContent tr:nth-child(even) td{
-    background:#f6f7f9 !important;
-    -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
-  }
-  body.yazdirma-modu #exportModalContent tfoot td{
-    background:#eceef1 !important; font-weight:700 !important;
-  }
-  /* Sayfa bolunmesinde satir ortadan kesilmesin, baslik her sayfada tekrarlansin */
-  body.yazdirma-modu #exportModalContent tr{ page-break-inside:avoid !important }
-  body.yazdirma-modu #exportModalContent thead{ display:table-header-group !important }
+  .yz-baslik{ font-size:15pt; font-weight:800; line-height:1.15 }
+  .yz-alt{ font-size:7.5pt; color:#ffd6d4 !important; margin-top:3px }
+  .yz-marka{ font-size:7.5pt; font-weight:800; letter-spacing:.9px; text-align:right; white-space:nowrap }
+  .yz-tarih{ font-size:6.8pt; color:#ffbebc !important; margin-top:3px; text-align:right; white-space:nowrap }
 
-  /* Rapor grafigi (SVG/HTML) yazdirilirken beyaz zemin */
-  body.yazdirma-modu #raporChartBox,
-  body.yazdirma-modu #exportModalContent > div:first-child{
-    background:#fff !important; border:1px solid #e5e7eb !important;
-    page-break-inside:avoid !important;
+  /* Ozet kartlari (kapanis raporu) */
+  .yz-kartlar{ display:flex; gap:5px; margin:8px 0 }
+  .yz-kart{ flex:1; background:#f7f8fa !important; border:1px solid #e2e5ea !important;
+            border-left:3px solid #e2231a !important; border-radius:3px; padding:6px 8px }
+  .yz-kart-b{ font-size:6.2pt; color:#787c82 !important; font-weight:700; letter-spacing:.4px }
+  .yz-kart-d{ font-size:11pt; font-weight:800; color:#1a1c1e !important; margin-top:2px }
+  .yz-kart-a{ font-size:6.2pt; color:#82868c !important; margin-top:1px }
+
+  /* Vektorel bar grafik — resim degil, renkli kutular */
+  .yz-grafik{ margin:8px 0 10px; page-break-inside:avoid }
+  .yz-grafik-b{ font-size:8pt; font-weight:700; color:#3c3c3c !important; margin-bottom:4px }
+  .yz-barlar{ display:flex; align-items:flex-end; gap:2px; height:46px;
+              border-bottom:1px solid #e1e1e1 !important; padding:0 2px }
+  .yz-bar-sar{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100% }
+  .yz-bar{ width:70%; border-radius:1px 1px 0 0 }
+  .yz-bar-et{ font-size:5.4pt; color:#6e6e6e !important; margin-top:2px; white-space:nowrap }
+
+  /* Bolum basligi + anahtar/deger satiri */
+  .yz-bolum{ font-size:8.4pt; font-weight:800; color:#e2231a !important;
+             border-bottom:1px solid #f0c8c6 !important; padding-bottom:2px; margin:9px 0 4px }
+  .yz-satir{ display:flex; justify-content:space-between; gap:10px;
+             font-size:7.8pt; padding:2.4px 1px; border-bottom:1px solid #eef0f3 !important }
+  .yz-satir b{ color:#1a1c1e !important; font-weight:700 }
+  .yz-satir span{ color:#464a50 !important }
+
+  /* Tablo: PDF ile ayni — kirmizi baslik, zebra, cerceve */
+  #yazdirmaAlani table{
+    width:100% !important; border-collapse:collapse !important;
+    font-size:7.6pt !important; margin-top:4px; table-layout:auto !important;
   }
+  #yazdirmaAlani thead{ display:table-header-group !important }
+  #yazdirmaAlani tr{ page-break-inside:avoid !important }
+  #yazdirmaAlani th{
+    background:#e2231a !important; color:#fff !important; font-weight:700 !important;
+    font-size:7.4pt !important; padding:4px 5px !important;
+    border:1px solid #c81d15 !important; text-align:left !important;
+  }
+  #yazdirmaAlani td{
+    color:#1a1c1e !important; padding:3.4px 5px !important;
+    border:1px solid #dcdfe4 !important; background:#fff !important;
+  }
+  #yazdirmaAlani tbody tr:nth-child(even) td{ background:#f7f8fa !important }
+  #yazdirmaAlani td.sag, #yazdirmaAlani th.sag{ text-align:right !important }
+  #yazdirmaAlani tr.toplam td{ background:#eceef1 !important; font-weight:800 !important }
+
+  .yz-dipnot{ margin-top:10px; padding-top:5px; border-top:1px solid #dcdcdc !important;
+              display:flex; justify-content:space-between; font-size:6.8pt; color:#828282 !important }
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2927,7 +2938,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v266';
+const APP_VERSION = 'v267';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3040,7 +3051,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '10.07.2026 16:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '10.07.2026 18:15'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3680,6 +3691,7 @@ function openKapanisRaporu(){
     <div id="kapanisRaporIcerik" style="max-height:70vh;overflow-y:auto"></div>
     <div id="kapanisRaporAksiyon" style="display:none;padding:11px 16px;background:var(--panel2);border-top:1px solid var(--line);gap:8px;justify-content:flex-end">
       <button onclick="paylasKapanisRaporu()" style="padding:9px 16px;background:rgba(63,208,255,0.14);border:1px solid rgba(63,208,255,0.4);border-radius:8px;color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer">📤 Paylaş</button>
+      <button onclick="yazdirKapanisRaporu()" style="padding:9px 16px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:12.5px;font-weight:700;cursor:pointer">🖨 Yazdır</button>
       <button onclick="pdfKapanisRaporu()" style="padding:9px 16px;background:linear-gradient(135deg,#dc2626,#b91c1c);border:none;border-radius:8px;color:#fff;font-size:12.5px;font-weight:800;cursor:pointer">📄 PDF İndir</button>
     </div>
   </div>`;
@@ -15396,6 +15408,9 @@ function renderHedefGecmis(){
   </div>
 </div>
 
+<!-- v267: Yazdirma katmani. Ekranda gizli (#yazdirmaAlani{display:none}), kagitta tek gorunen sey. -->
+<div id="yazdirmaAlani" aria-hidden="true"></div>
+
 <!-- v264: Disa aktarma icin gizli kaynak tablolar (openExportPreview bunlari klonlar) -->
 <table id="gecmisKampanyaTable" style="display:none"></table>
 <table id="musteriTakipTable" style="display:none"></table>
@@ -15417,12 +15432,6 @@ function renderHedefGecmis(){
   </div>
   <!-- Tabs -->
   <div id="exportModalTabs" style="display:flex;border-bottom:1px solid #333;flex-shrink:0;background:#111"></div>
-  <!-- Yazdirma basligi: ekranda gizli, sadece kagitta gorunur -->
-  <div id="exportPrintHeader" aria-hidden="true">
-    <div class="pb-marka">ER-TECH İLETİŞİM</div>
-    <div class="pb-baslik" id="printBaslik"></div>
-    <div class="pb-alt" id="printAlt"></div>
-  </div>
   <!-- Content -->
   <div id="exportModalContent" style="flex:1;overflow:auto;padding:12px;background:#1a1c20"></div>
 </div>
@@ -15673,25 +15682,97 @@ function _butonMesgul(id, mesgul, eskiMetin){
 }
 
 // ---------- 1) YAZDIR ----------
-// Popup yok. @media print kurali sadece #exportFullModal icerigini kagida basar,
-// renkler print-color-adjust:exact ile korunur.
+// Popup yok, body sinif oyunu yok, zamanlayici yok.
+// RaporTanimi -> #yazdirmaAlani icine PDF ile AYNI tasarimda renkli belge basilir.
+function _yzKacis(v){ return esc(v == null ? '' : v); }
+
+function _yzBarlar(grafik){
+  if(!grafik || !grafik.length) return '';
+  const enBuyuk = Math.max(...grafik.map(b => Math.abs(b.value)), 1);
+  const barlar = grafik.map(b => {
+    const oran = Math.abs(b.value) / enBuyuk;
+    const yuzde = oran * 100;
+    const renk = yuzde >= 80 ? '#16a34a' : (yuzde >= 50 ? '#2563eb' : '#e2231a');
+    const et = String(b.label || '');
+    return `<div class="yz-bar-sar">
+      <div class="yz-bar" style="height:${Math.max(2, oran*100)}%;background:${renk} !important"></div>
+      <div class="yz-bar-et">${_yzKacis(et.length > 9 ? et.slice(0,8)+'…' : et)}</div>
+    </div>`;
+  }).join('');
+  return `<div class="yz-grafik"><div class="yz-grafik-b">Performans grafiği</div>
+    <div class="yz-barlar">${barlar}</div></div>`;
+}
+
+function _yzTablo(t){
+  const bas = t.basliklar.map(r =>
+    '<tr>' + r.map((h,i) => `<th class="${t.sayisal[i]?'sag':''}">${_yzKacis(h)}</th>`).join('') + '</tr>'
+  ).join('');
+  const govde = t.satirlar.map(r =>
+    '<tr>' + r.map((c,i) => `<td class="${t.sayisal[i]?'sag':''}">${_yzKacis(c)}</td>`).join('') + '</tr>'
+  ).join('');
+  return `<table><thead>${bas}</thead><tbody>${govde}</tbody></table>`;
+}
+
+// Ortak belge iskeleti — hem rapor tablolari hem kapanis raporu bunu kullanir
+function _yzBelge(baslik, altBilgi, govdeHtml){
+  const zaman = nowTR().toLocaleString('tr-TR');
+  const surum = (typeof APP_VERSION !== 'undefined') ? APP_VERSION : '';
+  return `<div class="yz-bant">
+      <div><div class="yz-baslik">${_yzKacis(baslik)}</div>
+           <div class="yz-alt">${_yzKacis(altBilgi || '')}</div></div>
+      <div><div class="yz-marka">ER-TECH İLETİŞİM</div>
+           <div class="yz-tarih">${_yzKacis(zaman)}</div></div>
+    </div>
+    ${govdeHtml}
+    <div class="yz-dipnot"><span>Er-Tech İletişim · ${_yzKacis(surum)}</span><span>${_yzKacis(zaman)}</span></div>`;
+}
+
+function _yzBas(html){
+  const alan = document.getElementById('yazdirmaAlani');
+  if(!alan){ alert('Yazdırma alanı bulunamadı.'); return; }
+  alan.innerHTML = html;
+  // Tarayici yerlesimi tamamlasin diye bir kare bekle; sinif/temizlik yok, yaris yok.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    try{ window.print(); }catch(e){ console.error('Yazdırma hatası', e); }
+  }));
+}
+
 function raporYazdir(){
-  const modal = document.getElementById('exportFullModal');
-  if(!modal || modal.style.display === 'none'){ alert('Önce bir rapor açın.'); return; }
-  // Kagit uzerindeki belge basligini doldur (ekranda gizli)
-  const pb = document.getElementById('printBaslik'), pa = document.getElementById('printAlt');
-  if(pb) pb.textContent = _raporAktif ? _raporAktif.baslik
-        : (document.getElementById('exportModalTitle').textContent || '').replace(/^[^\w\u00c0-\u017f]+/, '');
-  if(pa) pa.textContent = _raporAktif ? (_raporAktif.altBilgi || '')
-        : (document.getElementById('exportModalSub').textContent || '');
-  document.body.classList.add('yazdirma-modu');
-  const temizle = () => {
-    document.body.classList.remove('yazdirma-modu');
-    window.removeEventListener('afterprint', temizle);
-  };
-  window.addEventListener('afterprint', temizle);
-  setTimeout(()=>{ try{ window.print(); }catch(e){ temizle(); } }, 120);
-  setTimeout(temizle, 8000); // afterprint tetiklenmezse (bazi mobil tarayicilar) yine de temizle
+  if(!_raporAktif || !_raporAktif.satirlar || !_raporAktif.satirlar.length){
+    alert('Yazdırılacak veri yok. Önce bir rapor açın.'); return;
+  }
+  const t = _raporAktif;
+  _yzBas(_yzBelge(t.baslik, t.altBilgi, _yzBarlar(t.grafik) + _yzTablo(t)));
+}
+
+// Kapanis Raporu icin: PDF ile ayni bloklardan renkli yazdirma belgesi
+function yazdirKapanisRaporu(){
+  const govde = document.getElementById('kapanisRaporGovde');
+  if(!govde){ alert('Önce raporu görüntüleyin.'); return; }
+  const ym = window._kapanisYm || '';
+  const bloklar = _kapanisBloklari(govde);
+
+  const kartlar = bloklar.filter(b => b.tip === 'kart').slice(0,3);
+  const kartHtml = kartlar.length ? `<div class="yz-kartlar">${kartlar.map(k => `
+    <div class="yz-kart"><div class="yz-kart-b">${_yzKacis(trBuyuk(k.baslik))}</div>
+      <div class="yz-kart-d">${_yzKacis(k.deger)}</div>
+      ${k.alt ? `<div class="yz-kart-a">${_yzKacis(k.alt)}</div>` : ''}</div>`).join('')}</div>` : '';
+
+  const tabloHtml = bloklar.filter(b => b.tip === 'tablo').map(tb => {
+    const bas = tb.bas.map(r => '<tr>' + r.map((h,i) => `<th class="${i>0?'sag':''}">${_yzKacis(h)}</th>`).join('') + '</tr>').join('');
+    const gov = tb.satirlar.map(r => '<tr>' + r.map((c,i) => `<td class="${i>0?'sag':''}">${_yzKacis(c)}</td>`).join('') + '</tr>').join('');
+    const alt = tb.alt.map(r => '<tr class="toplam">' + r.map((c,i) => `<td class="${i>0?'sag':''}">${_yzKacis(c)}</td>`).join('') + '</tr>').join('');
+    return `<table><thead>${bas}</thead><tbody>${gov}${alt}</tbody></table>`;
+  }).join('');
+
+  const digerHtml = bloklar.filter(b => b.tip === 'baslik' || b.tip === 'satir').map(b =>
+    b.tip === 'baslik'
+      ? `<div class="yz-bolum">${_yzKacis(trBuyuk(b.metin))}</div>`
+      : `<div class="yz-satir"><span>${_yzKacis(b.sol)}</span><b>${_yzKacis(b.sag)}</b></div>`
+  ).join('');
+
+  const baslik = (typeof monthLabel === 'function' && ym ? monthLabel(ym) : ym) + ' — Kapanış Raporu';
+  _yzBas(_yzBelge(baslik, 'Aylık kapanış özeti', kartHtml + tabloHtml + digerHtml));
 }
 
 // ---------- 2) PDF (+ 4) PAYLAS) ----------
@@ -16644,6 +16725,19 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v267',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'YAZDIR BOMBOS BEYAZ SAYFA VERIYORDU. Sebep bir yaris durumuydu: raporYazdir() body\'ye "yazdirma-modu" sinifi ekliyor, 120 ms sonra print() cagiriyordu. Mobil tarayicilarda afterprint olayi onizleme cizilmeden tetikleniyor, sinif kaldiriliyor ve tum yazdirma kurallari dusuyordu — geriye bos sayfa kaliyordu. 8 saniyelik yedek zamanlayici da ayni sonucu veriyordu.' },
+      { type: 'new', text: 'YENI YAZDIRMA KATMANI: Artik body sinifi, zamanlayici veya acilir pencere yok. Icerik, DOM\'da surekli duran #yazdirmaAlani icine onceden basiliyor; ekranda gizli, kagitta gorunen tek sey o. Yaris durumu yapisal olarak imkansiz.' },
+      { type: 'new', text: 'YAZDIR CIKTISI ARTIK PDF ILE AYNI: kirmizi ust bant (baslik + alt bilgi + ER-TECH marka + tarih), renkli baslik satiri, zebra satirlar, cerceveler, sayisal sutunlarda saga yaslama, sayfa alt bilgisi. print-color-adjust:exact ile renkler kagitta korunuyor. Tablo basligi her sayfada tekrarlaniyor, satirlar ortadan bolunmuyor.' },
+      { type: 'new', text: 'Rapor grafigi yazdirmada da RESIM DEGIL: renkli kutular olarak ciziliyor (>=%80 yesil, >=%50 mavi, altinda kirmizi) — PDF\'teki ile ayni renk mantigi.' },
+      { type: 'new', text: 'KAPANIS RAPORUNA "YAZDIR" BUTONU eklendi. Ozet kartlari, kategori tablosu, bolum basliklari ve anahtar/deger satirlari renkli belge olarak basiliyor. PDF ile ayni bloklardan uretiliyor.' },
+      { type: 'fix', text: 'Yazdirma icerigi esc() ile kacisliyor — musteri adi/not gibi serbest metinler yazdirma katmanina HTML olarak sizamiyor.' },
+      { type: 'clean', text: 'Kullanilmayan #exportPrintHeader blogu ve ona bagli CSS kaldirildi.' },
+    ]
+  },
   {
     version: 'v266',
     date: '10.07.2026',
