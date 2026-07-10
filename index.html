@@ -1347,6 +1347,23 @@ input:focus,select:focus{outline:1px solid var(--accent)}
 .section-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:18px 0 8px}
 .prim-tool-pill{flex-shrink:0;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:filter .15s,background .15s}
 .prim-tool-pill:hover{filter:brightness(1.15)}
+/* v273: Ay Karsilastirma kontrol izgarasi — iki satir ayni sutun genisliklerini paylasir */
+.cmp-grid{
+  display:grid;
+  grid-template-columns:minmax(72px,auto) minmax(96px,1fr) minmax(84px,1fr) 104px;
+  gap:9px 10px; align-items:center;
+}
+.cmp-grid .cmp-etiket{
+  font-size:10.5px; font-weight:800; letter-spacing:.04em;
+  text-transform:uppercase; white-space:nowrap;
+}
+.cmp-grid select{ width:100%; min-width:0 }
+.cmp-grid .cmp-ayirac{ grid-column:1 / -1; height:1px; background:var(--line); margin:2px 0 }
+@media(max-width:560px){
+  .cmp-grid{ grid-template-columns:1fr 1fr; }
+  .cmp-grid .cmp-etiket{ grid-column:1 / -1 }
+  .cmp-grid button{ grid-column:1 / -1 }
+}
 /* v271: ACIK TEMADA ARAC CUBUGU OKUNMUYORDU.
    Pill metin renkleri koyu zemin icin secilmis sabit degerlerdi (#fcd34d, #4cd964),
    arka planlari rgba(...,0.12). Beyaz zeminde ikisi de kayboluyordu.
@@ -2380,28 +2397,29 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="cmpModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:980px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="background:linear-gradient(135deg,#3fd0ff,#1a90b8);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <span style="font-size:14px;font-weight:700;color:#000">📊 Ay Karşılaştırması</span>
-      <button onclick="closePrimModal('cmpModal')" style="background:rgba(0,0,0,0.15);border:none;color:#000;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+      <span style="font-size:14px;font-weight:700;color:#000;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📊 Ay Karşılaştırması</span>
+      <!-- v273: Disa Aktar butonu pencere basligina tasindi -->
+      <button onclick="openExportPreview('compareTable','Ay_Karsilastirma')" style="background:rgba(0,0,0,0.18);border:1px solid rgba(0,0,0,0.25);color:#000;padding:6px 11px;border-radius:7px;cursor:pointer;font-size:11.5px;font-weight:700;white-space:nowrap;margin-right:6px">📤 Dışa Aktar</button>
+      <button onclick="closePrimModal('cmpModal')" style="background:rgba(0,0,0,0.15);border:none;color:#000;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700;flex-shrink:0">✕</button>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
       <div class="section-title" id="compareTitle" style="margin:0 0 12px;font-size:15px">Bu Ay / Geçen Ay Karşılaştırması</div>
 
       <!-- v236: Kontrol karti — Ana Ay + Ay Ekle tek sik kart icinde -->
       <div style="background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 12px 10px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-size:10.5px;font-weight:800;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;flex-shrink:0">📅 Ana Ay</span>
-          <select id="cmpMonthSel" onchange="render()" style="flex:1 1 90px;min-width:78px"></select>
-          <select id="cmpYearSel" onchange="render()" style="flex:1 1 66px;min-width:66px"></select>
-          <button class="preview-btn" onclick="openExportPreview('compareTable','Ay_Karsilastirma')" style="white-space:nowrap;flex-shrink:0;margin-left:auto">📤 Dışa Aktar</button>
-        </div>
+        <!-- v273: iki satir ayni izgarayi paylasir -> ay, yil ve butonlar birebir hizali ve esit genislikte -->
+        <div class="cmp-grid">
+          <span class="cmp-etiket" style="color:var(--muted)">📅 Ana Ay</span>
+          <select id="cmpMonthSel" onchange="render()"></select>
+          <select id="cmpYearSel" onchange="render()"></select>
+          <span></span>
 
-        <div style="height:1px;background:var(--line);margin:11px 0"></div>
+          <div class="cmp-ayirac"></div>
 
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-size:10.5px;font-weight:800;letter-spacing:.04em;color:var(--accent);text-transform:uppercase;flex-shrink:0">➕ Ay Ekle</span>
-          <select id="cmpEkstraAy" style="flex:1 1 90px;min-width:78px"></select>
-          <select id="cmpEkstraYil" style="flex:1 1 66px;min-width:66px"></select>
-          <button class="prim-tool-pill" data-ton="accent" onclick="addCmpAy()" style="background:rgba(63,208,255,0.14);border-color:rgba(63,208,255,0.4);color:var(--accent);padding:6px 18px;font-weight:700;flex-shrink:0;margin-left:auto">Ekle</button>
+          <span class="cmp-etiket" style="color:var(--accent)">➕ Ay Ekle</span>
+          <select id="cmpEkstraAy"></select>
+          <select id="cmpEkstraYil"></select>
+          <button class="prim-tool-pill" data-ton="accent" onclick="addCmpAy()" style="background:rgba(63,208,255,0.14);border-color:rgba(63,208,255,0.4);color:var(--accent);font-weight:700;width:100%">Ekle</button>
         </div>
 
         <div style="font-size:9.5px;color:var(--muted);margin-top:10px;line-height:1.5;opacity:.85">💡 Satır başındaki ✕ ile ay çıkarılır · <b style="color:var(--muted)">Değişim</b> satırı ilk ↔ son ayı kıyaslar</div>
@@ -2415,8 +2433,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="tablolarModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:1100px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="background:linear-gradient(135deg,#e2231a,#b81b14);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <span style="font-size:14px;font-weight:700;color:#fff">📋 Prim Detayları</span>
-      <button onclick="closePrimModal('tablolarModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+      <span style="font-size:14px;font-weight:700;color:#fff;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📋 Prim Detayları</span>
+      <!-- v273: Disa Aktar pencere basliginda -->
+      <button onclick="exportDetayTablolari()" style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:6px 11px;border-radius:7px;cursor:pointer;font-size:11.5px;font-weight:700;white-space:nowrap;margin-right:6px">📤 Dışa Aktar</button>
+      <button onclick="closePrimModal('tablolarModal')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700;flex-shrink:0">✕</button>
     </div>
     <div style="padding:14px 18px;overflow-y:auto">
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:7px 10px;margin-bottom:10px">
@@ -2425,7 +2445,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
       <div class="section-title-row" style="margin-top:0">
         <div class="section-title">Aylık Kategori Dağılımı (Detay)</div>
-        <button class="preview-btn" onclick="exportDetayTablolari()">📤 Dışa Aktar</button>
       </div>
       <div class="table-wrap" style="max-height:340px;overflow-y:auto">
         <table class="main-table" id="mainTable"></table>
@@ -2503,16 +2522,16 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div id="fiyatModal" class="prim-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:12px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:820px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="background:linear-gradient(135deg,#92400e,#78350f);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <span style="font-size:14px;font-weight:700;color:#fcd34d">💰 Aylık Birim Fiyatlar &amp; Veri Yönetimi</span>
-      <button onclick="closePrimModal('fiyatModal')" style="background:rgba(255,255,255,0.15);border:none;color:#fcd34d;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+      <span style="font-size:14px;font-weight:700;color:#fcd34d;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💰 Aylık Birim Fiyatlar &amp; Veri Yönetimi</span>
+      <!-- v273: "Ay seç" icerikten pencere basligina, saga tasindi -->
+      <label for="priceMonthSel" style="font-size:10.5px;font-weight:800;letter-spacing:.04em;color:rgba(252,211,77,0.75);text-transform:uppercase;white-space:nowrap;margin-right:-2px">Ay seç</label>
+      <select id="priceMonthSel" onchange="render()" style="background:rgba(0,0,0,0.25);border:1px solid rgba(252,211,77,0.35);color:#fcd34d;border-radius:7px;padding:5px 8px;font-size:12px;font-weight:700;max-width:150px;margin-right:6px"></select>
+      <button onclick="closePrimModal('fiyatModal')" style="background:rgba(255,255,255,0.15);border:none;color:#fcd34d;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700;flex-shrink:0">✕</button>
     </div>
     <div style="padding:12px 9px;overflow-y:auto">
       <div class="price-panel" id="pricePanelDetails">
-        <div style="font-size:13px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:4px">💰 Aylık Birim Fiyatlar</div>
-        <div class="hdr" style="margin-top:8px">
-          <span style="color:var(--muted);font-size:12px">Ay seç:</span>
-          <select id="priceMonthSel" onchange="render()"></select>
-        </div>
+        <!-- v273: yinelenen "💰 Aylık Birim Fiyatlar" basligi kaldirildi (pencere basliginda zaten var),
+             "Ay seç" acilir listesi de baslik cubuguna tasindi. -->
         <div class="price-row" id="priceRow"></div>
         <div class="note">Her kategori için o aya ait adet başı prim tutarını girip kaydedin. Bir ay için fiyat tanımlanmazsa bir önceki tanımlı aydaki fiyat otomatik kullanılır.</div>
         <div class="price-history">
@@ -2971,7 +2990,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v272';
+const APP_VERSION = 'v273';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3084,7 +3103,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '11.07.2026 04:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '11.07.2026 09:15'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -12159,15 +12178,60 @@ function renderKampFiltreCatBar(){
   ).join('');
 }
 // ---- v271: Gecmis Kampanyalar ayri modal ----
+// v273: yil filtresi
+let _gecmisKampanyaYil = 'hepsi';
+
 function openGecmisKampanyaModal(){
   if(!window._gecmisKampanyaAdet){ alert('Geçmiş kampanya bulunmuyor.'); return; }
-  const el = document.getElementById('gecmisKampanyaModal');
-  document.getElementById('gecmisKampanyaSayi').textContent = window._gecmisKampanyaAdet;
-  document.getElementById('gecmisKampanyaIcerik').innerHTML = window._gecmisKampanyaHtml;
-  el.style.display = 'flex';
+  _gecmisKampanyaYil = 'hepsi';
+  document.getElementById('gecmisKampanyaModal').style.display = 'flex';
+  renderGecmisKampanya();
 }
 function closeGecmisKampanyaModal(){
   document.getElementById('gecmisKampanyaModal').style.display = 'none';
+}
+function setGecmisKampanyaYil(y){ _gecmisKampanyaYil = y; renderGecmisKampanya(); }
+
+function _gecmisKampanyaFiltreli(){
+  const grup = window._gecmisKampanyaGrup || {};
+  if(_gecmisKampanyaYil === 'hepsi') return grup;
+  const cikti = {};
+  Object.keys(grup).forEach(ym => { if(String(ym).slice(0,4) === _gecmisKampanyaYil) cikti[ym] = grup[ym]; });
+  return cikti;
+}
+
+function renderGecmisKampanya(){
+  const grup = window._gecmisKampanyaGrup || {};
+  const yillar = [...new Set(Object.keys(grup).map(ym => String(ym).slice(0,4)))].sort().reverse();
+
+  // Yil butonlari
+  const btnKutu = document.getElementById('gecmisKampanyaYilBtns');
+  if(btnKutu){
+    const btn = (deger, etiket, adet) => {
+      const aktif = _gecmisKampanyaYil === deger;
+      return `<button onclick="setGecmisKampanyaYil('${deger}')" style="
+        background:${aktif ? 'var(--accent)' : 'var(--panel)'};
+        border:1px solid ${aktif ? 'var(--accent)' : 'var(--line)'};
+        color:${aktif ? '#0b1a22' : 'var(--txt)'};
+        border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
+        ${etiket}<span style="opacity:.65;font-weight:600;margin-left:5px">${adet}</span></button>`;
+    };
+    const toplam = Object.keys(grup).reduce((a,ym)=>a+grup[ym].length, 0);
+    btnKutu.innerHTML = btn('hepsi','Tümü',toplam) + yillar.map(y => {
+      const n = Object.keys(grup).filter(ym => String(ym).slice(0,4) === y)
+                      .reduce((a,ym)=>a+grup[ym].length, 0);
+      return btn(y, y, n);
+    }).join('');
+    btnKutu.style.display = yillar.length > 1 ? 'flex' : 'none';
+  }
+
+  const filtreli = _gecmisKampanyaFiltreli();
+  const adet = Object.keys(filtreli).reduce((a,ym)=>a+filtreli[ym].length, 0);
+  document.getElementById('gecmisKampanyaSayi').textContent = adet;
+  const icerik = document.getElementById('gecmisKampanyaIcerik');
+  icerik.innerHTML = adet && window._gecmisKampanyaCiz
+    ? window._gecmisKampanyaCiz(filtreli)
+    : '<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px">Bu yılda geçmiş kampanya yok.</div>';
 }
 
 function renderKampanyaList(){
@@ -12251,8 +12315,11 @@ function renderKampanyaList(){
   if(oldKeys.length){
     const adet = oldKeys.reduce((a,ym)=>a+groupedOld[ym].length,0);
     // v271: <details> acilir bolum yerine kendi modal penceresi
+    // v273: yil filtresi icin ham grup ve cizici disari aciliyor
     window._gecmisKampanyaHtml = grupHtml(groupedOld);
     window._gecmisKampanyaAdet = adet;
+    window._gecmisKampanyaGrup = groupedOld;
+    window._gecmisKampanyaCiz  = grupHtml;
     html += `<div style="margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button onclick="openGecmisKampanyaModal()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 14px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px">
         📜 Geçmiş Kampanyalar
@@ -12263,6 +12330,8 @@ function renderKampanyaList(){
   } else {
     window._gecmisKampanyaHtml = '';
     window._gecmisKampanyaAdet = 0;
+    window._gecmisKampanyaGrup = {};
+    window._gecmisKampanyaCiz  = null;
   }
   list.innerHTML = html;
 }
@@ -15952,8 +16021,9 @@ function renderHedefGecmis(){
       <button onclick="exportGecmisKampanyalar()" title="Dışa aktar — Yazdır / PDF / Excel / Paylaş" style="background:rgba(63,208,255,0.12);border:1px solid rgba(63,208,255,0.32);color:var(--accent);height:32px;padding:0 11px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">📤 Dışa Aktar</button>
       <button onclick="closeGecmisKampanyaModal()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0">✕</button>
     </div>
-    <div style="padding:9px 16px;background:var(--panel2);border-bottom:1px solid var(--line);font-size:10.5px;color:var(--muted);flex-shrink:0">
-      Süresi dolmuş kampanyalar. Silinemezler; geçmiş dönem hesapları bunlarla yapılmaya devam eder.
+    <div style="padding:9px 16px;background:var(--panel2);border-bottom:1px solid var(--line);flex-shrink:0">
+      <div id="gecmisKampanyaYilBtns" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
+      <div style="font-size:10.5px;color:var(--muted)">Süresi dolmuş kampanyalar. Silinemezler; geçmiş dönem hesapları bunlarla yapılmaya devam eder.</div>
     </div>
     <div id="gecmisKampanyaIcerik" style="flex:1;overflow-y:auto;padding:14px 16px"></div>
   </div>
@@ -16637,12 +16707,37 @@ function exportDetayTablolari(){
   const t1 = document.getElementById('mainTable'), t2 = document.getElementById('financeTable');
   const comb = document.getElementById('detayCombinedTable');
   if(!t1 || !t2 || !comb) return;
-  comb.innerHTML = '<tr><th colspan="20" style="text-align:left">📊 AYLIK KATEGORİ DAĞILIMI</th></tr>'
-    + t1.innerHTML
-    + '<tr><td colspan="20" style="height:12px;border:none"></td></tr>'
-    + '<tr><th colspan="20" style="text-align:left">💰 PRİM / FİNANS ÖZETİ</th></tr>'
-    + t2.innerHTML;
-  openExportPreview('detayCombinedTable','Detay_Tablolari');
+
+  // v273 FIX: iki tablonun innerHTML'i ust uste yapistiriliyordu. Sonuc: DORT ayri
+  // <th> satiri (iki bolum basligi + iki tablo basligi) ciktinin en ustune yigiliyordu
+  // — cunku disa aktarma motoru "icinde th olan her satir" i baslik sayar.
+  // Artik tek bir <thead> var; bolum basliklari ve ikinci tablonun basligi govde
+  // satirina donusturuluyor (th -> td), boylece dogru yerlerinde kaliyorlar.
+  const satirlar = t => Array.from(t.querySelectorAll('tr'));
+  const basMi = tr => tr.querySelector('th') !== null;
+  const thToTd = tr => tr.outerHTML.replace(/<th/gi, '<td').replace(/<\/th>/gi, '</td>');
+
+  const t1Bas = satirlar(t1).filter(basMi);
+  const t1Gov = satirlar(t1).filter(tr => !basMi(tr));
+  const t2Bas = satirlar(t2).filter(basMi);
+  const t2Gov = satirlar(t2).filter(tr => !basMi(tr));
+
+  const sutun = Math.max(
+    ...satirlar(t1).concat(satirlar(t2)).map(tr => tr.children.length), 1);
+  const bolum = ad => '<tr><td colspan="' + sutun + '" style="text-align:left;font-weight:800;background:var(--panel2)">' + ad + '</td></tr>';
+  const bosluk = '<tr><td colspan="' + sutun + '" style="height:10px;border:none"></td></tr>';
+
+  comb.innerHTML =
+      '<thead>' + t1Bas.map(tr => tr.outerHTML).join('') + '</thead>'
+    + '<tbody>'
+    +   t1Gov.map(tr => tr.outerHTML).join('')
+    +   bosluk
+    +   bolum('PRİM / FİNANS ÖZETİ')
+    +   t2Bas.map(thToTd).join('')
+    +   t2Gov.map(tr => tr.outerHTML).join('')
+    + '</tbody>';
+
+  openExportPreview('detayCombinedTable','Prim_Detaylari');
 }
 // v240: Saatlik Giris Yogunlugu — disa aktarma tablosu
 function exportSaatTablosu(){
@@ -16684,7 +16779,12 @@ function exportSaatTablosu(){
 function _gecmisKampanyalar(){
   const buAy = thisMonthKey(), bugun = todayStr();
   const bitti = k => k.ym < buAy || (k.ym === buAy && k.endDate && k.endDate < bugun);
-  return (kampanyaData || []).filter(bitti).sort((a,b)=> String(b.ym).localeCompare(String(a.ym)));
+  let liste = (kampanyaData || []).filter(bitti);
+  // v273: modaldeki yil filtresi aciksa disa aktarma da onu izler
+  if(typeof _gecmisKampanyaYil !== 'undefined' && _gecmisKampanyaYil !== 'hepsi'){
+    liste = liste.filter(k => String(k.ym).slice(0,4) === _gecmisKampanyaYil);
+  }
+  return liste.sort((a,b)=> String(b.ym).localeCompare(String(a.ym)));
 }
 
 function _gecmisKampanyaTablosuDoldur(){
@@ -16814,8 +16914,9 @@ function openExportPreview(tableId, fileLabel){
     document.getElementById('exportModalSub').textContent = now;
     document.getElementById('exportModalTabs').innerHTML = `<button style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700">📋 Tablo</button>`;
     const clone = table.cloneNode(true);
-    Array.from(clone.querySelectorAll('*')).forEach(el=>el.removeAttribute('class'));
+    Array.from(clone.querySelectorAll('*')).forEach(el=>{ el.removeAttribute('class'); el.removeAttribute('id'); });
     clone.removeAttribute('class');
+    clone.removeAttribute('id');   // v273: klon kaynak tablonun id'sini tasiyordu -> DOM'da yinelenen id
     clone.style.cssText='width:100%;border-collapse:collapse;font-size:11px;background:#26282b';
     Array.from(clone.querySelectorAll('th')).forEach((th,i)=>{
       th.style.cssText=`padding:8px 10px;background:#1a1c20;color:#9aa0a6;font-size:10px;border-bottom:2px solid #e2231a;text-align:${i===0?'left':'right'};white-space:nowrap;${i===0?'position:sticky;left:0;z-index:3;':''}`;
@@ -17342,6 +17443,18 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v273',
+    date: '11.07.2026',
+    items: [
+      { type: 'fix', text: 'PRIM DETAYLARI DISA AKTARMASINDA TABLO BASLIKLARI YANLIS YERDEYDI. Iki tablonun innerHTML\'i ust uste yapistiriliyordu; sonucta DORT ayri baslik satiri (iki bolum basligi + iki tablo basligi) ciktinin en ustune yigiliyordu — cunku motor "icinde <th> olan her satiri" baslik sayar. Artik tek bir <thead> var; bolum basligi ve ikinci tablonun basligi govde satirina donusturuluyor, dogru yerlerinde kaliyorlar.' },
+      { type: 'ui', text: 'AY KARSILASTIRMA: "Ana Ay" ve "Ay Ekle" satirlari artik ayni CSS izgarasini paylasiyor. Ay listeleri, yil listeleri ve butonlar birebir ayni genislikte ve hizali. Dar ekranda iki sutuna duser.' },
+      { type: 'ui', text: 'AY KARSILASTIRMA ve PRIM DETAYLARI: "Disa Aktar" butonu icerikten pencere basligina tasindi.' },
+      { type: 'ui', text: 'AYLIK BIRIM FIYATLAR: icerikteki yinelenen "💰 Aylık Birim Fiyatlar" basligi kaldirildi (pencere basliginda zaten vardi). "Ay seç" acilir listesi pencere basligina, saga alindi.' },
+      { type: 'new', text: 'GECMIS KAMPANYALAR penceresine YIL FILTRESI eklendi. Tumu + her yil icin adet rozetli buton. Disa aktarma da acik filtreyi izler: 2025 seciliyken yalnizca 2025 kampanyalari aktarilir.' },
+      { type: 'fix', text: 'Disa aktarma onizlemesi tabloyu klonlarken kaynak tablonun id\'sini de kopyaliyordu; DOM\'da ayni id iki kez bulunuyordu. Klondan id\'ler temizleniyor.' },
+    ]
+  },
   {
     version: 'v272',
     date: '11.07.2026',
