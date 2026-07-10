@@ -2939,7 +2939,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v269';
+const APP_VERSION = 'v270';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3052,7 +3052,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '10.07.2026 22:10'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '10.07.2026 23:55'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -4005,16 +4005,14 @@ function pdfKapanisRaporu(){
   }, 30);
 }
 
-// ==================== v268: HTML -> VEKTOREL PDF MOTORU ====================
+// ==================== v270: HTML -> VEKTOREL PDF MOTORU ====================
 // Kapanis Raporu, ekrandaki modal ile AYNI gorunumde PDF'e cizilir.
-// html2canvas yok: her kutu, cerceve, rozet ve metin gercek PDF nesnesi olarak uretilir.
-// Calisma ilkesi: rapor govdesindeki tum renkler SATIR ICI style ozniteliginde durur.
-// Bunlari okur, var(--x) degiskenlerini aktif temadan cozer, px -> mm cevirir.
+// html2canvas yok: her kutu, cerceve, rozet, simge ve metin gercek PDF nesnesidir.
+// Renkler satir ici style ozniteliginden okunur, var(--x) aktif temadan cozulur.
 
 const PX = 0.2646;                 // 1 CSS px ~ 0.2646 mm (96 dpi)
 const mm = px => px * PX;
 
-// Aktif temanin renk paleti (koyu/acik). CSS degiskenleri gercek degerinden okunur.
 function _pdfTema(){
   let cs = null;
   try{ cs = getComputedStyle(document.body); }catch(e){}
@@ -4025,21 +4023,20 @@ function _pdfTema(){
   };
   const acik = document.body.classList.contains('light');
   return {
-    bg:     oku('--bg',     acik ? '#f0f2f5' : '#26282b'),
-    panel:  oku('--panel',  acik ? '#ffffff' : '#323539'),
-    panel2: oku('--panel2', acik ? '#e8eaed' : '#3c4045'),
-    line:   oku('--line',   acik ? '#d0d5dd' : '#46494e'),
-    txt:    oku('--txt',    acik ? '#1a1c1e' : '#eef0f2'),
-    muted:  oku('--muted',  acik ? '#6b7280' : '#9aa0a6'),
-    accent: oku('--accent', acik ? '#0077cc' : '#3fd0ff'),
-    gold:   oku('--gold',   acik ? '#b86e00' : '#ffb74d'),
-    red:    oku('--red',    '#e2231a'),
-    thbg:   oku('--th-bg',  acik ? '#d0d5dd' : '#1d1f21'),
-    thtxt:  oku('--th-txt', acik ? '#1a1c1e' : '#ffffff'),
+    bg:oku('--bg', acik?'#f0f2f5':'#26282b'),
+    panel:oku('--panel', acik?'#ffffff':'#323539'),
+    panel2:oku('--panel2', acik?'#e8eaed':'#3c4045'),
+    line:oku('--line', acik?'#d0d5dd':'#46494e'),
+    txt:oku('--txt', acik?'#1a1c1e':'#eef0f2'),
+    muted:oku('--muted', acik?'#6b7280':'#9aa0a6'),
+    accent:oku('--accent', acik?'#0077cc':'#3fd0ff'),
+    gold:oku('--gold', acik?'#b86e00':'#ffb74d'),
+    red:oku('--red','#e2231a'),
+    thbg:oku('--th-bg', acik?'#d0d5dd':'#1d1f21'),
+    thtxt:oku('--th-txt', acik?'#1a1c1e':'#ffffff'),
   };
 }
 
-// '#abc' | '#aabbcc' | 'rgb(..)' | 'rgba(..)' | 'var(--x)' -> {r,g,b,a}
 function _renkCoz(ifade, tema, yedek){
   let s = String(ifade || '').trim();
   if(!s) return yedek || null;
@@ -4058,20 +4055,13 @@ function _renkCoz(ifade, tema, yedek){
   return yedek || null;
 }
 
-// Yari saydam rengi zemine karistir (jsPDF'te alfa dolgusu yerine harmanlama daha guvenli)
 function _harmanla(on, arka){
   if(!on) return arka;
   const a = on.a == null ? 1 : on.a;
   if(a >= 1) return { r:on.r, g:on.g, b:on.b, a:1 };
-  return {
-    r: Math.round(on.r*a + arka.r*(1-a)),
-    g: Math.round(on.g*a + arka.g*(1-a)),
-    b: Math.round(on.b*a + arka.b*(1-a)),
-    a: 1
-  };
+  return { r:Math.round(on.r*a+arka.r*(1-a)), g:Math.round(on.g*a+arka.g*(1-a)), b:Math.round(on.b*a+arka.b*(1-a)), a:1 };
 }
 
-// Satir ici style ozniteligini nesneye cevir
 function _stil(el){
   const o = {};
   const s = (el.getAttribute && el.getAttribute('style')) || '';
@@ -4084,7 +4074,6 @@ function _stil(el){
 }
 const _sayi = (v, y) => { const n = parseFloat(v); return isFinite(n) ? n : y; };
 
-// 'padding:11px 13px' -> {ust,sag,alt,sol} (px)
 function _bosluk(deger, yedek){
   if(!deger) return { ust:yedek, sag:yedek, alt:yedek, sol:yedek };
   const p = deger.trim().split(/\s+/).map(x => _sayi(x, yedek));
@@ -4094,59 +4083,238 @@ function _bosluk(deger, yedek){
   return { ust:p[0], sag:p[1], alt:p[2], sol:p[3] };
 }
 
-// ---- Cizim baglami ----
-// olc=true iken hicbir sey cizilmez, sadece yukseklik hesaplanir (kutu icin iki gecis gerekir).
-function _YaziCiz(c, metin, x, y, opt){
-  opt = opt || {};
-  const boy = opt.boy || 10;                 // px
-  const kalin = (opt.agirlik || 400) >= 700;
-  if(!c.olc){
-    c.doc.setFont(c.F, kalin ? 'bold' : 'normal');
-    c.doc.setFontSize(boy * 0.75);           // px -> pt
-    const r = opt.renk || { r:0, g:0, b:0 };
-    c.doc.setTextColor(r.r, r.g, r.b);
-    c.doc.text(metin, x, y + mm(boy) * 0.78, opt.hiza ? { align:opt.hiza } : undefined);
+// ---------- Simge destegi ----------
+// Astral simgeler fontta U+E000+ alanina esli. Cizim sirasinda font degistirilir.
+// PUA araligi: fontta yeniden eslenmis astral simgeler (bkz. pdf-font-tr.js)
+function _puaMi(ch){ return ch >= '\uE000' && ch <= '\uE0FF'; }
+function _simgeMi(ch){ return _puaMi(ch) || !!(window.ERTECH_EMOJI && window.ERTECH_EMOJI[ch]); }
+
+// Metni [{simge:bool, s:'...'}] parcalarina ayirir; desteklenmeyen simgeler atilir.
+function _parcala(metin){
+  const H = window.ERTECH_EMOJI || {};
+  const parcalar = [];
+  for(const ch of String(metin || '').replace(/\uFE0F/g,'')){
+    // Zaten PUA'ya eslenmis karakter tekrar haritada aranmamali (v270 hatasi:
+    // ikinci gecişte bulunamayip duz metin sayiliyor, glif cizilemiyordu).
+    const simge = _simgeMi(ch);
+    if(!simge && /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/u.test(ch)) continue;
+    const s = _puaMi(ch) ? ch : (simge ? H[ch] : ch);
+    const son = parcalar[parcalar.length-1];
+    if(son && son.simge === simge) son.s += s;
+    else parcalar.push({ simge, s });
   }
-  return mm(boy) * 1.25;                     // satir yuksekligi
+  return parcalar;
+}
+
+function _fontSec(c, simge, kalin){
+  if(simge && c.simgeVar) c.doc.setFont('EmojiTR','normal');
+  else c.doc.setFont(c.F, kalin ? 'bold' : 'normal');
+}
+
+// Metin genisligi (mm) — simge parcalari kendi fontuyla olculur
+function _metinEn(c, metin, boy, kalin){
+  c.doc.setFontSize(boy * 0.75);
+  let en = 0;
+  _parcala(metin).forEach(p => { _fontSec(c, p.simge, kalin); en += c.doc.getTextWidth(p.s); });
+  return en;
+}
+
+// Tek satir metin ciz (simge + yazi karisik). x: hizaya gore referans nokta.
+function _metinCiz(c, metin, x, y, opt){
+  opt = opt || {};
+  const boy = opt.boy || 11;
+  const kalin = (opt.agirlik || 400) >= 700;
+  const satirYuk = mm(boy) * 1.32;
+  const parcalar = _parcala(metin);
+  if(!parcalar.length) return satirYuk;
+  if(c.olc) return satirYuk;                       // olcum: cizme, yuksekligi don
+
+  const doc = c.doc;
+  doc.setFontSize(boy * 0.75);
+  const r = opt.renk || { r:0, g:0, b:0 };
+  doc.setTextColor(r.r, r.g, r.b);
+
+  let toplam = 0;
+  parcalar.forEach(p => { _fontSec(c, p.simge, kalin); toplam += doc.getTextWidth(p.s); });
+  let cx = opt.hiza === 'right' ? x - toplam : (opt.hiza === 'center' ? x - toplam/2 : x);
+  const ty = y + mm(boy) * 0.80;
+  parcalar.forEach(p => {
+    _fontSec(c, p.simge, kalin);
+    doc.text(p.s, cx, ty);
+    cx += doc.getTextWidth(p.s);
+  });
+  return satirYuk;
+}
+
+// Sarmalanan paragraf. Bastaki simge ayri cizilir, kalan metin sarmalanir.
+// Olcum modunda da font/boyut ayarlanir — aksi halde splitTextToSize yanlis satir
+// sayisi dondurur ve kutular birbirinin uzerine biner (v268'deki tasma sebebi).
+function _paragrafCiz(c, metin, x, y, g, opt){
+  opt = opt || {};
+  const boy = opt.boy || 11;
+  const kalin = (opt.agirlik || 400) >= 700;
+  const parcalar = _parcala(metin);
+  if(!parcalar.length) return 0;
+
+  const bastaSimge = parcalar[0].simge ? parcalar[0].s : '';
+  const govde = parcalar.slice(bastaSimge ? 1 : 0).map(p => p.s).join('').replace(/^\s+/,'');
+
+  c.doc.setFontSize(boy * 0.75);
+  let simgeEn = 0;
+  if(bastaSimge){ _fontSec(c, true, false); simgeEn = c.doc.getTextWidth(bastaSimge) + mm(3); }
+  _fontSec(c, false, kalin);
+  const satirlar = govde ? c.doc.splitTextToSize(govde, Math.max(g - simgeEn, mm(20))) : [''];
+
+  if(!c.olc && bastaSimge){
+    _metinCiz(c, bastaSimge, x, y, { boy, renk:opt.renk });
+  }
+  let yy = y;
+  satirlar.forEach((sat, i) => {
+    const solX = x + (i === 0 ? simgeEn : simgeEn);
+    const hx = opt.hiza === 'center' ? x + g/2 : (opt.hiza === 'right' ? x + g : solX);
+    yy += _metinCiz(c, sat, hx, yy, { boy, agirlik:opt.agirlik, renk:opt.renk, hiza:opt.hiza });
+  });
+  return yy - y;
 }
 
 function _KutuCiz(c, x, y, g, yuk, dolgu, cerceve, yaricap, solSerit){
   if(c.olc) return;
   const d = c.doc;
-  if(dolgu){ d.setFillColor(dolgu.r, dolgu.g, dolgu.b); }
+  if(dolgu) d.setFillColor(dolgu.r, dolgu.g, dolgu.b);
   if(cerceve){ d.setDrawColor(cerceve.r, cerceve.g, cerceve.b); d.setLineWidth(0.2); }
   const mod = dolgu && cerceve ? 'FD' : (dolgu ? 'F' : 'S');
   if(yaricap > 0) d.roundedRect(x, y, g, yuk, yaricap, yaricap, mod);
   else d.rect(x, y, g, yuk, mod);
-  if(solSerit){
-    d.setFillColor(solSerit.r, solSerit.g, solSerit.b);
-    d.rect(x, y, 0.9, yuk, 'F');
+  if(solSerit){ d.setFillColor(solSerit.r, solSerit.g, solSerit.b); d.rect(x, y, 0.9, yuk, 'F'); }
+}
+
+// Simgeleri koruyan metin okuma (pdfTemiz simgeleri siler — o Excel icin)
+const _mt = el => String(el.textContent || '').replace(/\s+/g,' ').trim();
+
+// Rozetler: satirKat() icindeki "3 PrePaid" gibi kucuk etiketler pill olarak cizilir
+// Rozet satiri SADECE <span> yapraklarindan olusur (katRozet ciktisi).
+// v270 hatasi: olcut "background veya border-radius var mi" idi; ozet KARTLARI da
+// bu olcutu sagladigi icin kartlar pill sanilip metinleri tek satirda birlestiriliyordu.
+function _rozetSatiri(c, el){
+  const cocuklar = Array.from(el.children);
+  if(!cocuklar.length) return null;
+  const hepsiRozet = cocuklar.every(k =>
+    k.tagName === 'SPAN' &&
+    k.children.length === 0 &&
+    /background\s*:/.test(k.getAttribute('style') || '') &&
+    !/flex\s*:\s*1/.test(k.getAttribute('style') || '')
+  );
+  return hepsiRozet ? cocuklar : null;
+}
+
+function _rozetleriCiz(c, rozetler, x, y, g){
+  const boy = 8.5;
+  const yuk = mm(boy) * 1.9;
+  if(c.olc) return yuk + mm(2);
+  let cx = x;
+  rozetler.forEach(r => {
+    const st = _stil(r);
+    const t = _mt(r);
+    if(!t) return;
+    const en = _metinEn(c, t, boy, true) + mm(9);
+    if(cx + en > x + g){ return; }          // satira sigmiyorsa atla
+    const dolgu = _harmanla(_renkCoz(st['background'] || st['background-color'], c.tema, null), c.zemin);
+    const yazi = _renkCoz(st['color'], c.tema, c.tema.mutedR);
+    if(dolgu){ c.doc.setFillColor(dolgu.r, dolgu.g, dolgu.b); c.doc.roundedRect(cx, y, en, yuk, yuk/2, yuk/2, 'F'); }
+    _metinCiz(c, t, cx + mm(4.5), y + (yuk - mm(boy)*1.32)/2, { boy, agirlik:700, renk:yazi });
+    cx += en + mm(3);
+  });
+  return yuk + mm(2);
+}
+
+// Sayfa kirilimi YALNIZCA en ust seviyede yapilir (derinlik 0).
+// Ic icgeclerde c.y'yi okumak/yazmak, cocuk elemanlarin y'sini disaridaki
+// akisa zorluyor ve bloklar ust uste biniyordu.
+function _sayfaKontrol(c, gerekli){
+  if(c.olc || c.y == null || c.derinlik) return;
+  if(c.y + gerekli > c.altSinir){
+    c.altBant(); c.doc.addPage(); c.ustBant(); c.y = c.ustSinir;
   }
 }
 
-// Bir elemanin metnini oku (emoji temizli)
-const _mt = el => pdfTemiz(el.textContent || '');
+// Tablo hucre metni: ic blok elemanlar satir sonuyla ayrilir
+// ("2.400,00 ₺" + "hariç: 2.000,00 ₺" -> tek satira yapisiyordu)
+function _hucreMetni(td){
+  const bloklar = Array.from(td.children).filter(k => k.tagName === 'DIV');
+  if(bloklar.length > 1) return bloklar.map(b => pdfTemiz(b.textContent)).filter(Boolean).join('\n');
+  return pdfTemiz(td.textContent);
+}
 
-// Ana ozyinelemeli cizici. x/g mm cinsinden, y mm. Yeni y doner.
-function _htmlCiz(c, el, x, y, g){
-  if(el.nodeType === 3){                              // duz metin dugumu
-    const t = pdfTemiz(el.textContent);
+function _tabloCiz(c, tbl, x, y, g){
+  const oku = r => Array.from(r.querySelectorAll('th,td')).map(_hucreMetni);
+  const bas = Array.from(tbl.querySelectorAll('thead tr')).map(oku);
+  const gov = Array.from(tbl.querySelectorAll('tbody tr')).map(oku);
+  const alt = Array.from(tbl.querySelectorAll('tfoot tr')).map(oku);
+
+  if(c.olc){
+    const satirSayisi = bas.length + gov.length + alt.length;
+    return y + satirSayisi * mm(9) * 1.6 + mm(6);
+  }
+
+  const tema = c.tema;
+  const zeb = _harmanla({ r:255,g:255,b:255,a:0.035 }, c.zemin);
+  const baslangicSayfa = c.doc.internal.getNumberOfPages();
+  c.doc.autoTable({
+    head: bas.length ? bas : undefined,
+    body: gov.concat(alt),
+    startY: y,
+    margin: { top:c.ustSinir, left:x, right:c.doc.internal.pageSize.width - (x + g), bottom:16 },
+    tableWidth: g,
+    styles: { font:c.F, fontSize:7.2, cellPadding:{ top:1.6, bottom:1.6, left:2, right:2 },
+              lineColor:[tema.lineR.r, tema.lineR.g, tema.lineR.b], lineWidth:0.1,
+              textColor:[tema.txtR.r, tema.txtR.g, tema.txtR.b],
+              fillColor:[c.zemin.r, c.zemin.g, c.zemin.b], overflow:'linebreak', valign:'middle' },
+    headStyles: { font:c.F, fontStyle:'bold', fontSize:7,
+                  fillColor:[tema.thbgR.r, tema.thbgR.g, tema.thbgR.b],
+                  textColor:[tema.thtxtR.r, tema.thtxtR.g, tema.thtxtR.b], halign:'center' },
+    alternateRowStyles: { fillColor:[zeb.r, zeb.g, zeb.b] },
+    columnStyles: { 0: { halign:'left', cellWidth:'auto' } },
+    didParseCell: (dt) => {
+      if(dt.column.index === 0) dt.cell.styles.halign = 'left';
+      else if(dt.column.index === dt.table.columns.length - 1) dt.cell.styles.halign = 'right';
+      else dt.cell.styles.halign = 'center';
+      if(dt.section === 'body' && dt.row.index >= gov.length){
+        dt.cell.styles.fontStyle = 'bold';
+        dt.cell.styles.fillColor = [tema.panel2R.r, tema.panel2R.g, tema.panel2R.b];
+      }
+    },
+    didDrawPage: (dt) => { if(dt.pageNumber > baslangicSayfa) c.ustBant(); c.altBant(); }
+  });
+  c.y = c.doc.lastAutoTable.finalY;
+  return c.y;
+}
+
+// Ana ozyinelemeli cizici. x/g/y mm cinsinden. Yeni y doner.
+function _htmlCiz(c, el, x, y, g, zorlaYuk){
+  if(el.nodeType === 3){
+    const t = _mt(el);
     if(!t) return y;
-    return y + _YaziCiz(c, t, x, y, { boy:11, renk:c.tema.txtR });
+    return y + _paragrafCiz(c, t, x, y, g, { boy:11, renk:c.tema.txtR });
   }
   if(el.nodeType !== 1) return y;
   if(el.tagName === 'STYLE' || el.tagName === 'SCRIPT') return y;
+  if(el.tagName === 'TABLE') return _tabloCiz(c, el, x, y, g);
 
   const st = _stil(el);
   const tema = c.tema;
 
-  // --- Tablo
-  if(el.tagName === 'TABLE'){
-    return _tabloCiz(c, el, x, y, g);
+  // Tablo sarmalayicisi: autoTable kendi cercevesini cizer.
+  // Onceden kutu olarak olculuyordu; tahmini yukseklik gercekle uyusmayinca
+  // sonraki blok (MNP Kirilimi) tablonun uzerine biniyordu.
+  const icTablo = el.querySelector && el.querySelector('table');
+  if(icTablo && !el.matches('table')){
+    const marjAlt = _sayi((st['margin-bottom']||'').replace('px',''), 0);
+    const yeni = _htmlCiz(c, icTablo, x, y, g);
+    return yeni + mm(marjAlt || 10);
   }
 
   const arka = _harmanla(_renkCoz(st['background'] || st['background-color'], tema, null), c.zemin);
-  const kenarStr = st['border'] || st['border-top'] || '';
+  const kenarStr = st['border'] || '';
   const kenarRenk = kenarStr ? _renkCoz(kenarStr.replace(/^[\d.]+px\s+\w+\s+/,''), tema, null) : null;
   const kutuMu = !!(st['background'] || st['background-color'] || (st['border'] && !/dashed/.test(st['border'])));
   const yaricap = mm(_sayi(st['border-radius'], 0));
@@ -4157,23 +4325,29 @@ function _htmlCiz(c, el, x, y, g){
 
   y += mm(mUst);
 
-  // --- Yatay dizilim (kartlar): dogrudan cocuklari yan yana
   const esnek = (st['display'] === 'flex');
   const cocuklar = Array.from(el.children);
   const dagit = (st['justify-content'] || '');
 
+  // Rozet satiri (kategori pill'leri)
+  const rozetler = !esnek ? null : _rozetSatiri(c, el);
+  if(rozetler) return y + _rozetleriCiz(c, rozetler, x, y, g) + mm(mAlt);
+
+  // Anahtar / deger satiri
   if(esnek && dagit.includes('space-between') && cocuklar.length === 2){
-    const sol = _mt(cocuklar[0]), sag = _mt(cocuklar[1]);
     const s0 = _stil(cocuklar[0]), s1 = _stil(cocuklar[1]);
     const b0 = _sayi(s0['font-size'], _sayi(st['font-size'], 11));
     const b1 = _sayi(s1['font-size'], _sayi(st['font-size'], 11));
+    const a0 = _sayi(s0['font-weight'], 400), a1 = _sayi(s1['font-weight'], 700);
+    const sag = _mt(cocuklar[1]);
+    const sagEn = sag ? _metinEn(c, sag, b1, a1>=700) + mm(4) : 0;
     const yy = y + mm(ped.ust);
-    if(sol) _YaziCiz(c, sol, x + mm(ped.sol), yy, { boy:b0, agirlik:_sayi(s0['font-weight'],400),
-              renk:_renkCoz(s0['color'], tema, tema.mutedR) });
-    if(sag) _YaziCiz(c, sag, x + g - mm(ped.sag), yy, { boy:b1, agirlik:_sayi(s1['font-weight'],700),
+    const solYuk = _paragrafCiz(c, _mt(cocuklar[0]), x + mm(ped.sol), yy, g - mm(ped.sol+ped.sag) - sagEn,
+                    { boy:b0, agirlik:a0, renk:_renkCoz(s0['color'], tema, tema.mutedR) });
+    if(sag) _metinCiz(c, sag, x + g - mm(ped.sag), yy, { boy:b1, agirlik:a1,
               renk:_renkCoz(s1['color'], tema, tema.txtR), hiza:'right' });
-    const h = Math.max(mm(b0), mm(b1)) * 1.35 + mm(ped.ust + ped.alt);
-    if(!c.olc && /border-bottom/.test(JSON.stringify(st)) ){
+    const h = Math.max(solYuk, mm(b1)*1.32) + mm(ped.ust + ped.alt);
+    if(!c.olc && (st['border-bottom'] || st['border-top'])){
       c.doc.setDrawColor(tema.lineR.r, tema.lineR.g, tema.lineR.b);
       c.doc.setLineWidth(0.1);
       c.doc.line(x, y + h, x + g, y + h);
@@ -4181,43 +4355,52 @@ function _htmlCiz(c, el, x, y, g){
     return y + h + mm(mAlt);
   }
 
+  // Yan yana esnek kutular (ozet kartlari)
   if(esnek && cocuklar.length > 1 && cocuklar.every(k => /flex:\s*1/.test(k.getAttribute('style')||''))){
     const bosluk = mm(_sayi(st['gap'], 8));
     const kg = (g - bosluk * (cocuklar.length - 1)) / cocuklar.length;
-    // once olcum: en yuksek kart
     let enYuk = 0;
     cocuklar.forEach(k => {
-      const alt = { ...c, olc:true };
-      enYuk = Math.max(enYuk, _htmlCiz(alt, k, x, y, kg) - y);
+      const olcC = Object.assign({}, c, { olc:true });
+      enYuk = Math.max(enYuk, _htmlCiz(olcC, k, x, y, kg) - y);
     });
-    cocuklar.forEach((k, i) => {
-      _htmlCiz(c, k, x + i * (kg + bosluk), y, kg, enYuk);
-    });
+    _sayfaKontrol(c, enYuk);
+    if(!c.derinlik && c.y != null && !c.olc) y = c.y;
+    const icKart = Object.assign({}, c, { derinlik:(c.derinlik||0)+1 });
+    cocuklar.forEach((k, i) => { _htmlCiz(icKart, k, x + i * (kg + bosluk), y, kg, enYuk); });
+    if(!c.derinlik && !c.olc) c.y = y + enYuk + mm(mAlt);
     return y + enYuk + mm(mAlt);
   }
 
-  // --- Kutu: once icerigi olc, sonra zemini ciz, sonra icerigi ciz
+  // Kutu: once olc, sonra zemini ciz, sonra icerigi ciz
   if(kutuMu){
     const icX = x + mm(ped.sol), icG = g - mm(ped.sol + ped.sag);
-    const olcC = { ...c, olc:true, zemin:arka };
+    const olcC = Object.assign({}, c, { olc:true, zemin:arka, derinlik:(c.derinlik||0)+1 });
     let icY = y + mm(ped.ust);
     Array.from(el.childNodes).forEach(k => { icY = _htmlCiz(olcC, k, icX, icY, icG); });
-    const yuk = (icY - y) + mm(ped.alt);
+    const yuk = zorlaYuk != null ? zorlaYuk : (icY - y) + mm(ped.alt);
 
     _sayfaKontrol(c, yuk);
-    y = c.y != null ? c.y : y;
+    if(!c.derinlik && c.y != null && !c.olc && zorlaYuk == null) y = c.y;
 
     const serit = st['border-left'] ? _renkCoz(st['border-left'].replace(/^[\d.]+px\s+\w+\s+/,''), tema, null) : null;
     _KutuCiz(c, x, y, g, yuk, arka, kenarRenk, yaricap, serit);
 
-    const icC = { ...c, zemin:arka };
+    const icC = Object.assign({}, c, { zemin:arka, derinlik:(c.derinlik||0)+1 });
     let yy = y + mm(ped.ust);
-    Array.from(el.childNodes).forEach(k => { yy = _htmlCiz(icC, k, x + mm(ped.sol), yy, icG); });
+    Array.from(el.childNodes).forEach(k => { yy = _htmlCiz(icC, k, icX, yy, icG); });
+    if(!c.derinlik && !c.olc) c.y = y + yuk + mm(mAlt);
     return y + yuk + mm(mAlt);
   }
 
-  // --- Duz metin blogu
-  if(cocuklar.length === 0 || Array.from(el.childNodes).every(n => n.nodeType === 3 || n.tagName === 'B' || n.tagName === 'SPAN')){
+  // Duz metin blogu.
+  // Olcut: icinde blok seviyesinde eleman YOK (div/table/ul/ol). Boylece <b>/<span>/<i>
+  // ile orulmus satir ici paragraflar TEK paragraf olarak sarmalanir.
+  // v270 hatasi: "Nasil hesaplandi?" kutusundaki her <b> ayri satira dusuyor,
+  // kutu yuksekligi sisip icerik ikinci sayfaya tasiyordu.
+  const blokVar = el.querySelector && el.querySelector('div,table,ul,ol,p');
+  const yalnizMetin = !blokVar;
+  if(cocuklar.length === 0 || yalnizMetin){
     const t = _mt(el);
     if(!t) return y + mm(mAlt);
     const boy = _sayi(st['font-size'], 11);
@@ -4225,79 +4408,26 @@ function _htmlCiz(c, el, x, y, g){
     const renk = _renkCoz(st['color'], tema, tema.txtR);
     const buyuk = (st['text-transform'] === 'uppercase');
     const hiza = st['text-align'] === 'center' ? 'center' : (st['text-align'] === 'right' ? 'right' : null);
-    const hx = hiza === 'center' ? x + g/2 : (hiza === 'right' ? x + g : x);
-    const satirlar = c.doc.splitTextToSize(buyuk ? trBuyuk(t) : t, g);
-    let yy = y;
-    satirlar.forEach(s => { yy += _YaziCiz(c, s, hx, yy, { boy, agirlik:agr, renk, hiza }); });
-    return yy + mm(mAlt);
+    _sayfaKontrol(c, mm(boy) * 1.6);
+    if(!c.derinlik && c.y != null && !c.olc) y = c.y;
+    const h = _paragrafCiz(c, buyuk ? trBuyuk(t) : t, x, y, g, { boy, agirlik:agr, renk, hiza });
+    if(!c.derinlik && !c.olc) c.y = y + h + mm(mAlt);
+    return y + h + mm(mAlt);
   }
 
-  // --- Kapsayici: cocuklari sirayla
+  // Kapsayici
   let yy = y;
   Array.from(el.childNodes).forEach(k => { yy = _htmlCiz(c, k, x, yy, g); });
   return yy + mm(mAlt);
 }
 
-function _sayfaKontrol(c, gerekli){
-  if(c.olc) return;
-  if(c.y == null) return;
-  if(c.y + gerekli > c.altSinir){
-    c.altBant(); c.doc.addPage(); c.ustBant(); c.y = c.ustSinir;
-  }
-}
-
-function _tabloCiz(c, tbl, x, y, g){
-  if(c.olc){
-    const satir = tbl.querySelectorAll('tr').length;
-    return y + satir * mm(11) * 1.9 + mm(6);
-  }
-  const tema = c.tema;
-  const oku = r => Array.from(r.querySelectorAll('th,td')).map(k => pdfTemiz(k.textContent));
-  const bas = Array.from(tbl.querySelectorAll('thead tr')).map(oku);
-  const gov = Array.from(tbl.querySelectorAll('tbody tr')).map(oku);
-  const alt = Array.from(tbl.querySelectorAll('tfoot tr')).map(oku);
-
-  const zeb = _harmanla({ r:255,g:255,b:255,a:0.03 }, c.zemin);
-  const baslangicSayfa = c.doc.internal.getNumberOfPages();
-  c.doc.autoTable({
-    head: bas.length ? bas : undefined,
-    body: gov.concat(alt),
-    startY: y,
-    margin: { top:c.ustSinir, left:x, right:c.doc.internal.pageSize.width - (x + g), bottom:16 },
-    tableWidth: g,
-    styles: { font:c.F, fontSize:7.4, cellPadding:1.7,
-              lineColor:[tema.lineR.r, tema.lineR.g, tema.lineR.b], lineWidth:0.1,
-              textColor:[tema.txtR.r, tema.txtR.g, tema.txtR.b],
-              fillColor:[c.zemin.r, c.zemin.g, c.zemin.b] },
-    headStyles: { font:c.F, fontStyle:'bold', fontSize:7.2,
-                  fillColor:[tema.thbgR.r, tema.thbgR.g, tema.thbgR.b],
-                  textColor:[tema.thtxtR.r, tema.thtxtR.g, tema.thtxtR.b] },
-    alternateRowStyles: { fillColor:[zeb.r, zeb.g, zeb.b] },
-    didParseCell: (dt) => {
-      if(dt.column.index > 0) dt.cell.styles.halign = 'right';
-      if(dt.section === 'body' && dt.row.index >= gov.length){
-        dt.cell.styles.fontStyle = 'bold';
-        dt.cell.styles.fillColor = [tema.panel2R.r, tema.panel2R.g, tema.panel2R.b];
-      }
-    },
-    didDrawPage: (dt) => {
-      // v268: SADECE yeni sayfa acildiginda ust bant + zemin cizilir.
-      // Aksi halde tablonun basladigi sayfada zemin, daha once cizilmis kartlarin uzerine basiliyordu.
-      if(dt.pageNumber > baslangicSayfa){ c.ustBant(); }
-      c.altBant();
-    }
-  });
-  c.y = c.doc.lastAutoTable.finalY + mm(10);
-  return c.y;
-}
-
-// ---- Kapanis Raporu: modal ile ayni gorunum ----
 function _kapanisPdfUret(govde){
   const ym = window._kapanisYm || '';
   const jsPDF = window.jspdf.jsPDF;
   const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
   const fontVar = (typeof window.ertechFontKur === 'function') ? window.ertechFontKur(doc) : false;
   const F = fontVar ? 'RobotoTR' : 'helvetica';
+  const simgeVar = fontVar && !!(window.ERTECH_EMOJI);   // simgeler ancak font yuklendiyse cizilir
 
   const t = _pdfTema();
   // Sik kullanilan renkleri onceden coz
@@ -4344,7 +4474,7 @@ function _kapanisPdfUret(govde){
   };
 
   const ctx = {
-    doc, F, tema:t, olc:false, zemin:t.panelR,
+    doc, F, simgeVar, tema:t, olc:false, zemin:t.panelR, derinlik:0,
     ustSinir:27, altSinir:Y - 16, y:27,
     ustBant: () => { ustBant(); zeminBoya(); },
     altBant
@@ -16978,6 +17108,19 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v270',
+    date: '10.07.2026',
+    items: [
+      { type: 'new', text: 'PDF\'DE SIMGELER ARTIK VAR. jsPDF metni charCodeAt ile isler, bu yuzden 📦 🔄 💵 gibi astral (>U+FFFF) simgeler vekil ciftine bolunup cizilemiyordu. Cozum: Noto Emoji fontu alt-kumelendi (8 KB) ve bu glifler Ozel Kullanim Alanina (U+E000+) yeniden eslendi. Simgeler tek renklidir; cizildikleri metnin rengini alirlar (MNP kutusunda mor, hakediste yesil).' },
+      { type: 'fix', text: 'OZET KARTLARI ROZET SANILIYORDU. Rozet tespitinin olcutu "arka plan veya yuvarlak kose var mi" idi; ozet kartlari da bunu sagliyordu. Sonuc: uc kartin metni tek satirda birlestirilip kucuk pill\'ler olarak basiliyordu ("Toplam İşlem 30 adet 23 tesis · 7 MNP"). Artik yalnizca <span> yapraklari rozet sayiliyor.' },
+      { type: 'fix', text: 'TABLO HUCRELERI YAPISIYORDU: "2.400,00 ₺hariç: 2.000,00 ₺". Hucre icindeki ayri bloklar artik satir sonuyla ayriliyor ve iki satir halinde basiliyor. Sutun hizalari duzeldi: ilk sutun sola, son sutun saga, ortadakiler ortali.' },
+      { type: 'fix', text: 'MNP KIRILIMI KUTUSU TABLONUN UZERINE BINIYORDU. Tablo sarmalayicisi "kutu" olarak olculuyor, tahmini yukseklik gercekle uyusmuyordu. Artik tablo dogrudan ciziliyor, gercek bitis noktasi kullaniliyor.' },
+      { type: 'fix', text: 'SAYFA ALTINDAKI METIN UST USTE BINIYORDU. Iki sebebi vardi: (1) olcum gecisinde font/boyut ayarlanmadigi icin satir sarmalama yanlis sayida satir donduruyordu; (2) ic bloklar disaridaki akisin y konumunu okuyup yaziyordu. Ikisi de duzeltildi — 126 metin kutusu uzerinde yapilan kesisim testinde SIFIR cakisma.' },
+      { type: 'fix', text: '"Nasil hesaplandi?" kutusundaki satir ici <b>/<span> ogeleri ayri satirlara dusuyor, kutu sisip icerigi ikinci sayfaya itiyordu. Satir ici akis artik tek paragraf olarak sarmalaniyor.' },
+      { type: 'imp', text: 'Kart basliklari yeniden BUYUK HARF (TOPLAM İŞLEM), bolum basliklari trBuyuk() ile Turkce dogru buyutuluyor.' },
+    ]
+  },
   {
     version: 'v269',
     date: '10.07.2026',
