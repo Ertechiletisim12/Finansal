@@ -146,7 +146,7 @@
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- v266: html2canvas KALDIRILDI — hicbir PDF artik ekran goruntusu kullanmiyor (~200 KB tasarruf) -->
 <style>
 :root{
   --bg:#26282b; --panel:#323539; --panel2:#3c4045; --line:#46494e;
@@ -2927,7 +2927,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v265';
+const APP_VERSION = 'v266';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3040,7 +3040,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '10.07.2026 14:05'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '10.07.2026 16:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3926,39 +3926,185 @@ function paylasKapanisRaporu(){
   }
 }
 
+// v266: Kapanis Raporu PDF'i artik VEKTOREL uretilir.
+// Eski yontem: html2canvas ile ekran goruntusu -> PDF'e resim gomuluyordu.
+//   * metin secilemez/aranamaz  * dosya 3-5 MB  * yazicida bulanik  * yedegi acilir pencereydi
+// Yeni yontem: rapor govdesi okunur, jsPDF ile gercek metin/dikdortgen olarak cizilir (~40 KB).
+
+// Govdeyi PDF bloklarina cevir: kart / baslik / tablo / satir / not
+function _kapanisBloklari(govde){
+  const bloklar = [];
+  const metin = el => pdfTemiz(el.textContent || '');
+
+  govde.querySelectorAll('.kapanis-kart').forEach(k => {
+    const p = Array.from(k.children).map(metin).filter(Boolean);
+    if(p.length >= 2) bloklar.push({ tip:'kart', baslik:p[0], deger:p[1], alt:p[2] || '' });
+  });
+
+  // Kartlardan sonraki akis: bolum basliklari, tablolar ve anahtar/deger satirlari
+  const gezilen = new Set();
+  govde.querySelectorAll('table').forEach(t => gezilen.add(t));
+
+  govde.querySelectorAll('div').forEach(d => {
+    if(d.closest('.kapanis-kart')) return;
+    if(d.querySelector('table')) return;
+
+    const st = d.getAttribute('style') || '';
+
+    // Bolum basligi: kucuk, kalin, buyuk harf
+    if(/text-transform:uppercase/.test(st) && d.children.length === 0){
+      const m = metin(d);
+      if(m) bloklar.push({ tip:'baslik', metin:m });
+      return;
+    }
+    // Anahtar/deger satiri: iki cocuklu space-between
+    if(/justify-content:space-between/.test(st) && d.children.length === 2){
+      const sol = metin(d.children[0]), sag = metin(d.children[1]);
+      if(sol || sag) bloklar.push({ tip:'satir', sol, sag });
+      return;
+    }
+  });
+
+  govde.querySelectorAll('table').forEach(t => {
+    const oku = r => Array.from(r.querySelectorAll('th,td')).map(c => metin(c));
+    const bas = Array.from(t.querySelectorAll('thead tr')).map(oku);
+    const govdeSatir = Array.from(t.querySelectorAll('tbody tr')).map(oku);
+    const alt = Array.from(t.querySelectorAll('tfoot tr')).map(oku);
+    if(govdeSatir.length) bloklar.push({ tip:'tablo', bas, satirlar:govdeSatir, alt });
+  });
+
+  return bloklar;
+}
+
 function pdfKapanisRaporu(){
   const govde = document.getElementById('kapanisRaporGovde');
   if(!govde){ alert('Önce raporu görüntüleyin.'); return; }
-  const ym = window._kapanisYm || '';
-  if(typeof html2canvas === 'undefined' || !window.jspdf){
-    // Yedek: yazdırma penceresi (PDF olarak kaydet)
-    const w = window.open('', '_blank');
-    w.document.write(`<html><head><title>Kapanis_Raporu_${ym}</title></head><body style="background:#fff;margin:0">${govde.outerHTML}</body></html>`);
-    w.document.close(); w.focus(); setTimeout(()=>w.print(), 400);
-    return;
-  }
-  const btn = event && event.target; if(btn){ btn.disabled=true; btn.textContent='⏳ Hazırlanıyor...'; }
-  const _bg = document.body.classList.contains('light') ? '#ffffff' : '#1a1c20';
-  html2canvas(govde, {scale:2, backgroundColor:_bg, useCORS:true}).then(canvas=>{
-    const {jsPDF} = window.jspdf;
-    const pdf = new jsPDF('p','mm','a4');
-    const pw = pdf.internal.pageSize.getWidth();
-    const ph = pdf.internal.pageSize.getHeight();
-    const iw = pw - 12;
-    const ih = canvas.height * iw / canvas.width;
-    let kalanY = ih, konum = 0;
-    const img = canvas.toDataURL('image/png');
-    pdf.addImage(img, 'PNG', 6, 6, iw, ih);
-    kalanY -= (ph - 12);
-    while(kalanY > 0){
-      konum -= (ph - 12);
-      pdf.addPage();
-      pdf.addImage(img, 'PNG', 6, konum + 6, iw, ih);
-      kalanY -= (ph - 12);
+  if(!window.jspdf || !window.jspdf.jsPDF){ alert('PDF kütüphanesi henüz yüklenmedi. Birkaç saniye sonra tekrar deneyin.'); return; }
+  if(_raporMesgul) return;
+
+  const btn = document.querySelector('#kapanisRaporAksiyon button[onclick*="pdfKapanisRaporu"]');
+  const eskiMetin = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Hazırlanıyor...'; }
+  _raporMesgul = true;
+
+  setTimeout(() => {
+    try{ _kapanisPdfUret(govde); }
+    catch(err){ console.error('Kapanış PDF hatası', err); alert('PDF oluşturulamadı: ' + err.message); }
+    finally{
+      _raporMesgul = false;
+      if(btn){ btn.disabled = false; btn.textContent = eskiMetin; }
     }
-    pdf.save(`Kapanis_Raporu_${ym}.pdf`);
-  }).catch(err=>{ console.error(err); alert('PDF oluşturulamadı: ' + err.message); })
-  .finally(()=>{ if(btn){ btn.disabled=false; btn.textContent='📄 PDF İndir'; } });
+  }, 30);
+}
+
+function _kapanisPdfUret(govde){
+  const ym = window._kapanisYm || '';
+  const jsPDF = window.jspdf.jsPDF;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const fontVar = (typeof window.ertechFontKur === 'function') ? window.ertechFontKur(doc) : false;
+  const F = fontVar ? 'RobotoTR' : 'helvetica';
+
+  const G = doc.internal.pageSize.width;
+  const Y = doc.internal.pageSize.height;
+  const SOL = 12, SAG = G - 12, GENIS = SAG - SOL;
+  const baslikMetin = (typeof monthLabel === 'function' && ym ? monthLabel(ym) : ym) + ' — Kapanış Raporu';
+  const olusturma = nowTR().toLocaleString('tr-TR');
+
+  const ustBant = () => {
+    doc.setFillColor(226,35,26); doc.rect(0,0,G,24,'F');
+    doc.setFont(F,'bold'); doc.setFontSize(14); doc.setTextColor(255,255,255);
+    doc.text(baslikMetin, SOL, 12);
+    doc.setFont(F,'normal'); doc.setFontSize(8); doc.setTextColor(255,214,212);
+    doc.text('ER-TECH İLETİŞİM', SOL, 19);
+    doc.setFontSize(7.5);
+    doc.text(olusturma, SAG, 19, { align:'right' });
+  };
+  const altBant = () => {
+    doc.setDrawColor(220,220,220); doc.setLineWidth(0.2);
+    doc.line(SOL, Y-12, SAG, Y-12);
+    doc.setFont(F,'normal'); doc.setFontSize(7.5); doc.setTextColor(130,130,130);
+    doc.text('Er-Tech İletişim · ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : ''), SOL, Y-7);
+    doc.text('Sayfa ' + doc.internal.getNumberOfPages(), SAG, Y-7, { align:'right' });
+  };
+
+  ustBant();
+  let y = 32;
+  const sayfaKontrol = (gerekli) => {
+    if(y + gerekli > Y - 16){ altBant(); doc.addPage(); ustBant(); y = 32; }
+  };
+
+  const bloklar = _kapanisBloklari(govde);
+
+  // 1) Ozet kartlari — yan yana kutular
+  const kartlar = bloklar.filter(b => b.tip === 'kart').slice(0, 3);
+  if(kartlar.length){
+    const kG = (GENIS - (kartlar.length - 1) * 4) / kartlar.length;
+    const kY = 20;
+    sayfaKontrol(kY + 6);
+    kartlar.forEach((k, i) => {
+      const x = SOL + i * (kG + 4);
+      doc.setFillColor(247,248,250); doc.setDrawColor(226,229,234); doc.setLineWidth(0.2);
+      doc.roundedRect(x, y, kG, kY, 2, 2, 'FD');
+      doc.setFillColor(226,35,26); doc.rect(x, y, 1.2, kY, 'F');
+      doc.setFont(F,'normal'); doc.setFontSize(6.6); doc.setTextColor(120,124,130);
+      doc.text(trBuyuk(k.baslik), x + 4, y + 5.5);
+      doc.setFont(F,'bold'); doc.setFontSize(11); doc.setTextColor(26,28,30);
+      doc.text(k.deger, x + 4, y + 12);
+      if(k.alt){
+        doc.setFont(F,'normal'); doc.setFontSize(6.2); doc.setTextColor(130,134,140);
+        doc.text(doc.splitTextToSize(k.alt, kG - 8)[0], x + 4, y + 17);
+      }
+    });
+    y += kY + 7;
+  }
+
+  // 2) Tablolar
+  bloklar.filter(b => b.tip === 'tablo').forEach(tb => {
+    sayfaKontrol(20);
+    doc.autoTable({
+      head: tb.bas.length ? tb.bas : undefined,
+      body: tb.satirlar.concat(tb.alt),
+      startY: y,
+      margin: { top:30, left:SOL, right:12, bottom:16 },
+      styles: { font:F, fontSize:7.4, cellPadding:1.7, lineColor:[228,230,235], lineWidth:0.1, textColor:[40,42,46] },
+      headStyles: { font:F, fontStyle:'bold', fillColor:[226,35,26], textColor:255, fontSize:7.4 },
+      alternateRowStyles: { fillColor:[247,248,250] },
+      didParseCell: (data) => {
+        // tfoot satiri (TOPLAM) kalin ve gri zeminli
+        if(data.section === 'body' && data.row.index >= tb.satirlar.length){
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [236,238,241];
+        }
+      },
+      didDrawPage: () => { ustBant(); altBant(); }
+    });
+    y = doc.lastAutoTable.finalY + 7;
+  });
+
+  // 3) Bolum basliklari + anahtar/deger satirlari
+  bloklar.filter(b => b.tip === 'baslik' || b.tip === 'satir').forEach(b => {
+    if(b.tip === 'baslik'){
+      sayfaKontrol(10);
+      doc.setFont(F,'bold'); doc.setFontSize(8.4); doc.setTextColor(226,35,26);
+      doc.text(trBuyuk(b.metin), SOL, y);
+      doc.setDrawColor(240,200,198); doc.setLineWidth(0.3);
+      doc.line(SOL, y + 1.5, SAG, y + 1.5);
+      y += 6;
+    } else {
+      sayfaKontrol(6);
+      doc.setFont(F,'normal'); doc.setFontSize(7.8); doc.setTextColor(70,74,80);
+      const sol = doc.splitTextToSize(b.sol, GENIS - 45)[0] || '';
+      doc.text(sol, SOL + 1, y);
+      doc.setFont(F,'bold'); doc.setTextColor(26,28,30);
+      doc.text(b.sag, SAG - 1, y, { align:'right' });
+      doc.setDrawColor(238,240,243); doc.setLineWidth(0.15);
+      doc.line(SOL, y + 1.6, SAG, y + 1.6);
+      y += 5.4;
+    }
+  });
+
+  altBant();
+  doc.save('Kapanis_Raporu_' + (ym || 'rapor') + '.pdf');
 }
 
 // ---- persistence: localStorage (kalıcı, tarayıcı kapatılıp açılsa da silinmez) ----
@@ -5472,11 +5618,11 @@ function xlsTimestamp(){
 }
 function exportTableToExcel(tableId, fileLabel){
   try{
-    if(typeof XLSX === 'undefined'){ alert('Excel kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin.'); return; }
+    if(!xlsxHazir()) return;
     const table = document.getElementById(tableId);
     if(!table || !table.rows || table.rows.length === 0){ alert('Aktarılacak veri yok.'); return; }
-    const wb = XLSX.utils.table_to_book(table, {sheet: fileLabel.slice(0,31)});
-    XLSX.writeFile(wb, fileLabel + '_' + xlsTimestamp() + '.xlsx');
+    // v266: table_to_book yerine stilli motor — renkli baslik, zebra, gercek sayi hucreleri
+    raporExcelYaz(raporTanimiTablodan(table, fileLabel.replace(/_/g,' '), nowTR().toLocaleString('tr-TR'), null));
   }catch(err){
     console.error('Excel aktarım hatası', err);
     alert('Excel dosyası oluşturulurken bir hata oluştu.');
@@ -5484,7 +5630,7 @@ function exportTableToExcel(tableId, fileLabel){
 }
 function exportActivityListToExcel(){
   try{
-    if(typeof XLSX === 'undefined'){ alert('Excel kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin.'); return; }
+    if(!xlsxHazir()) return;
     const rStart = document.getElementById('rangeStart').value;
     const rEnd = document.getElementById('rangeEnd').value;
     const rows = entries
@@ -5495,11 +5641,10 @@ function exportActivityListToExcel(){
         return [e.date, e.cat, e.count, amt];
       });
     if(!rows.length){ alert('Bu aralıkta aktarılacak işlem yok.'); return; }
-    const aoa = [['Tarih','Kategori','Adet','Tutar'], ...rows];
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Islem Listesi');
-    XLSX.writeFile(wb, 'Islem_Listesi_' + xlsTimestamp() + '.xlsx');
+    raporExcelYaz(raporTanimiDizidenm('İşlem Listesi',
+      rStart + ' — ' + rEnd + ' · ' + rows.length + ' işlem',
+      ['Tarih','Kategori','Adet','Tutar'],
+      rows.map(r => [r[0], r[1], r[2], fmt(r[3]) + ' ₺'])));
   }catch(err){
     console.error('Excel aktarım hatası', err);
     alert('Excel dosyası oluşturulurken bir hata oluştu.');
@@ -13891,12 +14036,11 @@ function _renderRaporShared({ chartTitle, bars, avgAmt, kpis, bestLabel, bestVal
 
 function exportRaporXls() {
   if (!window._raporXlsData) return;
+  if (!xlsxHazir()) return;
   const { title, headers, data } = window._raporXlsData;
-  const wb = XLSX.utils.book_new();
-  const wsData = [headers, ...data.map(row => headers.map(h => row[h] ?? ''))];
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  XLSX.utils.book_append_sheet(wb, ws, title.slice(0,30));
-  XLSX.writeFile(wb, `Rapor_${title}_${ymd(new Date())}.xlsx`);
+  // v266: stilli motor
+  raporExcelYaz(raporTanimiDizidenm(title, nowTR().toLocaleString('tr-TR'), headers,
+    data.map(row => headers.map(h => row[h] ?? ''))));
 }
 
 function exportRaporModal() {
@@ -15446,6 +15590,17 @@ let _activeExportTable = null;
 // }
 
 const RAPOR_KIRMIZI = [226, 35, 26];
+
+// Turkce buyuk harf: 'Hakediş'.toUpperCase() -> 'HAKEDIŞ' (yanlis). Dogrusu 'HAKEDİŞ'.
+function trBuyuk(s){
+  return String(s == null ? '' : s).replace(/i/g,'İ').replace(/ı/g,'I').toUpperCase();
+}
+// PDF fontunda emoji glifi yok -> bos kutu/bosluk birakir. Metinden temizle.
+function pdfTemiz(s){
+  return String(s == null ? '' : s)
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}]/gu, '')
+    .replace(/\s+/g,' ').trim();
+}
 let _raporAktif = null;
 let _raporMesgul = false;
 
@@ -15477,7 +15632,7 @@ function raporTanimiTablodan(tbl, baslik, altBilgi, grafik){
   const trler = Array.from(tbl.querySelectorAll('tr'));
   const basSatiriMi = r => r.querySelector('th') !== null;
   const oku = r => Array.from(r.querySelectorAll('th,td'))
-    .map(c => (c.textContent || '').trim().replace(/\s+/g, ' '));
+    .map(c => pdfTemiz(c.textContent || ''));
 
   const basliklar = trler.filter(basSatiriMi).map(oku);
   const satirlar  = trler.filter(r => !basSatiriMi(r)).map(oku);
@@ -15575,9 +15730,9 @@ function _raporPdfUret(paylas){
     doc.setFillColor(...RAPOR_KIRMIZI);
     doc.rect(0, 0, sayfaG, 24, 'F');
     doc.setFont(F, 'bold'); doc.setFontSize(14); doc.setTextColor(255,255,255);
-    doc.text(t.baslik, 12, 12);
+    doc.text(pdfTemiz(t.baslik), 12, 12);
     doc.setFont(F, 'normal'); doc.setFontSize(8.5); doc.setTextColor(255, 214, 212);
-    doc.text(t.altBilgi || '', 12, 19);
+    doc.text(pdfTemiz(t.altBilgi || ''), 12, 19);
     doc.setFontSize(8); doc.setTextColor(255, 190, 188);
     doc.text('ER-TECH İLETİŞİM', sayfaG - 12, 12, { align:'right' });
     doc.setFontSize(7);
@@ -15667,10 +15822,30 @@ function _raporPdfUret(paylas){
 }
 
 // ---------- 3) EXCEL ----------
+// Tek merkezi Excel hazir-mi kontrolu (onceden 3 farkli mesaj vardi, 2 yerde hic yoktu)
+function xlsxHazir(){
+  if(typeof XLSX !== 'undefined' && XLSX.utils) return true;
+  alert('Excel kütüphanesi yüklenemedi.\n\nxlsx-style.min.js dosyasının index.html ile aynı klasörde olduğundan emin olun, sonra sayfayı yenileyin.');
+  return false;
+}
+
+// Ham dizilerden RaporTanimi kurar (tablosu olmayan cagiranlar icin)
+function raporTanimiDizidenm(baslik, altBilgi, basliklar, satirlar){
+  const sahte = document.createElement('table');
+  sahte.innerHTML = '<tr>' + basliklar.map(h=>'<th>'+esc(h)+'</th>').join('') + '</tr>'
+    + satirlar.map(r=>'<tr>'+r.map(c=>'<td>'+esc(c==null?'':c)+'</td>').join('')+'</tr>').join('');
+  return raporTanimiTablodan(sahte, baslik, altBilgi, null);
+}
+
 function raporExcel(){
   if(!_raporKontrol()) return;
-  if(typeof XLSX === 'undefined'){ alert('Excel kütüphanesi henüz yüklenmedi.'); return; }
-  const t = _raporAktif;
+  raporExcelYaz(_raporAktif);
+}
+
+function raporExcelYaz(tanim){
+  if(!xlsxHazir()) return;
+  if(!tanim || !tanim.satirlar || !tanim.satirlar.length){ alert('Aktarılacak veri yok.'); return; }
+  const t = tanim;
 
   const KENAR = { style:'thin', color:{ rgb:'FFD8DCE2' } };
   const cerceve = { top:KENAR, bottom:KENAR, left:KENAR, right:KENAR };
@@ -16138,7 +16313,14 @@ function openExportPreview(tableId, fileLabel){
     document.getElementById('exportModalContent').innerHTML = detayliHtml;
     window._exportCurrentTab = 'detayli';
     _activeExportTable = null;
-    document.getElementById('exportModalXlsBtn').onclick = function(){ exportModalToExcel(); };
+    // v266 FIX: bu dal _raporAktif'i doldurmuyordu -> Yazdir / PDF / Paylas "veri yok" diyordu.
+    _raporAktif = raporTanimiDizidenm(
+      (fileLabel || 'İşlem Listesi').replace(/_/g,' '),
+      rStart + ' — ' + rEnd + ' · ' + filtRows.length + ' işlem',
+      ['Tarih','Kategori','Adet','Tutar'],
+      filtRows.map(e => [e.date, e.cat, e.count,
+        fmt(e.count * kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat))) + ' ₺']));
+    document.getElementById('exportModalXlsBtn').onclick = raporExcel;
     modal.style.display = 'flex';
     return;
   }
@@ -16159,14 +16341,15 @@ function switchExportTab(tab){
 }
 
 function exportModalToExcel(){
+  // v266: stilli motor + gercek sayi hucreleri
   const rows = window._exportFiltRows || [];
-  const data = [['Tarih','Kategori','Adet','Tutar']].concat(
-    rows.map(e=>[e.date, e.cat, e.count, e.count * kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat))])
-  );
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Islemler');
-  XLSX.writeFile(wb, (window._exportFileLabel||'export') + '.xlsx');
+  if(!rows.length){ alert('Aktarılacak veri yok.'); return; }
+  raporExcelYaz(raporTanimiDizidenm(
+    (window._exportFileLabel || 'İşlemler').replace(/_/g,' '),
+    rows.length + ' işlem · ' + nowTR().toLocaleString('tr-TR'),
+    ['Tarih','Kategori','Adet','Tutar'],
+    rows.map(e => [e.date, e.cat, e.count,
+      fmt(e.count * kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat))) + ' ₺'])));
 }
 </script>
 
@@ -16175,11 +16358,18 @@ function exportModalToExcel(){
 
 // Her versiyonda hangi dosyaların değiştiğini buraya yaz
 // Ben sana her versiyonda bunu güncel olarak vereceğim
+// v266 FIX: ikon adlari yanlisti ('icon-192.png' -> gercekte 'icon192.png'), sw.js hic listede yoktu
+// ve v265'te eklenen iki yerel kutuphane eksikti. Otomatik guncelleme bu dosyalari atliyordu.
 const GH_DOSYA_LISTESI = [
-  { dosya: 'index.html',    etiket: '📄 index.html',    aciklama: 'Ana uygulama',       degisti: true  },
-  { dosya: 'manifest.json', etiket: '📋 manifest.json',  aciklama: 'PWA ayarları',        degisti: false },
-  { dosya: 'icon-192.png',  etiket: '🖼️ icon-192.png',   aciklama: 'Küçük ikon',          degisti: false },
-  { dosya: 'icon-512.png',  etiket: '🖼️ icon-512.png',   aciklama: 'Büyük ikon',          degisti: false },
+  { dosya: 'index.html',            etiket: '📄 index.html',        aciklama: 'Ana uygulama',          degisti: true  },
+  { dosya: 'sw.js',                 etiket: '⚙️ sw.js',             aciklama: 'Service Worker',        degisti: true  },
+  { dosya: 'xlsx-style.min.js',     etiket: '📊 xlsx-style.min.js', aciklama: 'Excel (stilli)',        degisti: false },
+  { dosya: 'pdf-font-tr.js',        etiket: '🔤 pdf-font-tr.js',    aciklama: 'PDF Türkçe font',       degisti: false },
+  { dosya: 'manifest.json',         etiket: '📋 manifest.json',     aciklama: 'PWA ayarları',          degisti: false },
+  { dosya: 'icon192.png',           etiket: '🖼️ icon192.png',       aciklama: 'Küçük ikon',            degisti: false },
+  { dosya: 'icon512.png',           etiket: '🖼️ icon512.png',       aciklama: 'Büyük ikon',            degisti: false },
+  { dosya: 'icon192-maskable.png',  etiket: '🖼️ icon192-maskable',  aciklama: 'Android ikon (küçük)',  degisti: false },
+  { dosya: 'icon512-maskable.png',  etiket: '🖼️ icon512-maskable',  aciklama: 'Android ikon (büyük)',  degisti: false },
 ];
 
 let _ghDosyaIcerikleri = {};
@@ -16454,6 +16644,19 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v266',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'ISLEM LISTESI penceresinde Yazdir / PDF / Paylas calismiyordu ("Aktarilacak veri yok" diyordu). Sebep: bu dal, v265 rapor motorunun bekledigi _raporAktif nesnesini hic doldurmuyordu; yalnizca Excel butonu kendi eski fonksiyonuna bagliydi. Artik dort buton da calisiyor.' },
+      { type: 'fix', text: '"Excel kutuphanesi yuklenemedi" hatasi: sistemde BES ayri Excel yolu vardi, ucu farkli mesaj veriyor, IKISI (exportRaporXls ve exportModalToExcel) hic kontrol yapmadan cokuyordu. Hepsi tek xlsxHazir() kontrolune baglandi; mesaj artik hangi dosyanin eksik oldugunu soyluyor.' },
+      { type: 'fix', text: 'KAPANIS RAPORU PDF ARTIK VEKTOREL: son ekran goruntusu (html2canvas) kullanan yer buydu. Metin secilemiyor/aranamiyordu, dosya 3-5 MB oluyordu, yazicida bulaniyordu ve kutuphane yoksa acilir pencereye dusuyordu (mobilde engelleniyordu). Artik ozet kartlari, kategori tablosu, MNP kirilimi ve hakedis satirlari gercek metin ve dikdortgen olarak ciziliyor; dosya ~40 KB.' },
+      { type: 'clean', text: 'html2canvas kutuphanesi projeden TAMAMEN kaldirildi (script etiketi + Service Worker on-onbellegi). Artik hicbir PDF ekran goruntusu kullanmiyor. ~200 KB indirme tasarrufu.' },
+      { type: 'fix', text: 'pdfKapanisRaporu icindeki global "event" nesnesi kullanimi kaldirildi (Firefox\'ta ve programatik cagrida hata veriyordu). Buton artik dogrudan seciliyor, cift tiklama kilidi eklendi.' },
+      { type: 'new', text: 'TUM EXCEL CIKTILARI ARTIK STILLI: Islem Listesi, Rapor, tablo disa aktarmalari — hepsi kirmizi baslik satiri, zebra satirlar, cerceve, otomatik filtre ve GERCEK SAYI hucreleriyle uretiliyor. Onceden yalniz yeni pencereden aktarilanlar stilliydi.' },
+      { type: 'fix', text: 'OTOMATIK GUNCELLEME DOSYA LISTESI: ikon adlari yanlisti (icon-192.png yazilmisti, gercek ad icon192.png), sw.js listede HIC yoktu ve v265 ile gelen xlsx-style.min.js / pdf-font-tr.js eksikti. Guncelleme bu dosyalari atliyordu. Liste dokuz dosyayla duzeltildi.' },
+    ]
+  },
   {
     version: 'v265',
     date: '10.07.2026',

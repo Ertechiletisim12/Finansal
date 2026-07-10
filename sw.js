@@ -8,7 +8,7 @@
 //  2) İkonlar precache listesine eklendi.
 //  3) CACHE_VER, index.html içindeki APP_VERSION ile hizalandı. HER YAYINDA BUNU BUMP ET.
 
-const APP_VER   = 'v264';
+const APP_VER   = 'v266';
 const CACHE_VER = 'finansal-' + APP_VER;
 
 // Same-origin çekirdek dosyalar — biri bile inmezse install başarısız olsun istemiyoruz,
@@ -17,6 +17,8 @@ const CEKIRDEK = [
   './',
   './index.html',
   './manifest.json',
+  './xlsx-style.min.js',   // v265: stil destekli SheetJS catali (renkli/formatli Excel)
+  './pdf-font-tr.js',      // v265: PDF icin Turkce alt-kumelenmis Roboto
   './icon192.png',
   './icon512.png',
   './icon192-maskable.png',
@@ -26,10 +28,8 @@ const CEKIRDEK = [
 // Cross-origin kütüphaneler. `no-cors` ile çekilir → opaque response.
 // Opaque yanıtlar cache'lenebilir ve <script src> ile sorunsuz kullanılabilir.
 const CDN = [
-  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'
 ];
 
 async function tekTekCachele(cache, urls, opts) {
