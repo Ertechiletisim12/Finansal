@@ -153,6 +153,10 @@
   #yazdirmaAlani tbody tr:nth-child(even) td{ background:#f7f8fa !important }
   #yazdirmaAlani td.sag, #yazdirmaAlani th.sag{ text-align:right !important }
   #yazdirmaAlani tr.toplam td{ background:#eceef1 !important; font-weight:800 !important }
+  /* v274: bolum basligi ve ikinci tablonun baslik satiri — ust baslikla ayni gorunum */
+  #yazdirmaAlani tr.yz-bolum-satir td{
+    background:#1f2226 !important; color:#fff !important; font-weight:800 !important;
+  }
 
   .yz-dipnot{ margin-top:10px; padding-top:5px; border-top:1px solid #dcdcdc !important;
               display:flex; justify-content:space-between; font-size:6.8pt; color:#828282 !important }
@@ -2523,28 +2527,25 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:820px;width:98%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="background:linear-gradient(135deg,#92400e,#78350f);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <span style="font-size:14px;font-weight:700;color:#fcd34d;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💰 Aylık Birim Fiyatlar &amp; Veri Yönetimi</span>
-      <!-- v273: "Ay seç" icerikten pencere basligina, saga tasindi -->
-      <label for="priceMonthSel" style="font-size:10.5px;font-weight:800;letter-spacing:.04em;color:rgba(252,211,77,0.75);text-transform:uppercase;white-space:nowrap;margin-right:-2px">Ay seç</label>
-      <select id="priceMonthSel" onchange="render()" style="background:rgba(0,0,0,0.25);border:1px solid rgba(252,211,77,0.35);color:#fcd34d;border-radius:7px;padding:5px 8px;font-size:12px;font-weight:700;max-width:150px;margin-right:6px"></select>
       <button onclick="closePrimModal('fiyatModal')" style="background:rgba(255,255,255,0.15);border:none;color:#fcd34d;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700;flex-shrink:0">✕</button>
     </div>
     <div style="padding:12px 9px;overflow-y:auto">
       <div class="price-panel" id="pricePanelDetails">
-        <!-- v273: yinelenen "💰 Aylık Birim Fiyatlar" basligi kaldirildi (pencere basliginda zaten var),
-             "Ay seç" acilir listesi de baslik cubuguna tasindi. -->
+        <!-- v273: yinelenen "💰 Aylık Birim Fiyatlar" basligi kaldirildi (pencere basliginda zaten var).
+             v274: "Ay seç" panelin sag ust kosesinde, kendi satirinda. -->
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:9px">
+          <label for="priceMonthSel" style="font-size:10.5px;font-weight:800;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;white-space:nowrap">📅 Ay seç</label>
+          <select id="priceMonthSel" onchange="render()" style="min-width:150px"></select>
+        </div>
         <div class="price-row" id="priceRow"></div>
         <div class="note">Her kategori için o aya ait adet başı prim tutarını girip kaydedin. Bir ay için fiyat tanımlanmazsa bir önceki tanımlı aydaki fiyat otomatik kullanılır.</div>
-        <div class="price-history">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-            <label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);cursor:pointer;font-weight:700">
-              <input type="checkbox" id="fiyatGecmisToggle" onchange="render()" style="width:14px;height:14px;cursor:pointer">
-              📜 Geçmiş dönemleri göster
-            </label>
-            <button class="preview-btn" onclick="openExportPreview('priceHistTable','Fiyat_Gecmisi')">📤 Dışa Aktar</button>
-          </div>
-          <div style="overflow-x:auto;max-width:100%">
-            <table id="priceHistTable" style="min-width:400px"></table>
-          </div>
+        <!-- v274: Fiyat gecmisi ayri modal penceresine tasindi (yil filtresi ile) -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">
+          <button onclick="openFiyatGecmisModal()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 14px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px">
+            📜 Fiyat Geçmişi
+            <span id="fiyatGecmisSayaci" style="background:var(--muted);color:var(--panel);border-radius:10px;padding:0 7px;font-size:10px;font-weight:800">0</span>
+          </button>
+          <span style="font-size:10.5px;color:var(--muted)">Tüm dönemlerin birim fiyatları, yıla göre filtrelenebilir</span>
         </div>
       </div>
 
@@ -2557,6 +2558,30 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     </div>
   </div>
 </div>
+
+<!-- v274: Fiyat Gecmisi — kendi modal penceresi, yil filtreli -->
+<div id="fiyatGecmisModal" style="display:none;position:fixed;inset:0;z-index:4200;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:14px" onclick="if(event.target===this) closeFiyatGecmisModal()">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:940px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:8px;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
+      <div style="flex:1;font-size:15px;font-weight:800;color:var(--txt);white-space:nowrap">📜 Fiyat Geçmişi
+        <span id="fiyatGecmisSayi" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:1px 8px;font-size:11px;margin-left:4px"></span>
+      </div>
+      <button onclick="openExportPreview('priceHistTable','Fiyat_Gecmisi')" title="Dışa aktar — Yazdır / PDF / Excel / Paylaş" style="background:rgba(63,208,255,0.12);border:1px solid rgba(63,208,255,0.32);color:var(--accent);height:32px;padding:0 11px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">📤 Dışa Aktar</button>
+      <button onclick="closeFiyatGecmisModal()" style="background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0">✕</button>
+    </div>
+    <div style="padding:9px 16px;background:var(--panel2);border-bottom:1px solid var(--line);flex-shrink:0">
+      <div id="fiyatGecmisYilBtns" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
+      <div style="font-size:10.5px;color:var(--muted)">Bir ay için fiyat tanımlanmazsa bir önceki tanımlı aydaki fiyat kullanılır. ✏️ ile o ayın fiyatlarını düzenleyebilirsiniz.</div>
+    </div>
+    <div style="flex:1;overflow:auto;padding:14px 16px">
+      <div style="overflow-x:auto;max-width:100%">
+        <table id="priceHistTable" style="min-width:400px"></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 <!-- TARİFE/KAMPANYA FORM MODALI (v157 — prompt yerine şık modal) -->
 <div id="tarifeFormModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:4600;align-items:center;justify-content:center;padding:16px">
@@ -2990,7 +3015,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v273';
+const APP_VERSION = 'v274';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3103,7 +3128,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '11.07.2026 09:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '11.07.2026 12:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -7265,13 +7290,24 @@ function render(){
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:6px;margin-bottom:10px">${kartlar}<button onclick="savePricesFromForm(this)" style="padding:9px 6px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:9px;color:#1a1a1a;font-size:12px;font-weight:800;cursor:pointer;${window.innerWidth>700?'grid-column:1/-1;':''}">💾 Kaydet (${monthLabel(priceYm)})</button></div>`;
 
   // price history table — v162: geçmiş dönemler varsayılan gizli, satırda ✏️ düzenleme
-  let histYms = Object.keys(prices).sort().reverse();
-  const gecmisAc = document.getElementById('fiyatGecmisToggle')?.checked;
+  // v274: "Geçmiş dönemleri göster" anahtari kaldirildi. Fiyat gecmisi kendi modalinda
+  // ve YIL filtresiyle gosteriliyor. Tum aylar listelenir, secili yila gore suzulur.
+  const tumHistYms = Object.keys(prices).sort().reverse();
   const buYmF = thisMonthKey();
-  const gizlenen = histYms.filter(ym => ym < buYmF).length;
-  if(!gecmisAc) histYms = histYms.filter(ym => ym >= buYmF);
+  let histYms = (typeof _fiyatGecmisYil !== 'undefined' && _fiyatGecmisYil !== 'hepsi')
+    ? tumHistYms.filter(ym => String(ym).slice(0,4) === _fiyatGecmisYil)
+    : tumHistYms;
+
+  _fiyatGecmisYilButonlari(tumHistYms);
+  const sayi = document.getElementById('fiyatGecmisSayi');
+  if(sayi) sayi.textContent = histYms.length + ' dönem';
+  const sayac = document.getElementById('fiyatGecmisSayaci');
+  if(sayac) sayac.textContent = tumHistYms.length;
+
+  const gizlenen = 0;
   const ph = document.getElementById('priceHistTable');
-  if(histYms.length || gizlenen){
+  if(!ph){ /* modal henuz DOM'da degil */ }
+  else if(histYms.length){
     ph.innerHTML = '<tr><th style="position:sticky;left:0;z-index:3;background:var(--panel)">Ay</th>'+CATS.map(c=>`<th style="color:${(CAT_CONFIG[c]&&CAT_CONFIG[c].color)||'var(--muted)'}">${c}</th>`).join('')+'<th style="width:40px"></th></tr>' +
       histYms.map(ym=>{
         const gecmis = ym < buYmF;
@@ -7281,9 +7317,10 @@ function render(){
                        : (guncel ? ' <span style="font-size:8px;color:var(--gold);background:rgba(255,183,77,0.15);border-radius:4px;padding:1px 4px;font-weight:700">● bu ay</span>' : '');
         return `<tr style="${rowStyle}"><td style="white-space:nowrap;position:sticky;left:0;z-index:2;background:var(--panel)">${monthLabel(ym)}${ayEtiket}</td>${CATS.map(c=>`<td style="white-space:nowrap">${prices[ym][c]!=null?fmt(prices[ym][c]).replace(' ₺','₺').replace('\u00a0₺','₺'):'<span style=\"color:var(--muted)\">—</span>'}</td>`).join('')}<td><button onclick="fiyatAyiDuzenle('${ym}')" title="Bu ayın fiyatlarını düzenle" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button></td></tr>`;
       }).join('') +
-      (!gecmisAc && gizlenen ? `<tr><td colspan="${CATS.length+2}" style="text-align:center;color:var(--muted);font-size:10px;padding:8px">📜 ${gizlenen} geçmiş dönem gizli — görmek için yukarıdaki anahtarı aç</td></tr>` : '');
+      '';
   } else {
-    ph.innerHTML = '<tr><td style="color:var(--muted)">Henüz kayıtlı fiyat geçmişi yok.</td></tr>';
+    ph.innerHTML = '<tr><td style="color:var(--muted)">' +
+      (tumHistYms.length ? 'Bu yılda kayıtlı fiyat yok.' : 'Henüz kayıtlı fiyat geçmişi yok.') + '</td></tr>';
   }
 
   // ---- monthly aggregation (ALL data, for prev/curr month compare regardless of range filter) ----
@@ -7904,6 +7941,39 @@ function closePrimModal(id){
 function openCmpModal(){ openPrimModal('cmpModal'); }
 function openTablolarModal(){ openPrimModal('tablolarModal'); render(); if(typeof renderTblYilBtns==='function') renderTblYilBtns(); }
 function openSaatModal(){ openPrimModal('saatModal'); if(typeof renderEntryLogCharts==='function') renderEntryLogCharts(); }
+// ---- v274: Fiyat Gecmisi modali + yil filtresi ----
+let _fiyatGecmisYil = 'hepsi';
+
+function openFiyatGecmisModal(){
+  const aylar = Object.keys(prices || {});
+  if(!aylar.length){ alert('Henüz kayıtlı fiyat geçmişi yok.'); return; }
+  _fiyatGecmisYil = 'hepsi';
+  document.getElementById('fiyatGecmisModal').style.display = 'flex';
+  render();
+}
+function closeFiyatGecmisModal(){
+  document.getElementById('fiyatGecmisModal').style.display = 'none';
+}
+function setFiyatGecmisYil(y){ _fiyatGecmisYil = y; render(); }
+
+function _fiyatGecmisYilButonlari(tumAylar){
+  const kutu = document.getElementById('fiyatGecmisYilBtns');
+  if(!kutu) return;
+  const yillar = [...new Set(tumAylar.map(ym => String(ym).slice(0,4)))].sort().reverse();
+  const btn = (deger, etiket, adet) => {
+    const aktif = _fiyatGecmisYil === deger;
+    return `<button onclick="setFiyatGecmisYil('${deger}')" style="
+      background:${aktif ? 'var(--accent)' : 'var(--panel)'};
+      border:1px solid ${aktif ? 'var(--accent)' : 'var(--line)'};
+      color:${aktif ? '#0b1a22' : 'var(--txt)'};
+      border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
+      ${etiket}<span style="opacity:.65;font-weight:600;margin-left:5px">${adet}</span></button>`;
+  };
+  kutu.innerHTML = btn('hepsi','Tümü',tumAylar.length)
+    + yillar.map(y => btn(y, y, tumAylar.filter(ym => String(ym).slice(0,4) === y).length)).join('');
+  kutu.style.display = yillar.length > 1 ? 'flex' : 'none';
+}
+
 function openFiyatModal(){ openPrimModal('fiyatModal'); }
 // Modal dışına tıklayınca kapat
 document.addEventListener('click', function(e){
@@ -16291,7 +16361,7 @@ function trBuyuk(s){
 function pdfTemiz(s){
   return String(s == null ? '' : s)
     .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}]/gu, '')
-    .replace(/\s+/g,' ').trim();
+    .replace(/[^\S\n]+/g,' ').replace(/ *\n */g,'\n').trim();   // v274: satir sonlari korunur
 }
 let _raporAktif = null;
 let _raporMesgul = false;
@@ -16320,14 +16390,35 @@ function trSayiCoz(metin){
 const METIN_SUTUN_DESENI = /telefon|tel\.?$|^tel$|numara|^no$|gsm|iban|sıra|sira|^#$|tarih|saat/i;
 
 // Bir <table>'dan RaporTanimi uret. Gizli tabloda innerText bos doner -> textContent.
+// v274: Bir hucrenin metni. <br> ve blok cocuklar SATIR SONU verir.
+// Onceden textContent kullaniliyordu; "<b>19</b> adet<br><span>4.750 ₺</span>"
+// -> "19 adet4.750 ₺" seklinde yapisiyordu (Ay Karsilastirma, Degisim satiri...).
+function raporHucreMetni(hucre){
+  const parcalar = [];
+  const gez = (d) => {
+    if(d.nodeType === 3){ parcalar.push(String(d.textContent).replace(/\s+/g,' ')); return; }
+    if(d.nodeType !== 1) return;
+    if(d.tagName === 'BR'){ parcalar.push('\n'); return; }
+    const blok = /^(DIV|P|TR|LI)$/.test(d.tagName);
+    if(blok && parcalar.length && parcalar[parcalar.length-1] !== '\n') parcalar.push('\n');
+    Array.from(d.childNodes).forEach(gez);
+    if(blok) parcalar.push('\n');
+  };
+  Array.from(hucre.childNodes).forEach(gez);
+  return pdfTemiz(parcalar.join(''))
+    .split('\n').map(x => x.trim()).filter(Boolean).join('\n');
+}
+
 function raporTanimiTablodan(tbl, baslik, altBilgi, grafik){
   const trler = Array.from(tbl.querySelectorAll('tr'));
   const basSatiriMi = r => r.querySelector('th') !== null;
-  const oku = r => Array.from(r.querySelectorAll('th,td'))
-    .map(c => pdfTemiz(c.textContent || ''));
+  const oku = r => Array.from(r.querySelectorAll('th,td')).map(raporHucreMetni);
 
   const basliklar = trler.filter(basSatiriMi).map(oku);
-  const satirlar  = trler.filter(r => !basSatiriMi(r)).map(oku);
+  const govdeTrler = trler.filter(r => !basSatiriMi(r));
+  const satirlar  = govdeTrler.map(oku);
+  // v274: govde icindeki bolum basligi / ikinci tablo basligi satirlari isaretli gelir
+  const satirTip  = govdeTrler.map(r => r.getAttribute('data-rapor') || '');
   const sutunSayisi = Math.max(...[...basliklar, ...satirlar].map(r => r.length), 0);
 
   // Bir sutun, dolu hucrelerinin en az %60'i sayiya cozulebiliyorsa sayisaldir.
@@ -16342,6 +16433,7 @@ function raporTanimiTablodan(tbl, baslik, altBilgi, grafik){
       const h = r[c];
       if(h == null || h === '' || h === '—' || h === '-') return;
       dolu++;
+      if(String(h).includes('\n')) return;         // v274: iki satirli hucre sayi degil
       const s = trSayiCoz(h);
       if(s){ cozulen++; if(s.para) paraSayisi++; }
     });
@@ -16349,7 +16441,7 @@ function raporTanimiTablodan(tbl, baslik, altBilgi, grafik){
     sayisal.push(sayisalMi);
     para.push(sayisalMi && paraSayisi > cozulen / 2);
   }
-  return { baslik, altBilgi, basliklar, satirlar, sayisal, para, grafik: grafik || null };
+  return { baslik, altBilgi, basliklar, satirlar, sayisal, para, satirTip, grafik: grafik || null };
 }
 
 function _raporKontrol(){
@@ -16386,13 +16478,19 @@ function _yzBarlar(grafik){
     <div class="yz-barlar">${barlar}</div></div>`;
 }
 
+// v274: satir sonlarini <br>'a cevirir (iki satirli hucreler)
+function _yzSatirli(v){ return _yzKacis(v).replace(/\n/g, '<br>'); }
+
 function _yzTablo(t){
   const bas = t.basliklar.map(r =>
-    '<tr>' + r.map((h,i) => `<th class="${t.sayisal[i]?'sag':''}">${_yzKacis(h)}</th>`).join('') + '</tr>'
+    '<tr>' + r.map((h,i) => `<th class="${t.sayisal[i]?'sag':''}">${_yzSatirli(h)}</th>`).join('') + '</tr>'
   ).join('');
-  const govde = t.satirlar.map(r =>
-    '<tr>' + r.map((c,i) => `<td class="${t.sayisal[i]?'sag':''}">${_yzKacis(c)}</td>`).join('') + '</tr>'
-  ).join('');
+  const govde = t.satirlar.map((r, ri) => {
+    const tip = (t.satirTip && t.satirTip[ri]) || '';
+    const sinif = (tip === 'bolum' || tip === 'baslik') ? ' class="yz-bolum-satir"' : '';
+    return '<tr' + sinif + '>' + r.map((c,i) =>
+      `<td class="${tip ? '' : (t.sayisal[i]?'sag':'')}">${_yzSatirli(c)}</td>`).join('') + '</tr>';
+  }).join('');
   return `<table><thead>${bas}</thead><tbody>${govde}</tbody></table>`;
 }
 
@@ -16562,6 +16660,16 @@ function _raporPdfUret(paylas){
     headStyles: { font:F, fontStyle:'bold', fillColor:RAPOR_KIRMIZI, textColor:255, fontSize:7.8, halign:'left' },
     alternateRowStyles: { fillColor:[247,248,250] },
     columnStyles: sagaYasla,
+    didParseCell: (dt) => {
+      if(dt.section !== 'body') return;
+      const tip = (t.satirTip && t.satirTip[dt.row.index]) || '';
+      if(tip === 'bolum' || tip === 'baslik'){
+        dt.cell.styles.fillColor = [31,34,38];
+        dt.cell.styles.textColor = [255,255,255];
+        dt.cell.styles.fontStyle = 'bold';
+        dt.cell.styles.halign = tip === 'bolum' ? 'left' : 'center';
+      }
+    },
     didDrawPage: () => { ustBant(); altBant(); }
   });
 
@@ -16663,11 +16771,21 @@ function raporExcelYaz(tanim){
                 alignment:{ horizontal:'center', vertical:'center', wrapText:true },
                 border: cerceve };
       } else {
-        const cift = (R - basSonu) % 2 === 0;
-        h.s = { font:{ sz:10, color:{ rgb:'FF1A1C1E' } },
-                fill:{ patternType:'solid', fgColor:{ rgb: cift ? 'FFFFFFFF' : 'FFF6F7F9' } },
-                alignment:{ horizontal: t.sayisal[C] ? 'right' : 'left' },
-                border: cerceve };
+        const tip = (t.satirTip && t.satirTip[R - basSonu]) || '';
+        if(tip === 'bolum' || tip === 'baslik'){
+          // v274: bolum basligi ve ikinci tablonun baslik satiri, ust baslik satiriyla ayni gorunur
+          h.s = { font:{ bold:true, sz:10, color:{ rgb:'FFFFFFFF' } },
+                  fill:{ patternType:'solid', fgColor:{ rgb:'FF1F2226' } },
+                  alignment:{ horizontal: tip === 'bolum' ? 'left' : 'center', vertical:'center', wrapText:true },
+                  border: cerceve };
+        } else {
+          const cift = (R - basSonu) % 2 === 0;
+          const cokSatir = String(h.v || '').includes('\n');
+          h.s = { font:{ sz:10, color:{ rgb:'FF1A1C1E' } },
+                  fill:{ patternType:'solid', fgColor:{ rgb: cift ? 'FFFFFFFF' : 'FFF6F7F9' } },
+                  alignment:{ horizontal: t.sayisal[C] ? 'right' : 'left', vertical:'center', wrapText: cokSatir },
+                  border: cerceve };
+        }
       }
     }
   }
@@ -16678,9 +16796,15 @@ function raporExcelYaz(tanim){
     { s:{ r:1, c:0 }, e:{ r:1, c:Math.max(sutunSayisi-1, 0) } }
   ];
   ws['!rows'] = [{ hpt:24 }, { hpt:15 }];
+  // v274: iki satirli hucre iceren govde satirlari daha yuksek olsun
+  t.satirlar.forEach((r, i) => {
+    if(r.some(h => String(h).includes('\n'))) ws['!rows'][basSonu + i] = { hpt:28 };
+  });
   ws['!cols'] = Array.from({ length:sutunSayisi }, (_, c) => {
     let en = 8;
-    [...t.basliklar, ...t.satirlar].forEach(r => { en = Math.max(en, String(r[c] ?? '').length + 2); });
+    [...t.basliklar, ...t.satirlar].forEach(r => {
+      String(r[c] ?? '').split('\n').forEach(sat => { en = Math.max(en, sat.length + 2); });
+    });
     return { wch: Math.min(en, 42) };
   });
   if(t.basliklar.length){
@@ -16724,8 +16848,10 @@ function exportDetayTablolari(){
 
   const sutun = Math.max(
     ...satirlar(t1).concat(satirlar(t2)).map(tr => tr.children.length), 1);
-  const bolum = ad => '<tr><td colspan="' + sutun + '" style="text-align:left;font-weight:800;background:var(--panel2)">' + ad + '</td></tr>';
+  // v274: data-rapor isareti -> Excel/PDF/Yazdir bu satirlari baslik gibi bicimlendirir
+  const bolum = ad => '<tr data-rapor="bolum"><td colspan="' + sutun + '" style="text-align:left;font-weight:800;background:var(--panel2)">' + ad + '</td></tr>';
   const bosluk = '<tr><td colspan="' + sutun + '" style="height:10px;border:none"></td></tr>';
+  const basSatir = tr => thToTd(tr).replace('<tr', '<tr data-rapor="baslik"');
 
   comb.innerHTML =
       '<thead>' + t1Bas.map(tr => tr.outerHTML).join('') + '</thead>'
@@ -16733,7 +16859,7 @@ function exportDetayTablolari(){
     +   t1Gov.map(tr => tr.outerHTML).join('')
     +   bosluk
     +   bolum('PRİM / FİNANS ÖZETİ')
-    +   t2Bas.map(thToTd).join('')
+    +   t2Bas.map(basSatir).join('')
     +   t2Gov.map(tr => tr.outerHTML).join('')
     + '</tbody>';
 
@@ -17443,6 +17569,18 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v274',
+    date: '11.07.2026',
+    items: [
+      { type: 'fix', text: 'DISA AKTARMADA ADET VE TUTAR BIRBIRINE YAPISIYORDU: "19 adet4.750,00 ₺". Sebep, hucre metninin textContent ile okunmasiydi — <br> etiketi ve blok cocuklar yok sayiliyordu. Yeni raporHucreMetni() <br> ve <div> siniralarini SATIR SONUNA cevirir. Ay Karsilastirma, Degisim satiri ve benzeri tum iki satirli hucreler artik Excel, PDF ve Yazdir ciktisinda ekrandaki gibi iki satir.' },
+      { type: 'imp', text: 'Excel: iki satirli hucrelerde metin kaydirma (wrapText) aciliyor, satir yuksekligi artiyor, sutun genisligi en uzun SATIRA gore hesaplaniyor. Iki satirli hucreler sayisal sayilmiyor (yanlislikla sayiya cevrilmiyorlar).' },
+      { type: 'fix', text: 'PRIM DETAYLARI: "PRİM / FİNANS ÖZETİ" bolum basligi ve ikinci tablonun baslik satiri, ust baslik satiriyla ayni gorunume kavustu — KOYU ZEMIN, BEYAZ KALIN METIN. Bu satirlar artik data-rapor isaretiyle taniniyor ve Excel, PDF, Yazdir ciktilarinin ucunde de ayni sekilde bicimlendiriliyor.' },
+      { type: 'ui', text: 'AYLIK BIRIM FIYATLAR: v273\'te pencere basligina konulan "Ay seç" listesi geri alindi; artik panelin SAG UST kosesinde, kendi satirinda duruyor.' },
+      { type: 'new', text: 'FIYAT GECMISI KENDI MODAL PENCERESINDE. Onceden "📜 Geçmiş dönemleri göster" anahtariyla acilip listeyi uzatiyordu. Yeni pencerede YIL FILTRESI var (Tümü / 2026 / 2025 ...), donem sayaci, ve Disa Aktar butonu. Anahtar kaldirildi; tum donemler listelenip yila gore suzuluyor.' },
+      { type: 'fix', text: 'pdfTemiz() tum bosluklari tek boslukla degistirirken satir sonlarini da yok ediyordu. Artik satir sonlari korunuyor.' },
+    ]
+  },
   {
     version: 'v273',
     date: '11.07.2026',
