@@ -985,15 +985,17 @@ body.light #kapanisRaporModal [style*="color:#fcd34d"]{ color:#fcd34d!important;
   #page-trend > div:first-child > div{
     width:100%!important;
   }
-  #trendAySayisi{
+  /* v276: #trendAySayisi acilir listesi kaldirildi; yerine aralik butonlari */
+  #trendAralikBtns{
     width:100%!important;
-    font-size:13px!important;
-    padding:7px 10px!important;
-    border-radius:8px!important;
-    background:var(--panel2)!important;
-    color:var(--txt)!important;
-    border:1px solid var(--line)!important;
+    overflow-x:auto!important;
+    flex-wrap:nowrap!important;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    padding-bottom:2px;
   }
+  #trendAralikBtns::-webkit-scrollbar{ display:none }
+  #trendAralikBtns button{ flex-shrink:0!important }
 
   /* Kategori butonları: yatay scroll, taşmasın */
   #trendKatSec{
@@ -2109,6 +2111,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <button class="qbtn" id="raporViewHafta" onclick="setRaporView('hafta')" style="font-size:12px">📆 Haftalık</button>
           <button class="qbtn" id="raporViewAy" onclick="setRaporView('ay')" style="font-size:12px">📅 Aylık</button>
           <button class="qbtn" id="raporViewYil" onclick="setRaporView('yil')" style="font-size:12px">📊 Yıllık</button>
+          <!-- v276: Disa Aktar, gorunum butonlarinin yanina tasindi -->
+          <div style="width:1px;height:20px;background:var(--line);margin:0 2px"></div>
+          <button class="preview-btn" onclick="exportRaporModal()" style="font-size:12px;white-space:nowrap">📤 Dışa Aktar</button>
         </div>
       </div>
 
@@ -2128,7 +2133,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- Tablo -->
       <div class="section-title-row">
         <div class="section-title" id="raporTableTitle">Detay Tablosu</div>
-        <button class="preview-btn" onclick="exportRaporModal()">📤 Dışa Aktar</button>
       </div>
       <div class="table-wrap" style="max-height:380px">
         <table class="main-table" id="raporTable">
@@ -2188,13 +2192,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div id="page-trend" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
       <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40">
         <h2 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px"><button onclick="switchPage('prim')" class="prim-tool-pill" style="padding:4px 10px" title="Prim Sayfasına dön">← Prim</button> 📈 Trend Analizi</h2>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <select id="trendAySayisi" onchange="renderTrend()" style="font-size:12px;padding:4px 8px">
-            <option value="6">Son 6 Ay</option>
-            <option value="12">Son 12 Ay</option>
-            <option value="24">Son 24 Ay</option>
-          </select>
-        </div>
+        <!-- v276: acilir liste yerine hizli aralik butonlari -->
+        <div id="trendAralikBtns" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"></div>
       </div>
 
       <!-- Kategori Trend Grafiği -->
@@ -3048,7 +3047,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v275';
+const APP_VERSION = 'v276';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3161,7 +3160,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '11.07.2026 15:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '11.07.2026 18:05'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15238,12 +15237,65 @@ function renderHedefPage(){
 // ==================== TREND ANALİZİ SAYFASI ====================
 let trendSelectedCats = new Set(["PostPaid","PrePaid","Red"]);
 
-function renderTrend(){
-  const nAy = parseInt(document.getElementById('trendAySayisi')?.value || 6);
+// v276: Trend araligi. Onceden yalnizca 6/12/24 ay vardi.
+let _trendAralik = '6';
 
-  // Son N ayın listesi
-  const months = [];
-  for(let i = nAy-1; i >= 0; i--) months.push(addMonths(thisMonthKey(), -i));
+const TREND_ARALIKLAR = [
+  { id:'buay',  etiket:'Bu Ay' },
+  { id:'3',     etiket:'Son 3 Ay' },
+  { id:'6',     etiket:'Son 6 Ay' },
+  { id:'12',    etiket:'Son 12 Ay' },
+  { id:'24',    etiket:'Son 24 Ay' },
+  { id:'buyil', etiket:'Bu Yıl' },
+  { id:'gecenyil', etiket:'Geçen Yıl' },
+  { id:'tum',   etiket:'Tümü' },
+];
+
+function setTrendAralik(id){ _trendAralik = id; renderTrend(); }
+
+// Secili araliga karsilik gelen ay listesi (eskiden yeniye)
+function _trendAylari(){
+  const buAy = thisMonthKey();
+  const yil = buAy.slice(0,4);
+  const geriSay = (n) => { const a=[]; for(let i=n-1;i>=0;i--) a.push(addMonths(buAy,-i)); return a; };
+
+  if(_trendAralik === 'buay')  return [buAy];
+  if(_trendAralik === 'buyil'){
+    const a=[]; for(let m=1;m<=12;m++){ const ym = yil+'-'+String(m).padStart(2,'0'); if(ym<=buAy) a.push(ym); }
+    return a;
+  }
+  if(_trendAralik === 'gecenyil'){
+    const gy = String(parseInt(yil,10)-1);
+    return Array.from({length:12},(_,i)=> gy+'-'+String(i+1).padStart(2,'0'));
+  }
+  if(_trendAralik === 'tum'){
+    const varOlan = [...new Set(entries.map(e => effectiveYm(e)))].filter(Boolean).sort();
+    if(!varOlan.length) return geriSay(6);
+    const ilk = varOlan[0];
+    const a=[]; let ym = ilk;
+    while(ym <= buAy && a.length < 120){ a.push(ym); ym = addMonths(ym, 1); }
+    return a;
+  }
+  return geriSay(parseInt(_trendAralik, 10) || 6);
+}
+
+function _trendAralikButonlari(){
+  const kutu = document.getElementById('trendAralikBtns');
+  if(!kutu) return;
+  kutu.innerHTML = TREND_ARALIKLAR.map(a => {
+    const aktif = _trendAralik === a.id;
+    return `<button onclick="setTrendAralik('${a.id}')" style="
+      background:${aktif ? 'var(--accent)' : 'var(--panel2)'};
+      border:1px solid ${aktif ? 'var(--accent)' : 'var(--line)'};
+      color:${aktif ? '#0b1a22' : 'var(--txt)'};
+      border-radius:7px;padding:5px 10px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap">${a.etiket}</button>`;
+  }).join('');
+}
+
+function renderTrend(){
+  _trendAralikButonlari();
+  const months = _trendAylari();
+  const nAy = months.length;
 
   // Kategori bazlı aylık prim toplaları
   const catMonthData = {}; // {cat: {ym: total}}
@@ -16876,8 +16928,80 @@ function raporExcelYaz(tanim){
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, t.baslik.slice(0, 28).replace(/[\\/*?:[\]]/g,'-'));
+
+  // v276: GRAFIK ARTIK EXCEL'E DE GECIYOR.
+  // xlsx-js-style yerlesik Excel grafigi (chart part) uretemez — bu kutuphanenin siniri.
+  // Bunun yerine ikinci bir sayfa eklenir: gercek sayi hucreleri + oransal cubuk.
+  // Kullanici A/B sutunlarini secip Ekle > Grafik ile bir tikta gercek grafik yapabilir.
+  if(t.grafik && t.grafik.length) _raporExcelGrafikSayfasi(wb, t);
+
   const ad = t.baslik.replace(/[^\wğüşıöçĞÜŞİÖÇ -]+/g,'').trim().replace(/\s+/g,'_');
   XLSX.writeFile(wb, ad + '_' + xlsTimestamp() + '.xlsx', { cellStyles:true });
+}
+
+function _raporExcelGrafikSayfasi(wb, t){
+  const veri = t.grafik.filter(b => b && b.label != null);
+  if(!veri.length) return;
+  const enBuyuk = Math.max(...veri.map(b => Math.abs(+b.value || 0)), 1);
+
+  const kirmizi = 'FFE2231A';
+  const cerceve = {
+    top:{ style:'thin', color:{ rgb:'FFD9DDE3' } }, bottom:{ style:'thin', color:{ rgb:'FFD9DDE3' } },
+    left:{ style:'thin', color:{ rgb:'FFD9DDE3' } }, right:{ style:'thin', color:{ rgb:'FFD9DDE3' } }
+  };
+
+  const aoa = [
+    [pdfTemiz(t.baslik) + ' — Grafik Verisi'],
+    [pdfTemiz(t.altBilgi || '')],
+    ['Dönem', 'Değer', 'Oran', 'Görsel'],
+  ];
+  veri.forEach(b => {
+    const v = +b.value || 0;
+    const oran = Math.abs(v) / enBuyuk;
+    aoa.push([String(b.label), v, oran, '█'.repeat(Math.max(1, Math.round(oran * 28)))]);
+  });
+
+  const gs = XLSX.utils.aoa_to_sheet(aoa);
+  const son = XLSX.utils.decode_range(gs['!ref']);
+
+  for(let R = 0; R <= son.e.r; R++){
+    for(let C = 0; C <= son.e.c; C++){
+      const ad = XLSX.utils.encode_cell({ r:R, c:C });
+      if(!gs[ad]) gs[ad] = { t:'s', v:'' };
+      const h = gs[ad];
+      if(R === 0){
+        h.s = { font:{ bold:true, sz:13, color:{ rgb:'FFFFFFFF' } },
+                fill:{ patternType:'solid', fgColor:{ rgb:kirmizi } },
+                alignment:{ horizontal:'left', vertical:'center' } };
+      } else if(R === 1){
+        h.s = { font:{ sz:9, color:{ rgb:'FFFFD6D4' } },
+                fill:{ patternType:'solid', fgColor:{ rgb:kirmizi } },
+                alignment:{ horizontal:'left' } };
+      } else if(R === 2){
+        h.s = { font:{ bold:true, sz:10, color:{ rgb:'FFFFFFFF' } },
+                fill:{ patternType:'solid', fgColor:{ rgb:'FF1F2226' } },
+                alignment:{ horizontal: C === 0 ? 'left' : 'center' }, border:cerceve };
+      } else {
+        const cift = (R - 3) % 2 === 0;
+        const dolgu = { patternType:'solid', fgColor:{ rgb: cift ? 'FFFFFFFF' : 'FFF6F7F9' } };
+        if(C === 1){ h.t = 'n'; h.z = '#,##0.00'; }
+        if(C === 2){ h.t = 'n'; h.z = '0.0%'; }
+        const cubukRengi = (gs[XLSX.utils.encode_cell({ r:R, c:2 })].v >= 0.8) ? 'FF16A34A'
+                          : (gs[XLSX.utils.encode_cell({ r:R, c:2 })].v >= 0.5 ? 'FF2563EB' : kirmizi);
+        h.s = { font:{ sz:10, color:{ rgb: C === 3 ? cubukRengi : 'FF1A1C1E' } },
+                fill:dolgu, border:cerceve,
+                alignment:{ horizontal: C === 0 ? 'left' : (C === 3 ? 'left' : 'right') } };
+      }
+    }
+  }
+
+  gs['!merges'] = [
+    { s:{ r:0, c:0 }, e:{ r:0, c:3 } },
+    { s:{ r:1, c:0 }, e:{ r:1, c:3 } },
+  ];
+  gs['!cols'] = [{ wch:18 }, { wch:14 }, { wch:9 }, { wch:34 }];
+  gs['!rows'] = [{ hpt:24 }, { hpt:15 }];
+  XLSX.utils.book_append_sheet(wb, gs, 'Grafik Verisi');
 }
 
 function closeExportModal(){
@@ -17646,6 +17770,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v276',
+    date: '11.07.2026',
+    items: [
+      { type: 'new', text: 'GRAFIK ARTIK EXCEL\'E DE GECIYOR. Onceden grafik yalnizca PDF ve Yazdir ciktisinda vardi; Excel\'de hic yoktu. Kullanilan kutuphane (xlsx-js-style) yerlesik Excel grafigi uretemiyor — bu onun siniri. Bunun yerine ikinci bir sayfa ekleniyor: "Grafik Verisi". Icinde Donem, Deger, Oran ve gorsel cubuk sutunlari var. Degerler GERCEK SAYI hucresi (SUM/ortalama calisir), oran yuzde bicimli, cubuklar orana gore renkli (%80+ yesil, %50+ mavi, altinda kirmizi). A ve B sutununu secip Ekle > Grafik ile tek tikta gercek Excel grafigi olusturulabilir.' },
+      { type: 'ui', text: 'HAFTALIK / YILLIK RAPOR: "Dışa Aktar" butonu tablonun ustunden sayfa basligina, Haftalık / Aylık / Yıllık butonlarinin yanina tasindi.' },
+      { type: 'new', text: 'TREND ANALIZI ARALIKLARI GENISLETILDI. Uc secenekli acilir liste (Son 6/12/24 Ay) kaldirildi; yerine sekiz hizli buton geldi: Bu Ay · Son 3 Ay · Son 6 Ay · Son 12 Ay · Son 24 Ay · Bu Yıl · Geçen Yıl · Tümü. "Bu Yıl" ocaktan bu aya, "Tümü" ilk kayittan bugune kadar olan tum aylari kapsar. Mobilde butonlar yatay kaydirilabilir.' },
+    ]
+  },
   {
     version: 'v275',
     date: '11.07.2026',
