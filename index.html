@@ -3047,7 +3047,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v278';
+const APP_VERSION = 'v279';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3160,7 +3160,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '11.07.2026 23:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '12.07.2026 01:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -16933,6 +16933,8 @@ function _chartXml(sayfaAdi, ilkSatir, sonSatir, baslik){
 <c:idx val="0"/><c:order val="0"/>
 <c:tx><c:strRef><c:f>'${sayfaAdi.replace(/'/g,"''")}'!$B$${ilkSatir - 1}</c:f></c:strRef></c:tx>
 <c:spPr><a:solidFill><a:srgbClr val="E2231A"/></a:solidFill></c:spPr>
+<c:invertIfNegative val="0"/>
+<c:dLbls><c:numFmt formatCode="#,##0" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr><c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="900" b="1"><a:solidFill><a:srgbClr val="3C3C3C"/></a:solidFill></a:defRPr></a:pPr><a:endParaRPr lang="tr-TR"/></a:p></c:txPr><c:dLblPos val="outEnd"/><c:showLegendKey val="0"/><c:showVal val="1"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/></c:dLbls>
 <c:cat><c:strRef><c:f>${ref('A')}</c:f><c:strCache><c:ptCount val="${n}"/></c:strCache></c:strRef></c:cat>
 <c:val><c:numRef><c:f>${ref('B')}</c:f><c:numCache><c:ptCount val="${n}"/></c:numCache></c:numRef></c:val>
 </c:ser>
@@ -16942,7 +16944,6 @@ function _chartXml(sayfaAdi, ilkSatir, sonSatir, baslik){
 <c:catAx><c:axId val="111111111"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:crossAx val="222222222"/></c:catAx>
 <c:valAx><c:axId val="222222222"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:majorGridlines/><c:numFmt formatCode="#,##0" sourceLinked="0"/><c:crossAx val="111111111"/></c:valAx>
 </c:plotArea>
-<c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend>
 <c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/>
 </c:chart>
 </c:chartSpace>`;
@@ -18009,6 +18010,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v279',
+    date: '12.07.2026',
+    items: [
+      { type: 'fix', text: 'EXCEL GRAFIGINDE SUTUNLARIN USTUNDE DEGER YAZMIYORDU. Grafige veri etiketleri (dLbls) eklendi: her sutunun ustunde degeri #,##0 bicimiyle, kalin, disa hizali (outEnd) gorunuyor. Tek serili grafikte gereksiz olan alt gosterge (legend) kaldirildi.' },
+    ]
+  },
   {
     version: 'v278',
     date: '11.07.2026',
