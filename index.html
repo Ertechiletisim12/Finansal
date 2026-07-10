@@ -466,26 +466,52 @@ body.light #kapanisRaporModal [style*="color:#fcd34d"]{ color:#fcd34d!important;
     gap:4px!important;
   }
   #raporHeader h2{ font-size:14px!important; }
-  #raporHeader > div{
+  /* v280: kontrol grubu tek satirda tasiyordu; yil butonlari kaydirma disina dusuyordu.
+     Artik yil satiri ile gorunum/aktar satiri alt alta, her biri kendi yatay kaydirmasi. */
+  #raporKontrolGrup{
+    width:100%!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:6px!important;
+  }
+  #raporKontrolGrup > .rapor-ayirac{ display:none!important; }
+  #raporYilBtns{
     width:100%!important;
     flex-wrap:nowrap!important;
     overflow-x:auto!important;
     scrollbar-width:none!important;
-    gap:4px!important;
+    gap:5px!important;
+    padding-bottom:2px!important;
   }
-  #raporHeader > div::-webkit-scrollbar{ display:none; }
-  #raporYilBtns{
-    flex-wrap:nowrap!important;
-    gap:4px!important;
+  #raporYilBtns::-webkit-scrollbar{ display:none; }
+  /* gorunum + disa aktar butonlari ikinci satirda, kendi kaydirmasiyla */
+  #raporViewHafta{ margin-left:0!important; }
+  #raporKontrolGrup{ position:relative; }
+  #raporGorunumGrup{
+    width:100%!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+    gap:6px!important;
   }
-  #raporYilBtns .qbtn,
-  #raporViewHafta, #raporViewAy, #raporViewYil{
-    font-size:10.5px!important;
-    padding:5px 8px!important;
+  #raporGorunumGrup::-webkit-scrollbar{ display:none; }
+  #raporViewHafta, #raporViewAy, #raporViewYil, #raporGorunumGrup .preview-btn{
+    display:inline-flex!important;
+    align-items:center!important;
+    font-size:11px!important;
+    padding:6px 10px!important;
     white-space:nowrap!important;
     flex-shrink:0!important;
   }
-  #page-rapor{ padding-top:108px!important; } /* v243: baslangic; gercek deger JS ile olculur */
+  #raporGorunumGrup .preview-btn{ margin-left:0!important; }
+  #raporYilBtns .qbtn{
+    font-size:11px!important;
+    padding:6px 12px!important;
+    white-space:nowrap!important;
+    flex-shrink:0!important;
+    font-weight:700!important;
+  }
+  #page-rapor{ padding-top:150px!important; } /* v280: baslik uc satira cikti (h2 + yil + gorunum) */
   
   /* Ana scroll body'de olsun */
   body{ overflow-y:auto!important; }
@@ -2105,15 +2131,16 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div id="page-rapor" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
       <div id="raporHeader" style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;flex-wrap:wrap;gap:8px">
         <h2 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px"><button onclick="switchPage('prim')" class="prim-tool-pill" style="padding:4px 10px" title="Prim Sayfasına dön">← Prim</button> 📅 Haftalık / Yıllık Rapor</h2>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <!-- v280: yil satiri ve kontrol satiri ayri gruplar — mobilde alt alta, her biri kendi kaydirma alani -->
+        <div id="raporKontrolGrup" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <div id="raporYilBtns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-          <div style="width:1px;height:20px;background:var(--line);margin:0 2px"></div>
-          <button class="qbtn" id="raporViewHafta" onclick="setRaporView('hafta')" style="font-size:12px">📆 Haftalık</button>
-          <button class="qbtn" id="raporViewAy" onclick="setRaporView('ay')" style="font-size:12px">📅 Aylık</button>
-          <button class="qbtn" id="raporViewYil" onclick="setRaporView('yil')" style="font-size:12px">📊 Yıllık</button>
-          <!-- v276: Disa Aktar, gorunum butonlarinin yanina tasindi -->
-          <div style="width:1px;height:20px;background:var(--line);margin:0 2px"></div>
-          <button class="preview-btn" onclick="exportRaporModal()" style="font-size:12px;white-space:nowrap">📤 Dışa Aktar</button>
+          <div class="rapor-ayirac" style="width:1px;height:20px;background:var(--line);margin:0 2px"></div>
+          <div id="raporGorunumGrup" style="display:flex;gap:6px;align-items:center">
+            <button class="qbtn" id="raporViewHafta" onclick="setRaporView('hafta')" style="font-size:12px">📆 Haftalık</button>
+            <button class="qbtn" id="raporViewAy" onclick="setRaporView('ay')" style="font-size:12px">📅 Aylık</button>
+            <button class="qbtn" id="raporViewYil" onclick="setRaporView('yil')" style="font-size:12px">📊 Yıllık</button>
+            <button class="preview-btn" onclick="exportRaporModal()" style="font-size:12px;white-space:nowrap;margin-left:auto">📤 Dışa Aktar</button>
+          </div>
         </div>
       </div>
 
@@ -3047,7 +3074,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v279';
+const APP_VERSION = 'v280';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3160,7 +3187,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '12.07.2026 01:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '12.07.2026 03:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -18010,6 +18037,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v280',
+    date: '12.07.2026',
+    items: [
+      { type: 'fix', text: 'MOBILDE HAFTALIK/YILLIK RAPORDA YIL BUTONLARI GORUNMUYORDU. Yil butonlari, gorunum butonlari (Haftalık/Aylık/Yıllık) ve Dışa Aktar tek bir yatay kaydirma satirini paylasiyordu; ekrana sigmayinca yil butonlari soldan kaydirma disina dusuyor, yalnizca secili yil goruluyordu. Artik baslik uc satir: rapor adi / yil butonlari / gorunum + Dışa Aktar. Her buton grubu kendi yatay kaydirma alanina sahip.' },
+      { type: 'ui', text: 'Mobilde yil butonlari buyutuldu ve kalinlastirildi (kolay dokunma). Sayfa ust boslugu yeni uc satirli baslik yuksekligine gore ayarlandi.' },
+    ]
+  },
   {
     version: 'v279',
     date: '12.07.2026',
