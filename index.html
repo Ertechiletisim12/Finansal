@@ -511,7 +511,7 @@ body.light #kapanisRaporModal [style*="color:#fcd34d"]{ color:#fcd34d!important;
     flex-shrink:0!important;
     font-weight:700!important;
   }
-  #page-rapor{ padding-top:150px!important; } /* v280: baslik uc satira cikti (h2 + yil + gorunum) */
+  #page-rapor{ padding-top:160px!important; } /* v281: baslik uc satirlik yukseklik */
   
   /* Ana scroll body'de olsun */
   body{ overflow-y:auto!important; }
@@ -3074,7 +3074,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v280';
+const APP_VERSION = 'v281';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3187,7 +3187,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '12.07.2026 03:10'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '12.07.2026 06:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -16380,7 +16380,7 @@ function showCatDetail(cat, rStart, rEnd){
   if(popup) popup.remove();
   popup = document.createElement('div');
   popup.id = 'dayDetailPopup';
-  popup.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:16px';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:6500;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:16px';  // v281: export modali (6000) uzerinde acilmali, altinda kaliyordu
   popup.onclick = function(e){ if(e.target===popup) popup.remove(); };
   popup.innerHTML = `
     <div style="background:#22252a;border:1px solid #3a3d42;border-radius:14px;width:100%;max-width:520px;max-height:75vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.6)">
@@ -17573,15 +17573,26 @@ function openExportPreview(tableId, fileLabel){
             if(akt > rEnd)      devir = 'sonraki';   // bu dönemde girildi, sonraki döneme devrolacak
             else if(akt < g.date) devir = 'onceki';
           }
+          // v281: bu isleme bagli not (once musteri notu, sonra entryKey notu)
+          const _ek = (notlarData||[]).find(n => n.entryKey === g.date+'_'+g.cat);
+          const notMetni = (m.not || (_ek && _ek.metin) || '').trim();
+          const notEtiket = (_ek && _ek.etiketler && _ek.etiketler.length) ? _ek.etiketler.join(', ') : '';
           musteriRows.push({date:g.date,cat:g.cat,count:1,amt:birimAmt,
             ad:((m.ad||'')+' '+(m.soyad||'')).trim(),tel:m.tel||'-',tarife:m.tarife||(logE&&logE.tarife)||'-',
             tip: isMnp ? 'MNP' : 'Yeni Tesis', akt: akt||'-', devir,
-            bekliyor: m.durum==='bekliyor'});
+            bekliyor: m.durum==='bekliyor',
+            not: notMetni, etiket: notEtiket});
         });
         const kalan = g.count - ilgiliM.length;
-        if(kalan>0) musteriRows.push({date:g.date,cat:g.cat,count:kalan,amt:birimAmt*kalan,ad:'-',tel:'-',tarife:'-',tip:'-',akt:'-',devir:'',bekliyor:false});
+        if(kalan>0){
+          const _ek = (notlarData||[]).find(n => n.entryKey === g.date+'_'+g.cat);
+          musteriRows.push({date:g.date,cat:g.cat,count:kalan,amt:birimAmt*kalan,ad:'-',tel:'-',tarife:'-',tip:'-',akt:'-',devir:'',bekliyor:false,
+            not:(_ek&&_ek.metin)||'', etiket:(_ek&&_ek.etiketler&&_ek.etiketler.length)?_ek.etiketler.join(', '):''});
+        }
       } else {
-        musteriRows.push({date:g.date,cat:g.cat,count:g.count,amt:birimAmt*g.count,ad:'-',tel:'-',tarife:'-',tip:'-',akt:'-',devir:'',bekliyor:false});
+        const _ek = (notlarData||[]).find(n => n.entryKey === g.date+'_'+g.cat);
+        musteriRows.push({date:g.date,cat:g.cat,count:g.count,amt:birimAmt*g.count,ad:'-',tel:'-',tarife:'-',tip:'-',akt:'-',devir:'',bekliyor:false,
+          not:(_ek&&_ek.metin)||'', etiket:(_ek&&_ek.etiketler&&_ek.etiketler.length)?_ek.etiketler.join(', '):''});
       }
     });
     const catSummary = CATS.map(c=>{
@@ -17614,6 +17625,7 @@ function openExportPreview(tableId, fileLabel){
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Müşteri</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Telefon</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Tarife</th>
+        <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Not</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:center">Adet</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:right">Tutar</th>
       </tr></thead>
@@ -17632,12 +17644,13 @@ function openExportPreview(tableId, fileLabel){
         <td style="padding:8px 10px;font-size:12px;color:#fff;font-weight:600">${r.ad.trim()||'—'}</td>
         <td style="padding:8px 10px;font-size:12px;color:#aaa;white-space:nowrap">${r.tel}</td>
         <td style="padding:8px 10px;font-size:12px;color:#aaa">${r.tarife}</td>
+        <td style="padding:8px 10px;font-size:11px;color:#cbb;max-width:160px">${r.not?esc(r.not):''}${r.etiket?`<span style="display:block;color:#9b59b6;font-size:9.5px;margin-top:2px">🏷 ${esc(r.etiket)}</span>`:''}</td>
         <td style="padding:8px 10px;font-size:12px;color:#fff;font-weight:700;text-align:center">${r.count>0?r.count:''}</td>
         <td style="padding:8px 10px;font-size:12px;color:#4cd964;font-weight:700;text-align:right;white-space:nowrap">${r.count>0?fmt(r.amt):''}</td>
       </tr>`;}).join('')}
       </tbody>
       <tfoot><tr style="background:#1a1c20;border-top:2px solid #e2231a">
-        <td colspan="7" style="padding:10px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
+        <td colspan="8" style="padding:10px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
         <td style="padding:10px;font-size:13px;color:#fff;font-weight:800;text-align:center">${musteriRows.reduce((a,r)=>a+r.count,0)}</td>
         <td style="padding:10px;font-size:13px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(musteriRows.reduce((a,r)=>a+r.amt,0))}</td>
       </tr></tfoot></table>`;
@@ -17689,15 +17702,31 @@ function openExportPreview(tableId, fileLabel){
     const _bekleyenler = _mnpRows.filter(r=>r.bekliyor);
     const _katOzet = arr => { const m={}; arr.forEach(r=>{m[r.cat]=(m[r.cat]||0)+1;});
       return Object.keys(m).sort((a,b)=>m[b]-m[a]).map(c=>`${m[c]} ${c}`).join(' · ') || '—'; };
+    // v281: Devir durumu artik kompakt TABLO (kart cok yer kapliyor, PDF'te kayboluyordu).
+    // "Önceki dönemden devreden" satiri da eklendi (onceden yalnizca kutuda vardi, ozet tablosunda yoktu).
+    const devirSatir = (renk, ikon, ad, arr) => arr.length
+      ? `<tr style="border-bottom:1px solid #2e3035;background:#26282b">
+          <td style="padding:9px 14px;font-size:12px;color:${renk};font-weight:700;white-space:nowrap">${ikon} ${ad}</td>
+          <td style="padding:9px 14px;font-size:13px;color:#fff;font-weight:800;text-align:center">${arr.length}</td>
+          <td style="padding:9px 14px;font-size:11px;color:#9aa0a6;text-align:right">${_katOzet(arr)}</td>
+        </tr>` : '';
     const devirKutu = (_gidenler.length || _oncekiler.length || _bekleyenler.length) ? `
-      <div style="background:#26282b;border:1px solid #3a3d42;border-radius:10px;padding:12px 14px;margin-bottom:12px">
-        <div style="font-size:12px;font-weight:800;color:#c084fc;margin-bottom:8px">🔄 MNP Devir Durumu <span style="font-size:10px;color:#888;font-weight:600">(seçili aralığa göre)</span></div>
-        ${_oncekiler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0"><span style="color:#ffb74d">⬅️ Önceki dönemden devreden</span><span style="color:#ddd;font-weight:700">${_oncekiler.length} <span style="color:#888;font-weight:500">(${_katOzet(_oncekiler)})</span></span></div>`:''}
-        ${_gidenler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0;border-top:1px solid #34373c"><span style="color:#3fd0ff">➡️ Sonraki döneme devrolacak</span><span style="color:#ddd;font-weight:700">${_gidenler.length} <span style="color:#888;font-weight:500">(${_katOzet(_gidenler)})</span></span></div>`:''}
-        ${_bekleyenler.length?`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:4px 0;border-top:1px solid #34373c"><span style="color:#ffd27a">⏳ Onay bekleyen</span><span style="color:#ddd;font-weight:700">${_bekleyenler.length} <span style="color:#888;font-weight:500">(${_katOzet(_bekleyenler)})</span></span></div>`:''}
-        <div style="font-size:9.5px;color:#777;margin-top:7px;line-height:1.5">Prim aktivasyon tarihinde işlenir (MNP = giriş + 2 gün). Dönem sonunda girilen MNP'ler sonraki döneme devreder.</div>
+      <div style="background:#1e2023;border-radius:8px;overflow:hidden;margin-bottom:12px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#5b3a8c">
+            <th style="padding:10px 14px;font-size:11px;color:#fff;text-align:left;font-weight:700;letter-spacing:.04em">🔄 MNP DEVİR DURUMU <span style="font-weight:500;opacity:.8">(seçili aralığa göre)</span></th>
+            <th style="padding:10px 14px;font-size:11px;color:#fff;text-align:center;font-weight:700">ADET</th>
+            <th style="padding:10px 14px;font-size:11px;color:#fff;text-align:right;font-weight:700">KATEGORİ</th>
+          </tr></thead>
+          <tbody>
+            ${devirSatir('#ffb74d','⬅️','Önceki dönemden devreden', _oncekiler)}
+            ${devirSatir('#3fd0ff','➡️','Sonraki döneme devrolacak', _gidenler)}
+            ${devirSatir('#ffd27a','⏳','Onay bekleyen (hakedişe dahil değil)', _bekleyenler)}
+          </tbody>
+        </table>
+        <div style="font-size:9.5px;color:#777;padding:8px 14px;line-height:1.5;background:#26282b">Prim aktivasyon tarihinde işlenir (MNP = giriş + 2 gün). Dönem sonunda girilen MNP'ler sonraki döneme devreder.</div>
       </div>` : '';
-    ozetHtml = devirKutu + ozetHtml;   // devir kutusu özetin en üstünde
+    ozetHtml = devirKutu + ozetHtml;   // devir tablosu özetin en üstünde
 
     window._exportDetayliHtml = detayliHtml;
     window._exportOzetHtml = ozetHtml;
@@ -17706,14 +17735,46 @@ function openExportPreview(tableId, fileLabel){
     document.getElementById('exportModalContent').innerHTML = detayliHtml;
     window._exportCurrentTab = 'detayli';
     _activeExportTable = null;
-    // v266 FIX: bu dal _raporAktif'i doldurmuyordu -> Yazdir / PDF / Paylas "veri yok" diyordu.
+    // v281: _raporAktif artik ekrandaki DETAYLI tabloyla birebir ayni — Excel/PDF/Yazdir
+    // musteri, telefon, tarife, tip, aktivasyon/devir, not ve etiketi de aktarir.
+    // Onceden yalnizca 4 sutun (tarih/kategori/adet/tutar) aktariliyordu; ekrandaki
+    // zengin bilgi kayboluyordu.
+    const _paraMetni = v => { const f = fmt(v); return /₺/.test(f) ? f : f + ' ₺'; };
+    const _devirEtiket = r => r.devir==='sonraki' ? 'Sonraki döneme'
+                            : r.devir==='onceki' ? 'Önceki dönemden'
+                            : (r.bekliyor ? 'Onay bekliyor' : '');
     _raporAktif = raporTanimiDizidenm(
-      (fileLabel || 'İşlem Listesi').replace(/_/g,' '),
-      rStart + ' — ' + rEnd + ' · ' + filtRows.length + ' işlem',
-      ['Tarih','Kategori','Adet','Tutar'],
-      filtRows.map(e => [e.date, e.cat, e.count,
-        fmt(e.count * kampanyaFiyatFor(e.date, e.cat, priceFor(ymKey(e.date), e.cat))) + ' ₺']));
-    document.getElementById('exportModalXlsBtn').onclick = raporExcel;
+      'İşlem Listesi',
+      rStart + ' — ' + rEnd + ' · ' + musteriRows.length + ' kayıt',
+      ['Tarih','Kategori','Tip','Aktivasyon','Devir/Durum','Müşteri','Telefon','Tarife','Not','Etiket','Adet','Tutar'],
+      musteriRows.map(r => [
+        r.date, r.cat, (r.tip||'-'),
+        (r.akt && r.akt!=='-') ? r.akt : '',
+        _devirEtiket(r),
+        (r.ad||'').trim()==='' ? '' : r.ad,
+        r.tel==='-' ? '' : r.tel,
+        r.tarife==='-' ? '' : r.tarife,
+        r.not || '', r.etiket || '',
+        r.count>0 ? r.count : '',
+        r.count>0 ? _paraMetni(r.amt) : ''
+      ]));
+    // Ozet gorunumunun de aktarilabilmesi icin ikinci tanim
+    window._raporOzetTanim = raporTanimiDizidenm(
+      'İşlem Listesi — Özet',
+      rStart + ' — ' + rEnd,
+      ['Kategori','Toplam Adet','Tesis','MNP','Ay Sayısı','Tutar'],
+      CATS.map(c=>{
+        const ce = filtRows.filter(e=>e.cat===c);
+        const tc = ce.reduce((a,e)=>a+e.count,0);
+        if(!tc) return null;
+        const mnpC = ce.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
+        const ay = [...new Set(ce.map(e=>ymKey(e.date)))].length;
+        const amt = ce.reduce((a,e)=>a+e.count*kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c)),0);
+        return [c, tc, tc-mnpC, mnpC, ay+' ay', _paraMetni(amt)];
+      }).filter(Boolean));
+    // Aktif sekmeye gore hangi tanim aktarilir
+    window._exportAktifTanim = () => (window._exportCurrentTab==='ozet' ? window._raporOzetTanim : _raporAktif);
+    document.getElementById('exportModalXlsBtn').onclick = () => raporExcelYaz(window._exportAktifTanim());
     modal.style.display = 'flex';
     return;
   }
@@ -17730,6 +17791,10 @@ function switchExportTab(tab){
     o.style.background = '#e2231a'; o.style.color = '#fff';
     d.style.background = '#111'; d.style.color = '#888';
     document.getElementById('exportModalContent').innerHTML = window._exportOzetHtml;
+  }
+  // v281: Yazdir/PDF/Paylas butonlari _raporAktif'i okur; aktif sekmenin tanimina esitle
+  if(typeof window._exportAktifTanim === 'function' && window._exportOzetHtml != null){
+    _raporAktif = window._exportAktifTanim();
   }
 }
 
@@ -18037,6 +18102,19 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v281',
+    date: '12.07.2026',
+    items: [
+      { type: 'fix', text: 'ISLEM LISTESI DISA AKTARMA EKSIK VERI VERIYORDU. Excel/PDF/Yazdir yalnizca 4 sutun (tarih/kategori/adet/tutar) aktariyordu; ekrandaki musteri, telefon, tarife, tip, aktivasyon, devir ve not bilgisi kayboluyordu. Artik ekrandaki DETAYLI tabloyla birebir 12 sutun aktariliyor. PDF cok sutun icin yatay sayfada, tasmadan.' },
+      { type: 'fix', text: 'ISLEM LISTESINDEKI NOTLAR geri geldi. Not & Etiket sistemine yeniden baglandi: her isleme, once musteri notu sonra o gun+kategoriye bagli not (entryKey) eslenip Not sutununda (etiketiyle birlikte) gosteriliyor — hem ekranda hem disa aktarmada.' },
+      { type: 'fix', text: 'ONAY BEKLEYEN kartinin yaninda PDF\'te kaybolan devir kutusu KOMPAKT TABLOYA cevrildi. "Önceki dönemden devreden" satiri da eklendi (onceden ozet tarafinda hic yoktu). Uc durum tek tabloda: onceki donemden, sonraki doneme, onay bekleyen — her biri adet ve kategori kirilimiyla.' },
+      { type: 'fix', text: 'ISLEM LISTESI OZET goruntusu de artik ayri aktarilabiliyor: Ozet sekmesindeyken Excel/PDF/Yazdir kategori bazli ozet tablosunu (Tesis/MNP kirilimli) verir, Detaylı sekmesindeyken tam musteri listesini.' },
+      { type: 'fix', text: 'Kategori detay penceresi (Özet\'te bir kategoriye tiklayinca) disa aktarma penceresinin ALTINDA aciliyordu (z-index 3000 < 6000). Artik ustte (6500).' },
+      { type: 'fix', text: 'Tutar hucrelerinde cift ₺ isareti ("1.200,00 ₺ ₺") duzeltildi.' },
+      { type: 'ui', text: 'Haftalık/Yıllık rapor sayfasinin ust boslugu 160px (icerik bir tık yukarida kaliyordu).' },
+    ]
+  },
   {
     version: 'v280',
     date: '12.07.2026',
