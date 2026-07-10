@@ -3047,7 +3047,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v276';
+const APP_VERSION = 'v277';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3160,7 +3160,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '11.07.2026 18:05'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '11.07.2026 21:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -16819,6 +16819,190 @@ function raporExcel(){
   raporExcelYaz(_raporAktif);
 }
 
+// ==================== v277: EXCEL'E GERCEK GRAFIK GOMME ====================
+// xlsx-js-style yerlesik grafik (chart part) uretemez. Ancak SheetJS zip'i
+// SIKISTIRMASIZ (stored) yazabiliyor. Bu sayede uretilen .xlsx dosyasini acip
+// gerekli XML parcalarini ekleyip yeniden paketleyebiliyoruz. Boylece dosyada
+// GERCEK, yerlesik bir Excel sutun grafigi olusuyor (resim degil).
+
+function _crc32(veri){
+  let c, tablo = _crc32.tablo;
+  if(!tablo){
+    tablo = _crc32.tablo = new Int32Array(256);
+    for(let n = 0; n < 256; n++){
+      c = n;
+      for(let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      tablo[n] = c;
+    }
+  }
+  let crc = -1;
+  for(let i = 0; i < veri.length; i++) crc = (crc >>> 8) ^ tablo[(crc ^ veri[i]) & 0xFF];
+  return (crc ^ -1) >>> 0;
+}
+
+const _yaziya = s => new TextEncoder().encode(s);
+
+// Sikistirmasiz zip'i {ad: Uint8Array} haritasina cevir
+function _zipAc(veri){
+  const dv = new DataView(veri.buffer, veri.byteOffset, veri.byteLength);
+  const girdiler = new Map();
+  let i = 0;
+  while(i < veri.length - 4){
+    if(dv.getUint32(i, true) !== 0x04034b50){ i++; continue; }
+    const yontem = dv.getUint16(i + 8, true);
+    if(yontem !== 0) throw new Error('zip sikistirilmis; stored bekleniyordu');
+    const boyut  = dv.getUint32(i + 18, true);
+    const adUz   = dv.getUint16(i + 26, true);
+    const ekUz   = dv.getUint16(i + 28, true);
+    const ad     = new TextDecoder().decode(veri.subarray(i + 30, i + 30 + adUz));
+    const bas    = i + 30 + adUz + ekUz;
+    girdiler.set(ad, veri.subarray(bas, bas + boyut));
+    i = bas + boyut;
+  }
+  return girdiler;
+}
+
+// {ad: Uint8Array} -> sikistirmasiz zip
+function _zipKur(girdiler){
+  const parcalar = [], merkez = [];
+  let ofset = 0;
+  for(const [ad, veri] of girdiler){
+    const adB = _yaziya(ad);
+    const crc = _crc32(veri);
+    const yerel = new Uint8Array(30 + adB.length);
+    const dv = new DataView(yerel.buffer);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, 20, true); dv.setUint16(6, 0, true); dv.setUint16(8, 0, true);
+    dv.setUint16(10, 0, true); dv.setUint16(12, 0, true);
+    dv.setUint32(14, crc, true);
+    dv.setUint32(18, veri.length, true);
+    dv.setUint32(22, veri.length, true);
+    dv.setUint16(26, adB.length, true); dv.setUint16(28, 0, true);
+    yerel.set(adB, 30);
+    parcalar.push(yerel, veri);
+
+    const mrk = new Uint8Array(46 + adB.length);
+    const mv = new DataView(mrk.buffer);
+    mv.setUint32(0, 0x02014b50, true);
+    mv.setUint16(4, 20, true); mv.setUint16(6, 20, true);
+    mv.setUint16(8, 0, true); mv.setUint16(10, 0, true);
+    mv.setUint16(12, 0, true); mv.setUint16(14, 0, true);
+    mv.setUint32(16, crc, true);
+    mv.setUint32(20, veri.length, true);
+    mv.setUint32(24, veri.length, true);
+    mv.setUint16(28, adB.length, true);
+    mv.setUint32(42, ofset, true);
+    mrk.set(adB, 46);
+    merkez.push(mrk);
+    ofset += yerel.length + veri.length;
+  }
+  const merkezBoy = merkez.reduce((a, m) => a + m.length, 0);
+  const son = new Uint8Array(22);
+  const sv = new DataView(son.buffer);
+  sv.setUint32(0, 0x06054b50, true);
+  sv.setUint16(8, girdiler.size, true);
+  sv.setUint16(10, girdiler.size, true);
+  sv.setUint32(12, merkezBoy, true);
+  sv.setUint32(16, ofset, true);
+
+  const toplam = ofset + merkezBoy + 22;
+  const cikti = new Uint8Array(toplam);
+  let p = 0;
+  parcalar.forEach(x => { cikti.set(x, p); p += x.length; });
+  merkez.forEach(x => { cikti.set(x, p); p += x.length; });
+  cikti.set(son, p);
+  return cikti;
+}
+
+const _xmlKac = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function _chartXml(sayfaAdi, ilkSatir, sonSatir, baslik){
+  const ref = (sut) => `'${sayfaAdi.replace(/'/g, "''")}'!$${sut}$${ilkSatir}:$${sut}$${sonSatir}`;
+  const n = sonSatir - ilkSatir + 1;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<c:chart>
+<c:title><c:tx><c:rich><a:bodyPr/><a:p><a:r><a:t>${_xmlKac(baslik)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>
+<c:autoTitleDeleted val="0"/>
+<c:plotArea><c:layout/>
+<c:barChart>
+<c:barDir val="col"/><c:grouping val="clustered"/><c:varyColors val="0"/>
+<c:ser>
+<c:idx val="0"/><c:order val="0"/>
+<c:tx><c:strRef><c:f>'${sayfaAdi.replace(/'/g,"''")}'!$B$${ilkSatir - 1}</c:f></c:strRef></c:tx>
+<c:spPr><a:solidFill><a:srgbClr val="E2231A"/></a:solidFill></c:spPr>
+<c:cat><c:strRef><c:f>${ref('A')}</c:f><c:strCache><c:ptCount val="${n}"/></c:strCache></c:strRef></c:cat>
+<c:val><c:numRef><c:f>${ref('B')}</c:f><c:numCache><c:ptCount val="${n}"/></c:numCache></c:numRef></c:val>
+</c:ser>
+<c:gapWidth val="60"/>
+<c:axId val="111111111"/><c:axId val="222222222"/>
+</c:barChart>
+<c:catAx><c:axId val="111111111"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:crossAx val="222222222"/></c:catAx>
+<c:valAx><c:axId val="222222222"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:majorGridlines/><c:numFmt formatCode="#,##0" sourceLinked="0"/><c:crossAx val="111111111"/></c:valAx>
+</c:plotArea>
+<c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend>
+<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/>
+</c:chart>
+</c:chartSpace>`;
+}
+
+const _drawingXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<xdr:twoCellAnchor>
+<xdr:from><xdr:col>5</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>2</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+<xdr:to><xdr:col>15</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>22</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+<xdr:graphicFrame macro="">
+<xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Grafik 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr>
+<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>
+<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></a:graphicData></a:graphic>
+</xdr:graphicFrame>
+<xdr:clientData/>
+</xdr:twoCellAnchor>
+</xdr:wsDr>`;
+
+// Ana islev: uretilmis xlsx baytlarina grafik ekler
+function xlsxGrafikGom(baytlar, sayfaSirasi, sayfaAdi, ilkSatir, sonSatir, baslik){
+  const girdiler = _zipAc(new Uint8Array(baytlar));
+  const sayfaDosya = `xl/worksheets/sheet${sayfaSirasi}.xml`;
+  if(!girdiler.has(sayfaDosya)) throw new Error(sayfaDosya + ' bulunamadi');
+
+  // 1) chart + drawing parcalari
+  girdiler.set('xl/charts/chart1.xml', _yaziya(_chartXml(sayfaAdi, ilkSatir, sonSatir, baslik)));
+  girdiler.set('xl/drawings/drawing1.xml', _yaziya(_drawingXml));
+  girdiler.set('xl/drawings/_rels/drawing1.xml.rels', _yaziya(
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart1.xml"/>
+</Relationships>`));
+
+  // 2) sayfa -> drawing iliskisi
+  girdiler.set(`xl/worksheets/_rels/sheet${sayfaSirasi}.xml.rels`, _yaziya(
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rIdGrafik" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>
+</Relationships>`));
+
+  // 3) sayfa xml'ine <drawing/> ekle (</worksheet> hemen oncesi)
+  let sayfa = new TextDecoder().decode(girdiler.get(sayfaDosya));
+  if(!/<drawing /.test(sayfa)){
+    sayfa = sayfa.replace('</worksheet>', '<drawing r:id="rIdGrafik"/></worksheet>');
+    girdiler.set(sayfaDosya, _yaziya(sayfa));
+  }
+
+  // 4) [Content_Types].xml
+  let ct = new TextDecoder().decode(girdiler.get('[Content_Types].xml'));
+  const ekle = (parca, tip) => {
+    if(ct.includes(`PartName="${parca}"`)) return;
+    ct = ct.replace('</Types>', `<Override PartName="${parca}" ContentType="${tip}"/></Types>`);
+  };
+  ekle('/xl/charts/chart1.xml', 'application/vnd.openxmlformats-officedocument.drawingml.chart+xml');
+  ekle('/xl/drawings/drawing1.xml', 'application/vnd.openxmlformats-officedocument.drawing+xml');
+  girdiler.set('[Content_Types].xml', _yaziya(ct));
+
+  return _zipKur(girdiler);
+}
+
+
 function raporExcelYaz(tanim){
   if(!xlsxHazir()) return;
   if(!tanim || !tanim.satirlar || !tanim.satirlar.length){ alert('Aktarılacak veri yok.'); return; }
@@ -16837,6 +17021,26 @@ function raporExcelYaz(tanim){
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
 
+  // v277: Sayi bicimi SUTUN duzeyinde belirlenir.
+  // Onceden her hucre icin ayri karar veriliyordu (Number.isInteger). Ayni sutunda
+  // 41.160 ₺ (ondalıksız) ile 52.945,20 ₺ (ondalikli) yan yana duruyordu.
+  // Kural: para sutunu -> her zaman iki ondalik. Sayi sutunu -> sutunda tek bir
+  // ondalikli deger varsa hepsi iki ondalik, yoksa tamsayi.
+  const sutunBicim = [];
+  t.sayisal.forEach((sayisalMi, ci) => {
+    if(!sayisalMi){ sutunBicim[ci] = null; return; }
+    let ondalikVar = false, yuzdeVar = false;
+    t.satirlar.forEach(satir => {
+      const s = trSayiCoz(satir[ci]);
+      if(!s) return;
+      if(!Number.isInteger(s.sayi)) ondalikVar = true;
+      if(s.yuzde) yuzdeVar = true;
+    });
+    sutunBicim[ci] = t.para[ci] ? '#,##0.00 "₺"'
+                   : yuzdeVar   ? '0"%"'
+                   : (ondalikVar ? '#,##0.00' : '#,##0');
+  });
+
   // Sayisal sutunlari gercek sayiya cevir (metin degil!)
   t.satirlar.forEach((satir, ri) => {
     satir.forEach((hucre, ci) => {
@@ -16844,11 +17048,7 @@ function raporExcelYaz(tanim){
       const s = trSayiCoz(hucre);
       if(!s) return;
       const adres = XLSX.utils.encode_cell({ r: basSonu + ri, c: ci });
-      const tam = Number.isInteger(s.sayi);
-      const bicim = t.para[ci] ? (tam ? '#,##0 "₺"' : '#,##0.00 "₺"')
-                  : s.yuzde   ? '0"%"'
-                  : (tam ? '#,##0' : '#,##0.00');
-      ws[adres] = { t:'n', v:s.sayi, z: bicim };
+      ws[adres] = { t:'n', v:s.sayi, z: sutunBicim[ci] };
     });
   });
 
@@ -16929,19 +17129,42 @@ function raporExcelYaz(tanim){
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, t.baslik.slice(0, 28).replace(/[\\/*?:[\]]/g,'-'));
 
-  // v276: GRAFIK ARTIK EXCEL'E DE GECIYOR.
-  // xlsx-js-style yerlesik Excel grafigi (chart part) uretemez — bu kutuphanenin siniri.
-  // Bunun yerine ikinci bir sayfa eklenir: gercek sayi hucreleri + oransal cubuk.
-  // Kullanici A/B sutunlarini secip Ekle > Grafik ile bir tikta gercek grafik yapabilir.
-  if(t.grafik && t.grafik.length) _raporExcelGrafikSayfasi(wb, t);
+  // v276/v277: Grafik Excel'e de geciyor — ikinci sayfa + GERCEK gomulu sutun grafigi.
+  const grafikVar = !!(t.grafik && t.grafik.length);
+  let grafikSatir = 0;
+  if(grafikVar) grafikSatir = _raporExcelGrafikSayfasi(wb, t);
 
   const ad = t.baslik.replace(/[^\wğüşıöçĞÜŞİÖÇ -]+/g,'').trim().replace(/\s+/g,'_');
-  XLSX.writeFile(wb, ad + '_' + xlsTimestamp() + '.xlsx', { cellStyles:true });
+  const dosya = ad + '_' + xlsTimestamp() + '.xlsx';
+
+  if(!grafikVar){
+    XLSX.writeFile(wb, dosya, { cellStyles:true });
+    return;
+  }
+
+  // Grafik gommek icin zip SIKISTIRMASIZ yazilir (stored), sonra parcalar eklenir.
+  try{
+    const ham = XLSX.write(wb, { bookType:'xlsx', type:'array', compression:false, cellStyles:true });
+    const sayfaSirasi = wb.SheetNames.indexOf('Grafik Verisi') + 1;
+    const yeni = xlsxGrafikGom(ham, sayfaSirasi, 'Grafik Verisi', 4, 3 + grafikSatir, pdfTemiz(t.baslik));
+    _dosyaIndir(new Blob([yeni], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), dosya);
+  }catch(err){
+    console.warn('Grafik gomulemedi, grafiksiz kaydediliyor:', err);
+    XLSX.writeFile(wb, dosya, { cellStyles:true });
+  }
+}
+
+function _dosyaIndir(blob, ad){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = ad;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
 }
 
 function _raporExcelGrafikSayfasi(wb, t){
   const veri = t.grafik.filter(b => b && b.label != null);
-  if(!veri.length) return;
+  if(!veri.length) return 0;
   const enBuyuk = Math.max(...veri.map(b => Math.abs(+b.value || 0)), 1);
 
   const kirmizi = 'FFE2231A';
@@ -17002,6 +17225,7 @@ function _raporExcelGrafikSayfasi(wb, t){
   gs['!cols'] = [{ wch:18 }, { wch:14 }, { wch:9 }, { wch:34 }];
   gs['!rows'] = [{ hpt:24 }, { hpt:15 }];
   XLSX.utils.book_append_sheet(wb, gs, 'Grafik Verisi');
+  return veri.length;   // v277: gomulu grafigin veri araligi icin
 }
 
 function closeExportModal(){
@@ -17770,6 +17994,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v277',
+    date: '11.07.2026',
+    items: [
+      { type: 'new', text: 'EXCEL DOSYASINDA ARTIK GERCEK, GOMULU SUTUN GRAFIGI VAR. Resim degil, Excel\'in kendi grafigi: tiklanir, renkleri degistirilir, veri araligi genisletilir. Kullandigimiz kutuphane (xlsx-js-style) grafik parcasi uretemiyor; bu yuzden dosya once SIKISTIRMASIZ yazilip, icine chart1.xml + drawing1.xml parcalari eklenip yeniden paketleniyor. Grafik "Grafik Verisi" sayfasinda, B sutunundaki gercek sayilara bagli.' },
+      { type: 'fix', text: 'EXCEL SAYI BICIMI AYNI SUTUNDA KARISIYORDU: 41.160 ₺ ile 52.945,20 ₺ yan yana. Bicim her HUCRE icin ayri seciliyordu (tamsayi ise ondaliksiz). Artik SUTUN duzeyinde karar veriliyor: para sutunlari her zaman iki ondalik; sayi sutununda tek bir ondalikli deger varsa tum sutun iki ondalik.' },
+      { type: 'imp', text: 'Grafik gomme basarisiz olursa dosya sessizce grafiksiz kaydedilir — dısa aktarma hicbir kosulda basarisiz olmaz.' },
+    ]
+  },
   {
     version: 'v276',
     date: '11.07.2026',
