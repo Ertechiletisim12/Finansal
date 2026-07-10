@@ -84,9 +84,12 @@
     background:#fff !important; height:auto !important; overflow:visible !important;
     margin:0 !important; padding:0 !important;
   }
-  /* Sadece yazdirma alani basilir */
+  /* Sadece yazdirma alani basilir.
+     visibility de acikca geri veriliyor: baska bir stil blogu 'body *{visibility:hidden}'
+     gibi bir kural koyarsa display:block tek basina yetmez, icerik gorunmez kalirdi. */
   body > *{ display:none !important }
-  body > #yazdirmaAlani{ display:block !important }
+  body > #yazdirmaAlani{ display:block !important; visibility:visible !important }
+  #yazdirmaAlani *{ visibility:visible !important }
 
   /* Renkler kagitta korunsun */
   #yazdirmaAlani, #yazdirmaAlani *{
@@ -1402,7 +1405,7 @@ table.main-table td.pending-cell{color:var(--gold);font-style:italic;border-bott
 table.main-table td.total-col,table.main-table th.total-col{background:var(--panel2)}
 
 /* ---- Yönetici Raporu (yazdırma / PDF) ---- */
-#managerReportPrintArea{display:none}
+/* v269: #managerReportPrintArea kaldirildi (hic kullanilmiyordu) */
 .report-doc{background:#f4f6f8;color:#1a1a1a;font-family:Arial,Helvetica,sans-serif;max-width:960px;margin:0 auto;padding:0}
 /* Kapak başlığı */
 .report-cover{background:linear-gradient(135deg,#1a1c20 0%,#2b2d30 60%,#e2231a 100%);padding:28px 32px 22px;color:#fff}
@@ -1443,13 +1446,12 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 .report-divider{height:1px;background:linear-gradient(90deg,transparent,#ddd,transparent);margin:4px 24px}
 /* Footer */
 .report-footer{text-align:center;padding:14px;font-size:9px;color:#aaa;background:#2b2d30;color:#888;margin-top:0}
-@media print{
-  body *{visibility:hidden}
-  #managerReportPrintArea, #managerReportPrintArea *{visibility:visible}
-  #managerReportPrintArea{display:block;position:absolute;top:0;left:0;width:100%;margin:0;padding:0}
-  .report-kpi,.report-doc table{box-shadow:none}
-  @page{margin:10mm}
-}
+/* v269: ESKI @media print BLOGU KALDIRILDI.
+   Icinde 'body *{visibility:hidden}' vardi — body'nin TUM torunlarini gizliyordu.
+   #yazdirmaAlani'na display:block versek bile icindeki her sey gorunmez kaliyor,
+   kagida BOS SAYFA basiliyordu. Ustelik #managerReportPrintArea hicbir zaman
+   doldurulmuyordu; blok tamamen olu koddu. Gecerli yazdirma kurallari <head> icindeki
+   #yazdirmaStilleri blogunda. */
 
 /* ---- kilit ekranı ---- */
 #lockScreen{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;overflow:auto}
@@ -1697,7 +1699,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
     </div>
   </div>
-  <div id="managerReportPrintArea"></div>
 <!-- Mobil üst navbar - tüm sayfalarda görünür -->
 <div id="mobileTopBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px;align-items:center;justify-content:space-between;gap:8px">
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
@@ -2938,7 +2939,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v268';
+const APP_VERSION = 'v269';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3051,7 +3052,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '10.07.2026 20:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '10.07.2026 22:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15980,9 +15981,13 @@ function _yzBas(html){
   if(!alan){ alert('Yazdırma alanı bulunamadı.'); return; }
   alan.innerHTML = html;
   // Tarayici yerlesimi tamamlasin diye bir kare bekle; sinif/temizlik yok, yaris yok.
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    try{ window.print(); }catch(e){ console.error('Yazdırma hatası', e); }
-  }));
+  let basildi = false;
+  const bas = () => { if(basildi) return; basildi = true;
+    try{ window.print(); }catch(e){ console.error('Yazdırma hatası', e); } };
+  if(typeof requestAnimationFrame === 'function'){
+    requestAnimationFrame(() => requestAnimationFrame(bas));
+  }
+  setTimeout(bas, 120);   // rAF calismayan/arka plandaki sekmeler icin yedek
 }
 
 function raporYazdir(){
@@ -16973,6 +16978,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v269',
+    date: '10.07.2026',
+    items: [
+      { type: 'fix', text: 'YAZDIR HALA BOS SAYFA VERIYORDU — asil suclu bulundu. Dosyada IKI ayri @media print blogu vardi. Eskisi (ana stil blogunun icinde, yenisinden SONRA geliyordu) su kurali tasiyordu: "body *{visibility:hidden}". Bu, body\'nin TUM torunlarini gizler. Yeni yazdirma katmanina display:block verilse bile icindeki her sey gorunmez kaliyor, kagida bos sayfa basiliyordu. v267\'deki yaris durumu gercek bir hataydi ve duzeldi, ama bu ikinci hata onun arkasinda saklaniyordu.' },
+      { type: 'clean', text: 'Eski @media print blogu tamamen kaldirildi. Korumaya calistigi #managerReportPrintArea elemani HICBIR ZAMAN doldurulmuyordu — blok bastan sona olu koddu ve tek etkisi yazdirmayi bozmakti. Bos eleman ve onu gizleyen kural da silindi.' },
+      { type: 'imp', text: 'Yeni yazdirma kurallari savunmaya alindi: #yazdirmaAlani ve tum cocuklari icin visibility:visible acikca zorlaniyor. Ileride baska bir stil blogu benzer bir gizleme kurali eklerse yazdirma yine calisir.' },
+      { type: 'imp', text: 'window.print() cagrisina yedek zamanlayici eklendi: requestAnimationFrame calismayan veya arka planda olan sekmelerde de yazdirma tetiklenir (cift basim korumasi ile).' },
+    ]
+  },
   {
     version: 'v268',
     date: '10.07.2026',
