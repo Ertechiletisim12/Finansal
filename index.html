@@ -3047,7 +3047,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v277';
+const APP_VERSION = 'v278';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3160,7 +3160,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '11.07.2026 21:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '11.07.2026 23:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -16453,7 +16453,9 @@ function trBuyuk(s){
 // PDF fontunda emoji glifi yok -> bos kutu/bosluk birakir. Metinden temizle.
 function pdfTemiz(s){
   return String(s == null ? '' : s)
-    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}]/gu, '')
+    // v278: ▲ ▼ ↑ ↓ ● ■ artik fontta VAR, silinmiyor. Yalnizca fontta olmayan
+    // renkli emoji/piktogramlar atiliyor.
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2B00}-\u{2BFF}]/gu, '')
     .replace(/[^\S\n]+/g,' ').replace(/ *\n */g,'\n').trim();   // v274: satir sonlari korunur
 }
 let _raporAktif = null;
@@ -16946,11 +16948,13 @@ function _chartXml(sayfaAdi, ilkSatir, sonSatir, baslik){
 </c:chartSpace>`;
 }
 
-const _drawingXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+function _drawingXml(ustSatir){
+  const alt = ustSatir + 20;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 <xdr:twoCellAnchor>
-<xdr:from><xdr:col>5</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>2</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
-<xdr:to><xdr:col>15</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>22</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+<xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${ustSatir}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+<xdr:to><xdr:col>8</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${alt}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
 <xdr:graphicFrame macro="">
 <xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Grafik 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr>
 <xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>
@@ -16959,28 +16963,36 @@ const _drawingXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xdr:clientData/>
 </xdr:twoCellAnchor>
 </xdr:wsDr>`;
+}
 
 // Ana islev: uretilmis xlsx baytlarina grafik ekler
-function xlsxGrafikGom(baytlar, sayfaSirasi, sayfaAdi, ilkSatir, sonSatir, baslik){
+function xlsxGrafikGom(baytlar, sayfaSirasi, sayfaAdi, ilkSatir, sonSatir, baslik, cizimSatiri){
   const girdiler = _zipAc(new Uint8Array(baytlar));
   const sayfaDosya = `xl/worksheets/sheet${sayfaSirasi}.xml`;
   if(!girdiler.has(sayfaDosya)) throw new Error(sayfaDosya + ' bulunamadi');
 
   // 1) chart + drawing parcalari
   girdiler.set('xl/charts/chart1.xml', _yaziya(_chartXml(sayfaAdi, ilkSatir, sonSatir, baslik)));
-  girdiler.set('xl/drawings/drawing1.xml', _yaziya(_drawingXml));
+  girdiler.set('xl/drawings/drawing1.xml', _yaziya(_drawingXml(cizimSatiri == null ? 2 : cizimSatiri)));
   girdiler.set('xl/drawings/_rels/drawing1.xml.rels', _yaziya(
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart1.xml"/>
 </Relationships>`));
 
-  // 2) sayfa -> drawing iliskisi
-  girdiler.set(`xl/worksheets/_rels/sheet${sayfaSirasi}.xml.rels`, _yaziya(
-    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-<Relationship Id="rIdGrafik" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>
-</Relationships>`));
+  // 2) sayfa -> drawing iliskisi.
+  // Sayfanin zaten bir .rels dosyasi olabilir (koprü vb.); uzerine yazmak yerine ekle.
+  const relAd = `xl/worksheets/_rels/sheet${sayfaSirasi}.xml.rels`;
+  const yeniRel = '<Relationship Id="rIdGrafik" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>';
+  if(girdiler.has(relAd)){
+    let mevcut = new TextDecoder().decode(girdiler.get(relAd));
+    if(!mevcut.includes('rIdGrafik')) mevcut = mevcut.replace('</Relationships>', yeniRel + '</Relationships>');
+    girdiler.set(relAd, _yaziya(mevcut));
+  } else {
+    girdiler.set(relAd, _yaziya(
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${yeniRel}</Relationships>`));
+  }
 
   // 3) sayfa xml'ine <drawing/> ekle (</worksheet> hemen oncesi)
   let sayfa = new TextDecoder().decode(girdiler.get(sayfaDosya));
@@ -17145,8 +17157,11 @@ function raporExcelYaz(tanim){
   // Grafik gommek icin zip SIKISTIRMASIZ yazilir (stored), sonra parcalar eklenir.
   try{
     const ham = XLSX.write(wb, { bookType:'xlsx', type:'array', compression:false, cellStyles:true });
-    const sayfaSirasi = wb.SheetNames.indexOf('Grafik Verisi') + 1;
-    const yeni = xlsxGrafikGom(ham, sayfaSirasi, 'Grafik Verisi', 4, 3 + grafikSatir, pdfTemiz(t.baslik));
+    // v278: Grafik ANA SAYFAYA gomulur (tablonun altina). Onceden "Grafik Verisi"
+    // sekmesindeydi ve fark edilmiyordu. Veri kaynagi yine o sayfadaki B sutunu.
+    const cizimSatiri = 2 + t.basliklar.length + t.satirlar.length + 2;
+    const yeni = xlsxGrafikGom(ham, 1, 'Grafik Verisi', 4, 3 + grafikSatir,
+                               pdfTemiz(t.baslik), cizimSatiri);
     _dosyaIndir(new Blob([yeni], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), dosya);
   }catch(err){
     console.warn('Grafik gomulemedi, grafiksiz kaydediliyor:', err);
@@ -17994,6 +18009,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v278',
+    date: '11.07.2026',
+    items: [
+      { type: 'fix', text: 'EXCEL GRAFIGI GORUNMUYORDU: v277\'de grafik "Grafik Verisi" sekmesine gomuluyordu, dosya acilinca ilk sayfa geldigi icin fark edilmiyordu. Grafik artik ANA SAYFAYA, tablonun hemen altina gomuluyor. Verisi yine ikinci sayfadaki gercek sayilardan besleniyor.' },
+      { type: 'fix', text: 'PDF VE YAZDIR CIKTISINDA ▲ ▼ OKLARI KAYBOLUYORDU. "Fark" ve "Büyüme" sutunlarindaki oklar Roboto fontunda YOK; jsPDF glifi bulamayinca sessizce hicbir sey cizmiyordu. ▲ ▼ ↑ ↓ ● ■ □ ◆ ✓ ✔ → ← glifleri DejaVu Sans\'tan alinip Roboto alt-kumesine birlestirildi (ayni birim/em, temiz kaynasma). pdfTemiz() artik bu karakterleri silmiyor.' },
+      { type: 'imp', text: 'Grafik gomerken sayfanin mevcut iliski dosyasi (.rels) varsa uzerine yazilmiyor, yeni iliski ekleniyor.' },
+    ]
+  },
   {
     version: 'v277',
     date: '11.07.2026',
