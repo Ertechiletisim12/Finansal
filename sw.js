@@ -8,7 +8,7 @@
 //  2) İkonlar precache listesine eklendi.
 //  3) CACHE_VER, index.html içindeki APP_VERSION ile hizalandı. HER YAYINDA BUNU BUMP ET.
 
-const APP_VER   = 'v267';
+const APP_VER   = 'v268';
 const CACHE_VER = 'finansal-' + APP_VER;
 
 // Same-origin çekirdek dosyalar — biri bile inmezse install başarısız olsun istemiyoruz,

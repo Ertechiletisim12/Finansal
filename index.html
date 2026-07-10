@@ -2938,7 +2938,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v267';
+const APP_VERSION = 'v268';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3051,7 +3051,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '10.07.2026 18:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '10.07.2026 20:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3835,7 +3835,7 @@ function renderKapanisRaporu(ym){
         <div style="font-size:8.5px;color:var(--muted);margin-top:1px;font-weight:600">hariç: ${P(d.pesin)}</div>
       </div>
       <div class="kapanis-kart" style="flex:1;min-width:145px;background:rgba(63,208,255,0.08);border:1px solid rgba(63,208,255,0.28);border-radius:10px;padding:11px 13px">
-        <div style="font-size:9.5px;color:#3fd0ff;font-weight:800;letter-spacing:.04em">+ %30 · ${monthLabel(d.eskiYm).toUpperCase()}'DAN</div>
+        <div style="font-size:9.5px;color:#3fd0ff;font-weight:800;letter-spacing:.04em">+ %30 · ${trBuyuk(monthLabel(d.eskiYm))}'DAN</div>
         <div style="font-size:18px;font-weight:900;color:#3fd0ff;margin-top:3px">${B(d.geridenGelen)}</div>
         <div style="font-size:8.5px;color:var(--muted);margin-top:1px;font-weight:600">hariç: ${P(d.geridenGelen)}</div>
       </div>
@@ -3938,12 +3938,6 @@ function paylasKapanisRaporu(){
   }
 }
 
-// v266: Kapanis Raporu PDF'i artik VEKTOREL uretilir.
-// Eski yontem: html2canvas ile ekran goruntusu -> PDF'e resim gomuluyordu.
-//   * metin secilemez/aranamaz  * dosya 3-5 MB  * yazicida bulanik  * yedegi acilir pencereydi
-// Yeni yontem: rapor govdesi okunur, jsPDF ile gercek metin/dikdortgen olarak cizilir (~40 KB).
-
-// Govdeyi PDF bloklarina cevir: kart / baslik / tablo / satir / not
 function _kapanisBloklari(govde){
   const bloklar = [];
   const metin = el => pdfTemiz(el.textContent || '');
@@ -3988,6 +3982,7 @@ function _kapanisBloklari(govde){
   return bloklar;
 }
 
+
 function pdfKapanisRaporu(){
   const govde = document.getElementById('kapanisRaporGovde');
   if(!govde){ alert('Önce raporu görüntüleyin.'); return; }
@@ -4009,6 +4004,293 @@ function pdfKapanisRaporu(){
   }, 30);
 }
 
+// ==================== v268: HTML -> VEKTOREL PDF MOTORU ====================
+// Kapanis Raporu, ekrandaki modal ile AYNI gorunumde PDF'e cizilir.
+// html2canvas yok: her kutu, cerceve, rozet ve metin gercek PDF nesnesi olarak uretilir.
+// Calisma ilkesi: rapor govdesindeki tum renkler SATIR ICI style ozniteliginde durur.
+// Bunlari okur, var(--x) degiskenlerini aktif temadan cozer, px -> mm cevirir.
+
+const PX = 0.2646;                 // 1 CSS px ~ 0.2646 mm (96 dpi)
+const mm = px => px * PX;
+
+// Aktif temanin renk paleti (koyu/acik). CSS degiskenleri gercek degerinden okunur.
+function _pdfTema(){
+  let cs = null;
+  try{ cs = getComputedStyle(document.body); }catch(e){}
+  const oku = (ad, yedek) => {
+    if(!cs) return yedek;
+    const v = (cs.getPropertyValue(ad) || '').trim();
+    return v || yedek;
+  };
+  const acik = document.body.classList.contains('light');
+  return {
+    bg:     oku('--bg',     acik ? '#f0f2f5' : '#26282b'),
+    panel:  oku('--panel',  acik ? '#ffffff' : '#323539'),
+    panel2: oku('--panel2', acik ? '#e8eaed' : '#3c4045'),
+    line:   oku('--line',   acik ? '#d0d5dd' : '#46494e'),
+    txt:    oku('--txt',    acik ? '#1a1c1e' : '#eef0f2'),
+    muted:  oku('--muted',  acik ? '#6b7280' : '#9aa0a6'),
+    accent: oku('--accent', acik ? '#0077cc' : '#3fd0ff'),
+    gold:   oku('--gold',   acik ? '#b86e00' : '#ffb74d'),
+    red:    oku('--red',    '#e2231a'),
+    thbg:   oku('--th-bg',  acik ? '#d0d5dd' : '#1d1f21'),
+    thtxt:  oku('--th-txt', acik ? '#1a1c1e' : '#ffffff'),
+  };
+}
+
+// '#abc' | '#aabbcc' | 'rgb(..)' | 'rgba(..)' | 'var(--x)' -> {r,g,b,a}
+function _renkCoz(ifade, tema, yedek){
+  let s = String(ifade || '').trim();
+  if(!s) return yedek || null;
+  const v = s.match(/var\(\s*(--[\w-]+)\s*(?:,([^)]*))?\)/);
+  if(v){
+    const ad = v[1].replace('--','');
+    s = tema[ad] || (v[2] ? v[2].trim() : '') || '';
+    if(!s) return yedek || null;
+  }
+  let m = s.match(/^#([0-9a-f]{3})$/i);
+  if(m){ const h=m[1]; return { r:parseInt(h[0]+h[0],16), g:parseInt(h[1]+h[1],16), b:parseInt(h[2]+h[2],16), a:1 }; }
+  m = s.match(/^#([0-9a-f]{6})$/i);
+  if(m){ const h=m[1]; return { r:parseInt(h.slice(0,2),16), g:parseInt(h.slice(2,4),16), b:parseInt(h.slice(4,6),16), a:1 }; }
+  m = s.match(/rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+))?\s*\)/i);
+  if(m) return { r:+m[1], g:+m[2], b:+m[3], a: m[4]===undefined ? 1 : +m[4] };
+  return yedek || null;
+}
+
+// Yari saydam rengi zemine karistir (jsPDF'te alfa dolgusu yerine harmanlama daha guvenli)
+function _harmanla(on, arka){
+  if(!on) return arka;
+  const a = on.a == null ? 1 : on.a;
+  if(a >= 1) return { r:on.r, g:on.g, b:on.b, a:1 };
+  return {
+    r: Math.round(on.r*a + arka.r*(1-a)),
+    g: Math.round(on.g*a + arka.g*(1-a)),
+    b: Math.round(on.b*a + arka.b*(1-a)),
+    a: 1
+  };
+}
+
+// Satir ici style ozniteligini nesneye cevir
+function _stil(el){
+  const o = {};
+  const s = (el.getAttribute && el.getAttribute('style')) || '';
+  s.split(';').forEach(par => {
+    const i = par.indexOf(':');
+    if(i < 0) return;
+    o[par.slice(0,i).trim().toLowerCase()] = par.slice(i+1).trim();
+  });
+  return o;
+}
+const _sayi = (v, y) => { const n = parseFloat(v); return isFinite(n) ? n : y; };
+
+// 'padding:11px 13px' -> {ust,sag,alt,sol} (px)
+function _bosluk(deger, yedek){
+  if(!deger) return { ust:yedek, sag:yedek, alt:yedek, sol:yedek };
+  const p = deger.trim().split(/\s+/).map(x => _sayi(x, yedek));
+  if(p.length === 1) return { ust:p[0], sag:p[0], alt:p[0], sol:p[0] };
+  if(p.length === 2) return { ust:p[0], sag:p[1], alt:p[0], sol:p[1] };
+  if(p.length === 3) return { ust:p[0], sag:p[1], alt:p[2], sol:p[1] };
+  return { ust:p[0], sag:p[1], alt:p[2], sol:p[3] };
+}
+
+// ---- Cizim baglami ----
+// olc=true iken hicbir sey cizilmez, sadece yukseklik hesaplanir (kutu icin iki gecis gerekir).
+function _YaziCiz(c, metin, x, y, opt){
+  opt = opt || {};
+  const boy = opt.boy || 10;                 // px
+  const kalin = (opt.agirlik || 400) >= 700;
+  if(!c.olc){
+    c.doc.setFont(c.F, kalin ? 'bold' : 'normal');
+    c.doc.setFontSize(boy * 0.75);           // px -> pt
+    const r = opt.renk || { r:0, g:0, b:0 };
+    c.doc.setTextColor(r.r, r.g, r.b);
+    c.doc.text(metin, x, y + mm(boy) * 0.78, opt.hiza ? { align:opt.hiza } : undefined);
+  }
+  return mm(boy) * 1.25;                     // satir yuksekligi
+}
+
+function _KutuCiz(c, x, y, g, yuk, dolgu, cerceve, yaricap, solSerit){
+  if(c.olc) return;
+  const d = c.doc;
+  if(dolgu){ d.setFillColor(dolgu.r, dolgu.g, dolgu.b); }
+  if(cerceve){ d.setDrawColor(cerceve.r, cerceve.g, cerceve.b); d.setLineWidth(0.2); }
+  const mod = dolgu && cerceve ? 'FD' : (dolgu ? 'F' : 'S');
+  if(yaricap > 0) d.roundedRect(x, y, g, yuk, yaricap, yaricap, mod);
+  else d.rect(x, y, g, yuk, mod);
+  if(solSerit){
+    d.setFillColor(solSerit.r, solSerit.g, solSerit.b);
+    d.rect(x, y, 0.9, yuk, 'F');
+  }
+}
+
+// Bir elemanin metnini oku (emoji temizli)
+const _mt = el => pdfTemiz(el.textContent || '');
+
+// Ana ozyinelemeli cizici. x/g mm cinsinden, y mm. Yeni y doner.
+function _htmlCiz(c, el, x, y, g){
+  if(el.nodeType === 3){                              // duz metin dugumu
+    const t = pdfTemiz(el.textContent);
+    if(!t) return y;
+    return y + _YaziCiz(c, t, x, y, { boy:11, renk:c.tema.txtR });
+  }
+  if(el.nodeType !== 1) return y;
+  if(el.tagName === 'STYLE' || el.tagName === 'SCRIPT') return y;
+
+  const st = _stil(el);
+  const tema = c.tema;
+
+  // --- Tablo
+  if(el.tagName === 'TABLE'){
+    return _tabloCiz(c, el, x, y, g);
+  }
+
+  const arka = _harmanla(_renkCoz(st['background'] || st['background-color'], tema, null), c.zemin);
+  const kenarStr = st['border'] || st['border-top'] || '';
+  const kenarRenk = kenarStr ? _renkCoz(kenarStr.replace(/^[\d.]+px\s+\w+\s+/,''), tema, null) : null;
+  const kutuMu = !!(st['background'] || st['background-color'] || (st['border'] && !/dashed/.test(st['border'])));
+  const yaricap = mm(_sayi(st['border-radius'], 0));
+  const ped = _bosluk(st['padding'], 0);
+  const marj = _bosluk(st['margin'], 0);
+  const mUst = _sayi((st['margin-top']||'').replace('px',''), marj.ust);
+  const mAlt = _sayi((st['margin-bottom']||'').replace('px',''), marj.alt);
+
+  y += mm(mUst);
+
+  // --- Yatay dizilim (kartlar): dogrudan cocuklari yan yana
+  const esnek = (st['display'] === 'flex');
+  const cocuklar = Array.from(el.children);
+  const dagit = (st['justify-content'] || '');
+
+  if(esnek && dagit.includes('space-between') && cocuklar.length === 2){
+    const sol = _mt(cocuklar[0]), sag = _mt(cocuklar[1]);
+    const s0 = _stil(cocuklar[0]), s1 = _stil(cocuklar[1]);
+    const b0 = _sayi(s0['font-size'], _sayi(st['font-size'], 11));
+    const b1 = _sayi(s1['font-size'], _sayi(st['font-size'], 11));
+    const yy = y + mm(ped.ust);
+    if(sol) _YaziCiz(c, sol, x + mm(ped.sol), yy, { boy:b0, agirlik:_sayi(s0['font-weight'],400),
+              renk:_renkCoz(s0['color'], tema, tema.mutedR) });
+    if(sag) _YaziCiz(c, sag, x + g - mm(ped.sag), yy, { boy:b1, agirlik:_sayi(s1['font-weight'],700),
+              renk:_renkCoz(s1['color'], tema, tema.txtR), hiza:'right' });
+    const h = Math.max(mm(b0), mm(b1)) * 1.35 + mm(ped.ust + ped.alt);
+    if(!c.olc && /border-bottom/.test(JSON.stringify(st)) ){
+      c.doc.setDrawColor(tema.lineR.r, tema.lineR.g, tema.lineR.b);
+      c.doc.setLineWidth(0.1);
+      c.doc.line(x, y + h, x + g, y + h);
+    }
+    return y + h + mm(mAlt);
+  }
+
+  if(esnek && cocuklar.length > 1 && cocuklar.every(k => /flex:\s*1/.test(k.getAttribute('style')||''))){
+    const bosluk = mm(_sayi(st['gap'], 8));
+    const kg = (g - bosluk * (cocuklar.length - 1)) / cocuklar.length;
+    // once olcum: en yuksek kart
+    let enYuk = 0;
+    cocuklar.forEach(k => {
+      const alt = { ...c, olc:true };
+      enYuk = Math.max(enYuk, _htmlCiz(alt, k, x, y, kg) - y);
+    });
+    cocuklar.forEach((k, i) => {
+      _htmlCiz(c, k, x + i * (kg + bosluk), y, kg, enYuk);
+    });
+    return y + enYuk + mm(mAlt);
+  }
+
+  // --- Kutu: once icerigi olc, sonra zemini ciz, sonra icerigi ciz
+  if(kutuMu){
+    const icX = x + mm(ped.sol), icG = g - mm(ped.sol + ped.sag);
+    const olcC = { ...c, olc:true, zemin:arka };
+    let icY = y + mm(ped.ust);
+    Array.from(el.childNodes).forEach(k => { icY = _htmlCiz(olcC, k, icX, icY, icG); });
+    const yuk = (icY - y) + mm(ped.alt);
+
+    _sayfaKontrol(c, yuk);
+    y = c.y != null ? c.y : y;
+
+    const serit = st['border-left'] ? _renkCoz(st['border-left'].replace(/^[\d.]+px\s+\w+\s+/,''), tema, null) : null;
+    _KutuCiz(c, x, y, g, yuk, arka, kenarRenk, yaricap, serit);
+
+    const icC = { ...c, zemin:arka };
+    let yy = y + mm(ped.ust);
+    Array.from(el.childNodes).forEach(k => { yy = _htmlCiz(icC, k, x + mm(ped.sol), yy, icG); });
+    return y + yuk + mm(mAlt);
+  }
+
+  // --- Duz metin blogu
+  if(cocuklar.length === 0 || Array.from(el.childNodes).every(n => n.nodeType === 3 || n.tagName === 'B' || n.tagName === 'SPAN')){
+    const t = _mt(el);
+    if(!t) return y + mm(mAlt);
+    const boy = _sayi(st['font-size'], 11);
+    const agr = _sayi(st['font-weight'], 400);
+    const renk = _renkCoz(st['color'], tema, tema.txtR);
+    const buyuk = (st['text-transform'] === 'uppercase');
+    const hiza = st['text-align'] === 'center' ? 'center' : (st['text-align'] === 'right' ? 'right' : null);
+    const hx = hiza === 'center' ? x + g/2 : (hiza === 'right' ? x + g : x);
+    const satirlar = c.doc.splitTextToSize(buyuk ? trBuyuk(t) : t, g);
+    let yy = y;
+    satirlar.forEach(s => { yy += _YaziCiz(c, s, hx, yy, { boy, agirlik:agr, renk, hiza }); });
+    return yy + mm(mAlt);
+  }
+
+  // --- Kapsayici: cocuklari sirayla
+  let yy = y;
+  Array.from(el.childNodes).forEach(k => { yy = _htmlCiz(c, k, x, yy, g); });
+  return yy + mm(mAlt);
+}
+
+function _sayfaKontrol(c, gerekli){
+  if(c.olc) return;
+  if(c.y == null) return;
+  if(c.y + gerekli > c.altSinir){
+    c.altBant(); c.doc.addPage(); c.ustBant(); c.y = c.ustSinir;
+  }
+}
+
+function _tabloCiz(c, tbl, x, y, g){
+  if(c.olc){
+    const satir = tbl.querySelectorAll('tr').length;
+    return y + satir * mm(11) * 1.9 + mm(6);
+  }
+  const tema = c.tema;
+  const oku = r => Array.from(r.querySelectorAll('th,td')).map(k => pdfTemiz(k.textContent));
+  const bas = Array.from(tbl.querySelectorAll('thead tr')).map(oku);
+  const gov = Array.from(tbl.querySelectorAll('tbody tr')).map(oku);
+  const alt = Array.from(tbl.querySelectorAll('tfoot tr')).map(oku);
+
+  const zeb = _harmanla({ r:255,g:255,b:255,a:0.03 }, c.zemin);
+  const baslangicSayfa = c.doc.internal.getNumberOfPages();
+  c.doc.autoTable({
+    head: bas.length ? bas : undefined,
+    body: gov.concat(alt),
+    startY: y,
+    margin: { top:c.ustSinir, left:x, right:c.doc.internal.pageSize.width - (x + g), bottom:16 },
+    tableWidth: g,
+    styles: { font:c.F, fontSize:7.4, cellPadding:1.7,
+              lineColor:[tema.lineR.r, tema.lineR.g, tema.lineR.b], lineWidth:0.1,
+              textColor:[tema.txtR.r, tema.txtR.g, tema.txtR.b],
+              fillColor:[c.zemin.r, c.zemin.g, c.zemin.b] },
+    headStyles: { font:c.F, fontStyle:'bold', fontSize:7.2,
+                  fillColor:[tema.thbgR.r, tema.thbgR.g, tema.thbgR.b],
+                  textColor:[tema.thtxtR.r, tema.thtxtR.g, tema.thtxtR.b] },
+    alternateRowStyles: { fillColor:[zeb.r, zeb.g, zeb.b] },
+    didParseCell: (dt) => {
+      if(dt.column.index > 0) dt.cell.styles.halign = 'right';
+      if(dt.section === 'body' && dt.row.index >= gov.length){
+        dt.cell.styles.fontStyle = 'bold';
+        dt.cell.styles.fillColor = [tema.panel2R.r, tema.panel2R.g, tema.panel2R.b];
+      }
+    },
+    didDrawPage: (dt) => {
+      // v268: SADECE yeni sayfa acildiginda ust bant + zemin cizilir.
+      // Aksi halde tablonun basladigi sayfada zemin, daha once cizilmis kartlarin uzerine basiliyordu.
+      if(dt.pageNumber > baslangicSayfa){ c.ustBant(); }
+      c.altBant();
+    }
+  });
+  c.y = c.doc.lastAutoTable.finalY + mm(10);
+  return c.y;
+}
+
+// ---- Kapanis Raporu: modal ile ayni gorunum ----
 function _kapanisPdfUret(govde){
   const ym = window._kapanisYm || '';
   const jsPDF = window.jspdf.jsPDF;
@@ -4016,108 +4298,74 @@ function _kapanisPdfUret(govde){
   const fontVar = (typeof window.ertechFontKur === 'function') ? window.ertechFontKur(doc) : false;
   const F = fontVar ? 'RobotoTR' : 'helvetica';
 
+  const t = _pdfTema();
+  // Sik kullanilan renkleri onceden coz
+  t.txtR    = _renkCoz(t.txt,    t, {r:0,g:0,b:0});
+  t.mutedR  = _renkCoz(t.muted,  t, {r:120,g:120,b:120});
+  t.lineR   = _renkCoz(t.line,   t, {r:200,g:200,b:200});
+  t.panelR  = _renkCoz(t.panel,  t, {r:255,g:255,b:255});
+  t.panel2R = _renkCoz(t.panel2, t, {r:245,g:245,b:245});
+  t.thbgR   = _renkCoz(t.thbg,   t, {r:230,g:230,b:230});
+  t.thtxtR  = _renkCoz(t.thtxt,  t, {r:20,g:20,b:20});
+  t.redR    = _renkCoz(t.red,    t, {r:226,g:35,b:26});
+
   const G = doc.internal.pageSize.width;
   const Y = doc.internal.pageSize.height;
-  const SOL = 12, SAG = G - 12, GENIS = SAG - SOL;
-  const baslikMetin = (typeof monthLabel === 'function' && ym ? monthLabel(ym) : ym) + ' — Kapanış Raporu';
-  const olusturma = nowTR().toLocaleString('tr-TR');
+  const SOL = 10, GENIS = G - 20;
+  const baslik = (typeof monthLabel === 'function' && ym ? monthLabel(ym) : ym) + ' — Kapanış Raporu';
+  const zaman = nowTR().toLocaleString('tr-TR');
 
   const ustBant = () => {
-    doc.setFillColor(226,35,26); doc.rect(0,0,G,24,'F');
-    doc.setFont(F,'bold'); doc.setFontSize(14); doc.setTextColor(255,255,255);
-    doc.text(baslikMetin, SOL, 12);
-    doc.setFont(F,'normal'); doc.setFontSize(8); doc.setTextColor(255,214,212);
-    doc.text('ER-TECH İLETİŞİM', SOL, 19);
-    doc.setFontSize(7.5);
-    doc.text(olusturma, SAG, 19, { align:'right' });
+    doc.setFillColor(t.redR.r, t.redR.g, t.redR.b);
+    doc.rect(0, 0, G, 22, 'F');
+    doc.setFont(F,'bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
+    doc.text(baslik, SOL, 11);
+    doc.setFont(F,'normal'); doc.setFontSize(7.5); doc.setTextColor(255,214,212);
+    doc.text('ER-TECH İLETİŞİM', SOL, 17);
+    doc.text(zaman, G - SOL, 17, { align:'right' });
   };
+  const altBantCizilen = new Set();   // v268: ayni sayfaya iki kez basilmasin
   const altBant = () => {
-    doc.setDrawColor(220,220,220); doc.setLineWidth(0.2);
-    doc.line(SOL, Y-12, SAG, Y-12);
-    doc.setFont(F,'normal'); doc.setFontSize(7.5); doc.setTextColor(130,130,130);
+    const sayfa = doc.internal.getNumberOfPages();
+    if(altBantCizilen.has(sayfa)) return;
+    altBantCizilen.add(sayfa);
+    doc.setDrawColor(t.lineR.r, t.lineR.g, t.lineR.b); doc.setLineWidth(0.2);
+    doc.line(SOL, Y-12, G-SOL, Y-12);
+    doc.setFont(F,'normal'); doc.setFontSize(7); doc.setTextColor(t.mutedR.r, t.mutedR.g, t.mutedR.b);
     doc.text('Er-Tech İletişim · ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : ''), SOL, Y-7);
-    doc.text('Sayfa ' + doc.internal.getNumberOfPages(), SAG, Y-7, { align:'right' });
+    doc.text('Sayfa ' + sayfa, G-SOL, Y-7, { align:'right' });
   };
 
-  ustBant();
-  let y = 32;
-  const sayfaKontrol = (gerekli) => {
-    if(y + gerekli > Y - 16){ altBant(); doc.addPage(); ustBant(); y = 32; }
+  // Sayfa zeminini panel rengiyle boya (koyu temada PDF de koyu olsun — modalla ayni)
+  const zeminBoya = () => {
+    doc.setFillColor(t.panelR.r, t.panelR.g, t.panelR.b);
+    doc.rect(0, 22, G, Y - 22, 'F');
   };
 
-  const bloklar = _kapanisBloklari(govde);
+  const ctx = {
+    doc, F, tema:t, olc:false, zemin:t.panelR,
+    ustSinir:27, altSinir:Y - 16, y:27,
+    ustBant: () => { ustBant(); zeminBoya(); },
+    altBant
+  };
 
-  // 1) Ozet kartlari — yan yana kutular
-  const kartlar = bloklar.filter(b => b.tip === 'kart').slice(0, 3);
-  if(kartlar.length){
-    const kG = (GENIS - (kartlar.length - 1) * 4) / kartlar.length;
-    const kY = 20;
-    sayfaKontrol(kY + 6);
-    kartlar.forEach((k, i) => {
-      const x = SOL + i * (kG + 4);
-      doc.setFillColor(247,248,250); doc.setDrawColor(226,229,234); doc.setLineWidth(0.2);
-      doc.roundedRect(x, y, kG, kY, 2, 2, 'FD');
-      doc.setFillColor(226,35,26); doc.rect(x, y, 1.2, kY, 'F');
-      doc.setFont(F,'normal'); doc.setFontSize(6.6); doc.setTextColor(120,124,130);
-      doc.text(trBuyuk(k.baslik), x + 4, y + 5.5);
-      doc.setFont(F,'bold'); doc.setFontSize(11); doc.setTextColor(26,28,30);
-      doc.text(k.deger, x + 4, y + 12);
-      if(k.alt){
-        doc.setFont(F,'normal'); doc.setFontSize(6.2); doc.setTextColor(130,134,140);
-        doc.text(doc.splitTextToSize(k.alt, kG - 8)[0], x + 4, y + 17);
-      }
-    });
-    y += kY + 7;
-  }
+  ustBant(); zeminBoya();
+  ctx.y = 27;
 
-  // 2) Tablolar
-  bloklar.filter(b => b.tip === 'tablo').forEach(tb => {
-    sayfaKontrol(20);
-    doc.autoTable({
-      head: tb.bas.length ? tb.bas : undefined,
-      body: tb.satirlar.concat(tb.alt),
-      startY: y,
-      margin: { top:30, left:SOL, right:12, bottom:16 },
-      styles: { font:F, fontSize:7.4, cellPadding:1.7, lineColor:[228,230,235], lineWidth:0.1, textColor:[40,42,46] },
-      headStyles: { font:F, fontStyle:'bold', fillColor:[226,35,26], textColor:255, fontSize:7.4 },
-      alternateRowStyles: { fillColor:[247,248,250] },
-      didParseCell: (data) => {
-        // tfoot satiri (TOPLAM) kalin ve gri zeminli
-        if(data.section === 'body' && data.row.index >= tb.satirlar.length){
-          data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.fillColor = [236,238,241];
-        }
-      },
-      didDrawPage: () => { ustBant(); altBant(); }
-    });
-    y = doc.lastAutoTable.finalY + 7;
-  });
-
-  // 3) Bolum basliklari + anahtar/deger satirlari
-  bloklar.filter(b => b.tip === 'baslik' || b.tip === 'satir').forEach(b => {
-    if(b.tip === 'baslik'){
-      sayfaKontrol(10);
-      doc.setFont(F,'bold'); doc.setFontSize(8.4); doc.setTextColor(226,35,26);
-      doc.text(trBuyuk(b.metin), SOL, y);
-      doc.setDrawColor(240,200,198); doc.setLineWidth(0.3);
-      doc.line(SOL, y + 1.5, SAG, y + 1.5);
-      y += 6;
-    } else {
-      sayfaKontrol(6);
-      doc.setFont(F,'normal'); doc.setFontSize(7.8); doc.setTextColor(70,74,80);
-      const sol = doc.splitTextToSize(b.sol, GENIS - 45)[0] || '';
-      doc.text(sol, SOL + 1, y);
-      doc.setFont(F,'bold'); doc.setTextColor(26,28,30);
-      doc.text(b.sag, SAG - 1, y, { align:'right' });
-      doc.setDrawColor(238,240,243); doc.setLineWidth(0.15);
-      doc.line(SOL, y + 1.6, SAG, y + 1.6);
-      y += 5.4;
-    }
+  // Rapor govdesinin dogrudan cocuklarini sirayla ciz.
+  // Ilk cocuk, gorsel basliktir (ortalanmis "... — Kapanis Raporu" + olusturma tarihi);
+  // PDF'in kirmizi ust bandi zaten ayni bilgiyi tasidigi icin atlanir.
+  const cocuklar = Array.from(govde.children);
+  const basIndeksi = cocuklar.findIndex(k => /text-align:\s*center/.test(k.getAttribute('style') || ''));
+  cocuklar.forEach((k, i) => {
+    if(i === basIndeksi) return;
+    ctx.y = _htmlCiz(ctx, k, SOL, ctx.y, GENIS);
   });
 
   altBant();
   doc.save('Kapanis_Raporu_' + (ym || 'rapor') + '.pdf');
 }
+
 
 // ---- persistence: localStorage (kalıcı, tarayıcı kapatılıp açılsa da silinmez) ----
 // ===== LocalStorage Boyut Kontrolü =====
@@ -16725,6 +16973,19 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v268',
+    date: '10.07.2026',
+    items: [
+      { type: 'new', text: 'KAPANIS RAPORU PDF ARTIK MODAL PENCERESININ BIREBIR TASARIMI. Yeni bir HTML -> vektorel PDF motoru yazildi: rapor govdesindeki her kutu, cerceve, yuvarlatilmis kose, sol renk seridi, ozet karti ve anahtar/deger satiri gercek PDF nesnesi olarak yeniden ciziliyor. Ekran goruntusu (html2canvas) YOK — metin secilebilir, aranabilir, dosya ~50 KB.' },
+      { type: 'new', text: 'Motor, satir ici style ozniteliklerini okuyup var(--panel) gibi CSS degiskenlerini AKTIF TEMADAN cozuyor. Yari saydam renkler (ornegin MNP kutusunun mor rgba dolgusu) zeminle harmanlanip tam opak karsiligina ceviriliyor. Sonuc: koyu temada koyu, acik temada beyaz PDF — ekranda ne goruyorsan o.' },
+      { type: 'info', text: 'PDF aktif temayi izler. Yaziciya gonderecekseniz uygulamayi ACIK TEMAYA alin — koyu tema PDF\'i cok murekkep harcar. Yazdir butonu zaten her zaman beyaz belge uretir.' },
+      { type: 'fix', text: 'Kapanis raporunda "NISAN 2026\'DAN" yaziyordu. toUpperCase() Turkce degil: i -> I uretiyor. trBuyuk() ile duzeltildi, artik "NİSAN". Bu hata sadece PDF\'te degil EKRANDA da vardi.' },
+      { type: 'fix', text: 'PDF motoru: autoTable\'in sayfa geri cagrisi, tablonun basladigi sayfada sayfa zeminini YENIDEN boyuyor, daha once cizilmis ozet kartlarinin uzerine basiyordu. Artik zemin yalnizca yeni sayfa acildiginda cizilir.' },
+      { type: 'fix', text: 'PDF ust bandi ile raporun kendi ortalanmis basligi ayni bilgiyi iki kez yaziyordu. Govdenin baslik blogu artik atlaniyor.' },
+      { type: 'fix', text: 'Sayfa alt bilgisi (marka + sayfa numarasi) ayni sayfaya iki kez basiliyordu. Sayfa basina tek sefer cizilecek sekilde korumaya alindi.' },
+    ]
+  },
   {
     version: 'v267',
     date: '10.07.2026',
