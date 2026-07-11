@@ -3090,7 +3090,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v289';
+const APP_VERSION = 'v290';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3203,7 +3203,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '13.07.2026 03:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '13.07.2026 05:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3229,6 +3229,28 @@ const CAT_CONFIG = {
   "İnternet": { delay:0, countForMonth:'activation', activationInput:true,  color:'#fb923c' },
   "Diğer":    { delay:0, countForMonth:'entry',      activationInput:false, color:'#888888' },
 };
+
+// v290: Tip rozeti — MNP olabilen kategorilerde MNP/Yeni Tesis; digerlerinde kategori adi.
+// YENI TESIS artik TURUNCU (#ffb74d) — yesil kategori noktalarindan ve MNP morundan ayrisir.
+// Doner: { etiket, renk, arkaRgba }
+const YENI_TESIS_RENK = '#ffb74d';
+function tipRozetBilgi(cat, isMnp){
+  if(MNP_CATS.includes(cat)){
+    return isMnp
+      ? { etiket:'MNP', renk:'#c084fc', arka:'rgba(192,132,252,0.18)' }
+      : { etiket:'Yeni Tesis', renk:YENI_TESIS_RENK, arka:'rgba(255,183,77,0.18)' };
+  }
+  // MNP olamayan kategoriler: kendi adiyla, kendi rengiyle
+  const renk = (CAT_CONFIG[cat] && CAT_CONFIG[cat].color) || '#4cd964';
+  const rgb = renk.replace('#','').match(/.{2}/g).map(h=>parseInt(h,16));
+  return { etiket:cat, renk, arka:`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.18)` };
+}
+// Kisa rozet HTML'i (satir ici kullanim)
+function tipRozetHTML(cat, isMnp, boy){
+  const b = tipRozetBilgi(cat, isMnp);
+  const fs = boy || 8.5;
+  return `<span style="font-size:${fs}px;font-weight:800;padding:1px 5px;border-radius:5px;white-space:nowrap;flex-shrink:0;line-height:1.5;background:${b.arka};color:${b.renk}">${b.etiket}</span>`;
+}
 
 // MNP: girilen tarih + 3 gün = aktivasyon tarihi
 function mnpActivationDate(entryDate){
@@ -7886,9 +7908,7 @@ function render(){
               const adSoyad = `${esc(m.ad||'')} ${esc(m.soyad||'')}`.trim();
               const logE2 = dayLogs2.find(l=>l.id===m.logId);
               const tarife2 = m.tarife||(logE2&&logE2.tarife)||'';
-              const _tipRozet = m.tip==='mnp'
-                ? `<span style="font-size:7.5px;font-weight:800;padding:0 4px;border-radius:4px;background:rgba(192,132,252,0.18);color:#c084fc;white-space:nowrap;flex-shrink:0;line-height:1.5">MNP</span>`
-                : `<span style="font-size:7.5px;font-weight:800;padding:0 4px;border-radius:4px;background:rgba(76,217,100,0.18);color:#4cd964;white-space:nowrap;flex-shrink:0;line-height:1.5">TESİS</span>`;
+const _tipRozet = tipRozetHTML(m.cat || e.cat, m.tip==='mnp', 7.5);
               return `<div style="display:flex;align-items:flex-start;gap:4px;padding:3px 0 3px 4px;border-top:1px solid rgba(255,255,255,0.04)">
                 <span style="color:#5bc8f5;flex-shrink:0;font-size:9px;line-height:1.6">↳</span>
                 <div style="flex:1;min-width:0">
@@ -16431,10 +16451,11 @@ function showCatDetail(cat, rStart, rEnd){
           ad:`${esc(m.ad||'')} ${esc(m.soyad||'')}`.trim()||'—',
           tel:m.tel||'—',
           tarife,
-          tip: MNP_CATS.includes(cat) ? (m.tip==='mnp' ? 'MNP' : 'Yeni Tesis') : '',
+          tip: MNP_CATS.includes(cat) ? (m.tip==='mnp' ? 'MNP' : 'Yeni Tesis') : cat,  // v290: MNP-disi kategoride kendi adi
           count:1,
           amt:fmt(amt1),
-          devir: !!e._devir   // v289: onceki donemden devreden isareti
+          devir: !!e._devir,  // v289: onceki donemden devreden isareti
+          cat: cat
         });
       });
       // Musterisi eslesmeyen kalan adetler
@@ -16452,7 +16473,7 @@ function showCatDetail(cat, rStart, rEnd){
         ${r.ad && r.ad!=='—' ? `<div style="font-size:11.5px;color:#e8eaec;font-weight:600">${r.ad}</div>` : ''}
         <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap">
           ${r.tel && r.tel!=='—' ? `<span style="font-size:10.5px;color:#7a8090">${r.tel}</span>` : ''}
-          ${r.tip ? `<span style="font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:5px;white-space:nowrap;background:${r.tip==='MNP'?'rgba(192,132,252,0.18)':'rgba(76,217,100,0.18)'};color:${r.tip==='MNP'?'#c084fc':'#4cd964'}">${r.tip}</span>` : ''}
+          ${r.tip ? (()=>{ const _b=tipRozetBilgi(r.cat, r.tip==='MNP'); return `<span style="font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:5px;white-space:nowrap;background:${_b.arka};color:${_b.renk}">${r.tip}</span>`; })() : ''}
           ${r.tarife && r.tarife!=='—' ? `<span style="font-size:10px;color:#7ee8ff">🏷 ${r.tarife}</span>` : ''}
           ${r.devir ? `<span style="font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:5px;white-space:nowrap;background:rgba(255,183,77,0.18);color:#ffb74d">⬅️ önceki dönemden</span>` : ''}
         </div>
@@ -17784,11 +17805,13 @@ function openExportPreview(tableId, fileLabel){
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:right">Tutar</th>
       </tr></thead>
       <tbody>${musteriRows.map((r,i)=>{
-        const tipRenk = r.tip==='MNP' ? '#c084fc' : (r.tip==='Yeni Tesis' ? '#4cd964' : '#666');
+        const _tb = tipRozetBilgi(r.cat, r.tip==='MNP');
+        const tipRenk = MNP_CATS.includes(r.cat) ? _tb.renk : '#888';
+        const tipEtiket = MNP_CATS.includes(r.cat) ? (r.tip||'-') : r.cat;
         return `<tr style="background:${i%2===0?'#26282b':'#2c2f33'};border-bottom:1px solid #2a2d33">
         <td style="padding:8px 10px;font-size:12px;color:#eee;font-weight:600;white-space:nowrap">${r.date}</td>
         <td style="padding:8px 10px;font-size:12px;color:#ccc">${r.cat}</td>
-        <td style="padding:8px 10px;font-size:11px;color:${tipRenk};font-weight:700;text-align:center;white-space:nowrap">${r.tip||'-'}</td>
+        <td style="padding:8px 10px;font-size:11px;color:${tipRenk};font-weight:700;text-align:center;white-space:nowrap">${tipEtiket}</td>
         <td style="padding:8px 10px;font-size:10.5px;text-align:center;white-space:nowrap">
           ${r.akt && r.akt!=='-' ? `<div style="color:#9aa0a6">${r.akt}</div>` : '<span style="color:#555">—</span>'}
           ${r.devir==='sonraki' ? '<div style="color:#3fd0ff;font-weight:700;font-size:9.5px">➡️ sonraki döneme</div>' : ''}
@@ -17822,7 +17845,7 @@ function openExportPreview(tableId, fileLabel){
       const mnpCnt   = catRows.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0);
       const tesisCnt = totalCount - mnpCnt;
       const kirilim = MNP_CATS.includes(c)
-        ? `<span style="color:#4cd964">${tesisCnt}</span> <span style="color:#555">/</span> <span style="color:#c084fc">${mnpCnt}</span>`
+        ? `<span style="color:#ffb74d">${tesisCnt}</span> <span style="color:#555">/</span> <span style="color:#c084fc">${mnpCnt}</span>`
         : `<span style="color:#666">—</span>`;
       return `<tr onclick="showCatDetail('${c}','${rStart}','${rEnd}')" style="border-bottom:1px solid #2e3035;cursor:pointer;background:#26282b" onmouseover="this.style.background='#2e3035'" onmouseout="this.style.background='#26282b'">
         <td style="padding:12px 14px;font-size:13px;color:#e8eaec;font-weight:700;white-space:nowrap">
@@ -17849,7 +17872,7 @@ function openExportPreview(tableId, fileLabel){
       <tfoot><tr style="background:#2a2d31;border-top:2px solid #e2231a">
         <td style="padding:12px 14px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
         <td style="padding:12px 14px;font-size:14px;color:#fff;font-weight:800;text-align:center">${toplamCount}</td>
-        <td style="padding:12px 14px;font-size:12px;font-weight:800;text-align:center;white-space:nowrap"><span style="color:#4cd964">${musteriRows.filter(r=>r.tip!=='MNP'&&MNP_CATS.includes(r.cat)).reduce((a,r)=>a+r.count,0)}</span> <span style="color:#555">/</span> <span style="color:#c084fc">${musteriRows.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0)}</span></td>
+        <td style="padding:12px 14px;font-size:12px;font-weight:800;text-align:center;white-space:nowrap"><span style="color:#ffb74d">${musteriRows.filter(r=>r.tip!=='MNP'&&MNP_CATS.includes(r.cat)).reduce((a,r)=>a+r.count,0)}</span> <span style="color:#555">/</span> <span style="color:#c084fc">${musteriRows.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0)}</span></td>
         <td class="oz-birim" style="padding:12px 14px;font-size:12px;color:#999;text-align:right;white-space:nowrap">${fmt(toplamCount?toplamAmt/toplamCount:0)}</td>
         <td class="oz-ay"></td>
         <td style="padding:12px 14px;font-size:14px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(toplamAmt)}</td>
@@ -17910,7 +17933,8 @@ function openExportPreview(tableId, fileLabel){
       rStart + ' — ' + rEnd + ' · ' + musteriRows.length + ' kayıt',
       ['Tarih','Kategori','Tip','Aktivasyon','Devir/Durum','Müşteri','Telefon','Tarife','Not','Etiket','Adet','Tutar'],
       musteriRows.map(r => [
-        r.date, r.cat, (r.tip||'-'),
+        r.date, r.cat,
+        (MNP_CATS.includes(r.cat) ? (r.tip||'-') : r.cat),   // v290: MNP-disi kategoride Tip = kategori adi
         (r.akt && r.akt!=='-') ? r.akt : '',
         _devirEtiket(r),
         (r.ad||'').trim()==='' ? '' : r.ad,
@@ -18282,6 +18306,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v290',
+    date: '13.07.2026',
+    items: [
+      { type: 'ui', text: 'TIP ROZETLERI YENIDEN DUZENLENDI. MNP olabilen kategorilerde (PrePaid/PostPaid/Red): numara tasima = MNP (mor), yeni hat = "Yeni Tesis" (artik her yerde tam bu — bazi yerlerde kisa "TESİS" yaziyordu). MNP olamayan kategorilerde (Mccm, P2P, İnternet, Diğer): rozet artik "Yeni Tesis" yerine KENDI KATEGORI ADINI gosteriyor (ornek: Mccm satirinda "Mccm").' },
+      { type: 'ui', text: 'YENI TESIS RENGI YESILDEN TURUNCUYA (amber #ffb74d) cevrildi — MNP morundan ve yesil kategori noktalarindan net ayrisiyor, daha dikkat cekici. TESİS/MNP sutunundaki sayilar (ornek 19/13) da uyumlu: turuncu tesis / mor MNP. MNP-disi kategoriler kendi renginde (Mccm mor, P2P yesil, İnternet turuncu).' },
+      { type: 'imp', text: 'Tum rozet noktalari tek bir merkezi fonksiyona (tipRozetBilgi) baglandi: gunluk liste, kategori detay modali, disa aktarma detay/ozet, dip toplam. Boylece renk/etiket her yerde tutarli.' },
+    ]
+  },
   {
     version: 'v289',
     date: '13.07.2026',
