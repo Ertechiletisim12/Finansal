@@ -3127,7 +3127,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v305';
+const APP_VERSION = 'v306';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3240,7 +3240,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '14.07.2026 19:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '14.07.2026 22:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15322,7 +15322,7 @@ function renderHedefPage(){
     const catsWithHedef = CATS.filter(c=>katHedefs[c]>0);
     if(catsWithHedef.length>0){
       // Mini kartlar
-      html += `<div class="note-panel" style="padding:12px;margin-bottom:0;margin-top:8px">
+      html += `<div class="note-panel" style="padding:12px;margin-bottom:0;flex:1">
         <div style="font-size:11.5px;font-weight:700;color:var(--accent);margin-bottom:8px">📊 ${monthLabel(progYm)} — Kategori Detayı</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">`;
       CATS.forEach(c=>{
@@ -15373,7 +15373,7 @@ function renderHedefPage(){
     // Sol (bar + kartlar) | Sag (detay barlar) yan yana
     progDiv.innerHTML = detayHtml
       ? `<div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap">
-           <div style="flex:1.5 1 340px;min-width:min(300px,100%)">${html}</div>
+           <div style="flex:1.5 1 340px;min-width:min(300px,100%);display:flex;flex-direction:column">${html}</div>
            <div style="flex:1 1 240px;min-width:min(240px,100%)">${detayHtml}</div>
          </div>`
       : html;
@@ -18387,6 +18387,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v306',
+    date: '14.07.2026',
+    items: [
+      { type: 'ui', text: 'HEDEF YONETIMI: sol Kategori Detayi karti ile sag Ilerleme barlari karti artik ESIT YUKSEKLIKTE bitiyor — ustten hizaliydi ama alttan degildi; sol kart kisa kaliyordu. Sol kart kalan alani doldurup sag kartla ayni cizgide bitiyor.' },
+    ]
+  },
   {
     version: 'v305',
     date: '14.07.2026',
