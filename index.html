@@ -1273,8 +1273,13 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 @media(max-width:640px){
   #statsRowTop{ flex-basis:100%!important; }
   #statsRowTop .prim-mini, #statsRowTop .prim-mini2{ flex:1 1 100%!important; }
-  #statsRowTop > div[style*="display:flex"]{ flex-direction:column!important; }
+  #statsRowTop .prim-kart-satir{ flex-direction:column!important; }
   #statsRowTop .prim-yilsec{ flex-direction:row!important; }
+  /* v294: mobilde 'GENEL DURUM' basligi 1. satir kartlarindan SONRA, En Yuksek Ay'in ustune */
+  #statsRowTop .prim-satir1{ order:1!important; }
+  #statsRowTop .prim-yilsec-wrap{ order:2!important; margin-top:4px; }
+  #statsRowTop .prim-satir2{ order:3!important; }
+  #statsRowTop .prim-satir3{ order:4!important; }
 }
 .bottom-card .t{font-size:11.5px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
 .bottom-card .y{font-size:13px;color:var(--muted);margin:5px 0}
@@ -1282,7 +1287,7 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 
 .chart-box{background:var(--panel);border:none;border-radius:8px;padding:16px;margin-bottom:6px}
 .chart-box h3{margin:0 0 14px;font-size:13.5px;font-weight:700}
-.bars{display:flex;align-items:flex-end;gap:16px;height:300px;padding:0 10px;overflow-x:auto}
+.bars{display:flex;align-items:flex-end;gap:16px;height:215px;padding:0 10px;overflow-x:auto}
 .bar-col{flex:1;min-width:50px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
 .bar-col .n{font-size:10.5px;color:var(--muted);margin-bottom:2px}
 .bar-col .v{font-size:10.5px;font-weight:700;margin-bottom:4px}
@@ -3097,7 +3102,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v293';
+const APP_VERSION = 'v294';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3210,7 +3215,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '13.07.2026 13:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '13.07.2026 16:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -7835,13 +7840,13 @@ function render(){
     </div>`;
 
   statsTopDiv.innerHTML = `
-    ${_yilSecerHtml}
-    <div class="prim-kart-satir" style="display:flex;gap:8px;flex-wrap:wrap;flex:1 1 0">${window._satir1Html}</div>
-    <div class="prim-kart-satir" style="display:flex;gap:8px;flex-wrap:wrap;flex:1 1 0">
+    <div class="prim-yilsec-wrap" style="order:0">${_yilSecerHtml}</div>
+    <div class="prim-kart-satir prim-satir1" style="display:flex;gap:8px;flex-wrap:wrap;flex:1 1 0;order:0">${window._satir1Html}</div>
+    <div class="prim-kart-satir prim-satir2" style="display:flex;gap:8px;flex-wrap:wrap;flex:1 1 0;order:0">
       ${_kompaktKart(_enYuksek, '1 1 0')}
       ${_kompaktKart(_enDusuk, '1 1 0')}
     </div>
-    <div class="prim-kart-satir" style="display:flex;gap:8px;flex-wrap:wrap;flex:1 1 0">
+    <div class="prim-kart-satir prim-satir3" style="display:flex;gap:8px;flex-wrap:wrap;flex:1 1 0;order:0">
       ${_kompaktKart(_genelToplam, '1 1 0')}
       ${_kompaktKart(_yilOrt, '1 1 0')}
       ${_kompaktKart(_yilTop, '1 1 0')}
@@ -18336,6 +18341,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v294',
+    date: '13.07.2026',
+    items: [
+      { type: 'ui', text: 'MOBILDE "Genel Durum & Tahminler" basligi + yil secici artik Günlük Ort/Ay Sonu/Hedef kartlarindan SONRA, En Yüksek Ay kartinin ustunde. (PC\'de degismedi — sag blogun en ustunde.)' },
+      { type: 'ui', text: 'Aylik Prim Grafigi sutunlarinin ustundeki gereksiz bosluk kaldirildi (grafik kutusu 300px -> 215px; cubuk olcegi zaten 160px idi, ust bosluk kapandi).' },
+    ]
+  },
   {
     version: 'v293',
     date: '13.07.2026',
