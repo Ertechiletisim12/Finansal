@@ -3084,7 +3084,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v283';
+const APP_VERSION = 'v284';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3197,7 +3197,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '12.07.2026 12:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '12.07.2026 14:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -17615,7 +17615,7 @@ function openExportPreview(tableId, fileLabel){
       const zatenVar = entries.some(e => e.date===m.entryDate && e.cat===m.cat && e.date>=rStart && e.date<=rEnd);
       if(zatenVar) return;
       if(!devirEntryler.some(e => e.date===m.entryDate && e.cat===m.cat))
-        devirEntryler.push({ date:m.entryDate, cat:m.cat, count:0, mnp:true, _devir:true });
+        devirEntryler.push({ date:m.entryDate, cat:m.cat, count:1, mnp:true, _devir:true });
     });
     filtRows = filtRows.concat(devirEntryler)
       .sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat));
@@ -17628,8 +17628,9 @@ function openExportPreview(tableId, fileLabel){
     const dateGruplari = {};
     filtRows.forEach(e=>{
       const k = e.date+'_'+e.cat;
-      if(!dateGruplari[k]) dateGruplari[k]={date:e.date, cat:e.cat, count:0};
+      if(!dateGruplari[k]) dateGruplari[k]={date:e.date, cat:e.cat, count:0, hepDevir:true};
       dateGruplari[k].count += e.count;
+      if(!e._devir) dateGruplari[k].hepDevir = false;   // v284: grupta devir-disi entry varsa devir grubu degil
     });
     Object.values(dateGruplari).sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat)).forEach(g=>{
       const birimAmt = kampanyaFiyatFor(g.date, g.cat, priceFor(ymKey(g.date), g.cat));
@@ -17640,8 +17641,8 @@ function openExportPreview(tableId, fileLabel){
         (m.entryDate===g.date && (!m.cat || m.cat===g.cat))       // v254: logId eski/bozuk olsa da gun+kategori ile esles
       );
       ilgiliM = ilgiliM.filter((m,i,arr)=>arr.findIndex(x=>x.id===m.id)===i); // mukerrer temizle
-      // v282: devir grubunda (count=0) musterileri kirpma — devir bilgisi gosterilecek
-      const _devirGrubu = g.count === 0;
+      // v282/v284: devir grubu = bu grubun tum entry'leri _devir isaretli mi?
+      const _devirGrubu = !!g.hepDevir;
       if(!_devirGrubu && ilgiliM.length > g.count) ilgiliM = ilgiliM.slice(0, g.count);
       // Devir grubunda yalnizca aktivasyonu bu aralikta olan onceki-donem MNP'leri kalsin
       if(_devirGrubu){
@@ -17668,7 +17669,7 @@ function openExportPreview(tableId, fileLabel){
           const _ek = (notlarData||[]).find(n => n.entryKey === g.date+'_'+g.cat);
           const notMetni = (m.not || (_ek && _ek.metin) || '').trim();
           const notEtiket = (_ek && _ek.etiketler && _ek.etiketler.length) ? _ek.etiketler.join(', ') : '';
-          musteriRows.push({date:g.date,cat:g.cat,count:_devirGrubu?0:1,amt:_devirGrubu?0:birimAmt,
+          musteriRows.push({date:g.date,cat:g.cat,count:1,amt:birimAmt,
             ad:((m.ad||'')+' '+(m.soyad||'')).trim(),tel:m.tel||'-',tarife:m.tarife||(logE&&logE.tarife)||'-',
             tip: isMnp ? 'MNP' : 'Yeni Tesis', akt: akt||'-', devir,
             bekliyor: m.durum==='bekliyor', devirBilgi:_devirGrubu,
@@ -18195,6 +18196,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v284',
+    date: '12.07.2026',
+    items: [
+      { type: 'fix', text: 'GECEN AYDAN DEVREDEN MNP\'LER OZET TABLOSUNDA VE DIP TOPLAMDA YOKTU. v282\'de devir kayitlari adet/tutar 0 olarak ekleniyordu (yalnizca detayda goruluyordu); ozet tablosu, dip toplam ve dip TUTAR bunlari saymiyordu. Ayrica basliktaki "Detaylı (32)" ile dip "TOPLAM 29" farkli cikiyordu. Devir kayitlari artik GERCEK islem gibi 1 adet sayiliyor: detay, ozet, dip toplam ve tutar birebir tutarli.' },
+      { type: 'fix', text: 'DISA AKTARMADA (Excel/PDF) devir kayitlari eksikti — hem detayli hem ozet ciktida artik tam. Ozet tanimi da devirleri iceren kategori toplamlariyla uretiliyor.' },
+    ]
+  },
   {
     version: 'v283',
     date: '12.07.2026',
