@@ -432,9 +432,9 @@ body.light #kapanisRaporModal [style*="color:#fcd34d"]{ color:#fcd34d!important;
   #primTitleBar{ display:none!important; }
   #primToolBar{ display:none!important; }
   /* v160: Anasayfa mobil — trend grafiği yatay kaydırmalı, barlar sıkışmaz */
-  #dashContent .trend-bars-wrap{ overflow-x:auto!important; -webkit-overflow-scrolling:touch; height:165px!important; gap:5px!important; min-width:0!important; scrollbar-width:none; padding-bottom:2px; }
-  #dashContent .trend-bars-wrap::-webkit-scrollbar{ display:none; }
-  #dashContent .trend-bars-wrap > div{ min-width:58px!important; flex-shrink:0!important; }
+  /* v308: 6 sutun ekrana sigsin — kaydirma yok, sutunlar esner */
+  #dashContent .trend-bars-wrap{ overflow:hidden!important; height:165px!important; gap:3px!important; min-width:0!important; padding-bottom:2px; }
+  #dashContent .trend-bars-wrap > div{ min-width:0!important; flex:1 1 0!important; }
   /* v154: tarife/kampanya ekleme satırı mobilde taşmasın */
   .tarife-add-row{ grid-template-columns:1fr 1fr!important; }
   .tarife-add-row input{ min-width:0!important; }
@@ -3127,7 +3127,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v307';
+const APP_VERSION = 'v308';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3240,7 +3240,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '14.07.2026 23:59'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '15.07.2026 02:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -18387,6 +18387,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v308',
+    date: '15.07.2026',
+    items: [
+      { type: 'fix', text: 'Son 6 Ay Trendi grafigi GERCEKTEN duzeldi. Onceki surumde inline stili duzeltmistim ama MOBIL CSS (her cubuk min-width:58px + overflow-x:auto) onu eziyordu — o yuzden hala kaydirmaliydi. Simdi mobil CSS de duzeltildi: 6 sutun ekrana sigacak sekilde esner, kaydirma yok.' },
+    ]
+  },
   {
     version: 'v307',
     date: '14.07.2026',
