@@ -1417,9 +1417,15 @@ input:focus,select:focus{outline:1px solid var(--accent)}
 .export-tbl-sar::-webkit-scrollbar-thumb{ background:#444; border-radius:3px; }
 @media(max-width:600px){
   #exportModalContent{ padding:6px!important; }
-  .export-tbl-sar table{ min-width:760px!important; }
-  .export-tbl-sar th{ padding:7px 8px!important; font-size:10px!important; }
-  .export-tbl-sar td{ padding:6px 8px!important; font-size:10.5px!important; }
+  /* v287: ozet + devir tablolari EKRANA SIGSIN — genis min-width kaldirildi,
+     hucreler daraltildi. Detayli tablo (12 sutun) yine yatay kaydirilabilir. */
+  .export-tbl-sar table{ min-width:0!important; width:100%!important; }
+  .export-tbl-sar th{ padding:8px 5px!important; font-size:10px!important; letter-spacing:0!important; }
+  .export-tbl-sar td{ padding:8px 5px!important; font-size:11px!important; }
+  /* Detayli 12-sutun tablosu kaydirmali kalsin (icinde Telefon/Tarife/Not var) */
+  .export-tbl-sar table.detay-genis{ min-width:820px!important; }
+  /* v287: ozet tablosunda BIRIM ve AY sutunlari mobilde gizli (4 sutun kalir, rahat sigar) */
+  .export-tbl-sar .oz-birim, .export-tbl-sar .oz-ay{ display:none!important; }
 }
 /* v273: Ay Karsilastirma kontrol izgarasi — iki satir ayni sutun genisliklerini paylasir */
 .cmp-grid{
@@ -3084,7 +3090,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v286';
+const APP_VERSION = 'v287';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3197,7 +3203,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '12.07.2026 19:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '12.07.2026 22:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -17713,7 +17719,7 @@ function openExportPreview(tableId, fileLabel){
     document.getElementById('exportModalTabs').innerHTML = `
       <button id="tabDetayli" onclick="switchExportTab('detayli')" style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">📋 Detaylı (${musteriRows.length})</button>
       <button id="tabOzet" onclick="switchExportTab('ozet')" style="flex:1;padding:10px;background:#111;color:#888;border:none;font-size:12px;cursor:pointer">📊 Özet</button>`;
-    const detayliHtml = `<table style="width:100%;border-collapse:collapse">
+    const detayliHtml = `<table class="detay-genis" style="width:100%;border-collapse:collapse;min-width:820px">
       <thead><tr style="background:#e2231a">
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left;white-space:nowrap">Tarih</th>
         <th style="padding:9px 10px;font-size:11px;color:#fff;text-align:left">Kategori</th>
@@ -17760,7 +17766,7 @@ function openExportPreview(tableId, fileLabel){
       if(!totalCount) return '';
       const totalAmt = catRows.reduce((a,r)=>a+r.amt,0);
       const aylar = [...new Set(catRows.map(r=>ymKey(r.date)))].sort().reverse();
-      const color = (typeof CAT_COLORS!=='undefined'&&CAT_COLORS[c])||'#4cd964';
+      const color = (CAT_CONFIG[c] && CAT_CONFIG[c].color) || '#4cd964';   // v287: global CAT_CONFIG (CAT_COLORS render() icinde localdi)
       // MNP / Yeni Tesis kirilimi (musteriRows.tip)
       const mnpCnt   = catRows.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0);
       const tesisCnt = totalCount - mnpCnt;
@@ -17773,8 +17779,8 @@ function openExportPreview(tableId, fileLabel){
         </td>
         <td style="padding:12px 14px;font-size:14px;color:#fff;font-weight:800;text-align:center">${totalCount}</td>
         <td style="padding:12px 14px;font-size:12px;text-align:center;font-weight:700;white-space:nowrap">${kirilim}</td>
-        <td style="padding:12px 14px;font-size:12px;color:#c9ccd0;text-align:right;white-space:nowrap">${fmt(totalCount?totalAmt/totalCount:0)}</td>
-        <td style="padding:12px 14px;font-size:12px;color:#888;text-align:center;white-space:nowrap">${aylar.length} ay</td>
+        <td class="oz-birim" style="padding:12px 14px;font-size:12px;color:#c9ccd0;text-align:right;white-space:nowrap">${fmt(totalCount?totalAmt/totalCount:0)}</td>
+        <td class="oz-ay" style="padding:12px 14px;font-size:12px;color:#888;text-align:center;white-space:nowrap">${aylar.length} ay</td>
         <td style="padding:12px 14px;font-size:13px;color:#4cd964;font-weight:700;text-align:right;white-space:nowrap">${fmt(totalAmt)}</td>
       </tr>`;
     }).filter(Boolean).join('');
@@ -17784,8 +17790,8 @@ function openExportPreview(tableId, fileLabel){
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:left;font-weight:700;letter-spacing:.05em">KATEGORİ</th>
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:center;font-weight:700;letter-spacing:.05em">TOPLAM ADET</th>
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:center;font-weight:700;letter-spacing:.05em" title="Yeni Tesis / MNP">TESİS / MNP</th>
-        <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:right;font-weight:700;letter-spacing:.05em">BİRİM</th>
-        <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:center;font-weight:700;letter-spacing:.05em">AY SAYISI</th>
+        <th class="oz-birim" style="padding:11px 14px;font-size:11px;color:#fff;text-align:right;font-weight:700;letter-spacing:.05em">BİRİM</th>
+        <th class="oz-ay" style="padding:11px 14px;font-size:11px;color:#fff;text-align:center;font-weight:700;letter-spacing:.05em">AY SAYISI</th>
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:right;font-weight:700;letter-spacing:.05em">TUTAR</th>
       </tr></thead>
       <tbody>${catSummaryRows}</tbody>
@@ -17793,8 +17799,8 @@ function openExportPreview(tableId, fileLabel){
         <td style="padding:12px 14px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
         <td style="padding:12px 14px;font-size:14px;color:#fff;font-weight:800;text-align:center">${toplamCount}</td>
         <td style="padding:12px 14px;font-size:12px;font-weight:800;text-align:center;white-space:nowrap"><span style="color:#4cd964">${musteriRows.filter(r=>r.tip!=='MNP'&&MNP_CATS.includes(r.cat)).reduce((a,r)=>a+r.count,0)}</span> <span style="color:#555">/</span> <span style="color:#c084fc">${musteriRows.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0)}</span></td>
-        <td style="padding:12px 14px;font-size:12px;color:#999;text-align:right;white-space:nowrap">${fmt(toplamCount?toplamAmt/toplamCount:0)}</td>
-        <td></td>
+        <td class="oz-birim" style="padding:12px 14px;font-size:12px;color:#999;text-align:right;white-space:nowrap">${fmt(toplamCount?toplamAmt/toplamCount:0)}</td>
+        <td class="oz-ay"></td>
         <td style="padding:12px 14px;font-size:14px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(toplamAmt)}</td>
       </tr></tfoot>
     </table></div>`;
@@ -18224,6 +18230,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v287',
+    date: '12.07.2026',
+    items: [
+      { type: 'fix', text: 'ISLEM LISTESI OZETI MOBILDE EKRANA SIGMIYORDU — TESİS/MNP, devir adetleri ve KATEGORİ sutunu sagda ekran disinda kaliyordu. Ozet ve devir tablolari artik ekrana sigiyor; BIRIM ve AY SAYISI sutunlari mobilde gizleniyor (KATEGORİ · ADET · TESİS/MNP · TUTAR kaliyor). Detayli 12-sutun tablo yine yatay kaydirilabilir. PDF/Excel ciktida tum sutunlar tam.' },
+      { type: 'fix', text: 'OZET TABLOSUNDA KATEGORI RENK NOKTALARI HEP YESIL cikiyordu. Renk kaynagi (CAT_COLORS) render() fonksiyonu icinde localdi, ozet kodu ona erisemiyordu. Artik global CAT_CONFIG kullaniliyor — her kategori kendi rengiyle (PrePaid mavi, Red kirmizi, Mccm mor...).' },
+    ]
+  },
   {
     version: 'v286',
     date: '12.07.2026',
