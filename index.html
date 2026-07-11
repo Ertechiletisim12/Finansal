@@ -3127,7 +3127,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v304';
+const APP_VERSION = 'v305';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3240,7 +3240,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '14.07.2026 17:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '14.07.2026 19:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15299,11 +15299,10 @@ function renderHedefPage(){
     let html = '';
     let detayHtml = '';
 
-    // Genel bar (UST — tam genislik)
+    // Genel bar
     const barColor = progPct>=100?'var(--green)':progPct>=80?'var(--gold)':'var(--accent)';
-    let barHtml = '';
     if(progHedef>0){
-      barHtml = `<div class="note-panel" style="margin-bottom:12px">
+      html += `<div class="note-panel" style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-weight:700;font-size:13px">🏁 ${monthLabel(progYm)} — Toplam Hedef</span>
           <span style="font-size:12px;color:var(--muted)">${fmt(progPrim)} / ${fmt(progHedef)}</span>
@@ -15316,14 +15315,14 @@ function renderHedefPage(){
         ${hedefAciklamaData[progYm]?`<div style="font-size:11px;color:var(--muted);margin-top:4px">📝 ${hedefAciklamaData[progYm]}</div>`:''}
       </div>`;
     } else {
-      barHtml = `<div style="font-size:12px;color:var(--muted);padding:4px 0 10px">${monthLabel(progYm)} için toplam hedef girilmemiş.</div>`;
+      html += `<div style="font-size:12px;color:var(--muted);padding:4px 0 10px">${monthLabel(progYm)} için toplam hedef girilmemiş.</div>`;
     }
 
     // Kategori kartlari + detay barlar — ayni blokta
     const catsWithHedef = CATS.filter(c=>katHedefs[c]>0);
     if(catsWithHedef.length>0){
       // Mini kartlar
-      html += `<div class="note-panel" style="padding:12px;margin-bottom:0">
+      html += `<div class="note-panel" style="padding:12px;margin-bottom:0;margin-top:8px">
         <div style="font-size:11.5px;font-weight:700;color:var(--accent);margin-bottom:8px">📊 ${monthLabel(progYm)} — Kategori Detayı</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">`;
       CATS.forEach(c=>{
@@ -15371,13 +15370,13 @@ function renderHedefPage(){
     } else {
       html += `<div style="font-size:12px;color:var(--muted);padding:6px 0">Kategori bazlı hedef yok. ✏️ ile ekleyebilirsiniz.</div>`;
     }
-    // v304: UST tam genislik Toplam Hedef bari; ALT sol(kartlar)|sag(barlar) — ayni hizadan baslar
+    // Sol (bar + kartlar) | Sag (detay barlar) yan yana
     progDiv.innerHTML = detayHtml
-      ? barHtml + `<div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap">
+      ? `<div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap">
            <div style="flex:1.5 1 340px;min-width:min(300px,100%)">${html}</div>
            <div style="flex:1 1 240px;min-width:min(240px,100%)">${detayHtml}</div>
          </div>`
-      : barHtml + html;
+      : html;
   }
 
   // Planlama tablosu
@@ -18388,6 +18387,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v305',
+    date: '14.07.2026',
+    items: [
+      { type: 'ui', text: 'HEDEF YONETIMI: v303 duzenine donuldu (sol Toplam Hedef bari + kategori kartlari, sag ilerleme barlari). Sol kategori kartlari blogu bir tik asagi cekilip sagdaki ilerleme barlariyla hizalandi. Baska degisiklik yok.' },
+    ]
+  },
   {
     version: 'v304',
     date: '14.07.2026',
