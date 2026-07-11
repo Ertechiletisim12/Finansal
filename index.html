@@ -3104,7 +3104,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v295';
+const APP_VERSION = 'v296';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3217,7 +3217,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '13.07.2026 18:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '13.07.2026 21:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -7692,23 +7692,26 @@ function render(){
   const allYears = [...new Set(Object.keys(monthMapAll).map(m=>m.split('-')[0]))].sort();
   const existingYrSel = document.getElementById('yearAvgSel');
   let selectedAvgYear = existingYrSel ? existingYrSel.value : '';
-  if(!selectedAvgYear || !allYears.includes(selectedAvgYear)){
+  if(!selectedAvgYear || (selectedAvgYear!=='all' && !allYears.includes(selectedAvgYear))){
     selectedAvgYear = allYears.includes(String(new Date().getFullYear()))
       ? String(new Date().getFullYear())
       : (allYears[allYears.length-1] || String(new Date().getFullYear()));
   }
 
-  // seçili yılın aylık ortalaması (KDV dahil)
-  const yearMonths = Object.keys(monthMapAll).filter(m=>m.startsWith(selectedAvgYear+'-'));
+  // seçili yılın aylık ortalaması (KDV dahil) — 'all' ise tum yillar
+  const yearMonths = selectedAvgYear==='all'
+    ? Object.keys(monthMapAll)
+    : Object.keys(monthMapAll).filter(m=>m.startsWith(selectedAvgYear+'-'));
   const yearSumKdv = yearMonths.reduce((a,m)=>a+monthSumAll(m)*1.20,0);
   const yearAvgKdv = yearMonths.length ? yearSumKdv/yearMonths.length : 0;
 
   // seçili yılın toplam tutarı (KDV dahil)
   const selectedYearSum = yearSumKdv;
 
-  const yearOptionsHtml = allYears.length
+  const yearOptionsHtml = (allYears.length
     ? allYears.map(y=>`<option value="${y}" ${y===selectedAvgYear?'selected':''}>${y}</option>`).join('')
-    : `<option value="${selectedAvgYear}">${selectedAvgYear}</option>`;
+    : `<option value="${selectedAvgYear}">${selectedAvgYear}</option>`)
+    + `<option value="all" ${selectedAvgYear==='all'?'selected':''}>Tümü</option>`;
   if(existingYrSel) existingYrSel.innerHTML = yearOptionsHtml;
 
   const curHedef = hedefler[realCurMonth] ?? null;
@@ -7800,6 +7803,7 @@ function render(){
   const genelToplamAll = allMonthKeys.reduce((a,m)=>a+monthSumAll(m)*1.20,0);
 
   // seçili yıl (yearAvgSel ile aynı yıl)
+  const _yilEtiket = selectedAvgYear==='all' ? 'Tümü' : selectedAvgYear;   // v296: 'all' -> Tumu
   let bestKeyYr=null,bestValYr=-Infinity,worstKeyYr=null,worstValYr=Infinity;
   yearMonths.forEach(m=>{ const v=monthSumAll(m)*1.20; if(v>bestValYr){bestValYr=v;bestKeyYr=m;} if(v<worstValYr){worstValYr=v;worstKeyYr=m;} });
   const genelToplamYr = yearMonths.reduce((a,m)=>a+monthSumAll(m)*1.20,0);
@@ -7812,24 +7816,24 @@ function render(){
     <div class="t" style="font-size:9.5px">En Yüksek Ay <span style="opacity:.6">KDV</span></div>
     <div class="y" style="font-size:11px;margin:2px 0">${bestKeyAll?monthLabel(bestKeyAll):'-'}</div>
     <div class="v" style="font-size:16px;color:#4cd964">${bestKeyAll?fmt(bestValAll):'-'}</div>
-    <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">${selectedAvgYear}: ${bestKeyYr?monthLabel(bestKeyYr):'-'} · <b style="color:#4cd964">${bestKeyYr?fmt(bestValYr):'-'}</b></div>`;
+    <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">${_yilEtiket}: ${bestKeyYr?monthLabel(bestKeyYr):'-'} · <b style="color:#4cd964">${bestKeyYr?fmt(bestValYr):'-'}</b></div>`;
   const _enDusuk = `
     <div class="t" style="font-size:9.5px">En Düşük Ay <span style="opacity:.6">KDV</span></div>
     <div class="y" style="font-size:11px;margin:2px 0">${worstKeyAll?monthLabel(worstKeyAll):'-'}</div>
     <div class="v" style="font-size:16px;color:#ff5252">${worstKeyAll?fmt(worstValAll):'-'}</div>
-    <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">${selectedAvgYear}: ${worstKeyYr?monthLabel(worstKeyYr):'-'} · <b style="color:#ff5252">${worstKeyYr?fmt(worstValYr):'-'}</b></div>`;
+    <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">${_yilEtiket}: ${worstKeyYr?monthLabel(worstKeyYr):'-'} · <b style="color:#ff5252">${worstKeyYr?fmt(worstValYr):'-'}</b></div>`;
   const _genelToplam = `
     <div class="t" style="font-size:9.5px">Genel Toplam <span style="opacity:.6">KDV</span></div>
     <div class="y" style="font-size:11px;margin:2px 0">Tüm zamanlar</div>
     <div class="v" style="font-size:16px">${fmt(genelToplamAll)}</div>
-    <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">${selectedAvgYear}: <b>${fmt(genelToplamYr)}</b></div>`;
+    <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">${_yilEtiket}: <b>${fmt(genelToplamYr)}</b></div>`;
   const _yilOrt = `
-    <div class="t" style="font-size:9.5px">${selectedAvgYear} Aylık Ort. <span style="opacity:.6">KDV</span></div>
+    <div class="t" style="font-size:9.5px">${_yilEtiket} Aylık Ort. <span style="opacity:.6">KDV</span></div>
     <div class="y" style="font-size:11px;margin:2px 0">${yearMonths.length} ay verisi</div>
     <div class="v" style="font-size:16px">${fmt(yearAvgKdv)}</div>
     <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">Aylık ortalama</div>`;
   const _yilTop = `
-    <div class="t" style="font-size:9.5px">${selectedAvgYear} Yılı Toplam <span style="opacity:.6">KDV</span></div>
+    <div class="t" style="font-size:9.5px">${_yilEtiket} Yılı Toplam <span style="opacity:.6">KDV</span></div>
     <div class="y" style="font-size:11px;margin:2px 0">${yearMonths.length} ay verisi</div>
     <div class="v" style="font-size:16px">${fmt(selectedYearSum)}</div>
     <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">Yıl toplamı</div>`;
@@ -18343,6 +18347,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v296',
+    date: '13.07.2026',
+    items: [
+      { type: 'new', text: 'Genel Durum & Tahminler yil secicisine "Tümü" eklendi — secince En Yüksek/En Düşük Ay, Aylik Ortalama ve Toplam kartlari TUM YILLARI kapsar (yalnizca secili yili degil).' },
+    ]
+  },
   {
     version: 'v295',
     date: '13.07.2026',
