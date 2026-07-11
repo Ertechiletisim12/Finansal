@@ -3127,7 +3127,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v306';
+const APP_VERSION = 'v307';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3240,7 +3240,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '14.07.2026 22:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '14.07.2026 23:59'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -9225,7 +9225,7 @@ function renderDash(){
     const adetColor  = isCur ? '#3fd0ff' : '#999';
     const tutarColor = isCur ? '#4cd964' : '#aaa';
     const tutarTam = t.v > 0 ? t.v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺' : '—';
-    return `<div onclick="showChartBarDetay('${t.ym}')" style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1;min-width:44px;cursor:pointer" title="Dokun: ${monthLabel(t.ym)} detayı&#10;Adet: ${t.adet}&#10;Tutar: ${tutarTam}">
+    return `<div onclick="showChartBarDetay('${t.ym}')" style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1 1 0;min-width:0;cursor:pointer" title="Dokun: ${monthLabel(t.ym)} detayı&#10;Adet: ${t.adet}&#10;Tutar: ${tutarTam}">
       <div style="font-size:${isMob?'7px':'9px'};font-weight:700;text-align:center;line-height:1.5;margin-bottom:4px;width:100%">
         ${t.adet>0 ? `<div style="color:${adetColor}">${t.adet} ad</div>` : '<div>&nbsp;</div>'}
         ${t.v>0 ? `<div style="color:${tutarColor};white-space:nowrap">${isMob ? t.v.toLocaleString('tr-TR',{maximumFractionDigits:0})+' ₺' : fmtF(t.v)}</div>` : '<div>&nbsp;</div>'}
@@ -9522,7 +9522,7 @@ function renderDash(){
       <!-- Sol: Grafik -->
       <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;flex:1;min-width:min(300px,100%)">
         <div style="font-size:9.5px;color:var(--muted);margin-bottom:8px;font-weight:600">📊 Son 6 Ay Trendi <span style="font-size:8px;opacity:.6">(adet · tutar)</span></div>
-        <div class="trend-bars-wrap" style="display:flex;align-items:flex-end;gap:4px;height:200px;padding-top:4px;min-width:280px">${trendBars}</div>
+        <div class="trend-bars-wrap" style="display:flex;align-items:flex-end;gap:3px;height:200px;padding-top:4px;min-width:0;overflow:hidden">${trendBars}</div>
       </div>
 
       <!-- Sağ: Kategori Dağılımı -->
@@ -9538,8 +9538,8 @@ function renderDash(){
                 <th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Kategori</th>
                 <th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Adet</th>
                 ${Object.keys(catHedefler).length ? '<th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Hedef</th><th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Fark</th>' : ''}
-                <th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600">Tutar (KDV)</th>
-                <th style="text-align:left;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600;min-width:80px">Dağılım</th>
+                <th style="text-align:right;padding:5px 6px;font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap">Tutar (KDV)</th>
+                <th style="text-align:right;padding:5px 4px;font-size:10px;color:var(--muted);font-weight:600;min-width:52px">Dağılım</th>
               </tr>
             </thead>
           <tbody>
@@ -9564,13 +9564,13 @@ function renderDash(){
                   <td style="text-align:right;padding:4px 6px;color:var(--muted)">${katH!=null?katH:'—'}</td>
                   <td style="text-align:right;padding:4px 6px;font-weight:700;color:${farkColor}">${fark!=null?(fark>=0?'+':'')+fark:'—'}</td>
                 ` : ''}
-                <td style="text-align:right;padding:4px 6px;color:${tutar>0?'var(--txt)':'var(--muted)'}">${tutar>0?fmtF(tutar):'—'}</td>
-                <td style="padding:4px 6px">
-                  <div style="display:flex;align-items:center;gap:5px">
-                    <div style="flex:1;height:5px;background:var(--line);border-radius:3px;overflow:hidden">
+                <td style="text-align:right;padding:4px 6px;white-space:nowrap;color:${tutar>0?'var(--txt)':'var(--muted)'}">${tutar>0?fmtF(tutar):'—'}</td>
+                <td style="padding:4px 4px">
+                  <div style="display:flex;align-items:center;gap:3px">
+                    <div style="width:22px;height:5px;background:var(--line);border-radius:3px;overflow:hidden;flex-shrink:0">
                       <div style="height:100%;width:${pct2}%;background:${color};border-radius:3px"></div>
                     </div>
-                    <span style="font-size:10px;color:var(--muted);min-width:26px;text-align:right">%${pct2}</span>
+                    <span style="font-size:10px;color:var(--muted);min-width:24px;text-align:right;white-space:nowrap">%${pct2}</span>
                   </div>
                 </td>
               </tr>`;
@@ -9584,7 +9584,7 @@ function renderDash(){
                 <td style="text-align:right;padding:7px 6px;font-weight:800;color:var(--muted)">${Object.values(catHedefler).reduce((a,b)=>a+b,0)}</td>
                 <td style="text-align:right;padding:7px 6px;font-weight:800;color:${catTotal>=Object.values(catHedefler).reduce((a,b)=>a+b,0)?'#4cd964':'#ff5252'}">${(()=>{const t=Object.values(catHedefler).reduce((a,b)=>a+b,0);const f=catTotal-t;return (f>=0?'+':'')+f;})()} </td>
               ` : ''}
-              <td style="text-align:right;padding:7px 6px;font-weight:800;color:var(--accent)">${fmtF(curKdv)}</td>
+              <td style="text-align:right;padding:7px 6px;font-weight:800;white-space:nowrap;color:var(--accent)">${fmtF(curKdv)}</td>
               <td style="padding:7px 6px"></td>
             </tr>
           </tfoot>
@@ -18387,6 +18387,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v307',
+    date: '14.07.2026',
+    items: [
+      { type: 'ui', text: 'ANASAYFA Son 6 Ay Trendi grafigi artik kaydirmasiz — 6 sutun ekrana sigacak sekilde daraltildi (onceden 7. sutun tasip yatay kaydirma gerekiyordu).' },
+      { type: 'ui', text: 'ANASAYFA Kategori Dagilimi tablosunda Tutar (ornek 16.020,00 ₺) alt satira kayiyordu. Tutar sutunu tek satira sabitlendi (nowrap), Dagilim sutunu daraltilarak Tutar\'a yer acildi. ₺ artik alta kaymaz.' },
+    ]
+  },
   {
     version: 'v306',
     date: '14.07.2026',
