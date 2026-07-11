@@ -3090,7 +3090,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v288';
+const APP_VERSION = 'v289';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3203,7 +3203,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '13.07.2026 00:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '13.07.2026 03:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -16377,9 +16377,30 @@ function renderHedefGecmis(){
 
 <script>
 function showCatDetail(cat, rStart, rEnd){
-  const catEntries = entries
+  let catEntries = entries
     .filter(e=>e.cat===cat && e.date>=rStart && e.date<=rEnd && e.count>0)
-    .sort((a,b)=>b.date.localeCompare(a.date));
+    .slice();
+
+  // v289: ONCEKI AYDAN DEVREDEN MNP'ler. Islem Listesi ozeti/detayi ile ayni mantik:
+  // girisi bu araligin oncesinde ama aktivasyonu bu aralikta olan MNP'ler bu kategoride
+  // de gorunmuyordu (catEntries yalnizca entries'ten geliyordu). Devir entry'lerini ekle.
+  if(MNP_CATS.includes(cat)){
+    const devirSay = {};
+    (musteriler||[]).forEach(m => {
+      if(m.tip !== 'mnp' || m.cat !== cat) return;
+      const akt = (m.aktivasyonTarihi || (m.entryDate ? mnpActivationDate(m.entryDate) : '')).slice(0,10);
+      if(!akt || akt < rStart || akt > rEnd) return;
+      if(!m.entryDate || (m.entryDate >= rStart && m.entryDate <= rEnd)) return;
+      const zaten = entries.some(e => e.date===m.entryDate && e.cat===cat && e.date>=rStart && e.date<=rEnd);
+      if(zaten) return;
+      const k = m.entryDate;
+      devirSay[k] = (devirSay[k] || 0) + 1;
+    });
+    Object.keys(devirSay).forEach(date => {
+      catEntries.push({ date, cat, count:devirSay[date], mnp:true, _devir:true });
+    });
+  }
+  catEntries.sort((a,b)=>b.date.localeCompare(a.date));
 
   // v254: Her musteri KENDI satirinda; adet/tutar her satirda gosterilir (onceden sadece ilki doluydu).
   // Eslestirme Islem Listesi ile ayni esnek mantikta: logId varsa onunla, bulunamazsa gun+kategori ile.
@@ -16412,7 +16433,8 @@ function showCatDetail(cat, rStart, rEnd){
           tarife,
           tip: MNP_CATS.includes(cat) ? (m.tip==='mnp' ? 'MNP' : 'Yeni Tesis') : '',
           count:1,
-          amt:fmt(amt1)
+          amt:fmt(amt1),
+          devir: !!e._devir   // v289: onceki donemden devreden isareti
         });
       });
       // Musterisi eslesmeyen kalan adetler
@@ -16432,6 +16454,7 @@ function showCatDetail(cat, rStart, rEnd){
           ${r.tel && r.tel!=='—' ? `<span style="font-size:10.5px;color:#7a8090">${r.tel}</span>` : ''}
           ${r.tip ? `<span style="font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:5px;white-space:nowrap;background:${r.tip==='MNP'?'rgba(192,132,252,0.18)':'rgba(76,217,100,0.18)'};color:${r.tip==='MNP'?'#c084fc':'#4cd964'}">${r.tip}</span>` : ''}
           ${r.tarife && r.tarife!=='—' ? `<span style="font-size:10px;color:#7ee8ff">🏷 ${r.tarife}</span>` : ''}
+          ${r.devir ? `<span style="font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:5px;white-space:nowrap;background:rgba(255,183,77,0.18);color:#ffb74d">⬅️ önceki dönemden</span>` : ''}
         </div>
         ${!r.ad || r.ad==='—' ? `<div style="font-size:10.5px;color:#3e4347">Müşteri kaydı yok</div>` : ''}
       </td>
@@ -18259,6 +18282,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v289',
+    date: '13.07.2026',
+    items: [
+      { type: 'fix', text: 'OZETTE BIR KATEGORIYE TIKLAYINCA ACILAN DETAY MODALINDA GECEN AYDAN DEVREDEN ISLEMLER GORUNMUYORDU. Modal yalnizca bu araliga girilen islemleri listeliyordu; girisi onceki donemde, aktivasyonu bu donemde olan MNP\'ler eksikti. Artik devir kayitlari da modalda "⬅️ önceki dönemden" etiketiyle gorunuyor ve modal toplamina dahil.' },
+    ]
+  },
   {
     version: 'v288',
     date: '13.07.2026',
