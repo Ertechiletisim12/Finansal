@@ -2230,10 +2230,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div class="stats-row" id="hedefSummaryRow" style="margin-bottom:12px"></div>
 
       <!-- v298: Ana alan — SAG ilerleme paneli + SOL planlama; her panelin kendi filtresi ustunde net etiketle -->
-      <div class="hedef-grid" style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap">
+      <div class="hedef-grid" style="display:flex;flex-direction:column;gap:14px">
 
         <!-- SOL: Ilerleme & Kategori (mobilde ustte gelir) -->
-        <div class="hedef-col hedef-col-prog" style="flex:1.6 1 420px;min-width:min(340px,100%)">
+        <div class="hedef-col hedef-col-prog" style="width:100%;order:1">
           <div class="hedef-panel-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 10px;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px">
             <div class="section-title" style="margin:0;display:flex;align-items:center;gap:6px">📊 <span>İlerleme &amp; Kategori</span></div>
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -2246,7 +2246,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- SAG: Hedef Planlamasi (mobilde altta) -->
-        <div class="hedef-col hedef-col-plan" style="flex:1 1 320px;min-width:min(300px,100%);display:flex;flex-direction:column">
+        <div class="hedef-col hedef-col-plan" style="width:100%;order:2;display:flex;flex-direction:column">
           <div class="hedef-panel-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 10px;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px">
             <div class="section-title" style="margin:0;display:flex;align-items:center;gap:6px">📅 <span>Planlama</span></div>
             <div style="display:flex;gap:6px;align-items:center">
@@ -2260,7 +2260,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
             <button class="prim-tool-pill hplan-btn" data-v="ileri6" onclick="setHedefPlanGoster('ileri6')" style="padding:5px 11px;font-size:10.5px;white-space:nowrap">6 Ay</button>
             <button class="prim-tool-pill hplan-btn" data-v="ileri12" onclick="setHedefPlanGoster('ileri12')" style="padding:5px 11px;font-size:10.5px;white-space:nowrap">12 Ay</button>
           </div>
-          <div class="table-wrap hedef-plan-tablo" style="flex:1;overflow-y:auto;min-height:0">
+          <div class="table-wrap hedef-plan-tablo" style="max-height:400px;overflow-y:auto">
             <table class="main-table" id="hedef6AyTable"></table>
           </div>
         </div>
@@ -3127,7 +3127,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v302';
+const APP_VERSION = 'v303';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3240,7 +3240,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '14.07.2026 12:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '14.07.2026 14:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -18387,6 +18387,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v303',
+    date: '14.07.2026',
+    items: [
+      { type: 'ui', text: 'HEDEF YONETIMI: Planlama tablosu artik gercekten ALTTA, tam genislik. Ust katmanda İlerleme paneli (SOL kartlar | SAG ilerleme barlari yan yana), alt katmanda tablo. Onceki surumde tablo yanlislikla hala sagda kaliyordu (3 sutun goruntusu). Simdi 2 katman: ilerleme ustte, tablo altta.' },
+    ]
+  },
   {
     version: 'v302',
     date: '14.07.2026',
