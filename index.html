@@ -1277,12 +1277,14 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
   #hedefSummaryRow{ grid-template-columns:repeat(2,1fr)!important; }
 }
 @media(max-width:640px){
-  .hedef-grid{ flex-direction:column!important; }
+  .hedef-grid{ flex-direction:column!important; align-items:stretch!important; }
   .hedef-col{ flex:1 1 100%!important; width:100%; }
   /* Mobilde: Ilerleme paneli ustte (order 1), Planlama altta (order 2) */
   .hedef-col-prog{ order:1!important; }
   .hedef-col-plan{ order:2!important; }
   .hplan-btns-row{ flex-wrap:nowrap!important; }
+  /* Mobilde tablo sabit yukseklik (PC'deki flex:1 tasmasin) */
+  .hedef-plan-tablo{ flex:none!important; max-height:460px!important; }
 }
 /* v292: Prim ust blok — mobilde kartlar alt alta, PC'de yan yana */
 @media(max-width:640px){
@@ -2229,7 +2231,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div class="stats-row" id="hedefSummaryRow" style="margin-bottom:12px"></div>
 
       <!-- v298: Ana alan — SAG ilerleme paneli + SOL planlama; her panelin kendi filtresi ustunde net etiketle -->
-      <div class="hedef-grid" style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div class="hedef-grid" style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap">
 
         <!-- SOL: Ilerleme & Kategori (mobilde ustte gelir) -->
         <div class="hedef-col hedef-col-prog" style="flex:1 1 380px;min-width:min(320px,100%)">
@@ -2245,7 +2247,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- SAG: Hedef Planlamasi (mobilde altta) -->
-        <div class="hedef-col hedef-col-plan" style="flex:1 1 380px;min-width:min(320px,100%)">
+        <div class="hedef-col hedef-col-plan" style="flex:1 1 380px;min-width:min(320px,100%);display:flex;flex-direction:column">
           <div class="hedef-panel-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 10px;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px">
             <div class="section-title" style="margin:0;display:flex;align-items:center;gap:6px">📅 <span>Planlama</span></div>
             <div style="display:flex;gap:6px;align-items:center">
@@ -2259,7 +2261,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
             <button class="prim-tool-pill hplan-btn" data-v="ileri6" onclick="setHedefPlanGoster('ileri6')" style="padding:5px 11px;font-size:10.5px;white-space:nowrap">6 Ay</button>
             <button class="prim-tool-pill hplan-btn" data-v="ileri12" onclick="setHedefPlanGoster('ileri12')" style="padding:5px 11px;font-size:10.5px;white-space:nowrap">12 Ay</button>
           </div>
-          <div class="table-wrap" style="max-height:520px;overflow-y:auto">
+          <div class="table-wrap hedef-plan-tablo" style="flex:1;overflow-y:auto;min-height:0">
             <table class="main-table" id="hedef6AyTable"></table>
           </div>
         </div>
@@ -3126,7 +3128,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v298';
+const APP_VERSION = 'v299';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3239,7 +3241,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '14.07.2026 02:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '14.07.2026 04:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -18383,6 +18385,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v299',
+    date: '14.07.2026',
+    items: [
+      { type: 'fix', text: 'HEDEF YONETIMI PC: sag Planlama paneli kisa bitince altinda bos alan kaliyordu. Iki panel artik esit yukseklikte (stretch); Planlama tablosu sol Ilerleme panelinin boyuna kadar uzayip bosluğu dolduruyor. Mobil degismedi (tablo sabit yukseklik, taşma yok).' },
+    ]
+  },
   {
     version: 'v298',
     date: '14.07.2026',
