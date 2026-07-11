@@ -3104,7 +3104,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v296';
+const APP_VERSION = 'v297';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3217,7 +3217,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '13.07.2026 21:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '13.07.2026 23:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -7859,12 +7859,25 @@ function render(){
     </div>
   `;
 
-  // ---- bar chart: SEÇİLİ YILIN tüm ayları (Ocak-Aralık), KDV dahil, ortalama altı için çizgi ----
+  // ---- bar chart: SEÇİLİ YILIN tüm ayları; "Tümü" ise YILLIK toplamlar ----
   const chartYear = selectedAvgYear;
-  const chartMonthKeys = [];
-  for(let mm=1; mm<=12; mm++) chartMonthKeys.push(chartYear+'-'+String(mm).padStart(2,'0'));
-  const chartVals = chartMonthKeys.map(k => monthSumAll(k) * 1.20);
-  const chartCnts = chartMonthKeys.map(k => CATS.reduce((a,c)=>a+(monthMapAll[k]?.[c]||0),0));
+  const _chartTumu = chartYear === 'all';
+  let chartMonthKeys, chartVals, chartCnts, chartLabels;
+  if(_chartTumu){
+    // v297: Tümü — her cubuk bir YIL (yillik toplam). Aylik anahtarlar 'all-01' oldugu
+    // icin cubuklar bos cikiyordu; artik yillara gore gruplaniyor.
+    const yillar = [...new Set(Object.keys(monthMapAll).map(k=>k.split('-')[0]))].sort();
+    chartMonthKeys = yillar;   // tiklama/detay icin yil anahtari
+    chartVals = yillar.map(y => Object.keys(monthMapAll).filter(k=>k.startsWith(y+'-')).reduce((a,k)=>a+monthSumAll(k)*1.20,0));
+    chartCnts = yillar.map(y => Object.keys(monthMapAll).filter(k=>k.startsWith(y+'-')).reduce((a,k)=>a+CATS.reduce((s,c)=>s+(monthMapAll[k]?.[c]||0),0),0));
+    chartLabels = yillar;
+  } else {
+    chartMonthKeys = [];
+    for(let mm=1; mm<=12; mm++) chartMonthKeys.push(chartYear+'-'+String(mm).padStart(2,'0'));
+    chartVals = chartMonthKeys.map(k => monthSumAll(k) * 1.20);
+    chartCnts = chartMonthKeys.map(k => CATS.reduce((a,c)=>a+(monthMapAll[k]?.[c]||0),0));
+    chartLabels = null;
+  }
   const maxV = Math.max(1, ...chartVals);
   const filledVals = chartVals.filter(v => v > 0);
   const chartAvg = filledVals.length ? filledVals.reduce((a,b)=>a+b,0)/filledVals.length : 0;
@@ -7875,8 +7888,9 @@ function render(){
     const h = Math.max(2, (chartVals[i]/maxV)*160);
     const hasData = chartVals[i] > 0;
     const color = !hasData ? 'var(--line)' : (chartVals[i] >= chartAvg ? '#2fae4e' : '#e2231a');
-    const shortLbl = monthLabel(k).split(' ')[0].slice(0,3);
-    return `<div class="bar-col" onclick="showChartBarDetay('${k}')" style="cursor:pointer" title="Dokun: ${monthLabel(k)} detayı">
+    const shortLbl = _chartTumu ? k : monthLabel(k).split(' ')[0].slice(0,3);
+    const _tip = _chartTumu ? k+' yılı' : monthLabel(k);
+    return `<div class="bar-col" onclick="${_chartTumu?'':`showChartBarDetay('${k}')`}" style="cursor:${_chartTumu?'default':'pointer'}" title="${_tip}">
       <div class="n">${hasData? chartCnts[i]+' Adet' : ''}</div>
       <div class="v">${hasData? fmt(chartVals[i]) : '-'}</div>
       <div class="bar" style="height:${h}px;background:${color}"></div>
@@ -7885,10 +7899,10 @@ function render(){
   }).join('');
   const avgLineHtml = `<div style="position:absolute;left:0;right:0;bottom:${avgLineBottom}px;border-top:2px dashed var(--gold);pointer-events:none;z-index:5"></div>`;
   chartDiv.innerHTML = barsHtml + avgLineHtml;
-  document.getElementById('chartTitle').textContent = `Aylık Prim Grafiği — ${chartYear} (KDV Dahil)`;
+  document.getElementById('chartTitle').textContent = _chartTumu ? 'Yıllık Prim Grafiği — Tümü (KDV Dahil)' : `Aylık Prim Grafiği — ${chartYear} (KDV Dahil)`;
   document.getElementById('avgLine').innerHTML = chartVals.some(v=>v>0)
-    ? `${chartYear} Yılı Ortalama (KDV Dahil): <b style="color:var(--gold)">${fmt(chartAvg)}</b> <span style="display:inline-block;width:14px;border-top:2px dashed var(--gold);vertical-align:middle;margin:0 4px"></span> kesikli çizgi ortalamayı gösterir`
-    : `${chartYear} yılına ait veri yok`;
+    ? `${_chartTumu?'Yıllık':chartYear+' Yılı'} Ortalama (KDV Dahil): <b style="color:var(--gold)">${fmt(chartAvg)}</b> <span style="display:inline-block;width:14px;border-top:2px dashed var(--gold);vertical-align:middle;margin:0 4px"></span> kesikli çizgi ortalamayı gösterir`
+    : `${_chartTumu?'':chartYear+' yılına ait '}veri yok`;
 
   // ---- işlem listesi (seçili aralık, tablo formatı, tarih desc) ----
   const actList = document.getElementById('activityList');
@@ -18347,6 +18361,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v297',
+    date: '13.07.2026',
+    items: [
+      { type: 'fix', text: '"Tümü" secildiginde Aylik Prim Grafigi cubuklari gorunmuyordu (aylik anahtarlar "all-01" olarak olusuyordu, hicbir veri eslesmiyordu). Tümü artik YILLIK grafige donusuyor: her cubuk bir yilin toplami, baslik "Yıllık Prim Grafiği — Tümü".' },
+    ]
+  },
   {
     version: 'v296',
     date: '13.07.2026',
