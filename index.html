@@ -1269,6 +1269,21 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 @media(max-width:900px){ .bottom-row > .bottom-card{flex:1 1 calc(50% - 5px)} }
 @media(max-width:520px){ .bottom-row > .bottom-card{flex:1 1 100%} }
 .bottom-card{background:var(--panel);border:none;border-radius:8px;padding:13px;flex:1;min-width:165px}
+/* v298: Hedef Yonetimi duzeni */
+.hedef-grid{ align-items:flex-start; }
+#hedefSummaryRow{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+#hedefSummaryRow .stat{ min-width:0; }
+@media(max-width:900px){
+  #hedefSummaryRow{ grid-template-columns:repeat(2,1fr)!important; }
+}
+@media(max-width:640px){
+  .hedef-grid{ flex-direction:column!important; }
+  .hedef-col{ flex:1 1 100%!important; width:100%; }
+  /* Mobilde: Ilerleme paneli ustte (order 1), Planlama altta (order 2) */
+  .hedef-col-prog{ order:1!important; }
+  .hedef-col-plan{ order:2!important; }
+  .hplan-btns-row{ flex-wrap:nowrap!important; }
+}
 /* v292: Prim ust blok — mobilde kartlar alt alta, PC'de yan yana */
 @media(max-width:640px){
   #statsRowTop{ flex-basis:100%!important; }
@@ -2210,36 +2225,43 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
       <div id="hedefOzetDiv" style="margin-bottom:10px"></div>
 
-      <!-- Özet Kartlar -->
-      <div class="stats-row" id="hedefSummaryRow" style="margin-bottom:10px"></div>
+      <!-- v298: Ozet kartlar -->
+      <div class="stats-row" id="hedefSummaryRow" style="margin-bottom:12px"></div>
 
-      <!-- v168: Hedef Planlaması (sol) + İlerleme & Kategori Detayı (sağ) yan yana — kolonlar takas edildi -->
-      <div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-top:14px">
-        <div style="flex:1.25;min-width:min(340px,100%)">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 8px">
-            <div class="section-title" style="margin:0">📅 Hedef Planlaması</div>
-            <select id="hedefPlanYil" onchange="renderHedefPage()" style="font-size:11px;padding:3px 7px"></select>
-          </div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px" id="hedefPlanBtns">
-            <button class="prim-tool-pill hplan-btn" data-v="hedefli" onclick="setHedefPlanGoster('hedefli')" style="padding:4px 11px;font-size:10.5px">🎯 Sadece Hedefliler</button>
-            <button class="prim-tool-pill hplan-btn" data-v="hepsi" onclick="setHedefPlanGoster('hepsi')" style="padding:4px 11px;font-size:10.5px">📋 Tüm Aylar</button>
-            <button class="prim-tool-pill hplan-btn" data-v="ileri6" onclick="setHedefPlanGoster('ileri6')" style="padding:4px 11px;font-size:10.5px">6 Ay</button>
-            <button class="prim-tool-pill hplan-btn" data-v="ileri12" onclick="setHedefPlanGoster('ileri12')" style="padding:4px 11px;font-size:10.5px">12 Ay</button>
-          </div>
-          <div class="table-wrap" style="max-height:520px;overflow-y:auto;margin-bottom:8px">
-            <table class="main-table" id="hedef6AyTable"></table>
-          </div>
-        </div>
+      <!-- v298: Ana alan — SAG ilerleme paneli + SOL planlama; her panelin kendi filtresi ustunde net etiketle -->
+      <div class="hedef-grid" style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
 
-        <div style="flex:1;min-width:min(340px,100%)">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 8px">
-            <div class="section-title" style="margin:0">📊 İlerleme & Kategori Detayı</div>
+        <!-- SOL: Ilerleme & Kategori (mobilde ustte gelir) -->
+        <div class="hedef-col hedef-col-prog" style="flex:1 1 380px;min-width:min(320px,100%)">
+          <div class="hedef-panel-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 10px;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px">
+            <div class="section-title" style="margin:0;display:flex;align-items:center;gap:6px">📊 <span>İlerleme &amp; Kategori</span></div>
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <select id="hedefProgYilSel" onchange="onHedefProgYilChange()" style="font-size:11px;padding:3px 7px"></select>
-              <select id="hedefProgAySel" onchange="renderHedefPage()" style="font-size:11px;padding:3px 7px"></select>
+              <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Ay:</span>
+              <select id="hedefProgYilSel" onchange="onHedefProgYilChange()" style="font-size:11px;padding:4px 8px;border-radius:6px"></select>
+              <select id="hedefProgAySel" onchange="renderHedefPage()" style="font-size:11px;padding:4px 8px;border-radius:6px"></select>
             </div>
           </div>
-          <div id="hedefProgressDiv" style="margin-bottom:10px"></div>
+          <div id="hedefProgressDiv"></div>
+        </div>
+
+        <!-- SAG: Hedef Planlamasi (mobilde altta) -->
+        <div class="hedef-col hedef-col-plan" style="flex:1 1 380px;min-width:min(320px,100%)">
+          <div class="hedef-panel-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 10px;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px">
+            <div class="section-title" style="margin:0;display:flex;align-items:center;gap:6px">📅 <span>Planlama</span></div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Yıl:</span>
+              <select id="hedefPlanYil" onchange="renderHedefPage()" style="font-size:11px;padding:4px 8px;border-radius:6px"></select>
+            </div>
+          </div>
+          <div class="hplan-btns-row" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;overflow-x:auto;padding-bottom:2px" id="hedefPlanBtns">
+            <button class="prim-tool-pill hplan-btn" data-v="hedefli" onclick="setHedefPlanGoster('hedefli')" style="padding:5px 11px;font-size:10.5px;white-space:nowrap">🎯 Hedefliler</button>
+            <button class="prim-tool-pill hplan-btn" data-v="hepsi" onclick="setHedefPlanGoster('hepsi')" style="padding:5px 11px;font-size:10.5px;white-space:nowrap">📋 Tümü</button>
+            <button class="prim-tool-pill hplan-btn" data-v="ileri6" onclick="setHedefPlanGoster('ileri6')" style="padding:5px 11px;font-size:10.5px;white-space:nowrap">6 Ay</button>
+            <button class="prim-tool-pill hplan-btn" data-v="ileri12" onclick="setHedefPlanGoster('ileri12')" style="padding:5px 11px;font-size:10.5px;white-space:nowrap">12 Ay</button>
+          </div>
+          <div class="table-wrap" style="max-height:520px;overflow-y:auto">
+            <table class="main-table" id="hedef6AyTable"></table>
+          </div>
         </div>
       </div>
 
@@ -3104,7 +3126,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v297';
+const APP_VERSION = 'v298';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3217,7 +3239,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '13.07.2026 23:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '14.07.2026 02:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -18361,6 +18383,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v298',
+    date: '14.07.2026',
+    items: [
+      { type: 'ui', text: 'HEDEF YONETIMI SAYFASI yeniden duzenlendi. Her panelin filtresi kendi basliginda net etiketle: "📊 İlerleme & Kategori" panelinin ustunde Ay secici, "📅 Planlama" panelinin ustunde Yil secici + gorunum butonlari (Hedefliler/Tümü/6 Ay/12 Ay). Panel basliklari kutulu ve belirgin. Iki sutun dengeli (esit genislik).' },
+      { type: 'ui', text: 'Mobilde: Ilerleme & Kategori paneli ustte, Planlama tablosu altta (once ozet/ilerleme, sonra detay tablo). Ozet kartlar genis ekranda 4\'lu tek satir, dar ekranda 2\'li. Filtre butonlari mobilde yatay kaydirilabilir. Yeni Hedef butonu korundu.' },
+    ]
+  },
   {
     version: 'v297',
     date: '13.07.2026',
