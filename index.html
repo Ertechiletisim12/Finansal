@@ -1411,6 +1411,16 @@ input:focus,select:focus{outline:1px solid var(--accent)}
 #fiyatGecmisModal tbody tr:hover td{ background:var(--hover) }
 #fiyatGecmisModal tbody tr:last-child td{ border-bottom:none }
 #fiyatGecmisModal td:last-child, #fiyatGecmisModal th:last-child{ width:46px; text-align:center }
+/* v282: Islem Listesi disa aktarma tablolari — mobilde yatay kaydirma + kompakt */
+.export-tbl-sar{ width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.export-tbl-sar::-webkit-scrollbar{ height:6px; }
+.export-tbl-sar::-webkit-scrollbar-thumb{ background:#444; border-radius:3px; }
+@media(max-width:600px){
+  #exportModalContent{ padding:6px!important; }
+  .export-tbl-sar table{ min-width:760px!important; }
+  .export-tbl-sar th{ padding:7px 8px!important; font-size:10px!important; }
+  .export-tbl-sar td{ padding:6px 8px!important; font-size:10.5px!important; }
+}
 /* v273: Ay Karsilastirma kontrol izgarasi — iki satir ayni sutun genisliklerini paylasir */
 .cmp-grid{
   display:grid;
@@ -3074,7 +3084,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v281';
+const APP_VERSION = 'v282';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3187,7 +3197,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '12.07.2026 06:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '12.07.2026 09:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -17538,9 +17548,28 @@ function openExportPreview(tableId, fileLabel){
   if(tableId === 'activityListTable'){
     const rStart = document.getElementById('rangeStart').value;
     const rEnd   = document.getElementById('rangeEnd').value;
-    const filtRows = entries
+    let filtRows = entries
       .filter(e => e.date>=rStart && e.date<=rEnd && e.count>0)
-      .slice().sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat));
+      .slice();
+
+    // v282: ONCEKI AYDAN DEVREDEN MNP'ler. Girisleri secili araligin ONCESINDE ama
+    // aktivasyonlari bu aralikta olan MNP musterileri, girisleri araliga girmedigi
+    // icin listeye HIC dahil olmuyordu. Bunlarin entry'lerini de ekle.
+    const devirEntryler = [];
+    (musteriler||[]).forEach(m => {
+      if(m.tip !== 'mnp') return;
+      const akt = (m.aktivasyonTarihi || (m.entryDate ? mnpActivationDate(m.entryDate) : '')).slice(0,10);
+      if(!akt || akt < rStart || akt > rEnd) return;        // aktivasyon bu aralikta degil
+      if(!m.entryDate || (m.entryDate >= rStart && m.entryDate <= rEnd)) return;  // girisi zaten aralikta
+      // Girisi onceki donemde, aktivasyonu bu donemde -> devir
+      const zatenVar = entries.some(e => e.date===m.entryDate && e.cat===m.cat && e.date>=rStart && e.date<=rEnd);
+      if(zatenVar) return;
+      if(!devirEntryler.some(e => e.date===m.entryDate && e.cat===m.cat))
+        devirEntryler.push({ date:m.entryDate, cat:m.cat, count:0, mnp:true, _devir:true });
+    });
+    filtRows = filtRows.concat(devirEntryler)
+      .sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat));
+
     if(!filtRows.length){ alert('Bu aralıkta aktarılacak işlem yok.'); return; }
     const now = nowTR().toLocaleString('tr-TR');
     // Müşteri bazlı satırlar
@@ -17561,7 +17590,18 @@ function openExportPreview(tableId, fileLabel){
         (m.entryDate===g.date && (!m.cat || m.cat===g.cat))       // v254: logId eski/bozuk olsa da gun+kategori ile esles
       );
       ilgiliM = ilgiliM.filter((m,i,arr)=>arr.findIndex(x=>x.id===m.id)===i); // mukerrer temizle
-      if(ilgiliM.length > g.count) ilgiliM = ilgiliM.slice(0, g.count);       // adedi asmasin
+      // v282: devir grubunda (count=0) musterileri kirpma — devir bilgisi gosterilecek
+      const _devirGrubu = g.count === 0;
+      if(!_devirGrubu && ilgiliM.length > g.count) ilgiliM = ilgiliM.slice(0, g.count);
+      // Devir grubunda yalnizca aktivasyonu bu aralikta olan onceki-donem MNP'leri kalsin
+      if(_devirGrubu){
+        ilgiliM = ilgiliM.filter(m => {
+          if(m.tip!=='mnp') return false;
+          const akt=(m.aktivasyonTarihi||mnpActivationDate(m.entryDate)).slice(0,10);
+          return akt>=rStart && akt<=rEnd && m.entryDate < rStart;
+        });
+        if(!ilgiliM.length) return;
+      }
       if(ilgiliM.length > 0){
         ilgiliM.forEach(m=>{
           const logE = dayLogs.find(l=>l.id===m.logId);
@@ -17570,17 +17610,18 @@ function openExportPreview(tableId, fileLabel){
           const akt = isMnp ? ((m.aktivasyonTarihi||mnpActivationDate(m.entryDate)).slice(0,10)) : '';
           let devir = '';
           if(isMnp && akt){
-            if(akt > rEnd)      devir = 'sonraki';   // bu dönemde girildi, sonraki döneme devrolacak
+            if(_devirGrubu)       devir = 'onceki';   // v282: onceki donemden devreden (girisi bu araligin oncesinde)
+            else if(akt > rEnd)   devir = 'sonraki';  // bu dönemde girildi, sonraki döneme devrolacak
             else if(akt < g.date) devir = 'onceki';
           }
           // v281: bu isleme bagli not (once musteri notu, sonra entryKey notu)
           const _ek = (notlarData||[]).find(n => n.entryKey === g.date+'_'+g.cat);
           const notMetni = (m.not || (_ek && _ek.metin) || '').trim();
           const notEtiket = (_ek && _ek.etiketler && _ek.etiketler.length) ? _ek.etiketler.join(', ') : '';
-          musteriRows.push({date:g.date,cat:g.cat,count:1,amt:birimAmt,
+          musteriRows.push({date:g.date,cat:g.cat,count:_devirGrubu?0:1,amt:_devirGrubu?0:birimAmt,
             ad:((m.ad||'')+' '+(m.soyad||'')).trim(),tel:m.tel||'-',tarife:m.tarife||(logE&&logE.tarife)||'-',
             tip: isMnp ? 'MNP' : 'Yeni Tesis', akt: akt||'-', devir,
-            bekliyor: m.durum==='bekliyor',
+            bekliyor: m.durum==='bekliyor', devirBilgi:_devirGrubu,
             not: notMetni, etiket: notEtiket});
         });
         const kalan = g.count - ilgiliM.length;
@@ -17728,11 +17769,13 @@ function openExportPreview(tableId, fileLabel){
       </div>` : '';
     ozetHtml = devirKutu + ozetHtml;   // devir tablosu özetin en üstünde
 
-    window._exportDetayliHtml = detayliHtml;
-    window._exportOzetHtml = ozetHtml;
+    // v282: mobilde tablolar tasiyordu — yatay kaydirmali sarmalayici + kompakt hucre CSS
+    const _sar = html => `<div class="export-tbl-sar">${html}</div>`;
+    window._exportDetayliHtml = _sar(detayliHtml);
+    window._exportOzetHtml = _sar(ozetHtml);
     window._exportFiltRows = filtRows;
     window._exportFileLabel = fileLabel;
-    document.getElementById('exportModalContent').innerHTML = detayliHtml;
+    document.getElementById('exportModalContent').innerHTML = window._exportDetayliHtml;
     window._exportCurrentTab = 'detayli';
     _activeExportTable = null;
     // v281: _raporAktif artik ekrandaki DETAYLI tabloyla birebir ayni — Excel/PDF/Yazdir
@@ -18102,6 +18145,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v282',
+    date: '12.07.2026',
+    items: [
+      { type: 'fix', text: 'ISLEM LISTESINDE GECEN AYLARDAN DEVREDEN MNP\'LER GORUNMUYORDU. Girisleri secili araligin oncesinde ama aktivasyonlari bu aralikta olan MNP musterileri, girisleri araliga girmedigi icin listeye hic dahil olmuyordu. Artik bu devir kayitlari da ekleniyor: "Önceki dönemden" etiketiyle, adet/tutar 0 (bilgi amacli, hakedise ve toplama katilmaz). Hem detayli listede hem ozet devir tablosunda.' },
+      { type: 'fix', text: 'OZET TABLOSU MOBILDE TASIYORDU. Disa aktarma penceresindeki detayli ve ozet tablolari artik yatay kaydirmali bir kapsayicida; dar ekranda hucreler kompaktlasir, tablo yatay kaydirilabilir.' },
+      { type: 'fix', text: 'NOT & ETIKET baglantisi guclendirildi: entryKey notu (o gun + kategoriye bagli not) artik musterisi olmayan islemlerde de, musterisi olup kendi notu olmayan islemlerde de Not sutununda gosteriliyor — yalnizca musteri notuna bagli degil.' },
+    ]
+  },
   {
     version: 'v281',
     date: '12.07.2026',
