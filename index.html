@@ -3090,7 +3090,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v290';
+const APP_VERSION = 'v291';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3203,7 +3203,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '13.07.2026 05:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '13.07.2026 08:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -8214,7 +8214,7 @@ function renderPrimAra(){
         <div style="padding:9px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
-              <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:rgba(${m.tip==='mnp'?'155,89,182':'76,217,100'},0.15);color:${m.tip==='mnp'?'#c084fc':'#4cd964'};font-weight:700">${m.tip==='mnp'?'🔄 MNP':'🆕 Tesis'}</span>
+              ${(()=>{ const _b=tipRozetBilgi(m.cat, m.tip==='mnp'); const _ik = m.tip==='mnp' ? '🔄 ' : (MNP_CATS.includes(m.cat) ? '🆕 ' : ''); return `<span style="font-size:10px;padding:1px 7px;border-radius:10px;background:${_b.arka};color:${_b.renk};font-weight:700">${_ik}${_b.etiket}</span>`; })()}
               <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--panel2);color:var(--muted)">${m.cat||'—'}</span>
               ${m.tarife?`<span style="font-size:10px;color:var(--muted)">${m.tarife}</span>`:''}
               <span style="font-size:10.5px;font-weight:700;color:${durumRenk[m.durum]||'#888'}">${durumIcon[m.durum]||'⏳'} ${durumLabel[m.durum]||m.durum||'—'}</span>
@@ -11418,8 +11418,8 @@ function renderIslemList(cat, date){
 
   const satirlar = logs.map((l, displayIdx) => {
     const isMnp = !!l.mnp;
-    const tip = MNP_CATS.includes(cat) ? (isMnp ? '🔄 MNP' : '🆕 Tesis') : '';
-    const tipRenk = isMnp ? '#c084fc' : '#4cd964';
+    const tip = MNP_CATS.includes(cat) ? (isMnp ? '🔄 MNP' : '🆕 Yeni Tesis') : '';
+    const tipRenk = isMnp ? '#c084fc' : '#ffb74d';
     const aktTarih = l.activationDate ? ` · Aktivasyon: ${l.activationDate}` : '';
 
     // Müşteri kaydı eşleştir (id veya saat bazlı)
@@ -11485,8 +11485,8 @@ function renderIslemList(cat, date){
     if(eksik <= 0) return;
     // Bu (tarih, kategori, tip) için log'a bağlı OLMAYAN müşteri kayıtları — isim/tel buradan gelir
     const adaylar = musteriler.filter(m => m.entryDate===e.date && m.cat===cat && (!MNP_CATS.includes(cat) || m.tip===eTip) && !(m.logId && _bagliLogIdler.has(m.logId)));
-    const lbl = MNP_CATS.includes(cat) ? (isMnpE ? '🔄 MNP' : '🆕 Tesis') : cat;
-    const renk = isMnpE ? '#c084fc' : (MNP_CATS.includes(cat) ? '#4cd964' : 'var(--txt)');
+    const lbl = MNP_CATS.includes(cat) ? (isMnpE ? '🔄 MNP' : '🆕 Yeni Tesis') : cat;
+    const renk = isMnpE ? '#c084fc' : (MNP_CATS.includes(cat) ? '#ffb74d' : 'var(--txt)');
     const aktStr = isMnpE ? (' → aktive '+trT(mnpActivationDate(e.date))) : '';
     for(let n=0; n<eksik; n++){
       const m = adaylar[n];
@@ -11678,7 +11678,7 @@ function openSilModal(cat, date){
   const tesisE= entries.find(e=>e.date===date&&e.cat===cat&&!e.mnp);
   document.getElementById('silModalTitle').textContent = cat + ' — Hangisini silmek istiyorsunuz?';
   document.getElementById('silModalSub').textContent =
-    '🆕 Tesis: '+(tesisE?tesisE.count:0)+' adet   🔄 MNP: '+(mnpE?mnpE.count:0)+' adet';
+    '🆕 Yeni Tesis: '+(tesisE?tesisE.count:0)+' adet   🔄 MNP: '+(mnpE?mnpE.count:0)+' adet';
   document.getElementById('silModal').style.display = 'flex';
 }
 function closeSilModal(){
@@ -12933,7 +12933,7 @@ function renderMusteriRapor(){
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
             <span style="font-size:12px;font-weight:800;color:var(--txt)">${esc(m.ad||'İsimsiz Müşteri')}</span>
             ${m.tel?`<span style="font-size:11px;color:var(--accent)">${esc(m.tel)}</span>`:''}
-            <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:rgba(${m.tip==='mnp'?'155,89,182':'76,217,100'},0.15);color:${m.tip==='mnp'?'#c084fc':'#4cd964'};font-weight:700">${m.tip==='mnp'?'🔄 MNP':'🆕 Tesis'}</span>
+            ${(()=>{ const _b=tipRozetBilgi(m.cat, m.tip==='mnp'); const _ik = m.tip==='mnp' ? '🔄 ' : (MNP_CATS.includes(m.cat) ? '🆕 ' : ''); return `<span style="font-size:10px;padding:1px 7px;border-radius:10px;background:${_b.arka};color:${_b.renk};font-weight:700">${_ik}${_b.etiket}</span>`; })()}
             <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--panel2);color:var(--muted)">${m.cat}</span>
             ${m.tarife?`<span style="font-size:10px;padding:1px 7px;border-radius:10px;background:rgba(124,58,237,0.18);color:#c4a5f7;font-weight:700">${m.cat==='Diğer'?'🎁':'📶'} ${m.tarife}</span>`:''}
           </div>
@@ -18306,6 +18306,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v291',
+    date: '13.07.2026',
+    items: [
+      { type: 'ui', text: 'MUSTERI TAKIP RAPORU rozetleri de yeni duzene gecti (v290 disa aktarma/ozet ile ayni). Kisa "🆕 Tesis" (yesil) etiketi kalkti: MNP olabilen kategorilerde "🆕 Yeni Tesis" (turuncu) / "🔄 MNP" (mor); MNP olamayan kategorilerde (Mccm, P2P, İnternet, Diğer) rozet kendi kategori adini kendi renginde gosteriyor.' },
+      { type: 'imp', text: 'Islem Listesi satir rozetleri ve ozet metinleri de merkezi tipRozetBilgi mantigina baglandi — Yeni Tesis her yerde turuncu, tum ekranlarda tutarli. Uygulamada artik hicbir yerde kisa "Tesis" etiketi kalmadi.' },
+    ]
+  },
   {
     version: 'v290',
     date: '13.07.2026',
