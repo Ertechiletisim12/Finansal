@@ -3084,7 +3084,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v284';
+const APP_VERSION = 'v285';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3197,7 +3197,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '12.07.2026 14:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '12.07.2026 17:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -17605,17 +17605,22 @@ function openExportPreview(tableId, fileLabel){
     // v282: ONCEKI AYDAN DEVREDEN MNP'ler. Girisleri secili araligin ONCESINDE ama
     // aktivasyonlari bu aralikta olan MNP musterileri, girisleri araliga girmedigi
     // icin listeye HIC dahil olmuyordu. Bunlarin entry'lerini de ekle.
-    const devirEntryler = [];
+    // v285: Her devir MUSTERISI icin bir adet say (onceden gun+kategori basina tek
+    // entry ekleniyordu; ayni gun ayni kategoride 2 devir varsa 1 sayiliyordu).
+    const devirGrupSay = {};
     (musteriler||[]).forEach(m => {
       if(m.tip !== 'mnp') return;
       const akt = (m.aktivasyonTarihi || (m.entryDate ? mnpActivationDate(m.entryDate) : '')).slice(0,10);
       if(!akt || akt < rStart || akt > rEnd) return;        // aktivasyon bu aralikta degil
       if(!m.entryDate || (m.entryDate >= rStart && m.entryDate <= rEnd)) return;  // girisi zaten aralikta
-      // Girisi onceki donemde, aktivasyonu bu donemde -> devir
       const zatenVar = entries.some(e => e.date===m.entryDate && e.cat===m.cat && e.date>=rStart && e.date<=rEnd);
-      if(zatenVar) return;
-      if(!devirEntryler.some(e => e.date===m.entryDate && e.cat===m.cat))
-        devirEntryler.push({ date:m.entryDate, cat:m.cat, count:1, mnp:true, _devir:true });
+      if(zatenVar) return;                                   // bu gun+kategori zaten listede
+      const k = m.entryDate + '_' + m.cat;
+      devirGrupSay[k] = (devirGrupSay[k] || 0) + 1;
+    });
+    const devirEntryler = Object.keys(devirGrupSay).map(k => {
+      const [date, cat] = k.split('_');
+      return { date, cat, count: devirGrupSay[k], mnp:true, _devir:true };
     });
     filtRows = filtRows.concat(devirEntryler)
       .sort((a,b)=>b.date.localeCompare(a.date)||a.cat.localeCompare(b.cat));
@@ -17700,8 +17705,8 @@ function openExportPreview(tableId, fileLabel){
         <td style="padding:10px 8px;font-size:13px;color:#4cd964;font-weight:700;text-align:right">${fmt(totalAmt)}</td>
       </tr>`;
     }).filter(Boolean).join('');
-    const toplamCount = filtRows.reduce((a,e)=>a+e.count,0);
-    const toplamAmt = filtRows.reduce((a,e)=>a+e.count*kampanyaFiyatFor(e.date,e.cat,priceFor(ymKey(e.date),e.cat)),0);
+    const toplamCount = musteriRows.reduce((a,r)=>a+r.count,0);   // v285: detayla ayni kaynak
+    const toplamAmt = musteriRows.reduce((a,r)=>a+r.amt,0);
     const modal = document.getElementById('exportFullModal');
     document.getElementById('exportModalTitle').textContent = '📋 İşlem Listesi';
     document.getElementById('exportModalSub').textContent = `${rStart} – ${rEnd} · ${now}`;
@@ -17746,15 +17751,18 @@ function openExportPreview(tableId, fileLabel){
         <td style="padding:10px;font-size:13px;color:#fff;font-weight:800;text-align:center">${musteriRows.reduce((a,r)=>a+r.count,0)}</td>
         <td style="padding:10px;font-size:13px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(musteriRows.reduce((a,r)=>a+r.amt,0))}</td>
       </tr></tfoot></table>`;
+    // v285: Ozet, detayla AYNI kaynaktan (musteriRows) sayilir. Onceden ozet filtRows'tan,
+    // detay musteriRows'tan geliyordu; veri tutarsizsa (ornek: 8 musteri ama 7 entry)
+    // ozet ile detay farkli cikiyordu. Artik ikisi de musteriRows -> her zaman tutarli.
     const catSummaryRows = CATS.map(c=>{
-      const catEntries = filtRows.filter(e=>e.cat===c);
-      const totalCount = catEntries.reduce((a,e)=>a+e.count,0);
+      const catRows = musteriRows.filter(r=>r.cat===c);
+      const totalCount = catRows.reduce((a,r)=>a+r.count,0);
       if(!totalCount) return '';
-      const totalAmt = catEntries.reduce((a,e)=>a+e.count*kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c)),0);
-      const aylar = [...new Set(catEntries.map(e=>ymKey(e.date)))].sort().reverse();
+      const totalAmt = catRows.reduce((a,r)=>a+r.amt,0);
+      const aylar = [...new Set(catRows.map(r=>ymKey(r.date)))].sort().reverse();
       const color = (typeof CAT_COLORS!=='undefined'&&CAT_COLORS[c])||'#4cd964';
-      // v253: MNP / Yeni Tesis kirilimi
-      const mnpCnt   = catEntries.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
+      // MNP / Yeni Tesis kirilimi (musteriRows.tip)
+      const mnpCnt   = catRows.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0);
       const tesisCnt = totalCount - mnpCnt;
       const kirilim = MNP_CATS.includes(c)
         ? `<span style="color:#4cd964">${tesisCnt}</span> <span style="color:#555">/</span> <span style="color:#c084fc">${mnpCnt}</span>`
@@ -17782,7 +17790,7 @@ function openExportPreview(tableId, fileLabel){
       <tfoot><tr style="background:#2a2d31;border-top:2px solid #e2231a">
         <td style="padding:12px 14px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
         <td style="padding:12px 14px;font-size:14px;color:#fff;font-weight:800;text-align:center">${toplamCount}</td>
-        <td style="padding:12px 14px;font-size:12px;font-weight:800;text-align:center;white-space:nowrap"><span style="color:#4cd964">${filtRows.filter(e=>!e.mnp&&MNP_CATS.includes(e.cat)).reduce((a,e)=>a+e.count,0)}</span> <span style="color:#555">/</span> <span style="color:#c084fc">${filtRows.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0)}</span></td>
+        <td style="padding:12px 14px;font-size:12px;font-weight:800;text-align:center;white-space:nowrap"><span style="color:#4cd964">${musteriRows.filter(r=>r.tip!=='MNP'&&MNP_CATS.includes(r.cat)).reduce((a,r)=>a+r.count,0)}</span> <span style="color:#555">/</span> <span style="color:#c084fc">${musteriRows.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0)}</span></td>
         <td></td>
         <td style="padding:12px 14px;font-size:14px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(toplamAmt)}</td>
       </tr></tfoot>
@@ -17858,12 +17866,12 @@ function openExportPreview(tableId, fileLabel){
       rStart + ' — ' + rEnd,
       ['Kategori','Toplam Adet','Tesis','MNP','Ay Sayısı','Tutar'],
       CATS.map(c=>{
-        const ce = filtRows.filter(e=>e.cat===c);
-        const tc = ce.reduce((a,e)=>a+e.count,0);
+        const cr = musteriRows.filter(r=>r.cat===c);   // v285: detayla ayni kaynak
+        const tc = cr.reduce((a,r)=>a+r.count,0);
         if(!tc) return null;
-        const mnpC = ce.filter(e=>!!e.mnp).reduce((a,e)=>a+e.count,0);
-        const ay = [...new Set(ce.map(e=>ymKey(e.date)))].length;
-        const amt = ce.reduce((a,e)=>a+e.count*kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c)),0);
+        const mnpC = cr.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0);
+        const ay = [...new Set(cr.map(r=>ymKey(r.date)))].length;
+        const amt = cr.reduce((a,r)=>a+r.amt,0);
         return [c, tc, tc-mnpC, mnpC, ay+' ay', _paraMetni(amt)];
       }).filter(Boolean));
     // Aktif sekmeye gore hangi tanim aktarilir
@@ -18196,6 +18204,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v285',
+    date: '12.07.2026',
+    items: [
+      { type: 'fix', text: 'OZET ILE DETAY FARKLI SAYI GOSTEREBILIYORDU (ornek: PrePaid detayda 8, ozette 7). Sebep: ozet tablosu ve dip toplamlar entries (islem kayitlari) uzerinden, detay listesi ise musteri kayitlari uzerinden sayiyordu — veri tutarsizsa ikisi ayrisiyordu. Artik ozet, dip toplam, TESİS/MNP kirilimi ve disa aktarma ozeti HEPSI detayla ayni kaynaktan (musteri satirlari) sayiliyor. Basliktaki "Detaylı (N)" ile ozet TOPLAM her zaman esit.' },
+      { type: 'fix', text: 'Ayni gun + ayni kategoride birden fazla onceki-donem devri varsa yalnizca 1 sayiliyordu; artik her devir musterisi ayri sayiliyor.' },
+    ]
+  },
   {
     version: 'v284',
     date: '12.07.2026',
