@@ -2230,10 +2230,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div class="stats-row" id="hedefSummaryRow" style="margin-bottom:12px"></div>
 
       <!-- v298: Ana alan — SAG ilerleme paneli + SOL planlama; her panelin kendi filtresi ustunde net etiketle -->
-      <div class="hedef-grid" style="display:flex;flex-direction:column;gap:14px">
+      <div class="hedef-grid" style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap">
 
         <!-- SOL: Ilerleme & Kategori (mobilde ustte gelir) -->
-        <div class="hedef-col hedef-col-prog" style="width:100%;order:2">
+        <div class="hedef-col hedef-col-prog" style="flex:1.6 1 420px;min-width:min(340px,100%)">
           <div class="hedef-panel-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 10px;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px">
             <div class="section-title" style="margin:0;display:flex;align-items:center;gap:6px">📊 <span>İlerleme &amp; Kategori</span></div>
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -2246,7 +2246,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- SAG: Hedef Planlamasi (mobilde altta) -->
-        <div class="hedef-col hedef-col-plan" style="width:100%;order:1;display:flex;flex-direction:column">
+        <div class="hedef-col hedef-col-plan" style="flex:1 1 320px;min-width:min(300px,100%);display:flex;flex-direction:column">
           <div class="hedef-panel-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 10px;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px">
             <div class="section-title" style="margin:0;display:flex;align-items:center;gap:6px">📅 <span>Planlama</span></div>
             <div style="display:flex;gap:6px;align-items:center">
@@ -2260,7 +2260,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
             <button class="prim-tool-pill hplan-btn" data-v="ileri6" onclick="setHedefPlanGoster('ileri6')" style="padding:5px 11px;font-size:10.5px;white-space:nowrap">6 Ay</button>
             <button class="prim-tool-pill hplan-btn" data-v="ileri12" onclick="setHedefPlanGoster('ileri12')" style="padding:5px 11px;font-size:10.5px;white-space:nowrap">12 Ay</button>
           </div>
-          <div class="table-wrap hedef-plan-tablo" style="max-height:420px;overflow-y:auto">
+          <div class="table-wrap hedef-plan-tablo" style="flex:1;overflow-y:auto;min-height:0">
             <table class="main-table" id="hedef6AyTable"></table>
           </div>
         </div>
@@ -3127,7 +3127,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v300';
+const APP_VERSION = 'v301';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3240,7 +3240,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '14.07.2026 07:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '14.07.2026 09:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15355,17 +15355,13 @@ function renderHedefPage(){
         const ht2 = ha2*bf2*(1+KDV_ORANI);
         const cp2 = Math.min(100,Math.round(ga2/ha2*100));
         const col3= cp2>=100?'var(--green)':cp2>=80?'var(--gold)':'var(--accent)';
-        html += `<div style="margin-bottom:9px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-            <span style="font-weight:700;font-size:12px">${c}</span>
-            <span style="font-size:11px;color:${col3};font-weight:700">${ga2}/${ha2} adet — %${cp2}</span>
-          </div>
-          <div style="background:var(--panel2);border-radius:4px;height:8px;overflow:hidden;margin-bottom:3px">
-            <div style="height:100%;width:${cp2}%;background:${col3};border-radius:4px"></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted)">
-            <span>Gerçekleşen: <b style="color:var(--txt)">${fmt(gt2)}</b></span>
-            ${ht2>0?`<span>Hedef: <b style="color:var(--gold)">${fmt(ht2)}</b></span>`:''}
+        html += `<div style="margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px">
+            <span style="font-weight:700;min-width:64px">${c}</span>
+            <div style="flex:1;background:var(--panel2);border-radius:4px;height:7px;overflow:hidden">
+              <div style="height:100%;width:${cp2}%;background:${col3};border-radius:4px"></div>
+            </div>
+            <span style="color:${col3};font-weight:700;white-space:nowrap;min-width:88px;text-align:right">${ga2}/${ha2} · %${cp2}</span>
           </div>
         </div>`;
       });
@@ -18384,6 +18380,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v301',
+    date: '14.07.2026',
+    items: [
+      { type: 'ui', text: 'HEDEF YONETIMI PC: yan yana duzene donuldu ama bu kez SOL Ilerleme paneli genis, SAG Planlama tablosu dar (icerige gore dengeli). Boylece ilerleme icin asagi kaydirmak gerekmiyor — tek ekranda. Kategori detay barlari tek satira sikistirildi (kategori · bar · oran) — cok daha az yer kapliyor. Sag tablo sol panelin boyuna uzuyor, bosluk yok. Mobil degismedi.' },
+    ]
+  },
   {
     version: 'v300',
     date: '14.07.2026',
