@@ -3084,7 +3084,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v282';
+const APP_VERSION = 'v283';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3197,7 +3197,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '12.07.2026 09:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '12.07.2026 12:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3612,9 +3612,59 @@ function editMusteriNot(id){
 function kaydetMusteriNot(id){
   const m = musteriler.find(x=>x.id===id);
   const t = document.getElementById('musteriNotInput');
-  if(m && t){ m.not = t.value.trim(); try{ saveMusteriStore(); }catch(e){} }
+  if(m && t){
+    m.not = t.value.trim();
+    try{ saveMusteriStore(); }catch(e){}
+    // v283: musteri notu ayni zamanda Not & Etiket defterine yazilir (Secenek 2).
+    // Musteri adi otomatik etiket olur; boylece Not & Etikette isimle filtrelenebilir.
+    try{ musteriNotunuDefterEsle(m); }catch(e){ console.warn('not defter eslesme:', e); }
+  }
   const el = document.getElementById('musteriNotModal'); if(el) el.remove();
   try{ render(); }catch(e){}
+}
+
+// Musteri notunu notlarData ile senkronlar. Her musteri icin TEK bagli not tutulur
+// (musteriNotId ile isaretli). Not bosaltilirsa defterden de silinir.
+function musteriNotunuDefterEsle(m){
+  const adSoyad = ((m.ad||'') + ' ' + (m.soyad||'')).trim() || 'Müşteri';
+  const gun = (m.entryDate || (m.aktivasyonTarihi||'').slice(0,10) || todayStr());
+  const kat = m.cat || '';
+  const key = kat ? (gun + '_' + kat) : '';
+
+  let mevcut = notlarData.find(n => n.musteriNotId === m.id);
+
+  // Not bosaltildi -> bagli defter notunu sil
+  if(!m.not){
+    if(mevcut){ notlarData = notlarData.filter(n => n !== mevcut); saveNotlarStore(); }
+    return;
+  }
+
+  // Etiketler: musteri adi + "müşteri-notu" (varsa kullanicinin ekledikleri korunur)
+  const otoEtiket = [adSoyad, 'müşteri-notu'];
+  if(mevcut){
+    const elle = (mevcut.etiketler||[]).filter(x => x !== 'müşteri-notu' && x !== mevcut._adEtiket);
+    mevcut.metin = m.not;
+    mevcut.etiketler = [...new Set([...otoEtiket, ...elle])];
+    mevcut._adEtiket = adSoyad;
+    mevcut.tarih = gun;
+    mevcut.entryKey = key;
+    mevcut.kategori = kat;
+  } else {
+    notlarData.push({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      tarih: gun,
+      baslik: adSoyad,
+      metin: m.not,
+      etiketler: otoEtiket,
+      _adEtiket: adSoyad,
+      renk: 'blue',
+      entryKey: key,
+      kategori: kat,
+      musteriNotId: m.id,
+      olusturma: nowTR().toISOString()
+    });
+  }
+  saveNotlarStore();
 }
 // v237: Turkce-uyumlu otomatik BUYUK harf (i->I, i->I dogru). Imlec konumu korunur.
 function trUpper(el){
@@ -18145,6 +18195,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v283',
+    date: '12.07.2026',
+    items: [
+      { type: 'new', text: 'MUSTERI NOTLARI ARTIK NOT & ETIKET SAYFASINDA DA GORUNUYOR. Bir musterinin mavi noktasina not yazinca, ayni not otomatik olarak Not & Etiket defterine ekleniyor. Not, musterinin ADIYLA etiketleniyor (ornek: "Ali Şık") + "müşteri-notu" etiketi. Boylece Not & Etikette isme tiklayarak o kisiye ait notlari suzebilirsiniz.' },
+      { type: 'imp', text: 'Her musteri icin defterde TEK bagli not tutulur: notu duzenleyince yeni kart acilmaz, mevcut guncellenir. Notu bosaltinca defterden de silinir. Musterinin adi degisirse eski isim etiketi otomatik guncellenir. Nota elle ekledigiiniz ekstra etiketler (ornek: "acil") korunur.' },
+    ]
+  },
   {
     version: 'v282',
     date: '12.07.2026',
