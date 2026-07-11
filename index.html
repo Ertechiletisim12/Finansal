@@ -3084,7 +3084,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v285';
+const APP_VERSION = 'v286';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3197,7 +3197,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '12.07.2026 17:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '12.07.2026 19:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -17773,6 +17773,7 @@ function openExportPreview(tableId, fileLabel){
         </td>
         <td style="padding:12px 14px;font-size:14px;color:#fff;font-weight:800;text-align:center">${totalCount}</td>
         <td style="padding:12px 14px;font-size:12px;text-align:center;font-weight:700;white-space:nowrap">${kirilim}</td>
+        <td style="padding:12px 14px;font-size:12px;color:#c9ccd0;text-align:right;white-space:nowrap">${fmt(totalCount?totalAmt/totalCount:0)}</td>
         <td style="padding:12px 14px;font-size:12px;color:#888;text-align:center;white-space:nowrap">${aylar.length} ay</td>
         <td style="padding:12px 14px;font-size:13px;color:#4cd964;font-weight:700;text-align:right;white-space:nowrap">${fmt(totalAmt)}</td>
       </tr>`;
@@ -17783,6 +17784,7 @@ function openExportPreview(tableId, fileLabel){
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:left;font-weight:700;letter-spacing:.05em">KATEGORİ</th>
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:center;font-weight:700;letter-spacing:.05em">TOPLAM ADET</th>
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:center;font-weight:700;letter-spacing:.05em" title="Yeni Tesis / MNP">TESİS / MNP</th>
+        <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:right;font-weight:700;letter-spacing:.05em">BİRİM</th>
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:center;font-weight:700;letter-spacing:.05em">AY SAYISI</th>
         <th style="padding:11px 14px;font-size:11px;color:#fff;text-align:right;font-weight:700;letter-spacing:.05em">TUTAR</th>
       </tr></thead>
@@ -17791,6 +17793,7 @@ function openExportPreview(tableId, fileLabel){
         <td style="padding:12px 14px;font-size:13px;color:#fff;font-weight:800">TOPLAM</td>
         <td style="padding:12px 14px;font-size:14px;color:#fff;font-weight:800;text-align:center">${toplamCount}</td>
         <td style="padding:12px 14px;font-size:12px;font-weight:800;text-align:center;white-space:nowrap"><span style="color:#4cd964">${musteriRows.filter(r=>r.tip!=='MNP'&&MNP_CATS.includes(r.cat)).reduce((a,r)=>a+r.count,0)}</span> <span style="color:#555">/</span> <span style="color:#c084fc">${musteriRows.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0)}</span></td>
+        <td style="padding:12px 14px;font-size:12px;color:#999;text-align:right;white-space:nowrap">${fmt(toplamCount?toplamAmt/toplamCount:0)}</td>
         <td></td>
         <td style="padding:12px 14px;font-size:14px;color:#4cd964;font-weight:800;text-align:right;white-space:nowrap">${fmt(toplamAmt)}</td>
       </tr></tfoot>
@@ -17859,21 +17862,38 @@ function openExportPreview(tableId, fileLabel){
         r.not || '', r.etiket || '',
         r.count>0 ? r.count : '',
         r.count>0 ? _paraMetni(r.amt) : ''
-      ]));
+      // v286: detay ciktisina TOPLAM satiri (PDF/Excel dip toplam)
+      ]).concat([['TOPLAM','','','','','','','','','',
+        musteriRows.reduce((a,r)=>a+r.count,0),
+        _paraMetni(musteriRows.reduce((a,r)=>a+r.amt,0))]]));
+    if(_raporAktif.satirTip) _raporAktif.satirTip[musteriRows.length] = 'baslik';
     // Ozet gorunumunun de aktarilabilmesi icin ikinci tanim
+    // v286: Ozet disa aktarma — BIRIM sutunu + TOPLAM satiri (dip toplam) eklendi.
+    const _ozetSatirlar = CATS.map(c=>{
+      const cr = musteriRows.filter(r=>r.cat===c);   // v285: detayla ayni kaynak
+      const tc = cr.reduce((a,r)=>a+r.count,0);
+      if(!tc) return null;
+      const mnpC = cr.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0);
+      const ay = [...new Set(cr.map(r=>ymKey(r.date)))].length;
+      const amt = cr.reduce((a,r)=>a+r.amt,0);
+      const birim = tc ? amt/tc : 0;
+      const tesisMnp = MNP_CATS.includes(c) ? ((tc-mnpC) + ' / ' + mnpC) : '—';
+      return { c, tc, tesisMnp, birim, ay, amt };
+    }).filter(Boolean);
+    const _ozT = {
+      tc: _ozetSatirlar.reduce((a,r)=>a+r.tc,0),
+      tesis: musteriRows.filter(r=>r.tip!=='MNP'&&MNP_CATS.includes(r.cat)).reduce((a,r)=>a+r.count,0),
+      mnp: musteriRows.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0),
+      amt: _ozetSatirlar.reduce((a,r)=>a+r.amt,0)
+    };
     window._raporOzetTanim = raporTanimiDizidenm(
       'İşlem Listesi — Özet',
       rStart + ' — ' + rEnd,
-      ['Kategori','Toplam Adet','Tesis','MNP','Ay Sayısı','Tutar'],
-      CATS.map(c=>{
-        const cr = musteriRows.filter(r=>r.cat===c);   // v285: detayla ayni kaynak
-        const tc = cr.reduce((a,r)=>a+r.count,0);
-        if(!tc) return null;
-        const mnpC = cr.filter(r=>r.tip==='MNP').reduce((a,r)=>a+r.count,0);
-        const ay = [...new Set(cr.map(r=>ymKey(r.date)))].length;
-        const amt = cr.reduce((a,r)=>a+r.amt,0);
-        return [c, tc, tc-mnpC, mnpC, ay+' ay', _paraMetni(amt)];
-      }).filter(Boolean));
+      ['Kategori','Adet','Tesis / MNP','Birim','Ay','Tutar'],
+      _ozetSatirlar.map(r => [r.c, r.tc, r.tesisMnp, _paraMetni(r.birim), r.ay+' ay', _paraMetni(r.amt)])
+        .concat([['TOPLAM', _ozT.tc, _ozT.tesis+' / '+_ozT.mnp, '', '', _paraMetni(_ozT.amt)]]));
+    // TOPLAM satirini bolum-basligi gibi isaretle (koyu zemin)
+    if(window._raporOzetTanim.satirTip) window._raporOzetTanim.satirTip[_ozetSatirlar.length] = 'baslik';
     // Aktif sekmeye gore hangi tanim aktarilir
     window._exportAktifTanim = () => (window._exportCurrentTab==='ozet' ? window._raporOzetTanim : _raporAktif);
     document.getElementById('exportModalXlsBtn').onclick = () => raporExcelYaz(window._exportAktifTanim());
@@ -18204,6 +18224,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v286',
+    date: '12.07.2026',
+    items: [
+      { type: 'fix', text: 'ISLEM LISTESI DISA AKTARMADA (PDF/Excel) DIP TOPLAM YOKTU. Hem detayli hem ozet ciktiya TOPLAM satiri eklendi (koyu zeminli): detayda toplam adet + toplam tutar, ozette toplam adet + Tesis/MNP + toplam tutar. Ekranda gorunen dip toplam artik PDF ve Excel\'de de var.' },
+      { type: 'new', text: 'ISLEM LISTESI OZETI KAPANIS RAPORU gibi detaylandirildi: BIRIM (ortalama birim fiyat) sutunu eklendi. Kategori satirlari renkli nokta + Tesis/MNP kirilimi (yesil/mor) ile; ekranda ve disa aktarmada tutarli.' },
+    ]
+  },
   {
     version: 'v285',
     date: '12.07.2026',
