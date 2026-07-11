@@ -1269,6 +1269,13 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 @media(max-width:900px){ .bottom-row > .bottom-card{flex:1 1 calc(50% - 5px)} }
 @media(max-width:520px){ .bottom-row > .bottom-card{flex:1 1 100%} }
 .bottom-card{background:var(--panel);border:none;border-radius:8px;padding:13px;flex:1;min-width:165px}
+/* v292: Prim ust blok — mobilde kartlar alt alta, PC'de yan yana */
+@media(max-width:640px){
+  #statsRowTop{ flex-basis:100%!important; }
+  #statsRowTop .prim-mini, #statsRowTop .prim-mini2{ flex:1 1 100%!important; }
+  #statsRowTop > div[style*="display:flex"]{ flex-direction:column!important; }
+  #statsRowTop .prim-yilsec{ flex-direction:row!important; }
+}
 .bottom-card .t{font-size:11.5px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
 .bottom-card .y{font-size:13px;color:var(--muted);margin:5px 0}
 .bottom-card .v{font-size:21px;font-weight:700}
@@ -2004,7 +2011,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch;flex-wrap:wrap">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
-        <div id="hakedisPanel" style="display:none;flex:1 1 330px;width:100%;max-width:500px;min-width:min(290px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+        <div id="hakedisPanel" style="display:none;flex:1 1 300px;width:100%;max-width:430px;min-width:min(280px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
           <!-- Üst: büyük hakediş rakamı -->
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -2021,7 +2028,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- Sağ: Günlük Ortalama & Ay Sonu Tahmini (hakedis ile yan yana) -->
-        <div id="statsRowTop" style="flex:1 1 340px;min-width:0;display:flex;flex-direction:row;flex-wrap:wrap;align-items:stretch;gap:8px;justify-content:stretch"></div>
+        <div id="statsRowTop" style="flex:1 1 420px;min-width:0;display:flex;flex-direction:column;gap:8px"></div>
 
         </div><!-- /hakedisStatsRow -->
         </div>
@@ -2029,14 +2036,14 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <!-- Scroll eden içerik -->
         <div class="content-col" style="overflow-y:auto;flex:1;padding-top:0">
 
-    <div class="section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
+    <!-- v292: Genel Durum kartlari yukari (hakedis yanina) tasindi. Yil secici gorunur kalsin. -->
+    <div class="section-title" id="genelDurumBaslik" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
       <span>Genel Durum &amp; Tahminler</span>
       <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:normal">Yıl:</span>
       <select id="yearAvgSel" onchange="render()" style="font-size:11px;padding:2px 6px;text-transform:none"></select>
     </div>
-    <div class="stats-row" id="statsRow"></div>
-
-    <div class="bottom-row" id="bottomRow"></div>
+    <div class="stats-row" id="statsRow" style="display:none"></div>
+    <div class="bottom-row" id="bottomRow" style="display:none"></div>
 
     <div class="chart-box">
       <h3 id="chartTitle">Aylık Prim Grafiği</h3>
@@ -3090,7 +3097,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v291';
+const APP_VERSION = 'v292';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3203,7 +3210,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '13.07.2026 08:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '13.07.2026 11:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3225,8 +3232,8 @@ const CAT_CONFIG = {
   "Red":      { delay:0, countForMonth:'entry',      activationInput:false, color:'#e2231a' },
   "P2P":      { delay:0, countForMonth:'entry',      activationInput:false, color:'#2fae4e' },
 
-  "Mccm":     { delay:0, countForMonth:'entry',      activationInput:false, color:'#c084fc' },
-  "İnternet": { delay:0, countForMonth:'activation', activationInput:true,  color:'#fb923c' },
+  "Mccm":     { delay:0, countForMonth:'entry',      activationInput:false, color:'#14b8a6' },
+  "İnternet": { delay:0, countForMonth:'activation', activationInput:true,  color:'#ec4899' },
   "Diğer":    { delay:0, countForMonth:'entry',      activationInput:false, color:'#888888' },
 };
 
@@ -7703,37 +7710,37 @@ function render(){
   const hedefRenk = hedefPctTop==null?'var(--gold)':hedefPctTop>=100?'#4cd964':hedefPctTop>=75?'#ffb74d':'#ff5252';
   const gundeGereken = (hedefKalan!=null && daysInCurMonth-todayNum>0) ? hedefKalan/(daysInCurMonth-todayNum) : null;
 
-  statsTopDiv.innerHTML = `
-    <div id="ortTahminWrap" style="display:contents">
-      <div class="stat" style="flex:1 1 140px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
-        <div class="t" style="font-size:10px">Günlük Ort. (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
-        <div class="v" style="font-size:18px;margin-top:4px">${fmt(dailyAvgCurMonth)}</div>
-        <div class="sub" style="font-size:9.5px">${todayNum} gün · toplam ${fmt(curMonthSumSoFar)}</div>
+  // v292: Satir 1 kartlari (Gunluk Ort / Ay Sonu Tahmini / Hedef) — icerik ayni, asagida bloga eklenecek
+  window._satir1Html = `
+      <div class="stat prim-mini" style="flex:1 1 0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
+        <div class="t" style="font-size:9.5px">Günlük Ort. <span style="opacity:.6">${monthLabel(realCurMonth)} · KDV</span></div>
+        <div class="v" style="font-size:16px;margin-top:2px">${fmt(dailyAvgCurMonth)}</div>
+        <div class="sub" style="font-size:9px">${todayNum} gün · ${fmt(curMonthSumSoFar)}</div>
       </div>
-      <div class="stat" style="flex:1 1 140px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
-        <div class="t" style="font-size:10px">Ay Sonu Tahmini (${monthLabel(realCurMonth)}) <span style="opacity:.65">KDV Dahil</span></div>
-        <div class="v" style="font-size:18px;margin-top:4px;color:var(--gold)">${fmt(projectedMonthEnd)}</div>
-        <div class="sub" style="font-size:9.5px">${daysInCurMonth} gün üzerinden projeksiyon</div>
+      <div class="stat prim-mini" style="flex:1 1 0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
+        <div class="t" style="font-size:9.5px">Ay Sonu Tahmini <span style="opacity:.6">${monthLabel(realCurMonth)} · KDV</span></div>
+        <div class="v" style="font-size:16px;margin-top:2px;color:var(--gold)">${fmt(projectedMonthEnd)}</div>
+        <div class="sub" style="font-size:9px">${daysInCurMonth} gün projeksiyon</div>
       </div>
-    </div>
-    <div class="stat" style="flex:1 1 200px;min-width:0;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
-      <div class="t" style="font-size:10px">🎯 ${monthLabel(realCurMonth)} Hedefi <span style="opacity:.65">KDV Dahil</span></div>
-      ${curHedef ? `
-        <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
-          <div class="v" style="font-size:18px;color:${hedefRenk};margin:0">${hedefPctTop!=null?`%${hedefPctTop}`:''}</div>
-          <div style="flex:1">
-            <div style="height:5px;border-radius:3px;background:var(--line);margin-bottom:4px;overflow:hidden">
-              <div style="height:100%;width:${Math.min(hedefPctTop??0,100)}%;background:${hedefRenk};border-radius:3px;transition:width .4s"></div>
+      <div class="stat prim-mini" style="flex:1 1 0;min-width:0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+        <div class="t" style="font-size:9.5px">🎯 Hedef <span style="opacity:.6">${monthLabel(realCurMonth)} · KDV</span></div>
+        ${curHedef ? `
+          <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+            <div class="v" style="font-size:16px;color:${hedefRenk};margin:0">${hedefPctTop!=null?`%${hedefPctTop}`:''}</div>
+            <div style="flex:1">
+              <div style="height:4px;border-radius:3px;background:var(--line);margin-bottom:3px;overflow:hidden">
+                <div style="height:100%;width:${Math.min(hedefPctTop??0,100)}%;background:${hedefRenk};border-radius:3px;transition:width .4s"></div>
+              </div>
+              <div class="sub" style="font-size:8.5px;line-height:1.35">Hedef: ${fmt(curHedef)}${hedefKalan!=null&&hedefKalan>0?` · Kalan: ${fmt(hedefKalan)}`:''}${gundeGereken!=null&&hedefKalan>0?' · Günde '+fmt(gundeGereken):''}</div>
+              ${hedefPctTop!=null&&hedefPctTop>=100?`<div class="sub" style="color:#4cd964;font-weight:700;font-size:8.5px">✓ Hedef aşıldı!</div>`:''}
             </div>
-            <div class="sub" style="font-size:9.5px">Hedef: ${fmt(curHedef)} · Gerçekleşen: ${fmt(curMonthSumSoFar)}${hedefKalan!=null&&hedefKalan>0?` · Kalan: ${fmt(hedefKalan)}`:''}${gundeGereken!=null&&hedefKalan>0?' · Günde '+fmt(gundeGereken):''}</div>
-            ${hedefPctTop!=null&&hedefPctTop>=100?`<div class="sub" style="color:#4cd964;font-weight:700;font-size:9.5px">✓ Hedef aşıldı!</div>`:''}
           </div>
-        </div>
-      ` : `
-        <div style="color:var(--muted);font-size:11px;margin-top:6px">Henüz hedef girilmedi</div>
-      `}
-    </div>
+        ` : `
+          <div style="color:var(--muted);font-size:10px;margin-top:4px">Henüz hedef girilmedi</div>
+        `}
+      </div>
   `;
+
 
   // v260: Bu iki kart aşağıdaki bottomRow'a taşındı — hepsi tek satırda yan yana dursun
   statsDiv.innerHTML = '';
@@ -7790,32 +7797,55 @@ function render(){
   yearMonths.forEach(m=>{ const v=monthSumAll(m)*1.20; if(v>bestValYr){bestValYr=v;bestKeyYr=m;} if(v<worstValYr){worstValYr=v;worstKeyYr=m;} });
   const genelToplamYr = yearMonths.reduce((a,m)=>a+monthSumAll(m)*1.20,0);
 
-  bottomDiv.innerHTML = `
-    <div class="bottom-card">
-      <div class="t">En Yüksek Ay <span style="font-size:9px;opacity:.7">KDV Dahil</span></div>
-      <div class="y">${bestKeyAll?monthLabel(bestKeyAll):'-'}</div>
-      <div class="v" style="color:#4cd964">${bestKeyAll?fmt(bestValAll):'-'}</div>
-      <div class="sub" style="font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px">
-        ${selectedAvgYear}: ${bestKeyYr?monthLabel(bestKeyYr):'-'} · <b style="color:#4cd964">${bestKeyYr?fmt(bestValYr):'-'}</b>
-      </div>
+  // v292: TUM Genel Durum kartlari statsRowTop bloguna 3 SATIR halinde (hakedis yaninda).
+  // Icerikler ayni; yalnizca kompakt sarmalayici + hizalama. Mobilde alt alta akar.
+  const _kompaktKart = (ic, flexBasis) => `<div class="bottom-card prim-mini2" style="flex:${flexBasis};min-width:0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px">${ic}</div>`;
+
+  const _enYuksek = `
+    <div class="t" style="font-size:9.5px">En Yüksek Ay <span style="opacity:.6">KDV</span></div>
+    <div class="y" style="font-size:11px;margin:2px 0">${bestKeyAll?monthLabel(bestKeyAll):'-'}</div>
+    <div class="v" style="font-size:16px;color:#4cd964">${bestKeyAll?fmt(bestValAll):'-'}</div>
+    <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">${selectedAvgYear}: ${bestKeyYr?monthLabel(bestKeyYr):'-'} · <b style="color:#4cd964">${bestKeyYr?fmt(bestValYr):'-'}</b></div>`;
+  const _enDusuk = `
+    <div class="t" style="font-size:9.5px">En Düşük Ay <span style="opacity:.6">KDV</span></div>
+    <div class="y" style="font-size:11px;margin:2px 0">${worstKeyAll?monthLabel(worstKeyAll):'-'}</div>
+    <div class="v" style="font-size:16px;color:#ff5252">${worstKeyAll?fmt(worstValAll):'-'}</div>
+    <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">${selectedAvgYear}: ${worstKeyYr?monthLabel(worstKeyYr):'-'} · <b style="color:#ff5252">${worstKeyYr?fmt(worstValYr):'-'}</b></div>`;
+  const _genelToplam = `
+    <div class="t" style="font-size:9.5px">Genel Toplam <span style="opacity:.6">KDV</span></div>
+    <div class="y" style="font-size:11px;margin:2px 0">Tüm zamanlar</div>
+    <div class="v" style="font-size:16px">${fmt(genelToplamAll)}</div>
+    <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">${selectedAvgYear}: <b>${fmt(genelToplamYr)}</b></div>`;
+  const _yilOrt = `
+    <div class="t" style="font-size:9.5px">${selectedAvgYear} Aylık Ort. <span style="opacity:.6">KDV</span></div>
+    <div class="y" style="font-size:11px;margin:2px 0">${yearMonths.length} ay verisi</div>
+    <div class="v" style="font-size:16px">${fmt(yearAvgKdv)}</div>
+    <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">Aylık ortalama</div>`;
+  const _yilTop = `
+    <div class="t" style="font-size:9.5px">${selectedAvgYear} Yılı Toplam <span style="opacity:.6">KDV</span></div>
+    <div class="y" style="font-size:11px;margin:2px 0">${yearMonths.length} ay verisi</div>
+    <div class="v" style="font-size:16px">${fmt(selectedYearSum)}</div>
+    <div class="sub" style="font-size:9px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:4px">Yıl toplamı</div>`;
+
+  // Yil secici (baslik gizlendigi icin buraya kucuk bir satir)
+  const _yilSecerHtml = `<div class="prim-yilsec" style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)">
+      <span style="font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.03em">Genel Durum & Tahminler</span>
+      <span>Yıl:</span>
+      <select id="yearAvgSelTop" onchange="(function(v){var s=document.getElementById('yearAvgSel');if(s){s.value=v;}render();})(this.value)" style="font-size:10px;padding:1px 5px;text-transform:none">${yearOptionsHtml}</select>
+    </div>`;
+
+  statsTopDiv.innerHTML = `
+    ${_yilSecerHtml}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${window._satir1Html}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${_kompaktKart(_enYuksek, '1 1 0')}
+      ${_kompaktKart(_enDusuk, '1 1 0')}
     </div>
-    <div class="bottom-card">
-      <div class="t">En Düşük Ay <span style="font-size:9px;opacity:.7">KDV Dahil</span></div>
-      <div class="y">${worstKeyAll?monthLabel(worstKeyAll):'-'}</div>
-      <div class="v" style="color:#ff5252">${worstKeyAll?fmt(worstValAll):'-'}</div>
-      <div class="sub" style="font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px">
-        ${selectedAvgYear}: ${worstKeyYr?monthLabel(worstKeyYr):'-'} · <b style="color:#ff5252">${worstKeyYr?fmt(worstValYr):'-'}</b>
-      </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${_kompaktKart(_genelToplam, '1 1 0')}
+      ${_kompaktKart(_yilOrt, '1 1 0')}
+      ${_kompaktKart(_yilTop, '1 1 0')}
     </div>
-    <div class="bottom-card">
-      <div class="t">Genel Toplam <span style="font-size:9px;opacity:.7">KDV Dahil</span></div>
-      <div class="y">Tüm zamanlar</div>
-      <div class="v">${fmt(genelToplamAll)}</div>
-      <div class="sub" style="font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px">
-        ${selectedAvgYear}: <b>${fmt(genelToplamYr)}</b>
-      </div>
-    </div>
-    ${window._yilKartlariHtml || ''}
   `;
 
   // ---- bar chart: SEÇİLİ YILIN tüm ayları (Ocak-Aralık), KDV dahil, ortalama altı için çizgi ----
@@ -9180,7 +9210,7 @@ function renderDash(){
     </div>` : '';
 
   // Kategori renkleri
-  const CAT_COLORS = {PostPaid:'#3fd0ff',PrePaid:'#4cd964','Red Tarife':'#ff5252',P2P:'#ffb74d',Mccm:'#c084fc',İnternet:'#fb923c'};
+  const CAT_COLORS = {PostPaid:'#3fd0ff',PrePaid:'#4cd964','Red Tarife':'#ff5252',P2P:'#ffb74d',Mccm:'#14b8a6',İnternet:'#ec4899'};
 
   el.innerHTML = `
     <!-- ── Anomali + MNP 3'lü kart yan yana ── -->
@@ -15424,7 +15454,7 @@ function renderTrend(){
   // Kategori seçici butonlar
   const katSecDiv = document.getElementById('trendKatSec');
   if(katSecDiv){
-    const catColors = { PrePaid:'#3fd0ff', PostPaid:'#ffb74d', Red:'#e2231a', P2P:'#2fae4e', Mccm:'#9b59b6', İnternet:'#ff7675', Diğer:'#888' };
+    const catColors = { PrePaid:'#3fd0ff', PostPaid:'#ffb74d', Red:'#e2231a', P2P:'#2fae4e', Mccm:'#14b8a6', İnternet:'#ec4899', Diğer:'#888' };
     katSecDiv.innerHTML = CATS.map(c => {
       const active = trendSelectedCats.has(c);
       return `<button onclick="toggleTrendCat('${c}')" style="padding:4px 12px;border-radius:14px;border:2px solid ${catColors[c]||'#888'};background:${active ? catColors[c]||'#888' : 'transparent'};color:${active ? '#000':'var(--txt)'};font-size:11px;font-weight:700;cursor:pointer">${c}</button>`;
@@ -15434,7 +15464,7 @@ function renderTrend(){
   // SVG Trend Grafiği
   const svgDiv = document.getElementById('trendChartSVG');
   if(svgDiv && months.length > 0){
-    const catColors = { PrePaid:'#3fd0ff', PostPaid:'#ffb74d', Red:'#e2231a', P2P:'#2fae4e', Mccm:'#9b59b6', İnternet:'#ff7675', Diğer:'#aaaaaa' };
+    const catColors = { PrePaid:'#3fd0ff', PostPaid:'#ffb74d', Red:'#e2231a', P2P:'#2fae4e', Mccm:'#14b8a6', İnternet:'#ec4899', Diğer:'#aaaaaa' };
     const W = 700, H = 240, PL=60, PR=20, PT=20, PB=40;
     const chartW = W-PL-PR, chartH = H-PT-PB;
     const activeCats = CATS.filter(c => trendSelectedCats.has(c));
@@ -18306,6 +18336,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v292',
+    date: '13.07.2026',
+    items: [
+      { type: 'ui', text: 'MCCM ve MNP ikisi de mor gorunuyordu. Mccm artik CAMGOBEGI (#14b8a6), İnternet PEMBE (#ec4899) — MNP morundan ve Yeni Tesis turuncusundan net ayrisiyor. Tum ekranlarda (rozet, grafik, ozet) tutarli.' },
+      { type: 'ui', text: 'PRIM SAYFASI kart duzeni yeniden dizildi (yalnizca PC/genis ekran — mobil AYNEN korundu). Genel Hakedis panelinin yaninda 3 satir: (1) Günlük Ort · Ay Sonu Tahmini · 🎯 Hedef, (2) En Yüksek Ay · En Düşük Ay, (3) Genel Toplam · Yıllık Ortalama · Yıllık Toplam. Kart yukseklikleri azaltildi, gereksiz bosluklar kaldirildi, grafik yukari kaydi. Kart icerikleri (cift bilgi: tum zamanlar + secili yil) aynen korundu. "Genel Durum" alt bolumu yukari tasindi, yil secici blogun ustunde.' },
+    ]
+  },
   {
     version: 'v291',
     date: '13.07.2026',
