@@ -3090,7 +3090,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v287';
+const APP_VERSION = 'v288';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3203,7 +3203,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '12.07.2026 22:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '13.07.2026 00:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -16841,8 +16841,18 @@ function _raporPdfUret(paylas){
     baslangicY = alanY + alanYuk + 10;
   }
 
+  // v288: sutun hizalari — sayisal sagda, "ortala" isaretli sutunlar ortada, digerleri solda.
+  // Ortalanacak sutunlar baslik adindan tespit edilir (Tesis/MNP, Ay, Tip, Aktivasyon, Adet kirilim).
+  const _baslik0 = (t.basliklar[0] || []).map(x => String(x||''));
+  const _ortaMi = ad => /tesis|mnp|ay say|^ay$|aktivasyon|^tip$|durum|devir/i.test(ad);
   const sagaYasla = {};
-  t.sayisal.forEach((s, i) => { if(s) sagaYasla[i] = { halign:'right' }; });
+  const sutunHiza = [];
+  t.sayisal.forEach((sayiMi, i) => {
+    const ad = _baslik0[i] || '';
+    const h = sayiMi ? 'right' : (_ortaMi(ad) ? 'center' : 'left');
+    sutunHiza[i] = h;
+    sagaYasla[i] = { halign:h };
+  });
 
   doc.autoTable({
     head: t.basliklar.length ? t.basliklar : undefined,
@@ -16857,13 +16867,25 @@ function _raporPdfUret(paylas){
     alternateRowStyles: { fillColor:[247,248,250] },
     columnStyles: sagaYasla,
     didParseCell: (dt) => {
+      const col = dt.column.index;
+      // Baslik satiri: hucre hizasi sutun hizasiyla ayni olsun (Adet/Tutar basligi da saga)
+      if(dt.section === 'head'){
+        if(sutunHiza[col]) dt.cell.styles.halign = sutunHiza[col];
+        return;
+      }
       if(dt.section !== 'body') return;
       const tip = (t.satirTip && t.satirTip[dt.row.index]) || '';
-      if(tip === 'bolum' || tip === 'baslik'){
+      if(tip === 'bolum'){
         dt.cell.styles.fillColor = [31,34,38];
         dt.cell.styles.textColor = [255,255,255];
         dt.cell.styles.fontStyle = 'bold';
-        dt.cell.styles.halign = tip === 'bolum' ? 'left' : 'center';
+        dt.cell.styles.halign = 'left';
+      } else if(tip === 'baslik'){
+        // TOPLAM / ikinci-tablo basligi: koyu zemin ama sutun hizasini KORU
+        dt.cell.styles.fillColor = [31,34,38];
+        dt.cell.styles.textColor = [255,255,255];
+        dt.cell.styles.fontStyle = 'bold';
+        if(sutunHiza[col]) dt.cell.styles.halign = sutunHiza[col];
       }
     },
     didDrawPage: () => { ustBant(); altBant(); }
@@ -17160,6 +17182,11 @@ function raporExcelYaz(tanim){
 
   // Bicimlendirme
   const aralik = XLSX.utils.decode_range(ws['!ref']);
+  // v288: sutun hizalari — PDF ile ayni mantik (sayisal sag, tesis/mnp/ay/tip orta, digeri sol)
+  const _xBaslik = (t.basliklar[0] || []).map(x => String(x||''));
+  const _xOrtaMi = ad => /tesis|mnp|ay say|^ay$|aktivasyon|^tip$|durum|devir/i.test(ad);
+  const _xHiza = C => t.sayisal[C] ? 'right' : (_xOrtaMi(_xBaslik[C]||'') ? 'center' : 'left');
+
   for(let R = aralik.s.r; R <= aralik.e.r; R++){
     for(let C = aralik.s.c; C <= aralik.e.c; C++){
       const adres = XLSX.utils.encode_cell({ r:R, c:C });
@@ -17175,15 +17202,16 @@ function raporExcelYaz(tanim){
       } else if(R < basSonu){
         h.s = { font:{ bold:true, sz:10, color:{ rgb:'FFFFFFFF' } },
                 fill:{ patternType:'solid', fgColor:{ rgb:'FF3C4045' } },
-                alignment:{ horizontal:'center', vertical:'center', wrapText:true },
+                alignment:{ horizontal:_xHiza(C), vertical:'center', wrapText:true },
                 border: cerceve };
       } else {
         const tip = (t.satirTip && t.satirTip[R - basSonu]) || '';
         if(tip === 'bolum' || tip === 'baslik'){
           // v274: bolum basligi ve ikinci tablonun baslik satiri, ust baslik satiriyla ayni gorunur
+          // v288: TOPLAM (baslik) satiri sutun hizasini korur; bolum tek hucre sola
           h.s = { font:{ bold:true, sz:10, color:{ rgb:'FFFFFFFF' } },
                   fill:{ patternType:'solid', fgColor:{ rgb:'FF1F2226' } },
-                  alignment:{ horizontal: tip === 'bolum' ? 'left' : 'center', vertical:'center', wrapText:true },
+                  alignment:{ horizontal: tip === 'bolum' ? 'left' : _xHiza(C), vertical:'center', wrapText:true },
                   border: cerceve };
         } else {
           const cift = (R - basSonu) % 2 === 0;
@@ -17873,6 +17901,7 @@ function openExportPreview(tableId, fileLabel){
         musteriRows.reduce((a,r)=>a+r.count,0),
         _paraMetni(musteriRows.reduce((a,r)=>a+r.amt,0))]]));
     if(_raporAktif.satirTip) _raporAktif.satirTip[musteriRows.length] = 'baslik';
+    window._raporDetayTanim = _raporAktif;   // v288: detay tanimi ayri saklanir (sekme gecisinde kaybolmasin)
     // Ozet gorunumunun de aktarilabilmesi icin ikinci tanim
     // v286: Ozet disa aktarma — BIRIM sutunu + TOPLAM satiri (dip toplam) eklendi.
     const _ozetSatirlar = CATS.map(c=>{
@@ -17901,7 +17930,7 @@ function openExportPreview(tableId, fileLabel){
     // TOPLAM satirini bolum-basligi gibi isaretle (koyu zemin)
     if(window._raporOzetTanim.satirTip) window._raporOzetTanim.satirTip[_ozetSatirlar.length] = 'baslik';
     // Aktif sekmeye gore hangi tanim aktarilir
-    window._exportAktifTanim = () => (window._exportCurrentTab==='ozet' ? window._raporOzetTanim : _raporAktif);
+    window._exportAktifTanim = () => (window._exportCurrentTab==='ozet' ? window._raporOzetTanim : window._raporDetayTanim);
     document.getElementById('exportModalXlsBtn').onclick = () => raporExcelYaz(window._exportAktifTanim());
     modal.style.display = 'flex';
     return;
@@ -18230,6 +18259,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v288',
+    date: '13.07.2026',
+    items: [
+      { type: 'fix', text: 'DISA AKTARMA SEKME GECISI HATASI: Ozet sekmesindeyken Detaylı\'ya gecip PDF/Excel alinca yine OZET ciktisi geliyordu. Sebep: detay tanimi, ozete gecince uzerine yaziliyordu. Artik detay ve ozet tanimlari ayri saklaniyor; hangi sekme aktifse onun ciktisi aliniyor (ileri-geri gecislerde de dogru).' },
+      { type: 'fix', text: 'PDF ve EXCEL HIZALAMALARI DUZELTILDI: sutun basligi, icerik ve TOPLAM (dip toplam) satiri artik ayni hizada. Sayisal sutunlar (Adet, Tutar, Birim) saga; Tesis/MNP, Ay, Tip gibi sutunlar ortaya; metin sutunlari sola. Onceden baslik ve TOPLAM satiri ortalaniyor, icerik saga gidiyordu — hizasizdilar.' },
+    ]
+  },
   {
     version: 'v287',
     date: '12.07.2026',
