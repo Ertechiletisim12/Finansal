@@ -3127,7 +3127,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v301';
+const APP_VERSION = 'v302';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3240,7 +3240,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '14.07.2026 09:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '14.07.2026 12:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -15297,6 +15297,7 @@ function renderHedefPage(){
     });
 
     let html = '';
+    let detayHtml = '';
 
     // Genel bar
     const barColor = progPct>=100?'var(--green)':progPct>=80?'var(--gold)':'var(--accent)';
@@ -15345,31 +15346,37 @@ function renderHedefPage(){
           :`<div style="font-size:9.5px;color:var(--muted);margin-top:3px">Hedef yok</div>`}
         </div>`;
       });
-      html += '</div>';
-      // Detay barlar
+      html += '</div></div>';   // mini kartlar bloğu kapandı
+      // Detay barlar — AYRI degiskende (sag sutun icin)
+      detayHtml = `<div class="note-panel" style="padding:12px;margin-bottom:0;height:100%">
+        <div style="font-size:11.5px;font-weight:700;color:var(--accent);margin-bottom:10px">📈 ${monthLabel(progYm)} — Kategori İlerlemesi</div>`;
       catsWithHedef.forEach(c=>{
         const ha2 = katHedefs[c];
         const ga2 = katAdet[c]||0;
-        const gt2 = katTutar[c]||0;
-        const bf2 = priceFor(progYm,c)||0;
-        const ht2 = ha2*bf2*(1+KDV_ORANI);
         const cp2 = Math.min(100,Math.round(ga2/ha2*100));
         const col3= cp2>=100?'var(--green)':cp2>=80?'var(--gold)':'var(--accent)';
-        html += `<div style="margin-bottom:6px">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px">
-            <span style="font-weight:700;min-width:64px">${c}</span>
-            <div style="flex:1;background:var(--panel2);border-radius:4px;height:7px;overflow:hidden">
-              <div style="height:100%;width:${cp2}%;background:${col3};border-radius:4px"></div>
-            </div>
-            <span style="color:${col3};font-weight:700;white-space:nowrap;min-width:88px;text-align:right">${ga2}/${ha2} · %${cp2}</span>
+        const katRenk = (CAT_CONFIG[c]&&CAT_CONFIG[c].color)||'var(--accent)';
+        detayHtml += `<div style="margin-bottom:9px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11.5px;margin-bottom:3px">
+            <span style="font-weight:700;color:${katRenk}">${c}</span>
+            <span style="color:${col3};font-weight:700;white-space:nowrap">${ga2}/${ha2} · %${cp2}</span>
+          </div>
+          <div style="background:var(--panel2);border-radius:4px;height:8px;overflow:hidden">
+            <div style="height:100%;width:${cp2}%;background:${col3};border-radius:4px"></div>
           </div>
         </div>`;
       });
-      html += '</div>';
+      detayHtml += '</div>';
     } else {
       html += `<div style="font-size:12px;color:var(--muted);padding:6px 0">Kategori bazlı hedef yok. ✏️ ile ekleyebilirsiniz.</div>`;
     }
-    progDiv.innerHTML = html;
+    // v302: Sol (bar + kartlar) | Sag (detay barlar) yan yana
+    progDiv.innerHTML = detayHtml
+      ? `<div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap">
+           <div style="flex:1.5 1 340px;min-width:min(300px,100%)">${html}</div>
+           <div style="flex:1 1 240px;min-width:min(240px,100%)">${detayHtml}</div>
+         </div>`
+      : html;
   }
 
   // Planlama tablosu
@@ -18380,6 +18387,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v302',
+    date: '14.07.2026',
+    items: [
+      { type: 'ui', text: 'HEDEF YONETIMI İlerleme paneli ikiye bolundu: SOL tarafta Toplam Hedef bari + kategori kartlari, SAG tarafta kategori ilerleme barlari — yan yana. Planlama tablosu ALTTA tam genislik. Boylece ilerleme ve detay tek ekranda, asagi kaydirmak gerekmiyor. Mobilde sol/sag alt alta akar.' },
+    ]
+  },
   {
     version: 'v301',
     date: '14.07.2026',
