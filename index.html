@@ -2008,7 +2008,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <div class="cards-row" id="catCards" style="margin-bottom:10px"></div>
 
         <!-- Genel Hakediş + Günlük Ortalama yan yana -->
-        <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:10px;align-items:stretch;flex-wrap:wrap">
+        <div id="hakedisStatsRow" style="display:flex;gap:10px;margin-bottom:6px;align-items:stretch;flex-wrap:wrap">
 
         <!-- Sol: Genel Hakediş Özet Paneli -->
         <div id="hakedisPanel" style="display:none;flex:1 1 300px;width:100%;max-width:430px;min-width:min(280px,100%);margin-top:8px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1f2937,#374151 55%,#4b5563);border:1px solid rgba(156,163,175,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.35)">
@@ -2042,10 +2042,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:normal">Yıl:</span>
       <select id="yearAvgSel" onchange="render()" style="font-size:11px;padding:2px 6px;text-transform:none"></select>
     </div>
-    <div class="stats-row" id="statsRow" style="display:none"></div>
-    <div class="bottom-row" id="bottomRow" style="display:none"></div>
+    <div class="stats-row" id="statsRow" style="display:none;margin:0"></div>
+    <div class="bottom-row" id="bottomRow" style="display:none;margin:0"></div>
 
-    <div class="chart-box">
+    <div class="chart-box" style="margin-top:4px">
       <h3 id="chartTitle">Aylık Prim Grafiği</h3>
       <div class="bars" id="chartBars"></div>
       <div class="avg-line" id="avgLine"></div>
@@ -3097,7 +3097,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v292';
+const APP_VERSION = 'v293';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3210,7 +3210,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '13.07.2026 11:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '13.07.2026 13:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -7712,17 +7712,17 @@ function render(){
 
   // v292: Satir 1 kartlari (Gunluk Ort / Ay Sonu Tahmini / Hedef) — icerik ayni, asagida bloga eklenecek
   window._satir1Html = `
-      <div class="stat prim-mini" style="flex:1 1 0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
+      <div class="stat prim-mini" style="flex:1 1 0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0;display:flex;flex-direction:column;justify-content:center">
         <div class="t" style="font-size:9.5px">Günlük Ort. <span style="opacity:.6">${monthLabel(realCurMonth)} · KDV</span></div>
         <div class="v" style="font-size:16px;margin-top:2px">${fmt(dailyAvgCurMonth)}</div>
         <div class="sub" style="font-size:9px">${todayNum} gün · ${fmt(curMonthSumSoFar)}</div>
       </div>
-      <div class="stat prim-mini" style="flex:1 1 0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0">
+      <div class="stat prim-mini" style="flex:1 1 0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0;display:flex;flex-direction:column;justify-content:center">
         <div class="t" style="font-size:9.5px">Ay Sonu Tahmini <span style="opacity:.6">${monthLabel(realCurMonth)} · KDV</span></div>
         <div class="v" style="font-size:16px;margin-top:2px;color:var(--gold)">${fmt(projectedMonthEnd)}</div>
         <div class="sub" style="font-size:9px">${daysInCurMonth} gün projeksiyon</div>
       </div>
-      <div class="stat prim-mini" style="flex:1 1 0;min-width:0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px">
+      <div class="stat prim-mini" style="flex:1 1 0;min-width:0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;justify-content:center">
         <div class="t" style="font-size:9.5px">🎯 Hedef <span style="opacity:.6">${monthLabel(realCurMonth)} · KDV</span></div>
         ${curHedef ? `
           <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
@@ -7799,7 +7799,7 @@ function render(){
 
   // v292: TUM Genel Durum kartlari statsRowTop bloguna 3 SATIR halinde (hakedis yaninda).
   // Icerikler ayni; yalnizca kompakt sarmalayici + hizalama. Mobilde alt alta akar.
-  const _kompaktKart = (ic, flexBasis) => `<div class="bottom-card prim-mini2" style="flex:${flexBasis};min-width:0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px">${ic}</div>`;
+  const _kompaktKart = (ic, flexBasis) => `<div class="bottom-card prim-mini2" style="flex:${flexBasis};min-width:0;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;justify-content:center">${ic}</div>`;
 
   const _enYuksek = `
     <div class="t" style="font-size:9.5px">En Yüksek Ay <span style="opacity:.6">KDV</span></div>
@@ -7836,12 +7836,12 @@ function render(){
 
   statsTopDiv.innerHTML = `
     ${_yilSecerHtml}
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${window._satir1Html}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div class="prim-kart-satir" style="display:flex;gap:8px;flex-wrap:wrap;flex:1 1 0">${window._satir1Html}</div>
+    <div class="prim-kart-satir" style="display:flex;gap:8px;flex-wrap:wrap;flex:1 1 0">
       ${_kompaktKart(_enYuksek, '1 1 0')}
       ${_kompaktKart(_enDusuk, '1 1 0')}
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div class="prim-kart-satir" style="display:flex;gap:8px;flex-wrap:wrap;flex:1 1 0">
       ${_kompaktKart(_genelToplam, '1 1 0')}
       ${_kompaktKart(_yilOrt, '1 1 0')}
       ${_kompaktKart(_yilTop, '1 1 0')}
@@ -18336,6 +18336,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v293',
+    date: '13.07.2026',
+    items: [
+      { type: 'ui', text: 'PRIM SAYFASI: sagdaki 3 satirlik kart blogu artik sol Genel Hakedis panelinin boyuna kadar UZUYOR — iki taraf ayni hizada bitiyor, altta bosluk kalmiyor (kartlar dikeyde esneyip icerikleri ortalaniyor). Kart blogu ile grafik arasindaki gereksiz bosluk daraltildi, grafik yukari kaydi. Sadece PC; mobil aynen korundu.' },
+    ]
+  },
   {
     version: 'v292',
     date: '13.07.2026',
