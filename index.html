@@ -1272,9 +1272,11 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 /* v292: Prim ust blok — mobilde kartlar alt alta, PC'de yan yana */
 @media(max-width:640px){
   #statsRowTop{ flex-basis:100%!important; }
-  #statsRowTop .prim-mini, #statsRowTop .prim-mini2{ flex:1 1 100%!important; }
-  #statsRowTop .prim-kart-satir{ flex-direction:column!important; }
+  #statsRowTop .prim-mini, #statsRowTop .prim-mini2{ flex:0 0 auto!important; }
+  #statsRowTop .prim-kart-satir{ flex-direction:column!important; flex:0 0 auto!important; }
   #statsRowTop .prim-yilsec{ flex-direction:row!important; }
+  /* v295: mobilde kartlar icerik kadar (esnemesin) — PC'deki uzama sadece genis ekranda */
+  #statsRowTop .prim-mini, #statsRowTop .prim-mini2{ justify-content:flex-start!important; }
   /* v294: mobilde 'GENEL DURUM' basligi 1. satir kartlarindan SONRA, En Yuksek Ay'in ustune */
   #statsRowTop .prim-satir1{ order:1!important; }
   #statsRowTop .prim-yilsec-wrap{ order:2!important; margin-top:4px; }
@@ -3102,7 +3104,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v294';
+const APP_VERSION = 'v295';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3215,7 +3217,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '13.07.2026 16:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '13.07.2026 18:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -18341,6 +18343,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v295',
+    date: '13.07.2026',
+    items: [
+      { type: 'fix', text: 'MOBILDE prim kartlari cok uzamisti (v293\'te eklenen "kartlar sol panel boyuna uzasin" ayari mobilde de gecerli olmustu). Mobilde kartlar artik icerik kadar (eski kompakt hali). PC\'de kartlar sol Genel Hakedis paneli boyuna uzamaya devam ediyor — o duzen bozulmadi.' },
+    ]
+  },
   {
     version: 'v294',
     date: '13.07.2026',
