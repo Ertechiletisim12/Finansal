@@ -1285,6 +1285,16 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
   .hplan-btns-row{ flex-wrap:nowrap!important; }
   .hedef-plan-tablo{ max-height:460px!important; }
 }
+/* v311: Mobil sayfa gecis animasyonlari */
+@keyframes sayfaGirSol{ from{ opacity:0; transform:translateX(38px) } to{ opacity:1; transform:translateX(0) } }
+@keyframes sayfaGirSag{ from{ opacity:0; transform:translateX(-38px) } to{ opacity:1; transform:translateX(0) } }
+@keyframes sayfaGirFade{ from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:translateY(0) } }
+.sayfa-gir-sol{ animation:sayfaGirSol .26s cubic-bezier(.22,.61,.36,1) }
+.sayfa-gir-sag{ animation:sayfaGirSag .26s cubic-bezier(.22,.61,.36,1) }
+.sayfa-gir-fade{ animation:sayfaGirFade .2s ease-out }
+@media(prefers-reduced-motion:reduce){
+  .sayfa-gir-sol,.sayfa-gir-sag,.sayfa-gir-fade{ animation:none }
+}
 /* v292: Prim ust blok — mobilde kartlar alt alta, PC'de yan yana */
 @media(max-width:640px){
   #statsRowTop{ flex-basis:100%!important; }
@@ -3127,7 +3137,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v310';
+const APP_VERSION = 'v311';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3240,7 +3250,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '15.07.2026 07:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '15.07.2026 09:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6153,8 +6163,8 @@ function vibrate(pattern){
     }
     const cur = pages.indexOf(typeof currentPage !== 'undefined' ? currentPage : 'dash');
     if(cur === -1) return;
-    if(dx < -60 && cur < pages.length-1) switchPage(pages[cur+1]); // sola → sonraki
-    if(dx > 60  && cur > 0)              switchPage(pages[cur-1]); // sağa → önceki
+    if(dx < -60 && cur < pages.length-1) switchPage(pages[cur+1], 'sol'); // sola → sonraki (sagdan girer)
+    if(dx > 60  && cur > 0)              switchPage(pages[cur-1], 'sag'); // sağa → önceki (soldan girer)
   }, {passive:true});
 })();
 // ==================== SWIPE SONU ====================
@@ -8096,12 +8106,21 @@ function renderHedefOzet(){
 // asagidaki kazaniyordu — buradaki kod hicbir zaman calismiyordu, sadece fazladan bir
 // resize listener'i ekliyordu. Gecerli tanim ve resize/orientationchange dinleyicileri
 // dosyanin sonundaki acilis blogunda.
-function switchPage(page){
+function switchPage(page, yon){
   currentPage = page;
   ['dash','prim','finans','gelir','not','rapor','hedef','trend','kasa'].forEach(p=>{
     const el = document.getElementById('page-'+p);
     if(el) el.style.display = page===p ? (p==='prim'?'flex':'') : 'none';
   });
+  // v311: mobil sayfa gecis animasyonu — yon 'sol'/'sag' ise kaydirmali, yoksa hafif fade
+  try{
+    const aktif = document.getElementById('page-'+page);
+    if(aktif && window.innerWidth <= 700){
+      aktif.classList.remove('sayfa-gir-sol','sayfa-gir-sag','sayfa-gir-fade');
+      void aktif.offsetWidth; // reflow — animasyonu yeniden tetikle
+      aktif.classList.add(yon==='sol' ? 'sayfa-gir-sol' : yon==='sag' ? 'sayfa-gir-sag' : 'sayfa-gir-fade');
+    }
+  }catch(e){}
   try{ if(typeof ayarlaTopbarBoslugu==='function') requestAnimationFrame(ayarlaTopbarBoslugu); }catch(e){}
   ['Dash','Prim','Finans','Gelir','Not','Rapor','Hedef','Trend','Kasa'].forEach(p=>{
     const el = document.getElementById('nav'+p);
@@ -18413,6 +18432,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v311',
+    date: '15.07.2026',
+    items: [
+      { type: 'new', text: 'Mobilde sayfa gecislerine ANIMASYON eklendi. Parmakla saga-sola kaydirinca yeni sayfa geldigi yonden yumusakca kayarak girer (sola kaydir → sagdan girer, saga kaydir → soldan girer). Menuden sayfa secince hafif fade-in olur. Sadece mobil; PC etkilenmez. "Hareket azalt" (reduced motion) acik cihazlarda animasyon otomatik kapanir.' },
+    ]
+  },
   {
     version: 'v310',
     date: '15.07.2026',
