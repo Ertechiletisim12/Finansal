@@ -3127,7 +3127,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v309';
+const APP_VERSION = 'v310';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3240,7 +3240,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '15.07.2026 04:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '15.07.2026 07:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -4025,7 +4025,7 @@ function renderKapanisRaporu(ym){
     </div>` : '';
 
   box.innerHTML = `<div id="kapanisRaporGovde" style="padding:15px 16px;background:var(--panel)">
-    <div style="text-align:center;margin-bottom:14px;padding-bottom:11px;border-bottom:2px solid var(--line)">
+    <div data-pdf-atla="1" style="text-align:center;margin-bottom:14px;padding-bottom:11px;border-bottom:2px solid var(--line)">
       <div style="font-size:19px;font-weight:900;color:var(--txt)">${monthLabel(ym)} — Kapanış Raporu</div>
       <div style="font-size:10.5px;color:var(--muted);margin-top:3px">ER-TECH İLETİŞİM · Oluşturma: ${nowTR().toLocaleString('tr-TR')}</div>
     </div>
@@ -4455,7 +4455,17 @@ function _KutuCiz(c, x, y, g, yuk, dolgu, cerceve, yaricap, solSerit, kesikli){
     else d.rect(x, y, g, yuk, mod);
   }
   if(kesikli && d.setLineDashPattern) d.setLineDashPattern([], 0);
-  if(solSerit){ d.setFillColor(solSerit.r, solSerit.g, solSerit.b); d.rect(x, y, solSerit.kal || 0.9, yuk, 'F'); }
+  // v310: sol renk seridi — cercevenin ICINDE, yuvarlak koseleri kesmesin.
+  // Serit, kutunun sol kenarinda yaricap kadar iceriden baslar/biter; koseyle cakismaz.
+  if(solSerit){
+    const kal = solSerit.kal || 0.9;
+    const ust = yaricap > 0 ? y + yaricap*0.6 : y;
+    const alt = yaricap > 0 ? yuk - yaricap*1.2 : yuk;
+    d.setFillColor(solSerit.r, solSerit.g, solSerit.b);
+    // Cerceve varsa seridi 0.2mm iceri al ki cizgiyle ust uste binmesin
+    const ix = cerceve ? x + 0.2 : x;
+    d.rect(ix, ust, kal, Math.max(alt, 1), 'F');
+  }
 }
 
 // ---------- Zengin satir ici icerik ----------
@@ -4915,6 +4925,7 @@ function _kapanisPdfUret(govde){
   // basligi da korunur (ekrandaki modal ile ayni). Kirmizi ust bant, modal basligi
   // cubugunun karsiligidir ve her sayfada tekrarlanir.
   Array.from(govde.children).forEach(k => {
+    if(k.getAttribute && k.getAttribute('data-pdf-atla')) return;   // v310: mukerrer basligi atla (kirmizi bant zaten var)
     ctx.y = _htmlCiz(ctx, k, SOL, ctx.y, GENIS);
   });
 
@@ -18402,6 +18413,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v310',
+    date: '15.07.2026',
+    items: [
+      { type: 'fix', text: 'KAPANIS RAPORU PDF (1/7): Mukerrer baslik giderildi. Raporun ust kismindaki "AY — Kapanış Raporu" basligi PDF\'te iki kez cikiyordu (kirmizi ust bantta + hemen altinda tekrar). Artik yalnizca kirmizi ust bantta gorunuyor.' },
+      { type: 'fix', text: 'KAPANIS RAPORU PDF (2/7): Ozet kartlarindaki sol renk seridi cerceveyle cakisip yuvarlak koseyi kesiyordu. Serit artik cercevenin icinde, yuvarlak koseleri kesmeyecek sekilde ciziliyor. Kalan 5 madde (TESİS/MNP renkleri, MNP Kirilimi cerceveleri, Hakedis hizalama, numarali daireler, simgeler) uzerinde calisma suruyor.' },
+    ]
+  },
   {
     version: 'v309',
     date: '15.07.2026',
