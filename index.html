@@ -1286,30 +1286,15 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
   .hedef-plan-tablo{ max-height:460px!important; }
 }
 /* v314: Mobil sayfa gecisi — ANDROID PERSPEKTIF (yandan 3D egimli yaklasarak girer) */
-@keyframes sayfaPerspSol{
-  from{ opacity:0; transform:translateX(12%) scale(.97) }
-  to  { opacity:1; transform:translateX(0)   scale(1) }
-}
-@keyframes sayfaPerspSag{
-  from{ opacity:0; transform:translateX(-12%) scale(.97) }
-  to  { opacity:1; transform:translateX(0)    scale(1) }
-}
-@keyframes sayfaPerspFade{
-  from{ opacity:0; transform:scale(.98) }
-  to  { opacity:1; transform:scale(1) }
-}
+@keyframes sayfaPerspSol{ from{ opacity:0 } to{ opacity:1 } }
+@keyframes sayfaPerspSag{ from{ opacity:0 } to{ opacity:1 } }
+@keyframes sayfaPerspFade{ from{ opacity:0 } to{ opacity:1 } }
 .sayfa-gir-sol{ animation:sayfaPerspSol .4s cubic-bezier(.33,.9,.4,1); transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden }
 .sayfa-gir-sag{ animation:sayfaPerspSag .4s cubic-bezier(.33,.9,.4,1); transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden }
 .sayfa-gir-fade{ animation:sayfaPerspFade .24s cubic-bezier(.33,.9,.4,1); transform-origin:center center; will-change:transform,opacity }
 /* v315: GIDEN sayfa — solar + perspektifle geriye gider (gelenle ayni anda gorunur) */
-@keyframes sayfaCikSol{
-  from{ opacity:1; transform:translateX(0)   scale(1) }
-  to  { opacity:0; transform:translateX(-12%) scale(.97) }
-}
-@keyframes sayfaCikSag{
-  from{ opacity:1; transform:translateX(0)  scale(1) }
-  to  { opacity:0; transform:translateX(12%) scale(.97) }
-}
+@keyframes sayfaCikSol{ from{ opacity:1 } to{ opacity:0 } }
+@keyframes sayfaCikSag{ from{ opacity:1 } to{ opacity:0 } }
 .sayfa-cik-sol{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSol .4s cubic-bezier(.4,0,.6,1) forwards; transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden; pointer-events:none }
 .sayfa-cik-sag{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSag .4s cubic-bezier(.4,0,.6,1) forwards; transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden; pointer-events:none }
 @media(prefers-reduced-motion:reduce){
@@ -3161,7 +3146,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v316';
+const APP_VERSION = 'v317';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3274,7 +3259,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '15.07.2026 22:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '16.07.2026 00:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -18475,6 +18460,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v317',
+    date: '16.07.2026',
+    items: [
+      { type: 'ui', text: 'Mobil sayfa gecisi SAF saydamlik gecisi oldu — hicbir yakinlasma/uzaklasma/kayma yok. Iki sayfa ayni yerde sabit, biri solarken oteki belirir (temiz cross-fade). Sadece mobil.' },
+    ]
+  },
   {
     version: 'v316',
     date: '15.07.2026',
