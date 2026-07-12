@@ -3146,7 +3146,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v317';
+const APP_VERSION = 'v318';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3259,7 +3259,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '16.07.2026 00:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '16.07.2026 03:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -18412,20 +18412,30 @@ async function githubGuncelle(){
       // Base64'e çevir
       const b64 = icerik.isBinary ? icerik.base64 : btoa(unescape(encodeURIComponent(icerik.text)));
 
-      // Yükle
-      const putResp = await fetch(apiUrl, {
+      // Yükle (SHA uyusmazliginda guncel SHA'yi cekip 1 kez daha dene)
+      const _putDene = async (shaVal) => fetch(apiUrl, {
         method: 'PUT',
         headers,
         body: JSON.stringify({
           message: `🔄 ${APP_VERSION} → ${d.dosya} güncellendi - ${new Date().toLocaleString('tr-TR')}`,
           content: b64,
-          sha,
+          sha: shaVal,
           branch: 'main'
         })
       });
+      let putResp = await _putDene(sha);
+      if(!putResp.ok && (putResp.status === 409 || putResp.status === 422)){
+        // v318: SHA cakismasi — dosya GitHub'da degismis. Guncel SHA'yi cek, tekrar dene.
+        durum.textContent = `[${i+1}/${degisecek.length}] ${d.dosya} — SHA yenileniyor, tekrar deneniyor...`;
+        try{
+          const yeni = await fetch(apiUrl, { headers, cache:'no-store' });
+          if(yeni.ok){ const yj = await yeni.json(); putResp = await _putDene(yj.sha); }
+        }catch(e){}
+      }
       if(!putResp.ok){
-        const err = await putResp.json();
-        throw new Error(`${d.dosya} yüklenemedi: ${err.message||putResp.status}`);
+        const err = await putResp.json().catch(()=>({}));
+        const msg = err.message || putResp.status;
+        throw new Error(`${d.dosya} yüklenemedi: ${msg}${putResp.status===409||putResp.status===422?' (dosya GitHub\'da degismis; sayfayi yenileyip tekrar deneyin)':''}`);
       }
     }
 
@@ -18460,6 +18470,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v318',
+    date: '16.07.2026',
+    items: [
+      { type: 'fix', text: 'GitHub Guncelle: "sw.js does not match [hash]" / SHA cakismasi hatasi icin otomatik kurtarma eklendi. Dosya GitHub\'da bu arada degismisse (409/422), uygulama guncel SHA\'yi cekip yuklemeyi 1 kez daha otomatik dener; yine olmazsa daha acik bir hata mesaji verir. NOT: mevcut hatayi goruyorsan sayfayi yenileyip tekrar Yukle demen yeterli.' },
+    ]
+  },
   {
     version: 'v317',
     date: '16.07.2026',
