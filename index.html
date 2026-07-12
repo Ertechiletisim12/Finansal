@@ -1285,13 +1285,24 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
   .hplan-btns-row{ flex-wrap:nowrap!important; }
   .hedef-plan-tablo{ max-height:460px!important; }
 }
-/* v313: Mobil sayfa gecisi — ANDROID tarzi DUZ YATAY SLIDE (tam genislik kayma) */
-@keyframes sayfaSlideSol{ from{ transform:translateX(100%) } to{ transform:translateX(0) } }
-@keyframes sayfaSlideSag{ from{ transform:translateX(-100%) } to{ transform:translateX(0) } }
-@keyframes sayfaSlideFade{ from{ opacity:0 } to{ opacity:1 } }
-.sayfa-gir-sol{ animation:sayfaSlideSol .3s cubic-bezier(.4,0,.2,1); will-change:transform }
-.sayfa-gir-sag{ animation:sayfaSlideSag .3s cubic-bezier(.4,0,.2,1); will-change:transform }
-.sayfa-gir-fade{ animation:sayfaSlideFade .2s ease-out }
+/* v314: Mobil sayfa gecisi — ANDROID PERSPEKTIF (yandan 3D egimli yaklasarak girer) */
+@keyframes sayfaPerspSol{
+  from{ opacity:.3; transform:perspective(1000px) translateX(85%) rotateY(-35deg) scale(.92) }
+  60% { opacity:1 }
+  to  { opacity:1; transform:perspective(1000px) translateX(0)   rotateY(0)     scale(1) }
+}
+@keyframes sayfaPerspSag{
+  from{ opacity:.3; transform:perspective(1000px) translateX(-85%) rotateY(35deg) scale(.92) }
+  60% { opacity:1 }
+  to  { opacity:1; transform:perspective(1000px) translateX(0)    rotateY(0)    scale(1) }
+}
+@keyframes sayfaPerspFade{
+  from{ opacity:0; transform:perspective(1000px) rotateY(8deg) scale(.96) }
+  to  { opacity:1; transform:perspective(1000px) rotateY(0)    scale(1) }
+}
+.sayfa-gir-sol{ animation:sayfaPerspSol .32s cubic-bezier(.33,.9,.4,1); transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden }
+.sayfa-gir-sag{ animation:sayfaPerspSag .32s cubic-bezier(.33,.9,.4,1); transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden }
+.sayfa-gir-fade{ animation:sayfaPerspFade .24s cubic-bezier(.33,.9,.4,1); transform-origin:center center; will-change:transform,opacity }
 @media(prefers-reduced-motion:reduce){
   .sayfa-gir-sol,.sayfa-gir-sag,.sayfa-gir-fade{ animation:none }
 }
@@ -3137,7 +3148,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v313';
+const APP_VERSION = 'v314';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3250,7 +3261,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '15.07.2026 14:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '15.07.2026 17:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -18432,6 +18443,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v314',
+    date: '15.07.2026',
+    items: [
+      { type: 'ui', text: 'Mobil sayfa gecisi ANDROID "Perspektif" tarzi oldu: yeni sayfa yandan, hafif 3D egimli (dis kenar geride) ve olcekli yaklasarak girer — telefon ana ekranindaki perspektif kaydirma hissi. Sola kaydir → sagdan doner, saga kaydir → soldan. Menuden secince hafif perspektif fade. Sadece mobil, reduced-motion\'da kapali.' },
+    ]
+  },
   {
     version: 'v313',
     date: '15.07.2026',
