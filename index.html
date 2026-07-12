@@ -3179,7 +3179,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v331';
+const APP_VERSION = 'v332';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3292,7 +3292,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '17.07.2026 12:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '17.07.2026 15:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14047,8 +14047,18 @@ function renderKasa(){
     <div class="stat" style="border-left:3px solid var(--gold)">
       <div class="t">🧮 Son Sayım</div>
       <div class="sub" style="margin-top:3px;font-size:10px;color:var(--muted)">${son?son.date+' '+(son.time||''):''}</div>
-      <div class="v" style="color:var(--gold);margin-top:3px">${son?fmtTL(son.toplam):'—'}</div>
-      <div class="sub" style="line-height:1.6;margin-top:4px">${son?`<span style="color:var(--txt)">Beklenen:</span> <b style="color:var(--accent)">${son.beklenen!=null?fmtTL(son.beklenen):'—'}</b> · <span style="color:var(--txt)">Elden:</span> <b style="color:#c084fc">${son.eldenToplam?fmtTL(son.eldenToplam):'—'}</b><br><span style="color:var(--txt)">Fark:</span> <b style="color:${sonFark==null?'var(--muted)':Math.abs(sonFark)<0.005?'#4cd964':sonFark>0?'#4cd964':'#ff5252'}">${sonFark==null?'—':Math.abs(sonFark)<0.005?'✓ tam':((sonFark>0?'+':'')+fmtTL(sonFark))}</b>`:'kayıt yok'}</div>
+      <div class="sub" style="margin-top:4px"><span style="color:var(--txt)">Beklenen:</span> <b style="color:var(--accent);font-size:13px">${son&&son.beklenen!=null?fmtTL(son.beklenen):'—'}</b></div>
+      <div style="display:flex;gap:14px;margin-top:5px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:9.5px;color:var(--muted)">Sayılan</div>
+          <div style="color:var(--gold);font-weight:900;font-size:15px">${son?fmtTL(son.toplam):'—'}</div>
+        </div>
+        <div>
+          <div style="font-size:9.5px;color:var(--muted)">Elden</div>
+          <div style="color:#c084fc;font-weight:900;font-size:15px">${son&&son.eldenToplam?fmtTL(son.eldenToplam):'—'}</div>
+        </div>
+      </div>
+      <div class="sub" style="margin-top:5px"><span style="color:var(--txt)">Fark:</span> <b style="color:${sonFark==null?'var(--muted)':Math.abs(sonFark)<0.005?'#4cd964':sonFark>0?'#4cd964':'#ff5252'}">${sonFark==null?'—':Math.abs(sonFark)<0.005?'✓ tam':((sonFark>0?'+':'')+fmtTL(sonFark))}</b></div>
     </div>
     <div class="stat" style="border-left:3px solid ${netFark<-0.005?'#ff5252':'#4cd964'}">
       <div class="t">⚖️ Net Fark</div>
@@ -18739,6 +18749,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v332',
+    date: '17.07.2026',
+    items: [
+      { type: 'ui', text: 'Kasa Son Sayim ozet karti yeniden duzenlendi: Beklenen tutar en uste alindi; altinda Sayilan ve Elden yan yana; en altta Fark. Daha okunakli duzen.' },
+    ]
+  },
   {
     version: 'v331',
     date: '17.07.2026',
