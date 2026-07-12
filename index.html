@@ -1300,11 +1300,26 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
   from{ opacity:0; transform:perspective(1000px) rotateY(8deg) scale(.96) }
   to  { opacity:1; transform:perspective(1000px) rotateY(0)    scale(1) }
 }
-.sayfa-gir-sol{ animation:sayfaPerspSol .32s cubic-bezier(.33,.9,.4,1); transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden }
-.sayfa-gir-sag{ animation:sayfaPerspSag .32s cubic-bezier(.33,.9,.4,1); transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden }
+.sayfa-gir-sol{ animation:sayfaPerspSol .36s cubic-bezier(.33,.9,.4,1); transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden }
+.sayfa-gir-sag{ animation:sayfaPerspSag .36s cubic-bezier(.33,.9,.4,1); transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden }
 .sayfa-gir-fade{ animation:sayfaPerspFade .24s cubic-bezier(.33,.9,.4,1); transform-origin:center center; will-change:transform,opacity }
+/* v315: GIDEN sayfa — solar + perspektifle geriye gider (gelenle ayni anda gorunur) */
+@keyframes sayfaCikSol{
+  from{ opacity:1; transform:perspective(1000px) translateX(0)    rotateY(0)    scale(1) }
+  to  { opacity:0; transform:perspective(1000px) translateX(-30%) rotateY(22deg) scale(.9) }
+}
+@keyframes sayfaCikSag{
+  from{ opacity:1; transform:perspective(1000px) translateX(0)   rotateY(0)     scale(1) }
+  to  { opacity:0; transform:perspective(1000px) translateX(30%) rotateY(-22deg) scale(.9) }
+}
+.sayfa-cik-sol{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSol .3s cubic-bezier(.4,0,.6,1) forwards; transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden; pointer-events:none }
+.sayfa-cik-sag{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSag .3s cubic-bezier(.4,0,.6,1) forwards; transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden; pointer-events:none }
 @media(prefers-reduced-motion:reduce){
-  .sayfa-gir-sol,.sayfa-gir-sag,.sayfa-gir-fade{ animation:none }
+  .sayfa-gir-sol,.sayfa-gir-sag,.sayfa-gir-fade,.sayfa-cik-sol,.sayfa-cik-sag{ animation:none }
+  .sayfa-cik-sol,.sayfa-cik-sag{ display:none!important }
+}
+@media(max-width:700px){
+  .main{ position:relative; }  /* v315: cikan sayfa (absolute) icin referans */
 }
 /* v292: Prim ust blok — mobilde kartlar alt alta, PC'de yan yana */
 @media(max-width:640px){
@@ -3148,7 +3163,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v314';
+const APP_VERSION = 'v315';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3261,7 +3276,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '15.07.2026 17:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '15.07.2026 19:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -8118,17 +8133,36 @@ function renderHedefOzet(){
 // resize listener'i ekliyordu. Gecerli tanim ve resize/orientationchange dinleyicileri
 // dosyanin sonundaki acilis blogunda.
 function switchPage(page, yon){
+  const _eski = (typeof currentPage!=='undefined') ? currentPage : null;
   currentPage = page;
-  ['dash','prim','finans','gelir','not','rapor','hedef','trend','kasa'].forEach(p=>{
-    const el = document.getElementById('page-'+p);
-    if(el) el.style.display = page===p ? (p==='prim'?'flex':'') : 'none';
-  });
-  // v311: mobil sayfa gecis animasyonu — yon 'sol'/'sag' ise kaydirmali, yoksa hafif fade
+  const _mobil = window.innerWidth <= 700;
+  const _tumPages = ['dash','prim','finans','gelir','not','rapor','hedef','trend','kasa'];
+  // v315: cross-fade — giden sayfa animasyonla cikar, gelen ayni anda girer (ikisi kisa sure birlikte gorunur)
+  const _eskiEl = _eski ? document.getElementById('page-'+_eski) : null;
+  if(_mobil && _eskiEl && _eski !== page && (yon==='sol'||yon==='sag')){
+    _eskiEl.classList.remove('sayfa-gir-sol','sayfa-gir-sag','sayfa-gir-fade','sayfa-cik-sol','sayfa-cik-sag');
+    void _eskiEl.offsetWidth;
+    _eskiEl.classList.add(yon==='sol' ? 'sayfa-cik-sol' : 'sayfa-cik-sag');
+    // cikis animasyonu bitince gizle
+    setTimeout(()=>{ if(currentPage!==_eski){ _eskiEl.style.display='none'; _eskiEl.classList.remove('sayfa-cik-sol','sayfa-cik-sag'); } }, 300);
+    // yeni sayfayi hemen goster (ustte belirsin), digerlerini gizle
+    _tumPages.forEach(p=>{
+      if(p===_eski) return; // eskiyi animasyon bitince gizleyecegiz
+      const el = document.getElementById('page-'+p);
+      if(el) el.style.display = page===p ? (p==='prim'?'flex':'') : 'none';
+    });
+  } else {
+    _tumPages.forEach(p=>{
+      const el = document.getElementById('page-'+p);
+      if(el) el.style.display = page===p ? (p==='prim'?'flex':'') : 'none';
+    });
+  }
+  // gelen sayfa giris animasyonu
   try{
     const aktif = document.getElementById('page-'+page);
-    if(aktif && window.innerWidth <= 700){
+    if(aktif && _mobil){
       aktif.classList.remove('sayfa-gir-sol','sayfa-gir-sag','sayfa-gir-fade');
-      void aktif.offsetWidth; // reflow — animasyonu yeniden tetikle
+      void aktif.offsetWidth;
       aktif.classList.add(yon==='sol' ? 'sayfa-gir-sol' : yon==='sag' ? 'sayfa-gir-sag' : 'sayfa-gir-fade');
     }
   }catch(e){}
@@ -18443,6 +18477,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v315',
+    date: '15.07.2026',
+    items: [
+      { type: 'ui', text: 'Mobil sayfa gecisi CROSS-FADE + perspektif oldu: giden sayfa solup hafif perspektifle geriye kayarken, gelen sayfa AYNI ANDA belirmeye baslar — ikisi kisa sure birlikte gorunur (telefon ana ekrani gecis hissi). Sola/saga kaydirma yonune gore. Sadece mobil, reduced-motion\'da kapali.' },
+    ]
+  },
   {
     version: 'v314',
     date: '15.07.2026',
