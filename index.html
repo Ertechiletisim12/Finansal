@@ -1285,22 +1285,13 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
   .hplan-btns-row{ flex-wrap:nowrap!important; }
   .hedef-plan-tablo{ max-height:460px!important; }
 }
-/* v312: Mobil sayfa gecisi — DERINLIKTEN GEL (uzaktan yakina, perspektif + olcek) */
-@keyframes sayfaDerinSol{
-  from{ opacity:0; transform:perspective(1200px) translateX(60px) translateZ(-220px) rotateY(-14deg) scale(.9) }
-  to  { opacity:1; transform:perspective(1200px) translateX(0)    translateZ(0)      rotateY(0)      scale(1) }
-}
-@keyframes sayfaDerinSag{
-  from{ opacity:0; transform:perspective(1200px) translateX(-60px) translateZ(-220px) rotateY(14deg) scale(.9) }
-  to  { opacity:1; transform:perspective(1200px) translateX(0)     translateZ(0)      rotateY(0)     scale(1) }
-}
-@keyframes sayfaDerinFade{
-  from{ opacity:0; transform:perspective(1200px) translateZ(-160px) scale(.94) }
-  to  { opacity:1; transform:perspective(1200px) translateZ(0)      scale(1) }
-}
-.sayfa-gir-sol{ animation:sayfaDerinSol .34s cubic-bezier(.22,.61,.36,1); transform-origin:center center; will-change:transform,opacity }
-.sayfa-gir-sag{ animation:sayfaDerinSag .34s cubic-bezier(.22,.61,.36,1); transform-origin:center center; will-change:transform,opacity }
-.sayfa-gir-fade{ animation:sayfaDerinFade .28s cubic-bezier(.22,.61,.36,1); transform-origin:center center; will-change:transform,opacity }
+/* v313: Mobil sayfa gecisi — ANDROID tarzi DUZ YATAY SLIDE (tam genislik kayma) */
+@keyframes sayfaSlideSol{ from{ transform:translateX(100%) } to{ transform:translateX(0) } }
+@keyframes sayfaSlideSag{ from{ transform:translateX(-100%) } to{ transform:translateX(0) } }
+@keyframes sayfaSlideFade{ from{ opacity:0 } to{ opacity:1 } }
+.sayfa-gir-sol{ animation:sayfaSlideSol .3s cubic-bezier(.4,0,.2,1); will-change:transform }
+.sayfa-gir-sag{ animation:sayfaSlideSag .3s cubic-bezier(.4,0,.2,1); will-change:transform }
+.sayfa-gir-fade{ animation:sayfaSlideFade .2s ease-out }
 @media(prefers-reduced-motion:reduce){
   .sayfa-gir-sol,.sayfa-gir-sag,.sayfa-gir-fade{ animation:none }
 }
@@ -3146,7 +3137,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v312';
+const APP_VERSION = 'v313';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3259,7 +3250,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '15.07.2026 12:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '15.07.2026 14:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -18441,6 +18432,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v313',
+    date: '15.07.2026',
+    items: [
+      { type: 'ui', text: 'Mobil sayfa gecisi ANDROID tarzi duz yatay slide oldu (perspektif/derinlik kaldirildi). Sola kaydirinca yeni sayfa sagdan, saga kaydirinca soldan tam genislikte kayarak girer. Menuden secince hizli fade. Sadece mobil.' },
+    ]
+  },
   {
     version: 'v312',
     date: '15.07.2026',
