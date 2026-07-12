@@ -3179,7 +3179,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v330';
+const APP_VERSION = 'v331';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3292,7 +3292,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '17.07.2026 10:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '17.07.2026 12:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14046,8 +14046,9 @@ function renderKasa(){
     </div>
     <div class="stat" style="border-left:3px solid var(--gold)">
       <div class="t">🧮 Son Sayım</div>
-      <div class="v" style="color:var(--gold);margin-top:6px">${son?fmtTL(son.toplam):'—'}</div>
-      <div class="sub" style="line-height:1.5">${son?`${son.date} ${son.time||''}<br>Beklenen: ${son.beklenen!=null?fmtTL(son.beklenen):'—'} · Elden: ${son.eldenToplam?fmtTL(son.eldenToplam):'—'}<br>Fark: <b style="color:${sonFark==null?'var(--muted)':Math.abs(sonFark)<0.005?'#4cd964':sonFark>0?'#4cd964':'#ff5252'}">${sonFark==null?'—':Math.abs(sonFark)<0.005?'✓ tam':((sonFark>0?'+':'')+fmtTL(sonFark))}</b>`:'kayıt yok'}</div>
+      <div class="sub" style="margin-top:3px;font-size:10px;color:var(--muted)">${son?son.date+' '+(son.time||''):''}</div>
+      <div class="v" style="color:var(--gold);margin-top:3px">${son?fmtTL(son.toplam):'—'}</div>
+      <div class="sub" style="line-height:1.6;margin-top:4px">${son?`<span style="color:var(--txt)">Beklenen:</span> <b style="color:var(--accent)">${son.beklenen!=null?fmtTL(son.beklenen):'—'}</b> · <span style="color:var(--txt)">Elden:</span> <b style="color:#c084fc">${son.eldenToplam?fmtTL(son.eldenToplam):'—'}</b><br><span style="color:var(--txt)">Fark:</span> <b style="color:${sonFark==null?'var(--muted)':Math.abs(sonFark)<0.005?'#4cd964':sonFark>0?'#4cd964':'#ff5252'}">${sonFark==null?'—':Math.abs(sonFark)<0.005?'✓ tam':((sonFark>0?'+':'')+fmtTL(sonFark))}</b>`:'kayıt yok'}</div>
     </div>
     <div class="stat" style="border-left:3px solid ${netFark<-0.005?'#ff5252':'#4cd964'}">
       <div class="t">⚖️ Net Fark</div>
@@ -18739,6 +18740,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v331',
+    date: '17.07.2026',
+    items: [
+      { type: 'fix', text: 'GERİ TUŞU artik programdan komple cikarmyor. Akilli davraniyor: acik bir modal/pencere varsa once onu kapatir; alt sayfadaysan (Prim/Finans/Kasa vb) once ANA SAYFAYA doner; ana sayfadayken bir kez daha basarsan cikar ("Cikmak icin tekrar geri tuşuna basin" uyarisi ile).' },
+      { type: 'ui', text: 'Kasa Son Sayim ozet karti yeniden duzenlendi: tarih uste alindi, Beklenen (mavi) ve Elden (mor) belirginlestirildi, Fark renkli. Sayfa gecis efekti icin YENI TEST SAYFASI hazirlandi (26 efekt) — begenmedigin gecisin yerine secebilirsin.' },
+    ]
+  },
+  {
     version: 'v330',
     date: '17.07.2026',
     items: [
@@ -20861,6 +20870,55 @@ function toggleChangelog(){
       btn.innerHTML = txt + ' <span style="font-size:9px;opacity:.6">&#9660;</span>';
     });
   } catch(e){ console.warn('Versiyon hatası:',e); }
+})();
+</script>
+
+<script>
+// v331: Geri tuşu yöneticisi — modal açıksa kapat, alt sayfadaysan ana sayfaya dön, ana sayfada çık
+(function(){
+  try {
+    // Açık modalı bul ve kapat. Kapatıldıysa true döner.
+    function acikModalKapat(){
+      const modaller = Array.from(document.querySelectorAll('div[id$="Modal"]'));
+      // z-index'i en yüksek görünür modalı kapat (en üstteki)
+      const gorunur = modaller.filter(m=>{
+        const st = getComputedStyle(m);
+        return st.display !== 'none' && (m.style.display==='flex' || m.style.display==='block' || st.display==='flex' || st.display==='block');
+      });
+      if(!gorunur.length) return false;
+      gorunur.sort((a,b)=>(parseInt(getComputedStyle(b).zIndex)||0)-(parseInt(getComputedStyle(a).zIndex)||0));
+      const ust = gorunur[0];
+      // Kapatma fonksiyonu varsa çağır, yoksa display none
+      const id = ust.id;
+      const kapatFn = 'close' + id.charAt(0).toUpperCase() + id.slice(1);
+      if(typeof window[kapatFn] === 'function'){ try{ window[kapatFn](); }catch(e){ ust.style.display='none'; } }
+      else { ust.style.display='none'; }
+      return true;
+    }
+
+    // History'e bir durum ekle (geri basınca popstate tetiklensin)
+    function durumEkle(){ try{ history.pushState({app:true}, ''); }catch(e){} }
+    durumEkle();
+
+    window.addEventListener('popstate', function(ev){
+      // 1) Açık modal varsa kapat
+      if(acikModalKapat()){ durumEkle(); return; }
+      // 2) Ana sayfada değilsek ana sayfaya dön
+      if(typeof currentPage !== 'undefined' && currentPage !== 'dash'){
+        if(typeof switchPage === 'function'){ switchPage('dash'); durumEkle(); return; }
+      }
+      // 3) Ana sayfadaysak: bir kez daha geri = çıkış. Kullanıcıya kısa uyarı.
+      if(!window._cikisOnay){
+        window._cikisOnay = true;
+        durumEkle();
+        if(typeof showToast === 'function') showToast('Çıkmak için tekrar geri tuşuna basın', 'info');
+        setTimeout(()=>{ window._cikisOnay = false; }, 2000);
+        return;
+      }
+      // Gerçekten çık — history'i geri bırak
+      history.back();
+    });
+  } catch(e){ console.warn('Geri tuşu yöneticisi hatası:', e); }
 })();
 </script>
 </body>
