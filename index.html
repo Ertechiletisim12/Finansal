@@ -3182,7 +3182,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v335';
+const APP_VERSION = 'v336';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3295,7 +3295,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '17.07.2026 22:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '18.07.2026 01:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6203,7 +6203,7 @@ function vibrate(pattern){
 
   function temizleStil(el){
     if(!el) return;
-    el.style.transition=''; el.style.transform=''; el.style.zIndex=''; el.style.position=''; el.style.top=''; el.style.left=''; el.style.right=''; el.style.pointerEvents=''; el.style.willChange='';
+    el.style.transition=''; el.style.transform=''; el.style.opacity=''; el.style.zIndex=''; el.style.position=''; el.style.top=''; el.style.left=''; el.style.right=''; el.style.pointerEvents=''; el.style.willChange='';
   }
   function bitir(){
     dragging=false; locked=null; basladi=false;
@@ -6256,12 +6256,15 @@ function vibrate(pattern){
     }
 
     if(dragging && locked==='h'){
-      // parmakla canlı kaydır
+      // parmakla canlı kaydır + solma (launcher hissi)
       let d = dx;
-      // sınır: ilk/son sayfada aşırı çekmeyi yumuşat
       const gelenBase = yon==='sol' ? gW : -gW;
       gelenEl.style.transform = `translateX(${gelenBase + d}px)`;
       gidenEl.style.transform = `translateX(${d}px)`;
+      // ilerleme oranı 0..1 — giden solar, gelen belirir
+      const oran = Math.min(1, Math.abs(d)/gW);
+      gidenEl.style.opacity = String(1 - oran*0.6);   // 1 → 0.4
+      gelenEl.style.opacity = String(0.4 + oran*0.6); // 0.4 → 1
       if(e.cancelable) e.preventDefault();
     }
   }, {passive:false});
@@ -6273,26 +6276,29 @@ function vibrate(pattern){
     const tamamla = Math.abs(dx) > esik;
     const sure = 220;
     const gelenBase = yon==='sol' ? gW : -gW;
-    gelenEl.style.transition = `transform ${sure}ms cubic-bezier(.4,0,.2,1)`;
-    gidenEl.style.transition = `transform ${sure}ms cubic-bezier(.4,0,.2,1)`;
+    gelenEl.style.transition = `transform ${sure}ms cubic-bezier(.4,0,.2,1), opacity ${sure}ms ease`;
+    gidenEl.style.transition = `transform ${sure}ms cubic-bezier(.4,0,.2,1), opacity ${sure}ms ease`;
 
     if(tamamla){
-      // tamamla: gelen 0'a, giden karşı yöne tam çıksın
+      // tamamla: gelen 0'a + tam net, giden karşı yöne + tam soluk
       gelenEl.style.transform = 'translateX(0)';
+      gelenEl.style.opacity = '1';
       gidenEl.style.transform = `translateX(${yon==='sol' ? -gW : gW}px)`;
+      gidenEl.style.opacity = '0.4';
       const cur=pages.indexOf(typeof currentPage!=='undefined'?currentPage:'dash');
       const hedef = pages[yon==='sol'?cur+1:cur-1];
       const _giden=gidenEl, _gelen=gelenEl;
       setTimeout(()=>{
         temizleStil(_giden); temizleStil(_gelen);
-        // gerçek geçişi uygula (render + state), animasyonsuz
         if(typeof switchPage==='function') switchPage(hedef, null, true);
       }, sure+10);
       dragging=false; locked=null; basladi=false; gelenEl=null; gidenEl=null;
     } else {
-      // geri dön: gelen tekrar dışarı, giden 0'a
+      // geri dön: gelen tekrar dışarı + soluk, giden 0'a + net
       gelenEl.style.transform = `translateX(${gelenBase}px)`;
+      gelenEl.style.opacity = '0.4';
       gidenEl.style.transform = 'translateX(0)';
+      gidenEl.style.opacity = '1';
       const _giden=gidenEl, _gelen=gelenEl;
       setTimeout(()=>{ _gelen.style.display='none'; temizleStil(_giden); temizleStil(_gelen); }, sure+10);
       bitir();
@@ -18839,6 +18845,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v336',
+    date: '18.07.2026',
+    items: [
+      { type: 'ui', text: 'Canli swipe gecisine SOLMA (opacity) eklendi — telefon ana ekrani hissi. Parmagini kaydirdikca giden sayfa yavasca soluklasir (%100→%40), gelen sayfa belirir (%40→%100); ayni anda ikisi de kayar. Parmagi birakinca tamamlanir ya da geri doner (solma da geri alinir).' },
+    ]
+  },
   {
     version: 'v335',
     date: '17.07.2026',
