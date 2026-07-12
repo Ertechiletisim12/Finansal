@@ -2835,6 +2835,14 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
       </div>
 
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Beklenen Kasa Tutarı (₺)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none">₺</span>
+          <input type="text" inputmode="decimal" id="kasaBeklenen" placeholder="0,00" style="width:100%;padding-left:22px;box-sizing:border-box" oninput="onCurrencyInput(this);updateKasaFark()" onblur="onCurrencyBlurGeneric(this);updateKasaFark()" onfocus="onCurrencyFocus(this)">
+        </div>
+      </div>
+
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💵 Kupür Sayımı</div>
       <div id="kasaKupurGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"></div>
 
@@ -2849,14 +2857,6 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:12px;font-weight:700;color:var(--muted)">SAYILAN TOPLAM</span>
         <span id="kasaToplamGoster" style="font-size:18px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums">0,00 ₺</span>
-      </div>
-
-      <div style="margin-bottom:8px">
-        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Beklenen Kasa Tutarı (₺)</label>
-        <div style="position:relative">
-          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none">₺</span>
-          <input type="text" inputmode="decimal" id="kasaBeklenen" placeholder="0,00" style="width:100%;padding-left:22px;box-sizing:border-box" oninput="onCurrencyInput(this);updateKasaFark()" onblur="onCurrencyBlurGeneric(this);updateKasaFark()" onfocus="onCurrencyFocus(this)">
-        </div>
       </div>
 
       <!-- v320: Elden Verdiklerim -->
@@ -3161,7 +3161,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v321';
+const APP_VERSION = 'v322';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3274,7 +3274,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '16.07.2026 10:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '16.07.2026 13:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13966,7 +13966,7 @@ function renderKasa(){
         <td style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmtTL(k.toplam)}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums">${k.beklenen!=null?fmtTL(k.beklenen):'—'}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums">${farkHtml}</td>
-        <td style="font-size:10px;color:var(--muted);max-width:240px">${detayOzet(k)}</td>
+        <td style="font-size:10px;color:var(--muted);max-width:240px;white-space:normal;line-height:1.35;word-break:break-word">${detayOzet(k)}</td>
         <td style="font-size:11px;color:var(--muted)">${esc(k.not||'')}</td>
         <td style="white-space:nowrap">
           <button onclick="openKasaSayimModal('${k.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.25);color:var(--accent);border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer">✏️</button>
@@ -18604,6 +18604,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v322',
+    date: '16.07.2026',
+    items: [
+      { type: 'ui', text: 'KASA SAYIMI modalinda "Beklenen Kasa Tutarı" alani kupurlerin USTUNE alindi (once beklenen, sonra kupur/diğerleri sayimi). Kasa gecmisi tablosunda Detay sutunu artik satira sigmayinca alt satira sariyor (nowrap kaldirildi) — uzun detaylar tabloyu tasirmiyor/ust uste bindirmiyor.' },
+    ]
+  },
   {
     version: 'v321',
     date: '16.07.2026',
