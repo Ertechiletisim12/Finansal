@@ -2850,11 +2850,11 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
       </div>
 
-      <div style="margin-bottom:10px">
-        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Beklenen Kasa Tutarı (₺)</label>
+      <div style="margin-bottom:12px;background:rgba(63,208,255,.07);border:1.5px solid rgba(63,208,255,.4);border-radius:9px;padding:10px 12px">
+        <label style="font-size:11.5px;color:var(--accent);display:block;margin-bottom:5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em">💰 Beklenen Kasa Tutarı</label>
         <div style="position:relative">
-          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none">₺</span>
-          <input type="text" inputmode="decimal" id="kasaBeklenen" placeholder="0,00" style="width:100%;padding-left:22px;box-sizing:border-box" oninput="onCurrencyInput(this);updateKasaFark()" onblur="onCurrencyBlurGeneric(this);updateKasaFark()" onfocus="onCurrencyFocus(this)">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--accent);pointer-events:none;font-weight:700">₺</span>
+          <input type="text" inputmode="decimal" id="kasaBeklenen" placeholder="0,00" style="width:100%;padding:10px 12px 10px 28px;box-sizing:border-box;font-size:18px;font-weight:800;background:var(--panel);border:1px solid rgba(63,208,255,.3);border-radius:7px;color:var(--accent)" oninput="onCurrencyInput(this);updateKasaFark()" onblur="onCurrencyBlurGeneric(this);updateKasaFark()" onfocus="onCurrencyFocus(this)">
         </div>
       </div>
 
@@ -2872,9 +2872,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div id="kasaDigerListe" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
       <button type="button" onclick="kasaDigerSatirEkle()" style="width:100%;background:transparent;border:1px dashed var(--line);color:var(--muted);border-radius:7px;padding:6px;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:10px">+ Satır Ekle</button>
 
-      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:12px;font-weight:700;color:var(--muted)">SAYILAN TOPLAM</span>
-        <span id="kasaToplamGoster" style="font-size:18px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums">0,00 ₺</span>
+      <div style="background:rgba(63,208,255,.06);border:1.5px solid rgba(63,208,255,.3);border-radius:8px;padding:9px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:800;color:var(--accent)">🧮 SAYILAN TOPLAM</span>
+        <span id="kasaToplamGoster" style="font-size:19px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums">0,00 ₺</span>
       </div>
 
       <!-- v323: Elden Verilenler — merkezi listeden okunur (salt gösterim + yönet) -->
@@ -3205,7 +3205,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v326';
+const APP_VERSION = 'v327';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3318,7 +3318,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '17.07.2026 00:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '17.07.2026 02:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13798,11 +13798,11 @@ function openKasaSayimModal(id){
   const grid = document.getElementById('kasaKupurGrid');
   grid.innerHTML = KASA_KUPURLER.map(k=>{
     const adet = kayit && kayit.denoms ? (kayit.denoms[k.key]||'') : '';
-    return `<div style="display:flex;align-items:center;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-width:0;box-sizing:border-box;overflow:hidden">
-      <span style="font-size:11px;font-weight:700;flex:0 0 40px;width:40px;color:${k.deger>=5?'var(--gold)':'var(--muted)'}">${k.label}</span>
+    return `<div style="display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-width:0;box-sizing:border-box;overflow:hidden">
+      <span style="font-size:11px;font-weight:700;color:${k.deger>=5?'var(--gold)':'var(--muted)'};white-space:nowrap">${k.label}</span>
       <input type="number" min="0" inputmode="numeric" id="kasaKupur_${k.key}" value="${adet}" placeholder="0" oninput="updateKasaToplam()"
-        style="flex:1 1 0;width:100%;min-width:0;box-sizing:border-box;background:transparent;border:none;color:var(--txt);font-size:14px;font-weight:700;text-align:center;outline:none">
-      <span id="kasaKupurTut_${k.key}" style="font-size:8.5px;color:var(--muted);flex:0 0 auto;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums"></span>
+        style="width:100%;min-width:0;box-sizing:border-box;background:transparent;border:none;color:var(--txt);font-size:14px;font-weight:700;text-align:center;outline:none">
+      <span id="kasaKupurTut_${k.key}" style="font-size:8.5px;color:var(--muted);min-width:44px;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums"></span>
     </div>`;
   }).join('');
   const bekEl = document.getElementById('kasaBeklenen');
@@ -13889,7 +13889,7 @@ function _kasaFisElden(){
   const ozet = document.getElementById('kasaEldenOzetListe');
   if(ozet){
     if(!eldenData.length){ ozet.textContent = 'Açık elden verilen yok.'; }
-    else { ozet.innerHTML = eldenData.map(e=>`• ${e.aciklama||'(açıklama yok)'} — <b style="color:#ff8f6b">${fmt(e.tutar)}</b> <span style="opacity:.7">(${e.tarih||''})</span>`).join('<br>'); }
+    else { ozet.innerHTML = eldenData.map(e=>`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:1px 0"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">• ${e.aciklama||'(açıklama yok)'} <span style="opacity:.6;font-size:9.5px">${e.tarih||''}</span></span><b style="color:#ff8f6b;white-space:nowrap;font-variant-numeric:tabular-nums">${fmt(e.tutar)}</b></div>`).join(''); }
   }
 }
 function closeKasaSayimModal(){
@@ -18735,6 +18735,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v327',
+    date: '17.07.2026',
+    items: [
+      { type: 'ui', text: 'Kasa Sayimi modali hizalama + vurgu: (1) Kupur kutulari artik grid ile hizali — etiket | sayi (ortada) | tutar (sagda) tum kutularda ayni sutunlarda. (2) BEKLENEN KASA alani vurgulu kutuya alindi (mavi kenarlik, 💰 baslik, buyuk kalin mavi font) — gozle kolay bulunur. (3) SAYILAN TOPLAM da vurgulandi. (4) Elden verilenler ozet satirlari hizalandi (aciklama solda, tutar sagda tabular).' },
+    ]
+  },
   {
     version: 'v326',
     date: '17.07.2026',
