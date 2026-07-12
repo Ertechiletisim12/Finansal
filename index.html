@@ -1287,33 +1287,31 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
 }
 /* v314: Mobil sayfa gecisi — ANDROID PERSPEKTIF (yandan 3D egimli yaklasarak girer) */
 @keyframes sayfaPerspSol{
-  from{ opacity:.3; transform:perspective(1000px) translateX(85%) rotateY(-35deg) scale(.92) }
-  60% { opacity:1 }
-  to  { opacity:1; transform:perspective(1000px) translateX(0)   rotateY(0)     scale(1) }
+  from{ opacity:0; transform:translateX(12%) scale(.97) }
+  to  { opacity:1; transform:translateX(0)   scale(1) }
 }
 @keyframes sayfaPerspSag{
-  from{ opacity:.3; transform:perspective(1000px) translateX(-85%) rotateY(35deg) scale(.92) }
-  60% { opacity:1 }
-  to  { opacity:1; transform:perspective(1000px) translateX(0)    rotateY(0)    scale(1) }
+  from{ opacity:0; transform:translateX(-12%) scale(.97) }
+  to  { opacity:1; transform:translateX(0)    scale(1) }
 }
 @keyframes sayfaPerspFade{
-  from{ opacity:0; transform:perspective(1000px) rotateY(8deg) scale(.96) }
-  to  { opacity:1; transform:perspective(1000px) rotateY(0)    scale(1) }
+  from{ opacity:0; transform:scale(.98) }
+  to  { opacity:1; transform:scale(1) }
 }
-.sayfa-gir-sol{ animation:sayfaPerspSol .36s cubic-bezier(.33,.9,.4,1); transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden }
-.sayfa-gir-sag{ animation:sayfaPerspSag .36s cubic-bezier(.33,.9,.4,1); transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden }
+.sayfa-gir-sol{ animation:sayfaPerspSol .4s cubic-bezier(.33,.9,.4,1); transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden }
+.sayfa-gir-sag{ animation:sayfaPerspSag .4s cubic-bezier(.33,.9,.4,1); transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden }
 .sayfa-gir-fade{ animation:sayfaPerspFade .24s cubic-bezier(.33,.9,.4,1); transform-origin:center center; will-change:transform,opacity }
 /* v315: GIDEN sayfa — solar + perspektifle geriye gider (gelenle ayni anda gorunur) */
 @keyframes sayfaCikSol{
-  from{ opacity:1; transform:perspective(1000px) translateX(0)    rotateY(0)    scale(1) }
-  to  { opacity:0; transform:perspective(1000px) translateX(-30%) rotateY(22deg) scale(.9) }
+  from{ opacity:1; transform:translateX(0)   scale(1) }
+  to  { opacity:0; transform:translateX(-12%) scale(.97) }
 }
 @keyframes sayfaCikSag{
-  from{ opacity:1; transform:perspective(1000px) translateX(0)   rotateY(0)     scale(1) }
-  to  { opacity:0; transform:perspective(1000px) translateX(30%) rotateY(-22deg) scale(.9) }
+  from{ opacity:1; transform:translateX(0)  scale(1) }
+  to  { opacity:0; transform:translateX(12%) scale(.97) }
 }
-.sayfa-cik-sol{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSol .3s cubic-bezier(.4,0,.6,1) forwards; transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden; pointer-events:none }
-.sayfa-cik-sag{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSag .3s cubic-bezier(.4,0,.6,1) forwards; transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden; pointer-events:none }
+.sayfa-cik-sol{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSol .4s cubic-bezier(.4,0,.6,1) forwards; transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden; pointer-events:none }
+.sayfa-cik-sag{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSag .4s cubic-bezier(.4,0,.6,1) forwards; transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden; pointer-events:none }
 @media(prefers-reduced-motion:reduce){
   .sayfa-gir-sol,.sayfa-gir-sag,.sayfa-gir-fade,.sayfa-cik-sol,.sayfa-cik-sag{ animation:none }
   .sayfa-cik-sol,.sayfa-cik-sag{ display:none!important }
@@ -3163,7 +3161,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v315';
+const APP_VERSION = 'v316';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3276,7 +3274,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '15.07.2026 19:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '15.07.2026 22:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -8144,7 +8142,7 @@ function switchPage(page, yon){
     void _eskiEl.offsetWidth;
     _eskiEl.classList.add(yon==='sol' ? 'sayfa-cik-sol' : 'sayfa-cik-sag');
     // cikis animasyonu bitince gizle
-    setTimeout(()=>{ if(currentPage!==_eski){ _eskiEl.style.display='none'; _eskiEl.classList.remove('sayfa-cik-sol','sayfa-cik-sag'); } }, 300);
+    setTimeout(()=>{ if(currentPage!==_eski){ _eskiEl.style.display='none'; _eskiEl.classList.remove('sayfa-cik-sol','sayfa-cik-sag'); } }, 400);
     // yeni sayfayi hemen goster (ustte belirsin), digerlerini gizle
     _tumPages.forEach(p=>{
       if(p===_eski) return; // eskiyi animasyon bitince gizleyecegiz
@@ -18477,6 +18475,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v316',
+    date: '15.07.2026',
+    items: [
+      { type: 'ui', text: 'Mobil sayfa gecisi SAF CROSS-FADE oldu: gecis ortasinda iki sayfa da yari saydam sekilde UST USTE gorunur (biri solarken oteki belirir, birbirinin icinden gecer) — tam telefon ana ekrani gecis hissi. Perspektif/donme kaldirildi, sadece saydamlik + cok hafif kayma. Sureler esitlendi (0.4s). Sadece mobil.' },
+    ]
+  },
   {
     version: 'v315',
     date: '15.07.2026',
