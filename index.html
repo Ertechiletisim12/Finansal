@@ -2836,7 +2836,15 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
 
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💵 Kupür Sayımı</div>
-      <div id="kasaKupurGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px"></div>
+      <div id="kasaKupurGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px"></div>
+
+      <!-- v320: Diğerleri (serbest tutarlar) -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">📦 Diğerleri</span>
+        <button type="button" onclick="kasaDigerOncekiCagir()" style="background:var(--panel2);border:1px solid var(--line);color:var(--accent);border-radius:6px;padding:3px 9px;font-size:10.5px;font-weight:700;cursor:pointer">⤵ Önceki günü çağır</button>
+      </div>
+      <div id="kasaDigerListe" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+      <button type="button" onclick="kasaDigerSatirEkle()" style="width:100%;background:transparent;border:1px dashed var(--line);color:var(--muted);border-radius:7px;padding:7px;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:12px">+ Satır Ekle</button>
 
       <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:12px;font-weight:700;color:var(--muted)">SAYILAN TOPLAM</span>
@@ -2850,6 +2858,16 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <input type="text" inputmode="decimal" id="kasaBeklenen" placeholder="0,00" style="width:100%;padding-left:22px;box-sizing:border-box" oninput="onCurrencyInput(this);updateKasaFark()" onblur="onCurrencyBlurGeneric(this);updateKasaFark()" onfocus="onCurrencyFocus(this)">
         </div>
       </div>
+
+      <!-- v320: Elden Verdiklerim -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;font-weight:700;color:#ff8f6b;text-transform:uppercase;letter-spacing:.06em">🔻 Elden Verdiklerim</span>
+        <span id="kasaEldenToplam" style="font-size:12px;font-weight:800;color:#ff8f6b;font-variant-numeric:tabular-nums">0,00 ₺</span>
+      </div>
+      <div id="kasaEldenListe" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+      <button type="button" onclick="kasaEldenSatirEkle()" style="width:100%;background:transparent;border:1px dashed rgba(255,143,107,.5);color:#ff8f6b;border-radius:7px;padding:7px;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:12px">+ Satır Ekle</button>
+
+      <div style="font-size:10.5px;color:var(--muted);margin-bottom:10px;line-height:1.4">Fark = Sayılan − (Beklenen − Elden Verilenler). Elden verilenler beklenen kasayı düşürür.</div>
 
       <div id="kasaFarkGoster" style="border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line)">
         <span style="font-size:12px;font-weight:700;color:var(--muted)">FARK</span>
@@ -3143,7 +3161,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v319';
+const APP_VERSION = 'v320';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3256,7 +3274,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '16.07.2026 05:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '16.07.2026 08:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13622,12 +13640,6 @@ const KASA_KUPURLER = [
   { key:'b20',  label:'20 ₺',  deger:20 },
   { key:'b10',  label:'10 ₺',  deger:10 },
   { key:'b5',   label:'5 ₺',   deger:5 },
-  { key:'m1',   label:'1 ₺',   deger:1 },
-  { key:'m50k', label:'50 Kr', deger:0.5 },
-  { key:'m25k', label:'25 Kr', deger:0.25 },
-  { key:'m10k', label:'10 Kr', deger:0.10 },
-  { key:'m5k',  label:'5 Kr',  deger:0.05 },
-  { key:'m1k',  label:'1 Kr',  deger:0.01 },
 ];
 
 function saveKasaStore(){
@@ -13660,8 +13672,108 @@ function openKasaSayimModal(id){
   const bekEl = document.getElementById('kasaBeklenen');
   bekEl.value = kayit && kayit.beklenen != null ? kayit.beklenen.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
   document.getElementById('kasaNot').value = kayit ? (kayit.not||'') : '';
+
+  // v320: Diğerleri — düzenlemede kayıttan gelir, yeni sayımda boş
+  document.getElementById('kasaDigerListe').innerHTML = '';
+  const digerler = (kayit && Array.isArray(kayit.digerleri)) ? kayit.digerleri : [];
+  if(digerler.length) digerler.forEach(d=>kasaDigerSatirEkle(d.etiket, d.tutar));
+
+  // v320: Elden Verdiklerim — düzenlemede kayıttan; YENİ sayımda önceki sayımdan otomatik kopyalanır
+  document.getElementById('kasaEldenListe').innerHTML = '';
+  let eldenler = [];
+  if(kayit && Array.isArray(kayit.eldenler)){
+    eldenler = kayit.eldenler;
+  } else if(!id){
+    // en son sayımın eldenler listesini kopyala
+    const sonrali = [...kasaData].sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||'')));
+    if(sonrali[0] && Array.isArray(sonrali[0].eldenler)) eldenler = sonrali[0].eldenler.map(e=>({...e}));
+  }
+  if(eldenler.length) eldenler.forEach(e=>kasaEldenSatirEkle(e.tarih, e.tutar, e.aciklama));
+
   updateKasaToplam();
   document.getElementById('kasaSayimModal').style.display = 'flex';
+}
+
+// ---- v320: Diğerleri satırları ----
+function kasaDigerSatirEkle(etiket, tutar){
+  const liste = document.getElementById('kasaDigerListe');
+  const row = document.createElement('div');
+  row.className = 'kasa-diger-row';
+  row.style.cssText = 'display:flex;align-items:center;gap:6px';
+  const tutarStr = (tutar!=null && tutar!=='') ? Number(tutar).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+  row.innerHTML = `
+    <input type="text" class="kasa-diger-etiket" value="${etiket?String(etiket).replace(/"/g,'&quot;'):''}" placeholder="Etiket (POS, banka...)" style="flex:1.2;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;color:var(--txt);font-size:12px">
+    <div style="position:relative;flex:1;min-width:0">
+      <span style="position:absolute;left:7px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted);pointer-events:none">₺</span>
+      <input type="text" inputmode="decimal" class="kasa-diger-tutar" value="${tutarStr}" placeholder="0,00" oninput="onCurrencyInput(this);updateKasaToplam()" onblur="onCurrencyBlurGeneric(this);updateKasaToplam()" onfocus="onCurrencyFocus(this)" style="width:100%;box-sizing:border-box;padding-left:20px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding-top:6px;padding-bottom:6px;color:var(--txt);font-size:12px;font-weight:700">
+    </div>
+    <button type="button" onclick="this.parentElement.remove();updateKasaToplam()" style="background:transparent;border:none;color:#ff5252;font-size:16px;font-weight:700;cursor:pointer;padding:2px 4px">✕</button>`;
+  liste.appendChild(row);
+}
+function kasaDigerOncekiCagir(){
+  const sonrali = [...kasaData].sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||'')));
+  const son = sonrali.find(k=>Array.isArray(k.digerleri) && k.digerleri.length);
+  if(!son){ alert('Önceki sayımlarda "Diğerleri" kaydı bulunamadı.'); return; }
+  document.getElementById('kasaDigerListe').innerHTML = '';
+  son.digerleri.forEach(d=>kasaDigerSatirEkle(d.etiket, d.tutar));
+  updateKasaToplam();
+}
+function _kasaDigerToplam(){
+  let t = 0;
+  document.querySelectorAll('#kasaDigerListe .kasa-diger-row').forEach(row=>{
+    const inp = row.querySelector('.kasa-diger-tutar');
+    const v = (typeof parseCurrencyVal==='function') ? parseCurrencyVal(inp) : parseFloat((inp.value||'').replace(/\./g,'').replace(',','.'));
+    if(!isNaN(v)) t += v;
+  });
+  return Math.round(t*100)/100;
+}
+function _kasaDigerTopla(){
+  const arr = [];
+  document.querySelectorAll('#kasaDigerListe .kasa-diger-row').forEach(row=>{
+    const et = row.querySelector('.kasa-diger-etiket').value.trim();
+    const inp = row.querySelector('.kasa-diger-tutar');
+    const v = (typeof parseCurrencyVal==='function') ? parseCurrencyVal(inp) : parseFloat((inp.value||'').replace(/\./g,'').replace(',','.'));
+    if(et || (!isNaN(v)&&v>0)) arr.push({ etiket:et, tutar:isNaN(v)?0:v });
+  });
+  return arr;
+}
+
+// ---- v320: Elden Verdiklerim satırları ----
+function kasaEldenSatirEkle(tarih, tutar, aciklama){
+  const liste = document.getElementById('kasaEldenListe');
+  const row = document.createElement('div');
+  row.className = 'kasa-elden-row';
+  row.style.cssText = 'display:flex;align-items:center;gap:5px;flex-wrap:wrap;background:rgba(255,143,107,.06);border:1px solid rgba(255,143,107,.25);border-radius:7px;padding:6px';
+  const tutarStr = (tutar!=null && tutar!=='') ? Number(tutar).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+  row.innerHTML = `
+    <input type="date" class="kasa-elden-tarih" value="${tarih||todayStr()}" style="flex:1 1 120px;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 6px;color:var(--txt);font-size:11.5px">
+    <div style="position:relative;flex:1 1 90px;min-width:0">
+      <span style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted);pointer-events:none">₺</span>
+      <input type="text" inputmode="decimal" class="kasa-elden-tutar" value="${tutarStr}" placeholder="0,00" oninput="onCurrencyInput(this);updateKasaFark()" onblur="onCurrencyBlurGeneric(this);updateKasaFark()" onfocus="onCurrencyFocus(this)" style="width:100%;box-sizing:border-box;padding-left:18px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding-top:5px;padding-bottom:5px;color:var(--txt);font-size:11.5px;font-weight:700">
+    </div>
+    <input type="text" class="kasa-elden-aciklama" value="${aciklama?String(aciklama).replace(/"/g,'&quot;'):''}" placeholder="Açıklama" style="flex:2 1 100%;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 7px;color:var(--txt);font-size:11.5px">
+    <button type="button" onclick="this.parentElement.remove();updateKasaFark()" style="background:transparent;border:none;color:#ff5252;font-size:15px;font-weight:700;cursor:pointer;padding:0 4px">✕</button>`;
+  liste.appendChild(row);
+}
+function _kasaEldenToplam(){
+  let t = 0;
+  document.querySelectorAll('#kasaEldenListe .kasa-elden-row').forEach(row=>{
+    const inp = row.querySelector('.kasa-elden-tutar');
+    const v = (typeof parseCurrencyVal==='function') ? parseCurrencyVal(inp) : parseFloat((inp.value||'').replace(/\./g,'').replace(',','.'));
+    if(!isNaN(v)) t += v;
+  });
+  return Math.round(t*100)/100;
+}
+function _kasaEldenTopla(){
+  const arr = [];
+  document.querySelectorAll('#kasaEldenListe .kasa-elden-row').forEach(row=>{
+    const tarih = row.querySelector('.kasa-elden-tarih').value || todayStr();
+    const inp = row.querySelector('.kasa-elden-tutar');
+    const v = (typeof parseCurrencyVal==='function') ? parseCurrencyVal(inp) : parseFloat((inp.value||'').replace(/\./g,'').replace(',','.'));
+    const ac = row.querySelector('.kasa-elden-aciklama').value.trim();
+    if((!isNaN(v)&&v>0) || ac) arr.push({ tarih, tutar:isNaN(v)?0:v, aciklama:ac });
+  });
+  return arr;
 }
 function closeKasaSayimModal(){
   document.getElementById('kasaSayimModal').style.display = 'none';
@@ -13679,14 +13791,18 @@ function _kasaHesaplaToplam(){
   return Math.round(toplam*100)/100;
 }
 function updateKasaToplam(){
-  const toplam = _kasaHesaplaToplam();
+  const toplam = _kasaHesaplaToplam() + _kasaDigerToplam();   // v320: kupürler + diğerleri
   document.getElementById('kasaToplamGoster').textContent = toplam.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺';
   updateKasaFark();
 }
 function updateKasaFark(){
-  const toplam = _kasaHesaplaToplam();
+  const toplam = _kasaHesaplaToplam() + _kasaDigerToplam();   // v320
+  const eldenT = _kasaEldenToplam();
+  // Elden toplam göstergesi
+  const eldenGoster = document.getElementById('kasaEldenToplam');
+  if(eldenGoster) eldenGoster.textContent = eldenT.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺';
   const bekEl = document.getElementById('kasaBeklenen');
-  const beklenen = (typeof parseCurrencyVal==='function') ? parseCurrencyVal(bekEl) : parseFloat((bekEl.value||'').replace(/\./g,'').replace(',','.'));
+  let beklenen = (typeof parseCurrencyVal==='function') ? parseCurrencyVal(bekEl) : parseFloat((bekEl.value||'').replace(/\./g,'').replace(',','.'));
   const kutu = document.getElementById('kasaFarkGoster');
   const deger = document.getElementById('kasaFarkDeger');
   if(beklenen == null || isNaN(beklenen) || bekEl.value.trim()===''){
@@ -13694,7 +13810,9 @@ function updateKasaFark(){
     deger.style.color='var(--muted)'; deger.textContent='—';
     return;
   }
-  const fark = Math.round((toplam - beklenen)*100)/100;
+  // v320: elden verilenler bekleneni düşürür
+  const beklenenNet = Math.round((beklenen - eldenT)*100)/100;
+  const fark = Math.round((toplam - beklenenNet)*100)/100;
   const fmtF = fark.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺';
   if(Math.abs(fark) < 0.005){
     kutu.style.background='rgba(76,217,100,0.08)'; kutu.style.borderColor='rgba(76,217,100,0.35)';
@@ -13716,23 +13834,28 @@ function saveKasaSayim(){
     const adet = parseInt(document.getElementById('kasaKupur_'+k.key)?.value) || 0;
     if(adet>0) denoms[k.key] = adet;
   });
-  const toplam = _kasaHesaplaToplam();
+  const digerleri = _kasaDigerTopla();          // v320
+  const eldenler = _kasaEldenTopla();           // v320
+  const digerT = _kasaDigerToplam();
+  const eldenT = _kasaEldenToplam();
+  const toplam = Math.round((_kasaHesaplaToplam() + digerT)*100)/100;   // kupür + diğerleri
   const bekEl = document.getElementById('kasaBeklenen');
   let beklenen = (typeof parseCurrencyVal==='function') ? parseCurrencyVal(bekEl) : parseFloat((bekEl.value||'').replace(/\./g,'').replace(',','.'));
   if(bekEl.value.trim()==='' || isNaN(beklenen)) beklenen = null;
   const notMetin = document.getElementById('kasaNot').value.trim();
-  if(toplam===0 && beklenen==null){ alert('En az bir kupür adedi veya beklenen tutar girin.'); return; }
+  if(toplam===0 && beklenen==null && !eldenler.length){ alert('En az bir kupür/tutar veya beklenen değer girin.'); return; }
 
   if(_kasaEditId){
     const k = kasaData.find(x=>x.id===_kasaEditId);
     if(k){
-      k.date=date; k.time=time; k.denoms=denoms; k.toplam=toplam; k.beklenen=beklenen; k.not=notMetin;
+      k.date=date; k.time=time; k.denoms=denoms; k.digerleri=digerleri; k.eldenler=eldenler;
+      k.eldenToplam=eldenT; k.toplam=toplam; k.beklenen=beklenen; k.not=notMetin;
       k.updatedAt = new Date().toISOString();
     }
   } else {
     kasaData.push({
       id: 'ks_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
-      date, time, denoms, toplam, beklenen, not: notMetin,
+      date, time, denoms, digerleri, eldenler, eldenToplam:eldenT, toplam, beklenen, not: notMetin,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
@@ -13748,6 +13871,12 @@ async function deleteKasaSayim(id){
   kasaData = kasaData.filter(x=>x.id!==id);
   saveKasaStore();
   renderKasa();
+}
+// v320: kasa farki = sayilan - (beklenen - elden verilenler)
+function _kasaFark(k){
+  if(k.beklenen==null) return null;
+  const elden = k.eldenToplam || 0;
+  return Math.round((k.toplam - (k.beklenen - elden))*100)/100;
 }
 function renderKasa(){
   const sel = document.getElementById('kasaAySel');
@@ -13765,8 +13894,8 @@ function renderKasa(){
 
   // --- Özet kartlar ---
   const farkli = filtered.filter(k=>k.beklenen!=null);
-  const netFark = farkli.reduce((a,k)=>a+(k.toplam-k.beklenen),0);
-  const acikSayisi = farkli.filter(k=>(k.toplam-k.beklenen) < -0.005).length;
+  const netFark = farkli.reduce((a,k)=>a+(_kasaFark(k)||0),0);
+  const acikSayisi = farkli.filter(k=>(_kasaFark(k)||0) < -0.005).length;
   const son = sorted[0];
   const fmtTL = v => gizliMod ? PARA_MASKE : v.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺';
   document.getElementById('kasaSummaryRow').innerHTML = `
@@ -13797,9 +13926,9 @@ function renderKasa(){
   if(!grafKayitlar.length){
     bars.innerHTML = '<div style="width:100%;text-align:center;color:var(--muted);font-size:12px;align-self:center">Beklenen tutar girilmiş sayım yok — grafik için sayımlarda beklenen tutarı da girin.</div>';
   } else {
-    const maxAbs = Math.max(...grafKayitlar.map(k=>Math.abs(k.toplam-k.beklenen)), 1);
+    const maxAbs = Math.max(...grafKayitlar.map(k=>Math.abs(_kasaFark(k)||0)), 1);
     bars.innerHTML = grafKayitlar.map(k=>{
-      const fark = k.toplam-k.beklenen;
+      const fark = _kasaFark(k)||0;
       const h = Math.max(6, Math.abs(fark)/maxAbs*100);
       const renk = fark < -0.005 ? '#ff5252' : '#4cd964';
       return `<div class="bar-wrap" onclick="showToast('🧮 ${k.date} ${k.time||''} → Sayılan: ${fmtTL(k.toplam)} · Beklenen: ${fmtTL(k.beklenen)} · Fark: ${(fark>0?'+':'')+fmtTL(fark)}', '${fark<-0.005?'err':'ok'}')" title="${k.date} ${k.time||''} → Fark: ${(fark>0?'+':'')+fmtTL(fark)}" style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;flex:1;height:100%;cursor:pointer">
@@ -13816,9 +13945,17 @@ function renderKasa(){
     return;
   }
   const kupurOzet = k => KASA_KUPURLER.filter(x=>k.denoms&&k.denoms[x.key]).map(x=>`${k.denoms[x.key]}×${x.label}`).join(', ') || '—';
-  tbl.innerHTML = '<thead><tr><th>Tarih</th><th>Saat</th><th style="text-align:right">Sayılan</th><th style="text-align:right">Beklenen</th><th style="text-align:right">Fark</th><th>Kupür Detayı</th><th>Not</th><th style="width:76px"></th></tr></thead><tbody>' +
+  const detayOzet = k => {
+    const parc = [];
+    const kup = KASA_KUPURLER.filter(x=>k.denoms&&k.denoms[x.key]).map(x=>`${k.denoms[x.key]}×${x.label}`).join(', ');
+    if(kup) parc.push(kup);
+    if(Array.isArray(k.digerleri)&&k.digerleri.length) parc.push('📦 '+k.digerleri.map(d=>`${d.etiket||'?'}: ${fmtTL(d.tutar)}`).join(', '));
+    if(Array.isArray(k.eldenler)&&k.eldenler.length) parc.push('🔻 '+k.eldenler.map(e=>`${e.aciklama||e.tarih}: ${fmtTL(e.tutar)}`).join(', '));
+    return parc.join(' · ') || '—';
+  };
+  tbl.innerHTML = '<thead><tr><th>Tarih</th><th>Saat</th><th style="text-align:right">Sayılan</th><th style="text-align:right">Beklenen</th><th style="text-align:right">Fark</th><th>Detay</th><th>Not</th><th style="width:76px"></th></tr></thead><tbody>' +
     filtered.map(k=>{
-      const fark = k.beklenen!=null ? k.toplam-k.beklenen : null;
+      const fark = _kasaFark(k);
       const farkHtml = fark==null ? '<span style="color:var(--muted)">—</span>'
         : Math.abs(fark)<0.005 ? '<span style="color:#4cd964;font-weight:700">✓ Tam</span>'
         : fark>0 ? `<span style="color:#4cd964;font-weight:700">+${fmtTL(fark)}</span>`
@@ -13829,7 +13966,7 @@ function renderKasa(){
         <td style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmtTL(k.toplam)}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums">${k.beklenen!=null?fmtTL(k.beklenen):'—'}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums">${farkHtml}</td>
-        <td style="font-size:10px;color:var(--muted);max-width:200px">${kupurOzet(k)}</td>
+        <td style="font-size:10px;color:var(--muted);max-width:240px">${detayOzet(k)}</td>
         <td style="font-size:11px;color:var(--muted)">${esc(k.not||'')}</td>
         <td style="white-space:nowrap">
           <button onclick="openKasaSayimModal('${k.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.25);color:var(--accent);border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer">✏️</button>
@@ -18467,6 +18604,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v320',
+    date: '16.07.2026',
+    items: [
+      { type: 'new', text: 'KASA SAYIMI genisletildi. (1) En dusuk kupur artik 5 ₺ (1 ₺ ve kuruslar kaldirildi). (2) "📦 Diğerleri" bolumu: kupur disinda serbest tutarlar (POS, banka, deste vb) etiketli satirlar halinde eklenir, sayilan toplama dahil olur; "⤵ Önceki günü çağır" ile son sayimin diğerleri satirlari geri gelir. (3) "🔻 Elden Verdiklerim": tarih + tutar + aciklama listesi; her yeni sayimda onceki sayimdan OTOMATIK kopyalanir. Elden verilenler beklenen kasayi dusurur.' },
+      { type: 'ui', text: 'Kasa farki yeni formul: Fark = Sayilan − (Beklenen − Elden Verilenler). Ozet kartlar, trend grafigi ve gecmis tablosu bu formule gore hesaplaniyor; gecmis tablosunda Detay sutununda kupurler + diğerleri + elden verilenler birlikte gorunuyor. Eski kayitlar etkilenmez (elden yoksa 0 sayilir).' },
+    ]
+  },
   {
     version: 'v319',
     date: '16.07.2026',
