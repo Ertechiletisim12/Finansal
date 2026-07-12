@@ -2823,8 +2823,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <span id="kasaSayimModalBaslik" style="font-size:14px;font-weight:700;color:#fff">🧮 Yeni Kasa Sayımı</span>
       <button onclick="closeKasaSayimModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
-    <div style="padding:16px 18px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div style="padding:12px 14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <div>
           <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Tarih</label>
           <input type="date" id="kasaDate" style="width:100%">
@@ -2836,7 +2836,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
 
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💵 Kupür Sayımı</div>
-      <div id="kasaKupurGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px"></div>
+      <div id="kasaKupurGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px"></div>
 
       <!-- v320: Diğerleri (serbest tutarlar) -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -2844,14 +2844,14 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <button type="button" onclick="kasaDigerOncekiCagir()" style="background:var(--panel2);border:1px solid var(--line);color:var(--accent);border-radius:6px;padding:3px 9px;font-size:10.5px;font-weight:700;cursor:pointer">⤵ Önceki günü çağır</button>
       </div>
       <div id="kasaDigerListe" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
-      <button type="button" onclick="kasaDigerSatirEkle()" style="width:100%;background:transparent;border:1px dashed var(--line);color:var(--muted);border-radius:7px;padding:7px;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:12px">+ Satır Ekle</button>
+      <button type="button" onclick="kasaDigerSatirEkle()" style="width:100%;background:transparent;border:1px dashed var(--line);color:var(--muted);border-radius:7px;padding:6px;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:10px">+ Satır Ekle</button>
 
-      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:12px;font-weight:700;color:var(--muted)">SAYILAN TOPLAM</span>
         <span id="kasaToplamGoster" style="font-size:18px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums">0,00 ₺</span>
       </div>
 
-      <div style="margin-bottom:10px">
+      <div style="margin-bottom:8px">
         <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Beklenen Kasa Tutarı (₺)</label>
         <div style="position:relative">
           <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none">₺</span>
@@ -2865,16 +2865,16 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         <span id="kasaEldenToplam" style="font-size:12px;font-weight:800;color:#ff8f6b;font-variant-numeric:tabular-nums">0,00 ₺</span>
       </div>
       <div id="kasaEldenListe" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
-      <button type="button" onclick="kasaEldenSatirEkle()" style="width:100%;background:transparent;border:1px dashed rgba(255,143,107,.5);color:#ff8f6b;border-radius:7px;padding:7px;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:12px">+ Satır Ekle</button>
+      <button type="button" onclick="kasaEldenSatirEkle()" style="width:100%;background:transparent;border:1px dashed rgba(255,143,107,.5);color:#ff8f6b;border-radius:7px;padding:6px;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:8px">+ Satır Ekle</button>
 
-      <div style="font-size:10.5px;color:var(--muted);margin-bottom:10px;line-height:1.4">Fark = Sayılan − (Beklenen − Elden Verilenler). Elden verilenler beklenen kasayı düşürür.</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.35">Fark = Sayılan − (Beklenen − Elden Verilenler)</div>
 
-      <div id="kasaFarkGoster" style="border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line)">
+      <div id="kasaFarkGoster" style="border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line)">
         <span style="font-size:12px;font-weight:700;color:var(--muted)">FARK</span>
         <span id="kasaFarkDeger" style="font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--muted)">—</span>
       </div>
 
-      <div style="margin-bottom:14px">
+      <div style="margin-bottom:10px">
         <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Not (opsiyonel)</label>
         <input type="text" id="kasaNot" placeholder="Örn: Akşam kapanış sayımı" style="width:100%;box-sizing:border-box">
       </div>
@@ -3161,7 +3161,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v320';
+const APP_VERSION = 'v321';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3274,7 +3274,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '16.07.2026 08:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '16.07.2026 10:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13699,15 +13699,15 @@ function kasaDigerSatirEkle(etiket, tutar){
   const liste = document.getElementById('kasaDigerListe');
   const row = document.createElement('div');
   row.className = 'kasa-diger-row';
-  row.style.cssText = 'display:flex;align-items:center;gap:6px';
+  row.style.cssText = 'display:flex;align-items:center;gap:5px';
   const tutarStr = (tutar!=null && tutar!=='') ? Number(tutar).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
   row.innerHTML = `
-    <input type="text" class="kasa-diger-etiket" value="${etiket?String(etiket).replace(/"/g,'&quot;'):''}" placeholder="Etiket (POS, banka...)" style="flex:1.2;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;color:var(--txt);font-size:12px">
+    <input type="text" class="kasa-diger-etiket" value="${etiket?String(etiket).replace(/"/g,'&quot;'):''}" placeholder="Etiket (POS, banka...)" style="flex:1.2;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 8px;color:var(--txt);font-size:12px">
     <div style="position:relative;flex:1;min-width:0">
       <span style="position:absolute;left:7px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted);pointer-events:none">₺</span>
-      <input type="text" inputmode="decimal" class="kasa-diger-tutar" value="${tutarStr}" placeholder="0,00" oninput="onCurrencyInput(this);updateKasaToplam()" onblur="onCurrencyBlurGeneric(this);updateKasaToplam()" onfocus="onCurrencyFocus(this)" style="width:100%;box-sizing:border-box;padding-left:20px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding-top:6px;padding-bottom:6px;color:var(--txt);font-size:12px;font-weight:700">
+      <input type="text" inputmode="decimal" class="kasa-diger-tutar" value="${tutarStr}" placeholder="0,00" oninput="onCurrencyInput(this);updateKasaToplam()" onblur="onCurrencyBlurGeneric(this);updateKasaToplam()" onfocus="onCurrencyFocus(this)" style="width:100%;box-sizing:border-box;padding:5px 6px 5px 20px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;font-weight:700">
     </div>
-    <button type="button" onclick="this.parentElement.remove();updateKasaToplam()" style="background:transparent;border:none;color:#ff5252;font-size:16px;font-weight:700;cursor:pointer;padding:2px 4px">✕</button>`;
+    <button type="button" onclick="this.parentElement.remove();updateKasaToplam()" style="flex:0 0 auto;background:transparent;border:none;color:#ff5252;font-size:14px;font-weight:700;cursor:pointer;padding:0 2px;line-height:1">✕</button>`;
   liste.appendChild(row);
 }
 function kasaDigerOncekiCagir(){
@@ -13743,16 +13743,16 @@ function kasaEldenSatirEkle(tarih, tutar, aciklama){
   const liste = document.getElementById('kasaEldenListe');
   const row = document.createElement('div');
   row.className = 'kasa-elden-row';
-  row.style.cssText = 'display:flex;align-items:center;gap:5px;flex-wrap:wrap;background:rgba(255,143,107,.06);border:1px solid rgba(255,143,107,.25);border-radius:7px;padding:6px';
+  row.style.cssText = 'display:flex;align-items:center;gap:5px;flex-wrap:wrap;background:rgba(255,143,107,.06);border:1px solid rgba(255,143,107,.22);border-radius:7px;padding:5px 6px';
   const tutarStr = (tutar!=null && tutar!=='') ? Number(tutar).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
   row.innerHTML = `
-    <input type="date" class="kasa-elden-tarih" value="${tarih||todayStr()}" style="flex:1 1 120px;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 6px;color:var(--txt);font-size:11.5px">
-    <div style="position:relative;flex:1 1 90px;min-width:0">
+    <input type="date" class="kasa-elden-tarih" value="${tarih||todayStr()}" style="flex:0 0 118px;width:118px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 4px;color:var(--txt);font-size:11px">
+    <div style="position:relative;flex:1 1 80px;min-width:0">
       <span style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted);pointer-events:none">₺</span>
-      <input type="text" inputmode="decimal" class="kasa-elden-tutar" value="${tutarStr}" placeholder="0,00" oninput="onCurrencyInput(this);updateKasaFark()" onblur="onCurrencyBlurGeneric(this);updateKasaFark()" onfocus="onCurrencyFocus(this)" style="width:100%;box-sizing:border-box;padding-left:18px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding-top:5px;padding-bottom:5px;color:var(--txt);font-size:11.5px;font-weight:700">
+      <input type="text" inputmode="decimal" class="kasa-elden-tutar" value="${tutarStr}" placeholder="0,00" oninput="onCurrencyInput(this);updateKasaFark()" onblur="onCurrencyBlurGeneric(this);updateKasaFark()" onfocus="onCurrencyFocus(this)" style="width:100%;box-sizing:border-box;padding:5px 6px 5px 18px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-size:11.5px;font-weight:700">
     </div>
-    <input type="text" class="kasa-elden-aciklama" value="${aciklama?String(aciklama).replace(/"/g,'&quot;'):''}" placeholder="Açıklama" style="flex:2 1 100%;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 7px;color:var(--txt);font-size:11.5px">
-    <button type="button" onclick="this.parentElement.remove();updateKasaFark()" style="background:transparent;border:none;color:#ff5252;font-size:15px;font-weight:700;cursor:pointer;padding:0 4px">✕</button>`;
+    <button type="button" onclick="this.parentElement.remove();updateKasaFark()" style="flex:0 0 auto;background:transparent;border:none;color:#ff5252;font-size:14px;font-weight:700;cursor:pointer;padding:0 2px;line-height:1">✕</button>
+    <input type="text" class="kasa-elden-aciklama" value="${aciklama?String(aciklama).replace(/"/g,'&quot;'):''}" placeholder="Açıklama (kime/ne için)" style="flex:1 1 100%;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 7px;color:var(--txt);font-size:11.5px">`;
   liste.appendChild(row);
 }
 function _kasaEldenToplam(){
@@ -18604,6 +18604,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v321',
+    date: '16.07.2026',
+    items: [
+      { type: 'ui', text: 'KASA SAYIMI modali derli toplu hale getirildi. Elden Verdiklerim satirlari sikistirildi (tarih kucuk ama gorunur; tutar + ✕ ustte, aciklama altta — eskiden 3 satira yayilip cok yer kapliyordu). ✕ butonu kucultuldu. Diğerleri satirlari tek satir (etiket + tutar + ✕). Modal genelinde bolum bosluklari, padding ve kutu yukseklikleri azaltildi — daha kompakt, daha az kaydirma.' },
+    ]
+  },
   {
     version: 'v320',
     date: '16.07.2026',
