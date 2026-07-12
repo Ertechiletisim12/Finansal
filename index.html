@@ -3182,7 +3182,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v334';
+const APP_VERSION = 'v335';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3295,7 +3295,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '17.07.2026 20:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '17.07.2026 22:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6286,7 +6286,7 @@ function vibrate(pattern){
       setTimeout(()=>{
         temizleStil(_giden); temizleStil(_gelen);
         // gerçek geçişi uygula (render + state), animasyonsuz
-        if(typeof switchPage==='function') switchPage(hedef);
+        if(typeof switchPage==='function') switchPage(hedef, null, true);
       }, sure+10);
       dragging=false; locked=null; basladi=false; gelenEl=null; gidenEl=null;
     } else {
@@ -8242,10 +8242,10 @@ function renderHedefOzet(){
 // asagidaki kazaniyordu — buradaki kod hicbir zaman calismiyordu, sadece fazladan bir
 // resize listener'i ekliyordu. Gecerli tanim ve resize/orientationchange dinleyicileri
 // dosyanin sonundaki acilis blogunda.
-function switchPage(page, yon){
+function switchPage(page, yon, animsiz){
   const _eski = (typeof currentPage!=='undefined') ? currentPage : null;
   currentPage = page;
-  const _mobil = window.innerWidth <= 700;
+  const _mobil = window.innerWidth <= 700 && !animsiz;   // v334: canlı swipe sonrası animasyon yapma
   const _tumPages = ['dash','prim','finans','gelir','not','rapor','hedef','trend','kasa'];
   // v315: cross-fade — giden sayfa animasyonla cikar, gelen ayni anda girer (ikisi kisa sure birlikte gorunur)
   const _eskiEl = _eski ? document.getElementById('page-'+_eski) : null;
@@ -18840,6 +18840,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v335',
+    date: '17.07.2026',
+    items: [
+      { type: 'fix', text: 'Canli swipe gecisinde TITREME/SOLMA giderildi: parmakla kaydirma tamamlandiginda sayfa artik ekstra fade animasyonu OYNATMADAN, aninda yerine oturuyor (once hem canli kaydirma hem fade ust uste biniyordu, titriyordu).' },
+      { type: 'fix', text: 'GERI TUSU yeniden yazildi, daha saglam: her geri basista sayfa kapanmasin diye tampon history state korunuyor. Sirayla: acik pencere kapanir → alt sayfadan ana sayfaya donulur → ana sayfada "tekrar bas" uyarisiyla cikilir.' },
+    ]
+  },
+  {
     version: 'v334',
     date: '17.07.2026',
     items: [
@@ -20995,13 +21003,11 @@ function toggleChangelog(){
 </script>
 
 <script>
-// v331: Geri tuşu yöneticisi — modal açıksa kapat, alt sayfadaysan ana sayfaya dön, ana sayfada çık
+// v334: Geri tuşu yöneticisi (daha sağlam) — modal kapat → alt sayfa ana sayfaya → ana sayfada çıkış onayı
 (function(){
   try {
-    // Açık modalı bul ve kapat. Kapatıldıysa true döner.
     function acikModalKapat(){
       const modaller = Array.from(document.querySelectorAll('div[id$="Modal"]'));
-      // z-index'i en yüksek görünür modalı kapat (en üstteki)
       const gorunur = modaller.filter(m=>{
         const st = getComputedStyle(m);
         return st.display !== 'none' && (m.style.display==='flex' || m.style.display==='block' || st.display==='flex' || st.display==='block');
@@ -21009,34 +21015,44 @@ function toggleChangelog(){
       if(!gorunur.length) return false;
       gorunur.sort((a,b)=>(parseInt(getComputedStyle(b).zIndex)||0)-(parseInt(getComputedStyle(a).zIndex)||0));
       const ust = gorunur[0];
-      // Kapatma fonksiyonu varsa çağır, yoksa display none
       const id = ust.id;
       const kapatFn = 'close' + id.charAt(0).toUpperCase() + id.slice(1);
       if(typeof window[kapatFn] === 'function'){ try{ window[kapatFn](); }catch(e){ ust.style.display='none'; } }
       else { ust.style.display='none'; }
       return true;
     }
+    function anaSayfada(){
+      try { return (typeof currentPage === 'undefined') || currentPage === 'dash'; } catch(e){ return true; }
+    }
 
-    // History'e bir durum ekle (geri basınca popstate tetiklensin)
-    function durumEkle(){ try{ history.pushState({app:true}, ''); }catch(e){} }
-    durumEkle();
+    // Başlangıçta bir "tampon" state ekle — geri basınca popstate tetiklensin, sayfa kapanmasın
+    history.pushState({app:true, t:Date.now()}, '');
 
     window.addEventListener('popstate', function(ev){
+      // Her popstate sonrası tamponu geri koy (sayfa kapanmasın) — çıkış hariç
+      let cikis = false;
+
       // 1) Açık modal varsa kapat
-      if(acikModalKapat()){ durumEkle(); return; }
-      // 2) Ana sayfada değilsek ana sayfaya dön
-      if(typeof currentPage !== 'undefined' && currentPage !== 'dash'){
-        if(typeof switchPage === 'function'){ switchPage('dash'); durumEkle(); return; }
-      }
-      // 3) Ana sayfadaysak: bir kez daha geri = çıkış. Kullanıcıya kısa uyarı.
-      if(!window._cikisOnay){
-        window._cikisOnay = true;
-        durumEkle();
-        if(typeof showToast === 'function') showToast('Çıkmak için tekrar geri tuşuna basın', 'info');
-        setTimeout(()=>{ window._cikisOnay = false; }, 2000);
+      if(acikModalKapat()){
+        history.pushState({app:true, t:Date.now()}, '');
         return;
       }
-      // Gerçekten çık — history'i geri bırak
+      // 2) Ana sayfada değilsek ana sayfaya dön
+      if(!anaSayfada() && typeof switchPage === 'function'){
+        switchPage('dash');
+        history.pushState({app:true, t:Date.now()}, '');
+        return;
+      }
+      // 3) Ana sayfadaysak: çıkış onayı
+      if(!window._cikisOnay){
+        window._cikisOnay = true;
+        if(typeof showToast === 'function') showToast('Çıkmak için tekrar geri tuşuna basın', 'info');
+        setTimeout(()=>{ window._cikisOnay = false; }, 2000);
+        history.pushState({app:true, t:Date.now()}, '');
+        return;
+      }
+      // Gerçekten çık: tamponu koymadan geri git → uygulama kapanır
+      window._cikisOnay = false;
       history.back();
     });
   } catch(e){ console.warn('Geri tuşu yöneticisi hatası:', e); }
