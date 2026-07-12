@@ -1285,21 +1285,24 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
   .hplan-btns-row{ flex-wrap:nowrap!important; }
   .hedef-plan-tablo{ max-height:460px!important; }
 }
-/* v319: Mobil sayfa gecisi — KATMAN KAYDIRMA (efekt 19): gelen sayfa USTTE golgeyle kayar, giden ALTTA sabit durur */
+/* v333: Mobil sayfa gecisi — IKI SAYFA BIRLIKTE KAYAR (Android/iOS tarzi) */
 @keyframes sayfaGirSol{ from{ transform:translateX(100%) } to{ transform:translateX(0) } }
 @keyframes sayfaGirSag{ from{ transform:translateX(-100%) } to{ transform:translateX(0) } }
 @keyframes sayfaGirFade{ from{ opacity:0 } to{ opacity:1 } }
-.sayfa-gir-sol{ animation:sayfaGirSol .4s cubic-bezier(.32,.72,0,1); z-index:5; box-shadow:-10px 0 30px rgba(0,0,0,.4); will-change:transform }
-.sayfa-gir-sag{ animation:sayfaGirSag .4s cubic-bezier(.32,.72,0,1); z-index:5; box-shadow:10px 0 30px rgba(0,0,0,.4); will-change:transform }
+@keyframes sayfaCikSol{ from{ transform:translateX(0) } to{ transform:translateX(-100%) } }
+@keyframes sayfaCikSag{ from{ transform:translateX(0) } to{ transform:translateX(100%) } }
+.sayfa-gir-sol{ animation:sayfaGirSol .32s cubic-bezier(.4,0,.2,1); z-index:2; will-change:transform }
+.sayfa-gir-sag{ animation:sayfaGirSag .32s cubic-bezier(.4,0,.2,1); z-index:2; will-change:transform }
 .sayfa-gir-fade{ animation:sayfaGirFade .22s ease-out }
-/* Giden sayfa: sabit altta durur (animasyon yok, sadece gizlenene kadar gorunur) */
-.sayfa-cik-sol,.sayfa-cik-sag{ position:absolute; top:0; left:0; right:0; z-index:1; pointer-events:none }
+/* Giden sayfa: karsi yone kayar (gelenle birlikte) */
+.sayfa-cik-sol{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSol .32s cubic-bezier(.4,0,.2,1) forwards; will-change:transform; pointer-events:none }
+.sayfa-cik-sag{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSag .32s cubic-bezier(.4,0,.2,1) forwards; will-change:transform; pointer-events:none }
 @media(prefers-reduced-motion:reduce){
-  .sayfa-gir-sol,.sayfa-gir-sag,.sayfa-gir-fade{ animation:none }
+  .sayfa-gir-sol,.sayfa-gir-sag,.sayfa-gir-fade,.sayfa-cik-sol,.sayfa-cik-sag{ animation:none }
   .sayfa-cik-sol,.sayfa-cik-sag{ display:none!important }
 }
 @media(max-width:700px){
-  .main{ position:relative; }  /* cikan sayfa (absolute) icin referans */
+  .main{ position:relative; overflow-x:hidden; }  /* cikan sayfa (absolute) icin referans + tasma gizle */
 }
 /* v292: Prim ust blok — mobilde kartlar alt alta, PC'de yan yana */
 @media(max-width:640px){
@@ -3179,7 +3182,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v332';
+const APP_VERSION = 'v333';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3292,7 +3295,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '17.07.2026 15:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '17.07.2026 17:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -8164,7 +8167,7 @@ function switchPage(page, yon){
     void _eskiEl.offsetWidth;
     _eskiEl.classList.add(yon==='sol' ? 'sayfa-cik-sol' : 'sayfa-cik-sag');
     // cikis animasyonu bitince gizle
-    setTimeout(()=>{ if(currentPage!==_eski){ _eskiEl.style.display='none'; _eskiEl.classList.remove('sayfa-cik-sol','sayfa-cik-sag'); } }, 400);
+    setTimeout(()=>{ if(currentPage!==_eski){ _eskiEl.style.display='none'; _eskiEl.classList.remove('sayfa-cik-sol','sayfa-cik-sag'); } }, 340);
     // yeni sayfayi hemen goster (ustte belirsin), digerlerini gizle
     _tumPages.forEach(p=>{
       if(p===_eski) return; // eskiyi animasyon bitince gizleyecegiz
@@ -18749,6 +18752,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v333',
+    date: '17.07.2026',
+    items: [
+      { type: 'ui', text: 'Mobil sayfa gecisi degistirildi: artik IKI SAYFA BIRLIKTE kayiyor (Android/iOS tarzi). Sola kaydirinca giden sayfa sola cikarken gelen sayfa sagdan ayni anda girer — tam yan yana kayma. Onceki "tek sayfa ustte kayar" efektinin yerine. Sadece mobil.' },
+    ]
+  },
   {
     version: 'v332',
     date: '17.07.2026',
