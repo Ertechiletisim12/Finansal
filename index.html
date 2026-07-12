@@ -1285,24 +1285,21 @@ table.main-table .save-btn{background:var(--red);border:none;color:#fff;border-r
   .hplan-btns-row{ flex-wrap:nowrap!important; }
   .hedef-plan-tablo{ max-height:460px!important; }
 }
-/* v314: Mobil sayfa gecisi — ANDROID PERSPEKTIF (yandan 3D egimli yaklasarak girer) */
-@keyframes sayfaPerspSol{ from{ opacity:0 } to{ opacity:1 } }
-@keyframes sayfaPerspSag{ from{ opacity:0 } to{ opacity:1 } }
-@keyframes sayfaPerspFade{ from{ opacity:0 } to{ opacity:1 } }
-.sayfa-gir-sol{ animation:sayfaPerspSol .4s cubic-bezier(.33,.9,.4,1); transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden }
-.sayfa-gir-sag{ animation:sayfaPerspSag .4s cubic-bezier(.33,.9,.4,1); transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden }
-.sayfa-gir-fade{ animation:sayfaPerspFade .24s cubic-bezier(.33,.9,.4,1); transform-origin:center center; will-change:transform,opacity }
-/* v315: GIDEN sayfa — solar + perspektifle geriye gider (gelenle ayni anda gorunur) */
-@keyframes sayfaCikSol{ from{ opacity:1 } to{ opacity:0 } }
-@keyframes sayfaCikSag{ from{ opacity:1 } to{ opacity:0 } }
-.sayfa-cik-sol{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSol .4s cubic-bezier(.4,0,.6,1) forwards; transform-origin:right center; will-change:transform,opacity; backface-visibility:hidden; pointer-events:none }
-.sayfa-cik-sag{ position:absolute; top:0; left:0; right:0; z-index:1; animation:sayfaCikSag .4s cubic-bezier(.4,0,.6,1) forwards; transform-origin:left center; will-change:transform,opacity; backface-visibility:hidden; pointer-events:none }
+/* v319: Mobil sayfa gecisi — KATMAN KAYDIRMA (efekt 19): gelen sayfa USTTE golgeyle kayar, giden ALTTA sabit durur */
+@keyframes sayfaGirSol{ from{ transform:translateX(100%) } to{ transform:translateX(0) } }
+@keyframes sayfaGirSag{ from{ transform:translateX(-100%) } to{ transform:translateX(0) } }
+@keyframes sayfaGirFade{ from{ opacity:0 } to{ opacity:1 } }
+.sayfa-gir-sol{ animation:sayfaGirSol .4s cubic-bezier(.32,.72,0,1); z-index:5; box-shadow:-10px 0 30px rgba(0,0,0,.4); will-change:transform }
+.sayfa-gir-sag{ animation:sayfaGirSag .4s cubic-bezier(.32,.72,0,1); z-index:5; box-shadow:10px 0 30px rgba(0,0,0,.4); will-change:transform }
+.sayfa-gir-fade{ animation:sayfaGirFade .22s ease-out }
+/* Giden sayfa: sabit altta durur (animasyon yok, sadece gizlenene kadar gorunur) */
+.sayfa-cik-sol,.sayfa-cik-sag{ position:absolute; top:0; left:0; right:0; z-index:1; pointer-events:none }
 @media(prefers-reduced-motion:reduce){
-  .sayfa-gir-sol,.sayfa-gir-sag,.sayfa-gir-fade,.sayfa-cik-sol,.sayfa-cik-sag{ animation:none }
+  .sayfa-gir-sol,.sayfa-gir-sag,.sayfa-gir-fade{ animation:none }
   .sayfa-cik-sol,.sayfa-cik-sag{ display:none!important }
 }
 @media(max-width:700px){
-  .main{ position:relative; }  /* v315: cikan sayfa (absolute) icin referans */
+  .main{ position:relative; }  /* cikan sayfa (absolute) icin referans */
 }
 /* v292: Prim ust blok — mobilde kartlar alt alta, PC'de yan yana */
 @media(max-width:640px){
@@ -3146,7 +3143,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v318';
+const APP_VERSION = 'v319';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3259,7 +3256,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '16.07.2026 03:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '16.07.2026 05:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -18470,6 +18467,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v319',
+    date: '16.07.2026',
+    items: [
+      { type: 'ui', text: 'Mobil sayfa gecis efekti secildi (efekt 19 — KATMAN KAYDIRMA): yeni sayfa ustte hafif golgeyle tam genislikte kayarak girer, eski sayfa altta sabit durur. Sola kaydir → sagdan, saga kaydir → soldan. Menuden secince hizli fade. Sadece mobil, reduced-motion\'da kapali.' },
+    ]
+  },
   {
     version: 'v318',
     date: '16.07.2026',
