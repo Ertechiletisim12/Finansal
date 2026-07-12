@@ -2340,7 +2340,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- Fark Trend Grafiği -->
       <div class="chart-box" style="margin-bottom:10px">
         <h3 id="kasaChartTitle">Kasa Farkı Trendi</h3>
-        <div class="bars" id="kasaChartBars" style="height:160px"></div>
+        <div class="bars" id="kasaChartBars" style="height:110px"></div>
         <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:11px;color:var(--muted)">
           <span><span style="display:inline-block;width:10px;height:10px;background:#4cd964;border-radius:2px;margin-right:4px"></span>Fazla / Tam</span>
           <span><span style="display:inline-block;width:10px;height:10px;background:#ff5252;border-radius:2px;margin-right:4px"></span>Açık</span>
@@ -3205,7 +3205,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v325';
+const APP_VERSION = 'v326';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3318,7 +3318,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '16.07.2026 21:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '17.07.2026 00:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13798,11 +13798,11 @@ function openKasaSayimModal(id){
   const grid = document.getElementById('kasaKupurGrid');
   grid.innerHTML = KASA_KUPURLER.map(k=>{
     const adet = kayit && kayit.denoms ? (kayit.denoms[k.key]||'') : '';
-    return `<div style="display:flex;align-items:center;gap:5px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:5px 7px;min-width:0;box-sizing:border-box;overflow:hidden">
-      <span style="font-size:11px;font-weight:700;flex:0 0 auto;color:${k.deger>=5?'var(--gold)':'var(--muted)'}">${k.label}</span>
+    return `<div style="display:flex;align-items:center;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-width:0;box-sizing:border-box;overflow:hidden">
+      <span style="font-size:11px;font-weight:700;flex:0 0 40px;width:40px;color:${k.deger>=5?'var(--gold)':'var(--muted)'}">${k.label}</span>
       <input type="number" min="0" inputmode="numeric" id="kasaKupur_${k.key}" value="${adet}" placeholder="0" oninput="updateKasaToplam()"
-        style="flex:1 1 0;width:100%;min-width:0;box-sizing:border-box;background:transparent;border:none;color:var(--txt);font-size:13px;font-weight:700;text-align:center;outline:none">
-      <span id="kasaKupurTut_${k.key}" style="font-size:9px;color:var(--muted);flex:0 0 auto;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums"></span>
+        style="flex:1 1 0;width:100%;min-width:0;box-sizing:border-box;background:transparent;border:none;color:var(--txt);font-size:14px;font-weight:700;text-align:center;outline:none">
+      <span id="kasaKupurTut_${k.key}" style="font-size:8.5px;color:var(--muted);flex:0 0 auto;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums"></span>
     </div>`;
   }).join('');
   const bekEl = document.getElementById('kasaBeklenen');
@@ -14016,21 +14016,25 @@ function renderKasa(){
   const acikSayisi = farkli.filter(k=>(_kasaFark(k)||0) < -0.005).length;
   const son = sorted[0];
   const fmtTL = v => gizliMod ? PARA_MASKE : v.toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺';
+  const sonFark = son ? _kasaFark(son) : null;
+  const sonFarkStr = sonFark==null ? '' : (Math.abs(sonFark)<0.005 ? ' · ✓ tam' : sonFark>0 ? ` · +${fmtTL(sonFark)}` : ` · ${fmtTL(sonFark)}`);
+  const ortFark = farkli.length ? netFark/farkli.length : 0;
+  const eldenAcik = eldenAcikToplam();
   document.getElementById('kasaSummaryRow').innerHTML = `
     <div class="stat" style="border-left:3px solid var(--accent)">
       <div class="t">📋 Sayım Adedi</div>
       <div class="v" style="margin-top:6px">${filtered.length}</div>
-      <div class="sub">${filtre==='all'?'tüm zamanlar':(typeof monthLabel==='function'?monthLabel(filtre):filtre)}</div>
+      <div class="sub">${filtre==='all'?'tüm zamanlar':(typeof monthLabel==='function'?monthLabel(filtre):filtre)}${eldenAcik>0?' · elden açık: '+fmtTL(eldenAcik):''}</div>
     </div>
     <div class="stat" style="border-left:3px solid var(--gold)">
       <div class="t">🧮 Son Sayım</div>
       <div class="v" style="color:var(--gold);margin-top:6px">${son?fmtTL(son.toplam):'—'}</div>
-      <div class="sub">${son?son.date+' '+(son.time||''):'kayıt yok'}</div>
+      <div class="sub">${son?son.date+' '+(son.time||'')+sonFarkStr:'kayıt yok'}</div>
     </div>
     <div class="stat" style="border-left:3px solid ${netFark<-0.005?'#ff5252':'#4cd964'}">
       <div class="t">⚖️ Net Fark</div>
       <div class="v" style="color:${netFark<-0.005?'#ff5252':netFark>0.005?'#4cd964':'var(--txt)'};margin-top:6px">${farkli.length?((netFark>0?'+':'')+fmtTL(netFark)):'—'}</div>
-      <div class="sub">${farkli.length} sayımda beklenen girildi</div>
+      <div class="sub">${farkli.length} sayım · ort. ${farkli.length?((ortFark>0?'+':'')+fmtTL(ortFark)):'—'}</div>
     </div>
     <div class="stat" style="border-left:3px solid ${acikSayisi>0?'#ff5252':'#4cd964'}">
       <div class="t">🔻 Açık Veren Sayım</div>
@@ -14071,9 +14075,10 @@ function renderKasa(){
     if(Array.isArray(k.eldenler)&&k.eldenler.length) parc.push('🔻 '+k.eldenler.map(e=>`${e.aciklama||e.tarih}: ${fmtTL(e.tutar)}`).join(', '));
     return parc.join(' · ') || '—';
   };
-  tbl.innerHTML = '<thead><tr><th>Tarih</th><th>Saat</th><th style="text-align:right">Sayılan</th><th style="text-align:right">Beklenen</th><th style="text-align:right">Fark</th><th style="width:76px"></th></tr></thead><tbody>' +
+  tbl.innerHTML = '<thead><tr><th>Tarih</th><th>Saat</th><th style="text-align:right">Sayılan</th><th style="text-align:right">Beklenen</th><th style="text-align:right">Elden</th><th style="text-align:right">Fark</th><th style="width:76px"></th></tr></thead><tbody>' +
     filtered.map(k=>{
       const fark = _kasaFark(k);
+      const eldenT = k.eldenToplam || 0;
       const farkHtml = fark==null ? '<span style="color:var(--muted)">—</span>'
         : Math.abs(fark)<0.005 ? '<span style="color:#4cd964;font-weight:700">✓ Tam</span>'
         : fark>0 ? `<span style="color:#4cd964;font-weight:700">+${fmtTL(fark)}</span>`
@@ -14085,13 +14090,14 @@ function renderKasa(){
       if(detay && detay!=='—') altParcalar.push(`<span style="color:var(--muted)">${detay}</span>`);
       if(notMetin) altParcalar.push(`<span style="color:var(--txt)">📝 ${esc(notMetin)}</span>`);
       const altSatir = altParcalar.length
-        ? `<tr class="kasa-detay-satir"><td colspan="6" style="font-size:10.5px;line-height:1.5;padding:2px 10px 10px 10px;border-top:none">${altParcalar.join('<br>')}</td></tr>`
+        ? `<tr class="kasa-detay-satir"><td colspan="7" style="font-size:10.5px;line-height:1.5;padding:2px 10px 10px 10px;border-top:none">${altParcalar.join('<br>')}</td></tr>`
         : '';
       return `<tr style="border-bottom:none">
         <td style="white-space:nowrap">${k.date}</td>
         <td>${k.time||'—'}</td>
         <td style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmtTL(k.toplam)}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums">${k.beklenen!=null?fmtTL(k.beklenen):'—'}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums;color:${eldenT>0?'#ff8f6b':'var(--muted)'}">${eldenT>0?fmtTL(eldenT):'—'}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums">${farkHtml}</td>
         <td style="white-space:nowrap">
           <button onclick="openKasaSayimModal('${k.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.25);color:var(--accent);border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer">✏️</button>
@@ -18729,6 +18735,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v326',
+    date: '17.07.2026',
+    items: [
+      { type: 'ui', text: 'Kasa Sayimi gelistirmeleri: (1) Gecmis tablosuna ELDEN sutunu eklendi (Sayilan · Beklenen · Elden · Fark). (2) Ozet kartlar detaylandirildi — Son Sayim karti o sayimin farkini, Net Fark karti ortalama farki, Sayim Adedi karti acik elden verilen toplamini gosteriyor. (3) Kasa Farki Trendi grafigi kisaltildi (daha az yer). (4) Kupur kutularinin ic hizasi duzeltildi (etiket sabit genislik — 200 ₺ ile 5 ₺ ayni hizada).' },
+    ]
+  },
   {
     version: 'v325',
     date: '16.07.2026',
