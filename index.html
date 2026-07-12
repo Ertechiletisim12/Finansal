@@ -3182,7 +3182,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v333';
+const APP_VERSION = 'v334';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3295,7 +3295,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '17.07.2026 17:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '17.07.2026 20:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6189,30 +6189,117 @@ function vibrate(pattern){
 }
 // ==================== TİTREŞİM SONU ====================
 
-// ==================== SWIPE İLE SAYFA GEÇİŞİ ====================
+// ==================== SWIPE İLE SAYFA GEÇİŞİ (v334: canlı parmak takibi) ====================
 (function(){
   const pages = ['dash','prim','finans','kasa','gelir','not'];
-  let touchStartX = 0, touchStartY = 0;
+  let sx=0, sy=0;          // başlangıç
+  let dragging=false;      // yatay sürükleme aktif mi
+  let locked=null;         // yön kilitlendi mi ('h'=yatay, 'v'=dikey)
+  let gelenEl=null, gidenEl=null, yon=null, gW=0;
+  let basladi=false;
+
+  function mobil(){ return window.innerWidth <= 700; }
+  function reducedMotion(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
+
+  function temizleStil(el){
+    if(!el) return;
+    el.style.transition=''; el.style.transform=''; el.style.zIndex=''; el.style.position=''; el.style.top=''; el.style.left=''; el.style.right=''; el.style.pointerEvents=''; el.style.willChange='';
+  }
+  function bitir(){
+    dragging=false; locked=null; basladi=false;
+    temizleStil(gelenEl); temizleStil(gidenEl);
+    gelenEl=null; gidenEl=null; yon=null;
+  }
+
   document.addEventListener('touchstart', e=>{
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
+    if(e.touches.length!==1 || !mobil() || reducedMotion()) return;
+    // açık modal varsa swipe yok
+    const acikModal = Array.from(document.querySelectorAll('div[id$="Modal"]')).some(m=>{
+      const st=getComputedStyle(m); return st.display!=='none' && (m.style.display==='flex'||m.style.display==='block'||st.display==='flex'||st.display==='block');
+    });
+    if(acikModal) return;
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+    locked=null; dragging=false; basladi=true;
   }, {passive:true});
-  document.addEventListener('touchend', e=>{
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    // Yatay swipe kontrolü — dikey scroll ile çakışmasın
-    if(Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
-    // Yatay scroll olan elementlerde swipe'ı engelle
-    let el = e.target;
-    while(el && el !== document.body){
-      if(el.scrollWidth > el.clientWidth + 10) return;
-      el = el.parentElement;
+
+  document.addEventListener('touchmove', e=>{
+    if(!basladi || e.touches.length!==1) return;
+    const dx=e.touches[0].clientX - sx;
+    const dy=e.touches[0].clientY - sy;
+
+    // yön kilidi henüz belirlenmediyse
+    if(locked===null){
+      if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return; // çok küçük, bekle
+      if(Math.abs(dy) > Math.abs(dx)){ locked='v'; basladi=false; return; } // dikey → bırak, normal scroll
+      // yatay: yatay-scroll'lu bir eleman içindeysek iptal
+      let el=e.target;
+      while(el && el!==document.body){ if(el.scrollWidth > el.clientWidth + 10){ locked='v'; basladi=false; return; } el=el.parentElement; }
+      locked='h';
+      // yatay sürükleme başlat — komşu sayfayı hazırla
+      const cur=pages.indexOf(typeof currentPage!=='undefined'?currentPage:'dash');
+      if(cur===-1){ basladi=false; return; }
+      const hedefIdx = dx<0 ? cur+1 : cur-1;
+      if(hedefIdx<0 || hedefIdx>=pages.length){ basladi=false; locked='v'; return; }
+      yon = dx<0 ? 'sol' : 'sag';
+      gidenEl = document.getElementById('page-'+pages[cur]);
+      gelenEl = document.getElementById('page-'+pages[hedefIdx]);
+      if(!gidenEl || !gelenEl){ basladi=false; return; }
+      gW = gidenEl.offsetWidth || window.innerWidth;
+      // komşu sayfayı içeriğiyle hazırla (render)
+      try{ if(typeof _kasaPreRender==='function'){} }catch(e){}
+      gelenEl.style.display = (pages[hedefIdx]==='prim'?'flex':'block');
+      // konumlandır: gelen sayfa ekran dışında (yöne göre), üstte
+      gelenEl.style.position='absolute'; gelenEl.style.top='0'; gelenEl.style.left='0'; gelenEl.style.right='0';
+      gelenEl.style.zIndex='3'; gelenEl.style.willChange='transform'; gelenEl.style.pointerEvents='none';
+      gidenEl.style.willChange='transform'; gidenEl.style.zIndex='2';
+      dragging=true;
     }
-    const cur = pages.indexOf(typeof currentPage !== 'undefined' ? currentPage : 'dash');
-    if(cur === -1) return;
-    if(dx < -60 && cur < pages.length-1) switchPage(pages[cur+1], 'sol'); // sola → sonraki (sagdan girer)
-    if(dx > 60  && cur > 0)              switchPage(pages[cur-1], 'sag'); // sağa → önceki (soldan girer)
+
+    if(dragging && locked==='h'){
+      // parmakla canlı kaydır
+      let d = dx;
+      // sınır: ilk/son sayfada aşırı çekmeyi yumuşat
+      const gelenBase = yon==='sol' ? gW : -gW;
+      gelenEl.style.transform = `translateX(${gelenBase + d}px)`;
+      gidenEl.style.transform = `translateX(${d}px)`;
+      if(e.cancelable) e.preventDefault();
+    }
+  }, {passive:false});
+
+  document.addEventListener('touchend', e=>{
+    if(!dragging || locked!=='h'){ if(locked!=='h') basladi=false; return; }
+    const dx=(e.changedTouches[0].clientX - sx);
+    const esik = gW*0.28;               // %28 geçilirse tamamla
+    const tamamla = Math.abs(dx) > esik;
+    const sure = 220;
+    const gelenBase = yon==='sol' ? gW : -gW;
+    gelenEl.style.transition = `transform ${sure}ms cubic-bezier(.4,0,.2,1)`;
+    gidenEl.style.transition = `transform ${sure}ms cubic-bezier(.4,0,.2,1)`;
+
+    if(tamamla){
+      // tamamla: gelen 0'a, giden karşı yöne tam çıksın
+      gelenEl.style.transform = 'translateX(0)';
+      gidenEl.style.transform = `translateX(${yon==='sol' ? -gW : gW}px)`;
+      const cur=pages.indexOf(typeof currentPage!=='undefined'?currentPage:'dash');
+      const hedef = pages[yon==='sol'?cur+1:cur-1];
+      const _giden=gidenEl, _gelen=gelenEl;
+      setTimeout(()=>{
+        temizleStil(_giden); temizleStil(_gelen);
+        // gerçek geçişi uygula (render + state), animasyonsuz
+        if(typeof switchPage==='function') switchPage(hedef);
+      }, sure+10);
+      dragging=false; locked=null; basladi=false; gelenEl=null; gidenEl=null;
+    } else {
+      // geri dön: gelen tekrar dışarı, giden 0'a
+      gelenEl.style.transform = `translateX(${gelenBase}px)`;
+      gidenEl.style.transform = 'translateX(0)';
+      const _giden=gidenEl, _gelen=gelenEl;
+      setTimeout(()=>{ _gelen.style.display='none'; temizleStil(_giden); temizleStil(_gelen); }, sure+10);
+      bitir();
+    }
   }, {passive:true});
+
+  document.addEventListener('touchcancel', ()=>{ if(dragging){ if(gelenEl) gelenEl.style.display='none'; bitir(); } else basladi=false; }, {passive:true});
 })();
 // ==================== SWIPE SONU ====================
 
@@ -18752,6 +18839,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v334',
+    date: '17.07.2026',
+    items: [
+      { type: 'new', text: 'SAYFA GECISI ARTIK CANLI PARMAK TAKIBI (gercek iOS/Android hissi): parmagini kaydirdikca iki sayfa BIRLIKTE parmagi takip ederek hareket eder — giden bir yone cikarken gelen obur yonden gelir. Parmagi birakinca yeterince kaydirdiysan (%28) gecis TAMAMLANIR, az kaldiysan GERI DONER. Ana ekran kaydirmasi gibi. Dikey kaydirma, tablolar ve yatay-scroll alanlar korunur; acik pencere varken swipe devre disi. Sadece mobil, "hareket azalt" acikken kapali.' },
+    ]
+  },
   {
     version: 'v333',
     date: '17.07.2026',
