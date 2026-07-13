@@ -3182,7 +3182,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v338';
+const APP_VERSION = 'v339';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3295,7 +3295,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '18.07.2026 06:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '18.07.2026 08:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6267,20 +6267,19 @@ function vibrate(pattern){
     }
 
     if(dragging && locked==='h'){
-      // parmakla canlı: iki sayfa da merkeze doğru KÜÇÜLÜR (%20) + hafif solar
+      // v339: LAUNCHER efekti — iki sayfa da EŞIT küçük, beraber kayar, hafif solar (simetrik)
       let d = dx;
       const gelenBase = yon==='sol' ? gW : -gW;
       const oran = Math.min(1, Math.abs(d)/gW);   // 0..1 ilerleme
-      // giden: kaydıkça küçülür (1 → .8, merkeze doğru) + hafif solar (1 → .6)
-      const gidenScale = 1 - oran*0.20;
-      const gidenOp = 1 - oran*0.4;
-      gidenEl.style.transform = `translateX(${d}px) scale(${gidenScale})`;
-      gidenEl.style.opacity = String(gidenOp);
-      // gelen: küçükten normale (.8 → 1) + belirir (.6 → 1)
-      const gelenScale = 0.8 + oran*0.20;
-      const gelenOp = 0.6 + oran*0.4;
-      gelenEl.style.transform = `translateX(${gelenBase + d}px) scale(${gelenScale})`;
-      gelenEl.style.opacity = String(gelenOp);
+      // Kaydırma ortasında en küçük, uçlarda normale yakın (V şeklinde) — launcher hissi
+      // orta noktada (oran=0.5) en fazla küçülme, başta ve sonda normale döner
+      const kucuklukEgri = Math.sin(oran*Math.PI);  // 0→1→0 (ortada tepe)
+      const scale = 1 - kucuklukEgri*0.12;          // ikisi de aynı: 1 → .88 → 1
+      const solma = 1 - kucuklukEgri*0.25;          // ikisi de aynı: 1 → .75 → 1 hafif
+      gidenEl.style.transform = `translateX(${d}px) scale(${scale})`;
+      gidenEl.style.opacity = String(solma);
+      gelenEl.style.transform = `translateX(${gelenBase + d}px) scale(${scale})`;
+      gelenEl.style.opacity = String(solma);
       if(e.cancelable) e.preventDefault();
     }
   }, {passive:false});
@@ -6288,7 +6287,7 @@ function vibrate(pattern){
   document.addEventListener('touchend', e=>{
     if(!dragging || locked!=='h'){ if(locked!=='h') basladi=false; return; }
     const dx=(e.changedTouches[0].clientX - sx);
-    const esik = gW*0.50;               // v337: %50 geçilirse tamamla, yoksa geri dön
+    const esik = gW*0.50;               // %50 geçilirse tamamla, yoksa geri dön
     const tamamla = Math.abs(dx) > esik;
     const sure = 240;
     const gelenBase = yon==='sol' ? gW : -gW;
@@ -6297,11 +6296,11 @@ function vibrate(pattern){
     gidenEl.style.transition = gecis;
 
     if(tamamla){
-      // tamamla: gelen normale (net+tam boyut), giden küçülüp solup çıksın
+      // tamamla: gelen tam ekrana (normal boyut+net), giden karşı yöne (normal boyut+net) kaysın
       gelenEl.style.transform = 'translateX(0) scale(1)';
       gelenEl.style.opacity = '1';
-      gidenEl.style.transform = `translateX(${yon==='sol' ? -gW : gW}px) scale(.8)`;
-      gidenEl.style.opacity = '0.6';
+      gidenEl.style.transform = `translateX(${yon==='sol' ? -gW : gW}px) scale(1)`;
+      gidenEl.style.opacity = '1';
       const cur=pages.indexOf(typeof currentPage!=='undefined'?currentPage:'dash');
       const hedef = pages[yon==='sol'?cur+1:cur-1];
       const _giden=gidenEl, _gelen=gelenEl;
@@ -6311,9 +6310,9 @@ function vibrate(pattern){
       }, sure+10);
       dragging=false; locked=null; basladi=false; gelenEl=null; gidenEl=null;
     } else {
-      // geri dön: gelen tekrar küçülüp solup çıksın, giden normale
-      gelenEl.style.transform = `translateX(${gelenBase}px) scale(.8)`;
-      gelenEl.style.opacity = '0.6';
+      // geri dön: gelen tekrar dışarı (normal boyut), giden 0'a (normal boyut)
+      gelenEl.style.transform = `translateX(${gelenBase}px) scale(1)`;
+      gelenEl.style.opacity = '1';
       gidenEl.style.transform = 'translateX(0) scale(1)';
       gidenEl.style.opacity = '1';
       const _giden=gidenEl, _gelen=gelenEl;
@@ -18862,6 +18861,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v339',
+    date: '18.07.2026',
+    items: [
+      { type: 'ui', text: 'Swipe gecisi telefon ana ekrani (launcher) gibi SIMETRIK yapildi: artik biri buyuyup obor kuculmuyorki — IKI SAYFA DA ESIT oranda kuculur (kaydirmanin ortasinda en fazla, %88; uclarda normal) ve BERABER kayar, ikisi de ayni oranda hafif solar. Onceki asimetrik (biri kucuk-soluk, obor buyuk-net) surumun yerine.' },
+    ]
+  },
   {
     version: 'v338',
     date: '18.07.2026',
