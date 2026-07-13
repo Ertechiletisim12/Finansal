@@ -3182,7 +3182,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v337';
+const APP_VERSION = 'v338';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3295,7 +3295,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '18.07.2026 03:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '18.07.2026 06:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6204,6 +6204,7 @@ function vibrate(pattern){
   function temizleStil(el){
     if(!el) return;
     el.style.transition=''; el.style.transform=''; el.style.opacity=''; el.style.zIndex=''; el.style.position=''; el.style.top=''; el.style.left=''; el.style.right=''; el.style.pointerEvents=''; el.style.willChange='';
+    el.style.height=''; el.style.overflow=''; el.style.transformOrigin=''; el.style.backfaceVisibility='';
   }
   function bitir(){
     dragging=false; locked=null; basladi=false;
@@ -6248,10 +6249,20 @@ function vibrate(pattern){
       // komşu sayfayı içeriğiyle hazırla (render)
       try{ if(typeof _kasaPreRender==='function'){} }catch(e){}
       gelenEl.style.display = (pages[hedefIdx]==='prim'?'flex':'block');
+      // v338: geçiş boyunca iki sayfa da TAM EKRAN yüksekliğinde olsun ki
+      // scale küçülünce dikey MERKEZDEN (hem üst hem alt) daralsın
+      const mainEl = document.querySelector('.main') || gidenEl.parentElement;
+      const mainH = mainEl ? mainEl.clientHeight : window.innerHeight;
+      [gelenEl, gidenEl].forEach(el=>{
+        el.style.height = mainH + 'px';
+        el.style.overflow = 'hidden';
+        el.style.transformOrigin = 'center center';
+        el.style.backfaceVisibility = 'hidden';
+      });
       // konumlandır: gelen sayfa ekran dışında (yöne göre), üstte
       gelenEl.style.position='absolute'; gelenEl.style.top='0'; gelenEl.style.left='0'; gelenEl.style.right='0';
-      gelenEl.style.zIndex='3'; gelenEl.style.willChange='transform'; gelenEl.style.pointerEvents='none';
-      gidenEl.style.willChange='transform'; gidenEl.style.zIndex='2';
+      gelenEl.style.zIndex='3'; gelenEl.style.willChange='transform,opacity'; gelenEl.style.pointerEvents='none';
+      gidenEl.style.willChange='transform,opacity'; gidenEl.style.zIndex='2';
       dragging=true;
     }
 
@@ -6263,13 +6274,11 @@ function vibrate(pattern){
       // giden: kaydıkça küçülür (1 → .8, merkeze doğru) + hafif solar (1 → .6)
       const gidenScale = 1 - oran*0.20;
       const gidenOp = 1 - oran*0.4;
-      gidenEl.style.transformOrigin = 'center center';
       gidenEl.style.transform = `translateX(${d}px) scale(${gidenScale})`;
       gidenEl.style.opacity = String(gidenOp);
       // gelen: küçükten normale (.8 → 1) + belirir (.6 → 1)
       const gelenScale = 0.8 + oran*0.20;
       const gelenOp = 0.6 + oran*0.4;
-      gelenEl.style.transformOrigin = 'center center';
       gelenEl.style.transform = `translateX(${gelenBase + d}px) scale(${gelenScale})`;
       gelenEl.style.opacity = String(gelenOp);
       if(e.cancelable) e.preventDefault();
@@ -18853,6 +18862,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v338',
+    date: '18.07.2026',
+    items: [
+      { type: 'fix', text: 'Swipe gecisinde sayfa sadece USTTEN kuculuyordu — duzeltildi. Artik gecis boyunca iki sayfa da tam ekran yuksekliginde tutuluyor ve merkezden (hem ust hem alt esit) kuculuyor. Solma da garanti altina alindi (opacity gecis boyunca uygulaniyor).' },
+    ]
+  },
   {
     version: 'v337',
     date: '18.07.2026',
