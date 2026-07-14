@@ -3197,7 +3197,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v342';
+const APP_VERSION = 'v343';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3310,7 +3310,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '18.07.2026 16:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '18.07.2026 18:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -11389,7 +11389,7 @@ function buildManagerReportHTML(){
     const bek = beklenenPrim(m, monthMapReport);
     const yat = yatirilan[m];
     const fark = (yat!=null) ? (yat-bek) : null;
-    return Object.assign({m, bek, yat, fark}, f);
+    return Object.assign({}, f, {m, bek, yat, fark});
   });
 
   // --- Bugünkü durum ---
@@ -18902,6 +18902,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v343',
+    date: '18.07.2026',
+    items: [
+      { type: 'fix', text: 'Sistem menusundeki "Yönetici Raporu" acilmiyordu (butona basinca hicbir sey olmuyordu). Sebep: rapor olusturulurken ay bilgisi, prim adedi verisiyle eziliyor ve rapor sessizce cokuyordu. Duzeltildi — rapor artik duzgun aciliyor, aylar dogru gorunuyor.' },
+    ]
+  },
   {
     version: 'v342',
     date: '18.07.2026',
