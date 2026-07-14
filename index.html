@@ -2900,21 +2900,21 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <!-- v323: ELDEN VERİLENLER MODALI (merkezi liste) -->
 <div id="eldenModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1260;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;max-width:520px;width:98%;margin:auto 0">
-    <div style="background:linear-gradient(135deg,#e8734f,#c8542f);padding:14px 18px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
+    <div style="background:linear-gradient(135deg,#a855f7,#7e22ce);padding:14px 18px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
       <span style="font-size:14px;font-weight:700;color:#fff">🔻 Elden Verilenler</span>
       <button onclick="closeEldenModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:14px">
       <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:12px;font-weight:700;color:var(--muted)">AÇIK TOPLAM (kasadan düşer)</span>
-        <span id="eldenModalToplam" style="font-size:18px;font-weight:900;color:#ff8f6b;font-variant-numeric:tabular-nums">0,00 ₺</span>
+        <span id="eldenModalToplam" style="font-size:18px;font-weight:900;color:#c084fc;font-variant-numeric:tabular-nums">0,00 ₺</span>
       </div>
       <div style="font-size:10.5px;color:var(--muted);margin-bottom:10px;line-height:1.4">Tahsil ettiğinde 🗑 ile sil — kasadan düşmez olur. Tarih sadece ne zaman verildiğini gösterir.</div>
       <div id="eldenModalListe" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
-      <button type="button" onclick="eldenModalSatirEkle()" style="width:100%;background:transparent;border:1px dashed rgba(255,143,107,.5);color:#ff8f6b;border-radius:7px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px">+ Yeni Elden Verilen Ekle</button>
+      <button type="button" onclick="eldenModalSatirEkle()" style="width:100%;background:transparent;border:1px dashed rgba(192,132,252,.5);color:#c084fc;border-radius:7px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px">+ Yeni Elden Verilen Ekle</button>
       <div style="display:flex;gap:8px">
         <button onclick="closeEldenModal()" style="flex:1;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">Vazgeç</button>
-        <button onclick="saveEldenModal()" style="flex:2;background:linear-gradient(135deg,#e8734f,#c8542f);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">✅ Kaydet</button>
+        <button onclick="saveEldenModal()" style="flex:2;background:linear-gradient(135deg,#a855f7,#7e22ce);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">✅ Kaydet</button>
       </div>
     </div>
   </div>
@@ -3197,7 +3197,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v340';
+const APP_VERSION = 'v341';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3310,7 +3310,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '18.07.2026 11:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '18.07.2026 13:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13832,7 +13832,7 @@ function eldenModalSatirEkle(tarih, tutar, aciklama){
   const liste = document.getElementById('eldenModalListe');
   const row = document.createElement('div');
   row.className = 'elden-modal-row';
-  row.style.cssText = 'display:flex;align-items:center;gap:4px;background:rgba(255,143,107,.06);border:1px solid rgba(255,143,107,.22);border-radius:7px;padding:5px 6px';
+  row.style.cssText = 'display:flex;align-items:center;gap:4px;background:rgba(192,132,252,.06);border:1px solid rgba(192,132,252,.22);border-radius:7px;padding:5px 6px';
   const tutarStr = (tutar!=null && tutar!=='') ? Number(tutar).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
   row.innerHTML = `
     <input type="date" class="elden-tarih" value="${tarih||todayStr()}" style="flex:0 0 108px;width:108px;min-width:0;box-sizing:border-box;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 3px;color:var(--txt);font-size:10.5px">
@@ -13869,9 +13869,16 @@ function saveEldenModal(){
   saveEldenStore();
   closeEldenModal();
   if(typeof renderKasa==='function') renderKasa();
-  // Sayım modalı açıksa fişteki elden bölümünü/farkı güncelle
+  // Sayım modalı açıksa fişteki elden satırlarını güncel listeyle yenile
   const sm = document.getElementById('kasaSayimModal');
-  if(sm && sm.style.display==='flex'){ if(typeof _kasaFisElden==='function') _kasaFisElden(); if(typeof updateKasaFark==='function') updateKasaFark(); }
+  if(sm && sm.style.display==='flex'){
+    const liste = document.getElementById('kasaEldenListe');
+    if(liste){
+      liste.innerHTML = '';
+      eldenData.forEach(e=>kasaEldenSatirEkle(e.tarih, e.tutar, e.aciklama));
+    }
+    if(typeof updateKasaFark==='function') updateKasaFark();
+  }
 }
 // Kart güncelleme (renderKasa içinden çağrılır)
 function _kasaEldenKartGuncelle(){
@@ -13920,14 +13927,11 @@ function openKasaSayimModal(id){
   }
   if(digerler.length) digerler.forEach(d=>kasaDigerSatirEkle(d.etiket, d.tutar));
 
-  // v330: Elden Verilenler — düzenlemede o kaydın, yeni sayımda önceki sayımdan otomatik kopyalanır
+  // v341: Elden — DÜZENLEMEDE o kaydın kendi eldeni (geçmiş sabit), YENİ sayımda MERKEZİ güncel liste
   document.getElementById('kasaEldenListe').innerHTML = '';
   let eldenler = [];
   if(kayit && Array.isArray(kayit.eldenler)){ eldenler = kayit.eldenler; }
-  else if(!id){
-    const sonE = [...kasaData].sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||''))).find(k=>Array.isArray(k.eldenler)&&k.eldenler.length);
-    if(sonE) eldenler = sonE.eldenler.map(e=>({...e}));
-  }
+  else if(!id){ eldenler = eldenData.map(e=>({...e})); }  // yeni sayım → güncel merkezi liste
   if(eldenler.length) eldenler.forEach(e=>kasaEldenSatirEkle(e.tarih, e.tutar, e.aciklama));
 
   _kasaDigerYedek = null;
@@ -14098,7 +14102,10 @@ function saveKasaSayim(){
     if(adet>0) denoms[k.key] = adet;
   });
   const digerleri = _kasaDigerTopla();          // v320
-  const eldenler = _kasaEldenTopla();   // v330: sayıma bağlı elden verilenler
+  const eldenler = _kasaEldenTopla();   // v341: fişteki elden verilenler
+  // Senkron: fişte elden düzenlendiyse merkezi güncel listeyi de güncelle (plan B)
+  eldenData = eldenler.map(e=>({...e}));
+  saveEldenStore();
   const digerT = _kasaDigerToplam();
   const eldenT = _kasaEldenToplam();   // v330: sayıma bağlı
   const toplam = Math.round((_kasaHesaplaToplam() + digerT)*100)/100;   // kupür + diğerleri
@@ -14144,21 +14151,21 @@ function _kasaFark(k){
 function renderKasa(){
   const sel = document.getElementById('kasaAySel');
   if(!sel) return;
-  // v340: Son sayımın elden verilenleri kartını güncelle
+  // v341: Merkezi elden verilenler kartını güncelle (tıkla → elden modalı)
   (function(){
     const kart = document.getElementById('kasaEldenKart');
     if(!kart) return;
-    const sonSayim = [...kasaData].sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||'')))[0];
-    if(sonSayim && Array.isArray(sonSayim.eldenler) && sonSayim.eldenler.length){
-      const toplam = sonSayim.eldenler.reduce((a,e)=>a+(Number(e.tutar)||0),0);
+    const toplam = eldenData.reduce((a,e)=>a+(Number(e.tutar)||0),0);
+    if(eldenData.length){
       document.getElementById('kasaEldenKartToplam').textContent = fmt(toplam);
-      const ozet = sonSayim.eldenler.slice(0,3).map(e=>`${e.aciklama||e.tarih}: ${fmt(e.tutar)}`).join(' · ');
-      document.getElementById('kasaEldenKartAlt').textContent = sonSayim.eldenler.length>3 ? ozet+` +${sonSayim.eldenler.length-3}` : ozet;
-      kart.style.display = 'flex';
-      kart.onclick = ()=>openKasaSayimModal(sonSayim.id);
+      const ozet = eldenData.slice(0,3).map(e=>`${e.aciklama||e.tarih}: ${fmt(e.tutar)}`).join(' · ');
+      document.getElementById('kasaEldenKartAlt').textContent = eldenData.length>3 ? ozet+` +${eldenData.length-3}` : ozet;
     } else {
-      kart.style.display = 'none';
+      document.getElementById('kasaEldenKartToplam').textContent = fmt(0);
+      document.getElementById('kasaEldenKartAlt').textContent = 'Henüz yok · dokun ekle';
     }
+    kart.style.display = 'flex';
+    kart.onclick = ()=>openEldenModal();
   })();
   // Ay filtresi seçenekleri
   const aylar = [...new Set(kasaData.map(k=>k.date.slice(0,7)))].sort().reverse();
@@ -18892,6 +18899,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v341',
+    date: '18.07.2026',
+    items: [
+      { type: 'new', text: 'ELDEN VERILENLER artik MERKEZI liste + say\u0131m foto\u011fraf\u0131 mant\u0131\u011f\u0131yla calisiyor. (1) Kasa sayfasindaki mor karta dokun \u2192 ayri Elden modali acilir, ekle/cikar/kaydet. (2) Yeni sayim acinca guncel elden listesi otomatik gelir. (3) Sayim fisinden de elden duzenlenebilir; hangisinden duzenlersen guncel liste SENKRON gunellenir (karta da, sayima da yansir). (4) Bir sayim kaydedince o anki elden listesi o sayima FOTOGRAF gibi yazilir. (5) ESKI bir sayimi duzenlerken kendi kayitli eldeni gelir \u2014 gecmis sayimlar degismez. Elden modali/kart mor temaya alindi.' },
+    ]
+  },
   {
     version: 'v340',
     date: '18.07.2026',
