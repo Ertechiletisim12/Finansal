@@ -3197,7 +3197,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v341';
+const APP_VERSION = 'v342';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3310,7 +3310,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '18.07.2026 13:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '18.07.2026 16:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14103,9 +14103,12 @@ function saveKasaSayim(){
   });
   const digerleri = _kasaDigerTopla();          // v320
   const eldenler = _kasaEldenTopla();   // v341: fişteki elden verilenler
-  // Senkron: fişte elden düzenlendiyse merkezi güncel listeyi de güncelle (plan B)
-  eldenData = eldenler.map(e=>({...e}));
-  saveEldenStore();
+  // v342 FIX: Senkron SADECE yeni sayımda. Eski sayımı düzenlerken güncel listeye DOKUNMA
+  // (yoksa dünkü kaydı düzenleyince bugün tahsil edilenler geri gelir).
+  if(!_kasaEditId){
+    eldenData = eldenler.map(e=>({...e}));
+    saveEldenStore();
+  }
   const digerT = _kasaDigerToplam();
   const eldenT = _kasaEldenToplam();   // v330: sayıma bağlı
   const toplam = Math.round((_kasaHesaplaToplam() + digerT)*100)/100;   // kupür + diğerleri
@@ -18899,6 +18902,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v342',
+    date: '18.07.2026',
+    items: [
+      { type: 'fix', text: 'ONEMLI DUZELTME: Eski bir sayimi duzenleyip kaydedince, o sayimin (dunku) elden listesi guncel listenin uzerine yaziliyordu — bugun tahsil edip sildiklerin geri geliyordu. Artik guncel elden listesi SADECE yeni sayim kaydedilirken senkronlanir; eski bir sayimi duzenlemek guncel listeye dokunmaz. Ornek: dun 5 elden vardi, bugun 2 tahsil ettin (kaldi 3), dunku kaydi duzeltip kaydedersen guncel liste yine 3 kalir.' },
+    ]
+  },
   {
     version: 'v341',
     date: '18.07.2026',
