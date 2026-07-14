@@ -2325,6 +2325,21 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <!-- Özet Kartlar -->
       <div class="stats-row" id="kasaSummaryRow" style="margin-bottom:10px"></div>
 
+      <!-- v340: Son sayımın elden verilenleri kartı (tıkla → son sayımı düzenle) -->
+      <div id="kasaEldenKart" style="display:none;background:linear-gradient(135deg,rgba(192,132,252,.12),rgba(192,132,252,.04));border:1px solid rgba(192,132,252,.35);border-radius:10px;padding:11px 14px;margin-bottom:10px;cursor:pointer;align-items:center;justify-content:space-between;gap:10px">
+        <div style="display:flex;align-items:center;gap:9px;min-width:0">
+          <span style="font-size:20px">🔻</span>
+          <div style="min-width:0">
+            <div style="font-size:12px;font-weight:800;color:#c084fc;text-transform:uppercase;letter-spacing:.04em">Elden Verilenler</div>
+            <div id="kasaEldenKartAlt" style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+          </div>
+        </div>
+        <div style="text-align:right;white-space:nowrap">
+          <div id="kasaEldenKartToplam" style="font-size:17px;font-weight:900;color:#c084fc;font-variant-numeric:tabular-nums">0,00 ₺</div>
+          <div style="font-size:9.5px;color:var(--muted)">son sayım · dokun düzenle</div>
+        </div>
+      </div>
+
       <!-- Sayım Geçmişi -->
       <div class="section-title-row">
         <div class="section-title">📋 Sayım Geçmişi</div>
@@ -3182,7 +3197,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v339';
+const APP_VERSION = 'v340';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3295,7 +3310,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '18.07.2026 08:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '18.07.2026 11:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14129,6 +14144,22 @@ function _kasaFark(k){
 function renderKasa(){
   const sel = document.getElementById('kasaAySel');
   if(!sel) return;
+  // v340: Son sayımın elden verilenleri kartını güncelle
+  (function(){
+    const kart = document.getElementById('kasaEldenKart');
+    if(!kart) return;
+    const sonSayim = [...kasaData].sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||'')))[0];
+    if(sonSayim && Array.isArray(sonSayim.eldenler) && sonSayim.eldenler.length){
+      const toplam = sonSayim.eldenler.reduce((a,e)=>a+(Number(e.tutar)||0),0);
+      document.getElementById('kasaEldenKartToplam').textContent = fmt(toplam);
+      const ozet = sonSayim.eldenler.slice(0,3).map(e=>`${e.aciklama||e.tarih}: ${fmt(e.tutar)}`).join(' · ');
+      document.getElementById('kasaEldenKartAlt').textContent = sonSayim.eldenler.length>3 ? ozet+` +${sonSayim.eldenler.length-3}` : ozet;
+      kart.style.display = 'flex';
+      kart.onclick = ()=>openKasaSayimModal(sonSayim.id);
+    } else {
+      kart.style.display = 'none';
+    }
+  })();
   // Ay filtresi seçenekleri
   const aylar = [...new Set(kasaData.map(k=>k.date.slice(0,7)))].sort().reverse();
   const curYm = thisMonthKey();
@@ -18178,7 +18209,7 @@ function openExportPreview(tableId, fileLabel){
   document.getElementById('exportModalContent').innerHTML = '';
   document.getElementById('exportModalTabs').innerHTML = '';
 
-  const modalTables = ['compareTable','mainTable','financeTable','priceHistTable','gelirTable','capitalTable','marjTable','finansDetailTable','detayCombinedTable','saatExportTable','gecmisKampanyaTable','musteriTakipTable'];
+  const modalTables = ['compareTable','mainTable','financeTable','priceHistTable','gelirTable','capitalTable','marjTable','finansDetailTable','detayCombinedTable','saatExportTable','gecmisKampanyaTable','musteriTakipTable','kasaTable'];
 
   if(modalTables.includes(tableId)){
     const table = document.getElementById(tableId);
@@ -18186,7 +18217,7 @@ function openExportPreview(tableId, fileLabel){
     const now = nowTR().toLocaleString('tr-TR');
     const stamp = xlsTimestamp();
     const modal = document.getElementById('exportFullModal');
-    const titles = {compareTable:'Ay Karşılaştırması',mainTable:'Aylık Kategori Dağılımı',financeTable:'Prim / Finans Özeti',priceHistTable:'Fiyat Geçmişi',gelirTable:'Gelir / Gider Tablosu',capitalTable:'Sermaye Gelişimi',marjTable:'Vodafone MIXY Kâr/Masraf',finansDetailTable:'Finans Detaylı Tablo',detayCombinedTable:'Prim Detayları',saatExportTable:'Saatlik Giriş Yoğunluğu',gecmisKampanyaTable:'Geçmiş Kampanyalar',musteriTakipTable:'Müşteri Takip Raporu'};
+    const titles = {compareTable:'Ay Karşılaştırması',mainTable:'Aylık Kategori Dağılımı',financeTable:'Prim / Finans Özeti',priceHistTable:'Fiyat Geçmişi',gelirTable:'Gelir / Gider Tablosu',capitalTable:'Sermaye Gelişimi',marjTable:'Vodafone MIXY Kâr/Masraf',finansDetailTable:'Finans Detaylı Tablo',detayCombinedTable:'Prim Detayları',saatExportTable:'Saatlik Giriş Yoğunluğu',gecmisKampanyaTable:'Geçmiş Kampanyalar',musteriTakipTable:'Müşteri Takip Raporu',kasaTable:'Kasa Sayım Geçmişi'};
     document.getElementById('exportModalTitle').textContent = '📊 ' + (titles[tableId] || fileLabel);
     document.getElementById('exportModalSub').textContent = now;
     document.getElementById('exportModalTabs').innerHTML = `<button style="flex:1;padding:10px;background:#e2231a;color:#fff;border:none;font-size:12px;font-weight:700">📋 Tablo</button>`;
@@ -18861,6 +18892,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v340',
+    date: '18.07.2026',
+    items: [
+      { type: 'new', text: 'Kasa sayfasina ELDEN VERILENLER karti geri geldi (mor): en son sayimin elden verilenlerini gosterir (toplam + ilk birkac kayit). Karta dokununca dogrudan SON SAYIMIN duzenleme ekrani acilir — orada elden verileni ekle/cikar, kaydet. Elden verileni olmayan durumda kart gizli.' },
+      { type: 'fix', text: 'Kasa Sayim Gecmisi "Dışa Aktar" calismyordu (kasaTable disari aktarma listesinde yoktu) — duzeltildi, artik Tablo/PDF/Excel/Paylas onizlemesi aciliyor.' },
+    ]
+  },
   {
     version: 'v339',
     date: '18.07.2026',
