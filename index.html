@@ -1138,6 +1138,68 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   .context-panel .ctx-card{
     background:var(--panel); border-radius:13px; padding:11px 13px;
   }
+  .context-panel .ctx-card.p0{ padding:0; overflow:hidden; }
+  .context-panel .ctx-card.go{ cursor:pointer; transition:background .12s; }
+  .context-panel .ctx-card.go:hover{ background:var(--hover); }
+
+  /* v353: bildirim aksiyon satirlari */
+  .ctx-act{ display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; transition:background .12s; }
+  .ctx-act:hover{ background:var(--hover); }
+  .ctx-act + .ctx-act{ box-shadow:inset 0 1px 0 rgba(128,136,148,0.16); }
+  .ctx-act-i{
+    width:30px; height:30px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:14px;
+  }
+  .ctx-act-i.o{ background:rgba(255,159,10,0.18); }
+  .ctx-act-i.r{ background:rgba(255,69,58,0.16); }
+  .ctx-act-i.g{ background:rgba(52,199,89,0.16); }
+  .ctx-act-x{ display:flex; flex-direction:column; flex:1; min-width:0; }
+  .ctx-act-t{ font-size:12.5px; font-weight:700; color:var(--txt); line-height:1.25; }
+  .ctx-act-s{ font-size:9.5px; color:var(--muted); margin-top:2px; line-height:1.25; }
+  .ctx-ok{ padding:11px 13px; font-size:11px; color:var(--muted); text-align:center; }
+
+  /* v353: hero istatistik */
+  .ctx-hero{ }
+  .ctx-hero.go{ cursor:pointer; }
+  .ctx-hero-l{
+    font-size:9px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted);
+    font-weight:700; display:flex; align-items:center; justify-content:space-between;
+  }
+  .ctx-hero-v{
+    font-size:20px; font-weight:800; color:var(--txt); margin-top:5px;
+    font-variant-numeric:tabular-nums; letter-spacing:-.02em; line-height:1.1;
+  }
+  .ctx-hero-v.neg{ color:#ff6a60; } .ctx-hero-v.pos{ color:var(--green); }
+  .ctx-hero-d{ font-size:10.5px; margin-top:5px; color:var(--muted); }
+  .ctx-hero-d b.neg, .ctx-kv b.neg{ color:#ff6a60; }
+  .ctx-hero-d b.pos, .ctx-kv b.pos{ color:var(--green); }
+
+  /* v353: iki'li istatistik */
+  .ctx-duo{ display:flex; }
+  .ctx-duo > div{ flex:1; padding:11px 13px; }
+  .ctx-duo > div + div{ box-shadow:inset 1px 0 0 rgba(128,136,148,0.16); }
+  .ctx-duo-l{ font-size:9px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); font-weight:700; }
+  .ctx-duo-v{ font-size:18px; font-weight:800; color:var(--txt); margin-top:4px; font-variant-numeric:tabular-nums; line-height:1.1; }
+  .ctx-duo-s{ font-size:9px; color:var(--muted); margin-left:3px; font-weight:600; }
+
+  /* v353: hedef ilerlemesi */
+  .ctx-prog-h{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .ctx-prog-p{ font-size:19px; font-weight:800; color:var(--red); letter-spacing:-.02em; }
+  .ctx-prog-r{ font-size:10.5px; color:var(--muted); font-weight:600; font-variant-numeric:tabular-nums; }
+  .ctx-tr{ height:6px; border-radius:3px; background:var(--panel2); overflow:hidden; }
+  .ctx-bar{ height:100%; border-radius:3px; background:linear-gradient(90deg,var(--red),var(--red-d)); transition:width .4s; }
+  .ctx-kv{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size:11.5px; color:var(--muted); padding:5px 0 0;
+  }
+  .ctx-kv b{ color:var(--txt); font-weight:700; font-variant-numeric:tabular-nums; }
+  .ctx-foot{
+    margin-top:9px; padding-top:8px; font-size:10px; color:var(--muted);
+    box-shadow:inset 0 1px 0 rgba(128,136,148,0.16);
+  }
+  .ctx-card.p0 .ctx-foot{ margin-top:0; padding:8px 13px; }
+  .ctx-foot b{ color:var(--txt); font-weight:700; }
+  .ctx-foot.warn{ color:#ffb04a; } .ctx-foot.warn b{ color:#ffb04a; }
   .context-panel .ctx-row{
     display:flex; justify-content:space-between; align-items:baseline;
     gap:8px; padding:3px 0; font-size:12.5px;
@@ -3555,7 +3617,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v352';
+const APP_VERSION = 'v353';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3668,7 +3730,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 04:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 05:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -8894,51 +8956,100 @@ function renderContextPanel(page){
     }
     function card(baslik,ic){ return '<div class="ds-sec-t">'+baslik+'</div><div class="ctx-card">'+ic+'</div>'; }
     var _entries = (typeof entries!=='undefined' && Array.isArray(entries)) ? entries : [];
-    var _finans  = (typeof finansData!=='undefined' && Array.isArray(finansData)) ? finansData : [];
-    var _kasa    = (typeof kasaData!=='undefined' && Array.isArray(kasaData)) ? kasaData : [];
+    // v353: dizi sirasi garanti degil (checkMasrafAnomali de ihtiyaten siraliyor).
+    // "Son kayit" TARIHE gore secilsin — eski bir ay sonradan eklenirse yanlis kayit gostermesin.
+    var _finans  = [];
+    try{
+      if(typeof finansData!=='undefined' && Array.isArray(finansData)){
+        _finans = [...finansData].sort(function(a,b){ return String(a.ym||'').localeCompare(String(b.ym||'')); });
+      }
+    }catch(e){ _finans = []; }
+    var _kasa    = [];
+    try{
+      if(typeof kasaData!=='undefined' && Array.isArray(kasaData)){
+        _kasa = [...kasaData].sort(function(a,b){ return String(a.date||'').localeCompare(String(b.date||'')); });
+      }
+    }catch(e){ _kasa = []; }
     var _tm = (typeof thisMonthKey==='function') ? thisMonthKey() : '';
     var _bugun = (typeof todayStr==='function') ? todayStr() : '';
 
     var H = '';
-    // v346: sayfa adı üst menüde zaten yazıyor — panelde tekrar etmiyoruz.
 
-    // ---- Bildirimler kartı (her sayfada üstte) ----
-    var bildirimHTML = '';
+    // ---- kucuk yardimcilar ----
+    function sec(t){ return '<div class="ds-sec-t">'+t+'</div>'; }
+    function act(ico, ton, baslik, alt, git){
+      return '<div class="ctx-act" onclick="'+git+'">'
+        + '<span class="ctx-act-i '+ton+'">'+ico+'</span>'
+        + '<span class="ctx-act-x"><span class="ctx-act-t">'+baslik+'</span>'
+        + '<span class="ctx-act-s">'+alt+'</span></span>'
+        + '<span class="go-ch">\u203a</span></div>';
+    }
+    function hero(etiket, deger, alt, ton, git){
+      return '<div class="ctx-hero'+(git?' go':'')+'"'+(git?' onclick="'+git+'"':'')+'>'
+        + '<div class="ctx-hero-l">'+etiket+(git?'<span class="go-ch">\u203a</span>':'')+'</div>'
+        + '<div class="ctx-hero-v'+(ton?' '+ton:'')+'">'+deger+'</div>'
+        + (alt?'<div class="ctx-hero-d">'+alt+'</div>':'') + '</div>';
+    }
+    function duo(a,b){ return '<div class="ctx-duo">'+a+b+'</div>'; }
+    function duoBox(etiket, deger, birim){
+      return '<div><div class="ctx-duo-l">'+etiket+'</div>'
+        + '<div class="ctx-duo-v">'+deger+'<span class="ctx-duo-s">'+(birim||'')+'</span></div></div>';
+    }
+
+    // ---- BİLDİRİMLER (her sayfada, aksiyon kartlari) ----
+    var acts = '';
     try{
       if(typeof musteriler!=='undefined' && Array.isArray(musteriler)){
         var bekleyen = musteriler.filter(function(m){ return m && m.durum==='bekliyor'; }).length;
-        if(bekleyen>0) bildirimHTML += '<div class="ctx-badge go" onclick="switchPage(\'prim\')">\u23f3 '+bekleyen+' MNP onay bekliyor<span class="go-ch">\u203a</span></div>';
+        if(bekleyen>0){
+          acts += act('\u23f3','o', bekleyen+' onay bekliyor', 'M\u00fc\u015fteri onay listesini a\u00e7',
+                      "openMusteriRaporFiltered('bekliyor','hepsi','hepsi')");
+        }
       }
     }catch(e){}
     try{
       if(typeof eldenAcikToplam==='function'){
         var _ea = eldenAcikToplam();
-        if(_ea>0) bildirimHTML += '<div class="ctx-badge go" onclick="openEldenModal()">\ud83d\udcb8 A\u00e7\u0131k elden: '+_fmt(_ea)+'<span class="go-ch">\u203a</span></div>';
+        if(_ea>0){
+          var _en = (typeof eldenData!=='undefined' && Array.isArray(eldenData)) ? eldenData.length : 0;
+          acts += act('\ud83d\udcb8','r', 'A\u00e7\u0131k elden', _fmt(_ea)+' \u00b7 '+_en+' kay\u0131t', 'openEldenModal()');
+        }
       }
     }catch(e){}
-    if(!bildirimHTML) bildirimHTML = '<div class="ctx-empty">Bekleyen bildirim yok</div>';
-    H += card('\ud83d\udd14 Bildirimler', bildirimHTML);
+    try{
+      if(grup==='finans' || grup==='dash'){
+        var _an = (typeof checkMasrafAnomali==='function') ? checkMasrafAnomali() : [];
+        if(_an.length){
+          var _sonAn = _an[_an.length-1];
+          var _etk = (typeof monthLabel==='function') ? monthLabel(_sonAn.ym) : _sonAn.ym;
+          acts += act('\ud83d\udea8','r', _an.length+' masraf anomalisi', 'Son: '+_etk+' \u2014 detay\u0131 a\u00e7', 'openAnomaliPopup()');
+        }
+      }
+    }catch(e){}
+    if(!acts) acts = '<div class="ctx-ok">\u2713 Bekleyen bir \u015fey yok</div>';
+    H += sec('\ud83d\udd14 Bildirimler') + '<div class="ctx-card p0">'+acts+'</div>';
 
-    // ---- Sayfaya özel kart(lar) ----
+    // ---- SAYFAYA OZEL ----
     if(grup==='kasa'){
       if(_kasa.length){
         var son = _kasa[_kasa.length-1];
-        var ic = row('Tarih', (son.date||'-'), '', 'switchPage(\'kasa\')');
-        ic += row('Say\u0131lan', _fmt(son.toplam||0));
         var fark = (typeof _kasaFark==='function') ? _kasaFark(son) : null;
-        if(fark!=null) ic += row('Fark', _fmt(fark), fark<0?'neg':(fark>0?'pos':''));
-        H += card('\ud83e\uddee Son Say\u0131m', ic);
+        var altm = (son.date||'-');
+        if(fark!=null){
+          altm += ' \u00b7 <b class="'+(fark<0?'neg':(fark>0?'pos':''))+'">'
+                + (fark>0?'+':'')+_fmt(fark)+'</b> fark';
+        }
+        H += sec('\ud83e\uddee Son Say\u0131m') + '<div class="ctx-card">'
+           + hero('Say\u0131lan', _fmt(son.toplam||0), altm, '', "switchPage('kasa')") + '</div>';
       } else {
-        H += card('\ud83e\uddee Son Say\u0131m', '<div class="ctx-empty">Hen\u00fcz say\u0131m yok</div>');
+        H += sec('\ud83e\uddee Son Say\u0131m') + '<div class="ctx-card"><div class="ctx-empty">Hen\u00fcz say\u0131m yok</div></div>';
       }
-      var eaic='';
       try{
         var eaT = (typeof eldenAcikToplam==='function') ? eldenAcikToplam() : 0;
         var eaN = (typeof eldenData!=='undefined' && Array.isArray(eldenData)) ? eldenData.length : 0;
-        eaic += row('Toplam', _fmt(eaT), eaT>0?'neg':'', 'openEldenModal()');
-        eaic += row('Kay\u0131t', eaN+' adet');
-      }catch(e){ eaic='<div class="ctx-empty">-</div>'; }
-      H += card('\ud83d\udcb8 A\u00e7\u0131k Elden', eaic);
+        H += sec('\ud83d\udcb8 A\u00e7\u0131k Elden') + '<div class="ctx-card">'
+           + hero('Toplam', _fmt(eaT), eaN+' kay\u0131t', eaT>0?'neg':'', 'openEldenModal()') + '</div>';
+      }catch(e){}
     }
     else if(grup==='prim'){
       var bugunAdet=0, ayAdet=0;
@@ -8949,68 +9060,73 @@ function renderContextPanel(page){
       });
       var gun = 1; try{ gun = Math.max(1, (typeof nowTR==='function'?nowTR():new Date()).getDate()); }catch(e){}
       var ort = Math.round((ayAdet/gun)*10)/10;
-      var pic = row('Bug\u00fcn', bugunAdet+' adet');
-      pic += row('Bu ay', ayAdet+' adet');
-      pic += row('G\u00fcnl\u00fck ort.', ort+' adet');
-      H += card('\ud83d\udcca Prim Adedi', pic);
-      var hic='';
+      H += sec('\ud83d\udcca Prim Adedi') + '<div class="ctx-card p0">'
+         + duo(duoBox('Bug\u00fcn', bugunAdet, 'adet'), duoBox('Bu ay', ayAdet, 'adet'))
+         + '<div class="ctx-foot">G\u00fcnl\u00fck ortalama <b>'+ort+' adet</b></div></div>';
       try{
         var g = (typeof _gunlukHedefHesap==='function') ? _gunlukHedefHesap() : null;
         if(g && g.hedef>0){
-          var yuzde = Math.round((g.realized/g.hedef)*100);
-          hic += row('Ayl\u0131k hedef', _fmt(g.hedef), '', 'switchPage(\'hedef\')');
-          hic += row('Ger\u00e7ekle\u015fen', _fmt(g.realized)+' \u00b7 %'+yuzde);
-          hic += row('Kalan', _fmt(Math.max(0,g.kalan)), g.kalan>0?'neg':'pos');
-          hic += row('G\u00fcnde gerekli', _fmt(g.gunluk)+' \u00b7 '+g.kalanGun+' g\u00fcn');
+          var yuzde = Math.max(0, Math.round((g.realized/g.hedef)*100));
+          H += sec('\ud83c\udfaf Ayl\u0131k Hedef') + '<div class="ctx-card go" onclick="switchPage(\'hedef\')">'
+             + '<div class="ctx-prog-h"><span class="ctx-prog-p">%'+yuzde+'</span>'
+             + '<span class="ctx-prog-r">'+_fmt(g.hedef)+'</span></div>'
+             + '<div class="ctx-tr"><div class="ctx-bar" style="width:'+Math.min(100,yuzde)+'%"></div></div>'
+             + '<div class="ctx-kv"><span>Ger\u00e7ekle\u015fen</span><b>'+_fmt(g.realized)+'</b></div>'
+             + '<div class="ctx-kv"><span>Kalan</span><b class="neg">'+_fmt(Math.max(0,g.kalan))+'</b></div>'
+             + '<div class="ctx-foot">G\u00fcnde <b>'+_fmt(g.gunluk)+'</b> gerekiyor \u00b7 '+g.kalanGun+' g\u00fcn kald\u0131</div>'
+             + '</div>';
         } else {
-          hic = '<div class="ctx-empty">Bu ay i\u00e7in hedef girilmemi\u015f</div>';
+          H += sec('\ud83c\udfaf Ayl\u0131k Hedef') + '<div class="ctx-card"><div class="ctx-empty">Bu ay i\u00e7in hedef girilmemi\u015f</div></div>';
         }
-      }catch(e){ hic='<div class="ctx-empty">-</div>'; }
-      H += card('\ud83c\udfaf Hedef', hic);
+      }catch(e){}
     }
     else if(grup==='finans'){
       if(_finans.length){
         var f = _finans[_finans.length-1];
         var ayEt = (typeof monthLabel==='function' && f.ym) ? monthLabel(f.ym) : (f.ay||f.ym||'-');
-        var fic = row('D\u00f6nem', ayEt);
-        fic += row('Mevcut sermaye', _fmt(f.mevcutSermaye||0));
-        H += card('\ud83d\udcb9 Son Kay\u0131t', fic);
-        var sf = Number(f.sermayeFarki)||0;
-        var kz = Number(f.topKarZarar)||0;
-        var aic = row('Sermaye fark\u0131', _fmt(sf), Math.abs(sf)>0.5?(sf<0?'neg':'pos'):'');
-        aic += row('Kar / Zarar', _fmt(kz), kz<0?'neg':(kz>0?'pos':''));
-        if(Math.abs(sf) > 5000) aic += '<div class="ctx-note">\u26a0\ufe0f Sermaye fark\u0131 y\u00fcksek \u2014 kontrol edilebilir.</div>';
-        H += card('\ud83d\udcc8 Analiz', aic);
-        // Anomali uyar\u0131lar\u0131 (g\u00f6rev notu: finansta anomali g\u00f6ster)
-        try{
-          var an = (typeof checkMasrafAnomali==='function') ? checkMasrafAnomali() : [];
-          if(an.length){
-            var son = an[an.length-1];
-            var etk = (typeof monthLabel==='function') ? monthLabel(son.ym) : son.ym;
-            var anic = row('Toplam', an.length+' ay', 'neg', 'openAnomaliPopup()');
-            anic += row('Son', etk);
-            anic += '<div class="ctx-note">Masraf, y\u0131l ortalamas\u0131n\u0131n %50 \u00fczerine \u00e7\u0131kt\u0131. Detay i\u00e7in t\u0131kla.</div>';
-            H += card('\ud83d\udea8 Masraf Anomalisi', anic);
-          }
-        }catch(e){}
+        var delta = null;
+        if(_finans.length>1){
+          var onceki = _finans[_finans.length-2];
+          delta = (Number(f.mevcutSermaye)||0) - (Number(onceki.mevcutSermaye)||0);
+        }
+        var altm = ayEt;
+        if(delta!=null){
+          altm += ' \u00b7 <b class="'+(delta<0?'neg':'pos')+'">'+(delta>0?'\u25b2 ':'\u25bc ')+_fmt(Math.abs(delta))+'</b>';
+        }
+        H += sec('\ud83d\udcb9 Sermaye') + '<div class="ctx-card">'
+           + hero('Mevcut sermaye', _fmt(f.mevcutSermaye||0), altm, '', "switchPage('finans')") + '</div>';
+        var sf = Number(f.sermayeFarki)||0, kz = Number(f.topKarZarar)||0;
+        H += sec('\ud83d\udcc8 Analiz') + '<div class="ctx-card">'
+           + '<div class="ctx-kv"><span>Sermaye fark\u0131</span><b class="'+(Math.abs(sf)>0.5?(sf<0?'neg':'pos'):'')+'">'+_fmt(sf)+'</b></div>'
+           + '<div class="ctx-kv"><span>Kar / Zarar</span><b class="'+(kz<0?'neg':(kz>0?'pos':''))+'">'+_fmt(kz)+'</b></div>'
+           + (Math.abs(sf) > 5000 ? '<div class="ctx-foot warn">\u26a0\ufe0f Sermaye fark\u0131 y\u00fcksek \u2014 kontrol edilebilir</div>' : '')
+           + '</div>';
       } else {
-        H += card('\ud83d\udcb9 Son Kay\u0131t', '<div class="ctx-empty">Kay\u0131t yok</div>');
+        H += sec('\ud83d\udcb9 Sermaye') + '<div class="ctx-card"><div class="ctx-empty">Kay\u0131t yok</div></div>';
       }
     }
     else {
-      // dash / gelir / not vb. — genel bakış
+      // dash / gelir / not — genel bakis
       var gic='';
       try{
-        if(_finans.length){ gic += row('Son sermaye', _fmt(_finans[_finans.length-1].mevcutSermaye||0), '', 'switchPage(\'finans\')'); }
-        var ayA=0; _entries.forEach(function(e){ if(e && e.date && e.date.slice(0,7)===_tm) ayA+=Number(e.count)||0; });
-        gic += row('Bu ay prim', ayA+' adet', '', 'switchPage(\'prim\')');
-        var eaT2 = (typeof eldenAcikToplam==='function') ? eldenAcikToplam() : 0;
-        if(eaT2>0) gic += row('A\u00e7\u0131k elden', _fmt(eaT2), 'neg', 'openEldenModal()');
+        if(_finans.length){
+          var lf=_finans[_finans.length-1];
+          var d2=null;
+          if(_finans.length>1) d2=(Number(lf.mevcutSermaye)||0)-(Number(_finans[_finans.length-2].mevcutSermaye)||0);
+          var alt2 = d2!=null ? ('<b class="'+(d2<0?'neg':'pos')+'">'+(d2>0?'\u25b2 ':'\u25bc ')+_fmt(Math.abs(d2))+'</b> ge\u00e7en aya g\u00f6re') : '';
+          H += sec('\ud83d\udcb9 Sermaye') + '<div class="ctx-card">'
+             + hero('Son sermaye', _fmt(lf.mevcutSermaye||0), alt2, '', "switchPage('finans')") + '</div>';
+        }
+        var ayA=0, bugA=0;
+        _entries.forEach(function(e){
+          var c=Number(e && e.count)||0;
+          if(e && e.date && e.date.slice(0,7)===_tm) ayA+=c;
+          if(e && e.date===_bugun) bugA+=c;
+        });
+        H += sec('\ud83d\udcca Prim') + '<div class="ctx-card p0 go" onclick="switchPage(\'prim\')">'
+           + duo(duoBox('Bug\u00fcn', bugA, 'adet'), duoBox('Bu ay', ayA, 'adet')) + '</div>';
       }catch(e){}
-      if(!gic) gic = '<div class="ctx-empty">\u00d6zet i\u00e7in veri yok</div>';
-      H += card('\ud83d\udccb Genel Bak\u0131\u015f', gic);
     }
-
     el.innerHTML = H;
   }catch(e){ /* panel asla uygulamay\u0131 bozmaz */ try{ console.warn('ctxPanel:',e); }catch(_){} }
 }
@@ -19640,6 +19756,17 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v353',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'HATA: "Onay bekliyor" bildirimine basinca Prim sayfasina atiyordu — artik dogrudan MUSTERI ONAY LISTESINI aciyor (bekleyenler filtreli).' },
+      { type: 'new', text: 'SAG PANEL BASTAN TASARLANDI. Eskiden her sey ayni "etiket — deger" satiriydi, bazilarina iki bilgi tikistirilmisti ("20.100 ₺ · %38"). Artik: BILDIRIMLER renkli ikonlu gercek aksiyon kartlari; PRIM ADEDI yan yana buyuk rakamlar (Bugun / Bu ay); AYLIK HEDEF yuzde + ILERLEME CUBUGU + kalan + gunde gerekli; SERMAYE ve SON SAYIM buyuk tek rakam + altinda degisim.' },
+      { type: 'new', text: 'Bildirimler artik yeterli ve goze carpiyor: bekleyen onaylar, acik elden (tutar + kayit sayisi) ve MASRAF ANOMALISI ayri ayri kartlar halinde, her biri dogru pencereyi aciyor. Bekleyen yoksa sade bir "her sey yolunda" satiri.' },
+      { type: 'fix', text: 'Sag panel "son kayit"i dizinin son elemani sanip gosteriyordu. Kayit sirasi garanti degil (uygulama baska yerde ihtiyaten siraliyor) — eski bir ayi sonradan eklersen YANLIS kayit gorunurdu. Artik son kayit TARIHE gore seciliyor (hem finansal hem kasa).' },
+      { type: 'new', text: 'TELEFON GORUNUMU YINE HIC DEGISMEDI.' },
+    ]
+  },
   {
     version: 'v352',
     date: '19.07.2026',
