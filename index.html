@@ -1250,20 +1250,32 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
     padding-right:10px; margin-right:2px; border-right:1px solid #242628;
   }
   .deskbar .db-nav{ display:flex; align-items:center; gap:3px; flex:1; min-width:0; overflow:hidden; }
+  /* v358: sekmeler de hap + ikon balonu (sayfa butonlariyla ayni dil) */
   .deskbar .db-item{
-    padding:7px 12px; border-radius:8px; color:#a0a5ac; font-size:12.5px;
+    height:34px; padding:0 13px 0 4px; border-radius:999px;
+    color:#a0a5ac; font-size:12.5px;
     cursor:pointer; white-space:nowrap; user-select:none;
-    display:flex; align-items:center; gap:6px;
-    transition:background .12s,color .12s;
+    display:flex; align-items:center; gap:8px; flex-shrink:0;
+    transition:background .12s, color .12s;
   }
-  .deskbar .db-item:hover{ background:rgba(255,255,255,0.06); color:#d8dce0; }
+  .deskbar .db-item > .bi{
+    width:24px; height:24px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12.5px; line-height:1;
+    background:rgba(255,255,255,0.07);
+    transition:background .12s;
+  }
+  .deskbar .db-item:hover{ background:rgba(255,255,255,0.07); color:#d8dce0; }
+  .deskbar .db-item:hover > .bi{ background:rgba(255,255,255,0.13); }
   .deskbar .db-item.active{ background:linear-gradient(90deg,var(--red),var(--red-d)); color:#fff; font-weight:700; }
+  .deskbar .db-item.active > .bi{ background:rgba(255,255,255,0.24); }
   .deskbar .db-tools{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
   .deskbar .db-btn{
     background:rgba(255,255,255,0.05); border:1px solid #2a2d30; color:#9aa0a8;
-    height:32px; padding:0 11px; border-radius:8px; cursor:pointer;
+    height:34px; padding:0 14px; border-radius:999px; cursor:pointer;
     font-size:12px; font-weight:600; font-family:inherit; white-space:nowrap;
     display:flex; align-items:center; gap:6px;
+    transition:background .12s, border-color .12s;
   }
   .deskbar .db-btn:hover{ background:rgba(255,255,255,0.1); color:#e8ebee; }
 
@@ -1279,9 +1291,19 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
      buradan okuyoruz), sadece görünmüyorlar. */
   .sidebar{ display:none!important; }
 }
-@media(min-width:701px) and (max-width:1000px){
+/* v358: hap sekmeler genisledi — dar masaustunde son sekme kirpilmasin diye kademeli kucul */
+@media(min-width:701px) and (max-width:1330px){
+  .deskbar .db-item{ padding:0 10px 0 3px!important; gap:6px!important; font-size:11.5px!important; }
+  .deskbar .db-item > .bi{ width:21px!important; height:21px!important; font-size:11px!important; }
+}
+@media(min-width:701px) and (max-width:1120px){
   .deskbar .db-brand{ display:none!important; }
-  .deskbar .db-item{ padding:7px 8px!important; font-size:11.5px!important; }
+  .deskbar .db-item{ padding:0 8px 0 2px!important; gap:5px!important; font-size:10.5px!important; }
+  .deskbar .db-item > .bi{ width:19px!important; height:19px!important; font-size:10px!important; }
+  .deskbar .db-clock{ display:none!important; }
+  /* Cok dar masaustunde sekmeler sigmayabilir -> kirpilip ulasilamaz kalmasin, kaysin */
+  .deskbar .db-nav{ overflow-x:auto!important; scrollbar-width:none!important; }
+  .deskbar .db-nav::-webkit-scrollbar{ display:none!important; }
 }
 @media(max-width:700px){
   .deskbar{ display:none!important; }
@@ -1331,8 +1353,8 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   /* B) Üst menüde sürüm rozeti — her sayfadan tıklanır, notları açar */
   .deskbar .db-ver{
     color:var(--gold); background:rgba(255,183,77,0.14);
-    border:1px solid rgba(255,183,77,0.30); border-radius:8px;
-    padding:3px 8px; font-size:10.5px; font-weight:700;
+    border:1px solid rgba(255,183,77,0.30); border-radius:999px;
+    padding:4px 11px; font-size:10.5px; font-weight:700;
     cursor:pointer; white-space:nowrap; user-select:none;
   }
   .deskbar .db-ver:hover{ background:rgba(255,183,77,0.26); }
@@ -1478,7 +1500,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   .deskbar .db-sess{
     display:flex; align-items:center; gap:6px;
     background:rgba(255,255,255,0.05); border:1px solid #2a2d30;
-    border-radius:8px; padding:3px 7px; height:32px; box-sizing:border-box;
+    border-radius:999px; padding:3px 4px 3px 9px; height:34px; box-sizing:border-box;
   }
   .deskbar .db-sess.warn{ border-color:rgba(255,159,10,0.55); background:rgba(255,159,10,0.10); }
   .deskbar .db-sess-i{ font-size:10px; opacity:.5; }
@@ -1494,7 +1516,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   .deskbar .db-lock:hover{ color:#ff6b6b; }
   .deskbar .db-bell{
     position:relative; background:rgba(255,255,255,0.05); border:1px solid #2a2d30;
-    color:#c8cdd3; width:32px; height:32px; border-radius:8px; cursor:pointer;
+    color:#c8cdd3; width:34px; height:34px; border-radius:50%; cursor:pointer;
     font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
   }
   .deskbar .db-bell:hover{ background:rgba(255,255,255,0.11); }
@@ -2274,12 +2296,12 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <nav class="deskbar" id="deskBar">
   <div class="db-brand"><span>🔴</span><span>ER-TECH</span></div>
   <div class="db-nav">
-    <div class="db-item active" id="navTopDash"   onclick="switchPage('dash')">🏠 Anasayfa</div>
-    <div class="db-item"        id="navTopPrim"   onclick="switchPage('prim')">📊 Prim</div>
-    <div class="db-item"        id="navTopFinans" onclick="switchPage('finans')">💹 Finansal Analiz</div>
-    <div class="db-item"        id="navTopKasa"   onclick="switchPage('kasa')">🧮 Kasa Sayımı</div>
-    <div class="db-item"        id="navTopGelir"  onclick="switchPage('gelir')">💰 Gelir Takibi</div>
-    <div class="db-item"        id="navTopNot"    onclick="switchPage('not')">🏷️ Not & Etiket</div>
+    <div class="db-item active" id="navTopDash"   onclick="switchPage('dash')"><span class="bi">🏠</span> Anasayfa</div>
+    <div class="db-item"        id="navTopPrim"   onclick="switchPage('prim')"><span class="bi">📊</span> Prim</div>
+    <div class="db-item"        id="navTopFinans" onclick="switchPage('finans')"><span class="bi">💹</span> Finansal Analiz</div>
+    <div class="db-item"        id="navTopKasa"   onclick="switchPage('kasa')"><span class="bi">🧮</span> Kasa Sayımı</div>
+    <div class="db-item"        id="navTopGelir"  onclick="switchPage('gelir')"><span class="bi">💰</span> Gelir Takibi</div>
+    <div class="db-item"        id="navTopNot"    onclick="switchPage('not')"><span class="bi">🏷️</span> Not & Etiket</div>
   </div>
   <div class="db-tools">
     <!-- v350: aktif oturum (sidebar gizli; degerler oradan aynalanir) -->
@@ -3718,7 +3740,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v357';
+const APP_VERSION = 'v358';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3831,7 +3853,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 09:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 10:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -19857,6 +19879,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v358',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'UST MENU ATLANMISTI. Anasayfa / Prim / Finansal Analiz / Kasa Sayimi / Gelir Takibi / Not & Etiket sekmeleri hala eski duz stildeydi; sayfa butonlari hap olunca tutarsiz kaldilar. Artik onlar da HAP + RENKLI IKON: ikon daire icinde, secili sekme dolu kirmizi hap. Ayarlar butonu, surum rozeti ve oturum kutusu hap; bildirim zili tam yuvarlak.' },
+      { type: 'fix', text: 'Hap sekmeler daha genis oldugu icin dar pencerede son sekme ("Not & Etiket") kirpilip ULASILAMAZ oluyordu. Kademeli kucultme eklendi (1330px ve 1120px altinda) ve cok dar ekranda sekmeler ezilmek yerine kaydirilabiliyor. 1000px\'e kadar hepsi tam sigiyor.' },
+      { type: 'new', text: 'TELEFON GORUNUMU YINE HIC DEGISMEDI: ust menu zaten sadece masaustunde var.' },
+    ]
+  },
   {
     version: 'v357',
     date: '19.07.2026',
