@@ -3723,7 +3723,25 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
       </div>
 
-      <button onclick="closeNotifModal()" style="width:100%;background:var(--red);color:#fff;border:none;border-radius:7px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">Kapat</button>
+      <!-- v360: YENİ UYARI TİPLERİ -->
+      <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🔔 Diğer Uyarılar</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">Bunlar açılışta baloncuk çıkarmaz — sessizce listede birikir. Sadece <b style="color:var(--txt)">gecikmiş onay</b> ve <b style="color:var(--txt)">kasa açığı</b> baloncuk çıkarır.</div>
+        <div id="notifExtraList"></div>
+      </div>
+
+      <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:14px">💬</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">Açılışta baloncuk göster</div>
+          <div style="font-size:11.5px;color:var(--muted)">Kapatırsan hiç baloncuk çıkmaz, bildirimler sadece listede görünür.</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer">
+          <input type="checkbox" id="notifToastEnabled" onchange="saveNotifSettings()" style="width:14px;height:14px;cursor:pointer"> Aktif
+        </label>
+      </div>
+
+      <button onclick="closeNotifModal()" style="width:100%;background:var(--red);color:#fff;border:none;border-radius:7px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-top:14px">Kapat</button>
 
       <!-- Bildirim Geçmişi -->
       <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:14px">
@@ -3775,7 +3793,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v359';
+const APP_VERSION = 'v360';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3888,7 +3906,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 11:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 13:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -10175,6 +10193,11 @@ function showToast(msg, type='ok'){
 function openAnomaliPopup(){
   const anomaliler = checkMasrafAnomali();
   if(!anomaliler.length) return;
+  // v360: Tablo, anomalileri BIR DAHA hesaplamaz — motorun (checkMasrafAnomali) sonucunu kullanir.
+  // Eskiden popup ortalamayi "o ay DAHIL" aliyordu, motor ise "o ay HARIC" — bu yuzden
+  // anasayfa 8 derken tablo 6 gosteriyordu. Artik tek kaynak var.
+  const anomaliSet = new Set(anomaliler.map(a=>a.ym));
+  const anomaliMap = {}; anomaliler.forEach(a=>{ anomaliMap[a.ym]=a; });
   const anomaliYillar = [...new Set(anomaliler.map(a=>a.yil))].sort();
   const yilHtml = anomaliYillar.map(yil => {
     const yilAylari = [...finansData].filter(d=>d.ym.slice(0,4)===yil).sort((a,b)=>a.ym.localeCompare(b.ym));
@@ -10183,14 +10206,14 @@ function openAnomaliPopup(){
     const esik      = yilOrt*1.5;
     const maxMasraf = Math.max(...yilAylari.map(d=>d.vodMasraf+d.mixyMasraf),esik*1.1);
     const AYLAR     = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
-    const anomaliAylar = yilAylari.filter(d=>d.vodMasraf+d.mixyMasraf>esik);
+    const anomaliAylar = yilAylari.filter(d=>anomaliSet.has(d.ym));
     const bars = yilAylari.map(d=>{
       const topMasraf = d.vodMasraf+d.mixyMasraf;
       const pct       = Math.round(topMasraf/maxMasraf*100);
-      const isAnomali = topMasraf>esik;
+      const isAnomali = anomaliSet.has(d.ym);
       const barColor  = isAnomali?'linear-gradient(180deg,#ff3b30,#e2231a)':'linear-gradient(180deg,#4cd964,#2fae4e)';
       const ayAdi     = AYLAR[parseInt(d.ym.slice(5))-1];
-      return `<div ${isAnomali?`onclick="toggleAnomaliDetail('${d.ym}')"`:''} style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;${isAnomali?'cursor:pointer':''}" title="${monthLabel(d.ym)}\nMasraf: ${fmtF(topMasraf)}">
+      return `<div ${isAnomali?`onclick="toggleAnomaliDetail('${d.ym}')"`:''} style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;${isAnomali?'cursor:pointer':''}" title="${monthLabel(d.ym)}&#10;Masraf: ${fmtF(topMasraf)}${isAnomali&&anomaliMap[d.ym]?'&#10;Diğer ayların ort.: '+fmtF(anomaliMap[d.ym].avgTopMasraf)+'&#10;Eşik (%150): '+fmtF(anomaliMap[d.ym].avgTopMasraf*1.5):''}&#10;Net: ${fmtF(d.topKarZarar)}${d.aciklama?'&#10;&#10;📝 Not: '+String(d.aciklama).replace(/"/g,'&quot;'):'&#10;&#10;📝 Not girilmemiş'}">
         <span style="font-size:9px;${isAnomali?'color:#ff5252;font-weight:700':'color:transparent'}">🚨</span>
         <div style="width:100%;display:flex;flex-direction:column;justify-content:flex-end;height:80px">
           <div id="bar-${d.ym}" style="background:${barColor};border-radius:3px 3px 0 0;width:100%;height:${Math.max(pct,3)}%;min-height:3px;transition:all .15s"></div>
@@ -10200,8 +10223,11 @@ function openAnomaliPopup(){
     }).join('');
     const detayDivler = anomaliAylar.map(d=>{
       const topMasraf = d.vodMasraf+d.mixyMasraf;
-      const fazla     = topMasraf-yilOrt;
-      const pctAnom   = Math.round(topMasraf/yilOrt*100);
+      // v360: karsilastirma tabani = O AY HARIC diger aylarin ortalamasi (motorun kullandigi deger)
+      const taban     = (anomaliMap[d.ym] && anomaliMap[d.ym].avgTopMasraf) || yilOrt;
+      const esikAy    = taban*1.5;
+      const fazla     = topMasraf-taban;
+      const pctAnom   = taban>0 ? Math.round(topMasraf/taban*100) : 0;
       const net       = d.topKarZarar;
       const netColor  = net>=0?'#4cd964':'#ff5252';
       return `<div id="anomali-detail-${d.ym}" style="display:none;margin-top:6px;background:rgba(226,35,26,0.08);border:1px solid rgba(226,35,26,0.35);border-radius:8px;padding:12px 14px">
@@ -10217,10 +10243,10 @@ function openAnomaliPopup(){
             <div style="font-size:9.5px;color:var(--muted)">MİXY: ${fmtF(d.mixyMasraf)}</div>
           </div>
           <div style="background:var(--panel2);border-radius:6px;padding:8px 10px">
-            <div style="font-size:9.5px;color:var(--muted);margin-bottom:3px">${yil} Yılı Ort.</div>
-            <div style="font-weight:700">${fmtF(yilOrt)}</div>
+            <div style="font-size:9.5px;color:var(--muted);margin-bottom:3px">Diğer Ayların Ort.</div>
+            <div style="font-weight:700">${fmtF(taban)}</div>
             <div style="font-size:9.5px;color:#ffb74d;margin-top:2px">Fazla: +${fmtF(fazla)}</div>
-            <div style="font-size:9.5px;color:#ffb74d">Eşik: ${fmtF(esik)}</div>
+            <div style="font-size:9.5px;color:#ffb74d">Eşik: ${fmtF(esikAy)}</div>
           </div>
           <div style="background:${net>=0?'rgba(47,174,78,0.1)':'rgba(226,35,26,0.1)'};border-radius:6px;padding:8px 10px">
             <div style="font-size:9.5px;color:var(--muted);margin-bottom:3px">Net Kâr/Zarar</div>
@@ -10230,7 +10256,7 @@ function openAnomaliPopup(){
           </div>
         </div>
         <div>
-          <div style="font-size:9.5px;color:var(--muted);margin-bottom:3px">Masraf / Yıl Ortalaması</div>
+          <div style="font-size:9.5px;color:var(--muted);margin-bottom:3px">Masraf / Diğer ayların ortalaması</div>
           <div style="height:7px;background:var(--line);border-radius:3px;overflow:hidden;position:relative">
             <div style="position:absolute;left:66.6%;top:0;bottom:0;width:2px;background:#ffb74d"></div>
             <div style="height:100%;width:${Math.min(pctAnom,100)}%;background:linear-gradient(90deg,#ffb74d,#ff3b30);border-radius:3px"></div>
@@ -10243,7 +10269,8 @@ function openAnomaliPopup(){
       </div>`;
     }).join('');
     const ortPct  = Math.round(yilOrt/maxMasraf*100);
-    const esikPct = Math.round(esik/maxMasraf*100);
+    // v360: tek "%150 esik" cizgisi kaldirildi — esik artik her ay icin ayri
+    // (o ay haric ortalamanin 1.5 kati). Her ayin kendi esigi detay kutusunda ve baloncukta.
     return `<div style="margin-bottom:20px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:14px;font-weight:800">${yil} — Toplam Masraf <span style="font-size:11px;font-weight:400;color:var(--muted)">(${anomaliAylar.length} anomali)</span></span>
@@ -10253,9 +10280,6 @@ function openAnomaliPopup(){
         </div>
       </div>
       <div style="position:relative;padding:0 4px">
-        <div style="position:absolute;left:4px;right:4px;bottom:calc(${esikPct}% + 26px);height:1px;background:#ffb74d;z-index:1;pointer-events:none">
-          <span style="position:absolute;right:0;top:-14px;font-size:9px;color:#ffb74d;font-weight:700;white-space:nowrap">%150 eşik</span>
-        </div>
         <div style="position:absolute;left:4px;right:4px;bottom:calc(${ortPct}% + 26px);height:1px;border-top:1px dashed rgba(255,255,255,0.2);z-index:1;pointer-events:none">
           <span style="position:absolute;left:0;top:-14px;font-size:9px;color:var(--muted);white-space:nowrap">Ort. ${fmtF(yilOrt)}</span>
         </div>
@@ -10266,7 +10290,7 @@ function openAnomaliPopup(){
   }).join('<hr style="border:none;border-top:1px solid var(--line);margin:10px 0">');
   document.getElementById('anomaliPopupBody').innerHTML = `
     <div style="background:rgba(255,183,77,0.08);border:1px solid rgba(255,183,77,0.3);border-radius:8px;padding:9px 14px;margin-bottom:14px;font-size:11.5px;color:var(--muted)">
-      \u2139\ufe0f <b style="color:var(--txt)">Hesaplama:</b> Toplam masraf, <b style="color:#ffb74d">o yılın aylık ortalamasının %150\u2019sini</b> a\u015farsa 🚨 anomali. <span style="color:var(--accent)">K\u0131rm\u0131z\u0131 barlara t\u0131kla \u2192 detay.</span>
+      \u2139\ufe0f <b style="color:var(--txt)">Hesaplama:</b> Bir ayın masrafı, o yılın <b style="color:#ffb74d">diğer aylarının ortalamasının %150\u2019sini</b> a\u015farsa 🚨 anomali. (Ay kendi ortalamasına katılmaz — yoksa yüksek masraf kendini gizler.) <span style="color:var(--accent)">K\u0131rm\u0131z\u0131 barlara t\u0131kla \u2192 detay. Barların üzerine gelince not görünür.</span>
     </div>
     ${yilHtml}
     <div style="text-align:right;margin-top:8px">
@@ -15765,6 +15789,43 @@ function loadNotifSettings() {
   } catch(e) {}
 }
 
+// v360: yeni uyari tiplerinin tanimi (tek yerde — hem cizim hem kaydetme buradan)
+const NOTIF_EKSTRA = [
+  { anahtar:'musteriEnabled',   ikon:'⏳', ad:'Onay bekleyen müşteri',   aciklama:'Bekleyen ve aktivasyon günü geçmiş (gecikmiş) onaylar' },
+  { anahtar:'eldenEnabled',     ikon:'💸', ad:'Açık elden',              aciklama:'Kapatılmamış elden verilen tutar', esikAnahtar:'eldenEsik', esikSonEk:'₺ üstündeyse uyar', esikGenislik:70 },
+  { anahtar:'anomaliEnabled',   ikon:'🚨', ad:'Masraf anomalisi',        aciklama:'Bir ayın masrafı diğer ayların ortalamasını belirgin aşarsa' },
+  { anahtar:'kasaAcikEnabled',  ikon:'🧮', ad:'Kasa açığı',              aciklama:'Son sayımda kasa eksik çıktıysa' },
+  { anahtar:'kasaSayimEnabled', ikon:'📦', ad:'Kasa sayımı gecikti',     aciklama:'Uzun süredir sayım yapılmadıysa', esikAnahtar:'kasaSayimGun', esikSonEk:'gün geçerse uyar', esikGenislik:52 },
+  { anahtar:'yedekEnabled',     ikon:'💾', ad:'Yedek alınmadı',          aciklama:'Uzun süredir yedek alınmadıysa', esikAnahtar:'yedekGun', esikSonEk:'gün geçerse uyar', esikGenislik:52 },
+  { anahtar:'hedefYokEnabled',  ikon:'🎯', ad:'Hedef girilmemiş',        aciklama:'Bu ay için aylık hedef belirlenmemişse' },
+  { anahtar:'ayKapanisEnabled', ikon:'🗓️', ad:'Ay kapanışı yapılmamış',  aciklama:'Geçen ayın finansal kaydı yoksa' },
+  { anahtar:'sermayeEnabled',   ikon:'📉', ad:'Sermaye eksildi',         aciklama:'Son kayıtta beklenen sermayenin altında kalındıysa' },
+];
+
+function renderNotifExtraSettings(){
+  const el = document.getElementById('notifExtraList');
+  if(!el) return;
+  el.innerHTML = NOTIF_EKSTRA.map(function(t){
+    const acik = notifSettings[t.anahtar] !== false;
+    const esik = t.esikAnahtar ? (notifSettings[t.esikAnahtar] ?? 0) : null;
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line)">'
+      + '<span style="font-size:14px;flex-shrink:0">'+t.ikon+'</span>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div style="font-size:12.5px;font-weight:700">'+t.ad+'</div>'
+      +   '<div style="font-size:11px;color:var(--muted)">'+t.aciklama+'</div>'
+      + '</div>'
+      + (t.esikAnahtar
+          ? '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+            + '<input type="number" min="0" id="nx_'+t.esikAnahtar+'" value="'+esik+'" onchange="saveNotifSettings()" '
+            + 'style="width:'+(t.esikGenislik||56)+'px;padding:3px 5px;font-size:11.5px;text-align:right">'
+            + '<span style="font-size:10px;color:var(--muted);white-space:nowrap">'+t.esikSonEk+'</span></div>'
+          : '')
+      + '<label style="display:flex;align-items:center;gap:4px;font-size:11.5px;cursor:pointer;flex-shrink:0">'
+      +   '<input type="checkbox" id="nx_'+t.anahtar+'" '+(acik?'checked':'')+' onchange="saveNotifSettings()" style="width:14px;height:14px;cursor:pointer"> Aktif'
+      + '</label></div>';
+  }).join('');
+}
+
 function saveNotifSettings() {
   notifSettings.hedefEnabled  = document.getElementById('notifHedefEnabled')?.checked ?? notifSettings.hedefEnabled;
   notifSettings.hedefEsik     = parseInt(document.getElementById('notifHedefEsik')?.value) || notifSettings.hedefEsik;
@@ -15774,8 +15835,22 @@ function saveNotifSettings() {
   notifSettings.butceEsik     = parseInt(document.getElementById('notifButceEsik')?.value) || notifSettings.butceEsik;
   notifSettings.dususEnabled  = document.getElementById('notifDususEnabled')?.checked ?? notifSettings.dususEnabled;
   notifSettings.dususEsik     = parseInt(document.getElementById('notifDususEsik')?.value) || notifSettings.dususEsik;
+  // v360: yeni uyari tipleri
+  try{
+    NOTIF_EKSTRA.forEach(function(t){
+      const chk = document.getElementById('nx_'+t.anahtar);
+      if(chk) notifSettings[t.anahtar] = chk.checked;
+      if(t.esikAnahtar){
+        const inp = document.getElementById('nx_'+t.esikAnahtar);
+        if(inp && inp.value !== ''){ const v = parseInt(inp.value); if(!isNaN(v) && v>=0) notifSettings[t.esikAnahtar] = v; }
+      }
+    });
+    const te = document.getElementById('notifToastEnabled');
+    if(te) notifSettings.toastEnabled = te.checked;
+  }catch(e){}
   try { localStorage.setItem(STORE_KEY_NOTIF, JSON.stringify(notifSettings)); } catch(e) {}
   checkAllNotifications();
+  try{ renderContextPanel(typeof currentPage!=='undefined'?currentPage:'dash'); }catch(e){}
 }
 
 function markNotifSeen(key, alertObj) {
@@ -16187,6 +16262,8 @@ function toggleNotifPanel() {
     setChk('notifGunlukEnabled', s.gunlukEnabled); setVal('notifGunlukGun',  s.gunlukGun);
     setChk('notifButceEnabled',  s.butceEnabled);  setVal('notifButceEsik',  s.butceEsik);
     setChk('notifDususEnabled',  s.dususEnabled);  setVal('notifDususEsik',  s.dususEsik);
+    setChk('notifToastEnabled',  s.toastEnabled !== false);
+    try{ renderNotifExtraSettings(); }catch(e){}   // v360
     const alerts = checkAllNotifications();
     renderNotifActiveList(alerts);
     // Panel açılınca badge'leri sıfırla (sadece görsel badge, okundu kaydı ayrı tutuluyor)
@@ -20091,6 +20168,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v360',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'MASRAF ANOMALISI 8 vs 6 HATASI COZULDU. Iki farkli formul vardi: anasayfadaki sayiyi ureten motor, bir ayin ortalamasini hesaplarken O AYI HARIC tutuyordu; tablodaki grafik ise O AY DAHIL hesapliyordu. Anormal ay kendi ortalamasini yukari cekip esigi yukselttigi icin tabloda 2 anomali kayboluyordu. Dogrusu "kendisi haric" — yuksek masraf kendini gizlememeli. Tablo artik anomalileri BIR DAHA hesaplamiyor, motorun sonucunu kullaniyor: sayi, kirmizi barlar, detay kutulari ve yil basliklari artik HEP AYNI.' },
+      { type: 'new', text: 'ANOMALI GRAFIGINDE BALONCUK ZENGINLESTI: barin uzerine gelince ay, masraf, DIGER AYLARIN ORTALAMASI, o aya ozel ESIK, net kar/zarar ve AY NOTU (ay kapanisinda girdigin aciklama) gorunuyor. Not yoksa "Not girilmemis" yaziyor.' },
+      { type: 'fix', text: 'Grafikteki tek "%150 esik" cizgisi kaldirildi — esik artik her ay icin ayri hesaplandigindan tek cizgi yaniltiyordu (kirmizi bar cizginin altinda kalabiliyordu). Her ayin kendi esigi baloncukta ve detay kutusunda yaziyor.' },
+      { type: 'new', text: 'BILDIRIM AYARLARI: v359\'da eklenen 9 yeni uyari tipinin ayri ayri ACMA/KAPAMA kutucuklari geldi. Ucunun esigi de ayarlanabiliyor: acik elden (₺), kasa sayimi (gun), yedek (gun). Ayrica "Acilista baloncuk goster" anahtari — kapatirsan hic balon cikmaz, bildirimler sadece listede birikir.' },
+    ]
+  },
   {
     version: 'v359',
     date: '19.07.2026',
