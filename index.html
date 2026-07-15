@@ -1158,6 +1158,41 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   .ctx-act-s{ font-size:9.5px; color:var(--muted); margin-top:2px; line-height:1.25; }
   .ctx-ok{ padding:11px 13px; font-size:11px; color:var(--muted); text-align:center; }
 
+  /* v359: OKUNMAMIŞ belirgin / OKUNMUŞ soluk ve ayrı renkte */
+  .notif-row{ position:relative; padding-left:14px; }
+  /* okunmamışta sol kenarda önem rengiyle şerit */
+  .notif-row.yeni::before{
+    content:''; position:absolute; left:0; top:8px; bottom:8px; width:3px; border-radius:0 2px 2px 0;
+  }
+  .notif-row.yeni.t-danger::before{ background:#ff453a; }
+  .notif-row.yeni.t-warn::before{ background:#ff9f0a; }
+  .notif-row.yeni.t-ok::before{ background:var(--green); }
+  .notif-row.yeni .ctx-act-t{ font-weight:800; color:var(--txt); }
+  /* okunmamışın sağında canlı nokta */
+  .notif-nokta{
+    width:8px; height:8px; border-radius:50%; background:#3fd0ff; flex-shrink:0;
+    box-shadow:0 0 6px rgba(63,208,255,0.7);
+  }
+  /* okunmuş: soluk + gri "okundu" etiketi (buton DEĞİL) */
+  .notif-row.okundu{ opacity:.5; }
+  .notif-row.okundu .ctx-act-t{ font-weight:600; color:var(--muted); }
+  .notif-row.okundu:hover{ opacity:.75; }
+  .notif-etiket{
+    font-size:8.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--muted); background:var(--panel2); border-radius:6px; padding:2px 6px;
+    flex-shrink:0; white-space:nowrap;
+  }
+  /* bölüm başlığındaki sayaç + "tümünü okundu" bağlantısı */
+  .ds-sec-t .sec-say{
+    background:var(--red); color:#fff; border-radius:8px; padding:0 5px;
+    font-size:9px; font-weight:800; margin-left:6px; letter-spacing:0;
+  }
+  .ds-sec-t .sec-ln{
+    float:right; text-transform:none; letter-spacing:0; font-size:9px; font-weight:600;
+    color:var(--muted); cursor:pointer; text-decoration:underline; opacity:.8;
+  }
+  .ds-sec-t .sec-ln:hover{ color:var(--txt); opacity:1; }
+
   /* v353: hero istatistik */
   .ctx-hero{ }
   .ctx-hero.go{ cursor:pointer; }
@@ -3740,7 +3775,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v358';
+const APP_VERSION = 'v359';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3853,7 +3888,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 10:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 11:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -8862,6 +8897,16 @@ function renderHedefOzet(){
 // asagidaki kazaniyordu — buradaki kod hicbir zaman calismiyordu, sadece fazladan bir
 // resize listener'i ekliyordu. Gecerli tanim ve resize/orientationchange dinleyicileri
 // dosyanin sonundaki acilis blogunda.
+// v359: Sag paneldeki bildirime tiklandi -> okundu isaretle + rozeti ve paneli tazele
+function ctxNotifAc(key){
+  try{ if(typeof markSingleNotif === 'function') markSingleNotif(key); }catch(e){}
+  try{ renderContextPanel(typeof currentPage!=='undefined' ? currentPage : 'dash'); }catch(e){}
+}
+function ctxNotifHepsi(){
+  try{ if(typeof markAllNotifsRead === 'function') markAllNotifsRead(); }catch(e){}
+  try{ renderContextPanel(typeof currentPage!=='undefined' ? currentPage : 'dash'); }catch(e){}
+}
+
 // ==================== v350: SAĞ PANEL — AYARLAR MODU (SADECE GENİŞ EKRAN) ====================
 // Sağ panelin iki modu var: 'context' (sayfa özeti) | 'settings' (ayarlar)
 var ctxMode = 'context';
@@ -9119,38 +9164,40 @@ function renderContextPanel(page){
         + '<div class="ctx-duo-v">'+deger+'<span class="ctx-duo-s">'+(birim||'')+'</span></div></div>';
     }
 
-    // ---- BİLDİRİMLER (her sayfada, aksiyon kartlari) ----
-    var acts = '';
+    // ---- BİLDİRİMLER: tek kaynak = collectAlerts() motoru (v359) ----
+    // Zil rozeti, bu panel ve bildirim penceresi ARTIK AYNI listeyi gösterir.
+    var acts = '', okunmamis = 0;
     try{
-      if(typeof musteriler!=='undefined' && Array.isArray(musteriler)){
-        var bekleyen = musteriler.filter(function(m){ return m && m.durum==='bekliyor'; }).length;
-        if(bekleyen>0){
-          acts += act('\u23f3','o', bekleyen+' onay bekliyor', 'M\u00fc\u015fteri onay listesini a\u00e7',
-                      "openMusteriRaporFiltered('bekliyor','hepsi','hepsi')");
-        }
-      }
+      var alerts = (typeof collectAlerts === 'function') ? collectAlerts() : [];
+      var oku = function(k){ try{ return isNotifSeen('panel_read_'+k, 72); }catch(e){ return false; } };
+      var onc = { danger:0, warn:1, ok:2 };
+      alerts = alerts.slice().sort(function(a,b){
+        var ra = oku(a.key)?1:0, rb = oku(b.key)?1:0;
+        if(ra !== rb) return ra - rb;                       // okunmamışlar üstte
+        return (onc[a.type]==null?3:onc[a.type]) - (onc[b.type]==null?3:onc[b.type]);
+      });
+      var ton = { danger:'r', warn:'o', ok:'g' };
+      try{ if(typeof updateNotifBadge === 'function') updateNotifBadge(alerts); }catch(e){}  // rozet hep listeyle ayni
+      alerts.forEach(function(a){
+        var read = oku(a.key);
+        if(!read && a.type !== 'ok') okunmamis++;   // rozetle ayni kural
+        var git = a.git ? String(a.git).replace(/"/g,'&quot;') : '';
+        acts += '<div class="ctx-act notif-row '+(read?'okundu':'yeni')+' t-'+(a.type||'warn')+'"'
+             +  ' onclick="ctxNotifAc(\''+a.key+'\')'+(git?'; '+git:'')+'">'
+             +  '<span class="ctx-act-i '+(ton[a.type]||'o')+'">'+(a.icon||'🔔')+'</span>'
+             +  '<span class="ctx-act-x">'
+             +  '<span class="ctx-act-t">'+a.title+'</span>'
+             +  '<span class="ctx-act-s">'+(a.msg||'')+'</span>'
+             +  '</span>'
+             +  (read ? '<span class="notif-etiket">okundu</span>' : '<span class="notif-nokta"></span>')
+             +  '</div>';
+      });
     }catch(e){}
-    try{
-      if(typeof eldenAcikToplam==='function'){
-        var _ea = eldenAcikToplam();
-        if(_ea>0){
-          var _en = (typeof eldenData!=='undefined' && Array.isArray(eldenData)) ? eldenData.length : 0;
-          acts += act('\ud83d\udcb8','r', 'A\u00e7\u0131k elden', _fmt(_ea)+' \u00b7 '+_en+' kay\u0131t', 'openEldenModal()');
-        }
-      }
-    }catch(e){}
-    try{
-      if(grup==='finans' || grup==='dash'){
-        var _an = (typeof checkMasrafAnomali==='function') ? checkMasrafAnomali() : [];
-        if(_an.length){
-          var _sonAn = _an[_an.length-1];
-          var _etk = (typeof monthLabel==='function') ? monthLabel(_sonAn.ym) : _sonAn.ym;
-          acts += act('\ud83d\udea8','r', _an.length+' masraf anomalisi', 'Son: '+_etk+' \u2014 detay\u0131 a\u00e7', 'openAnomaliPopup()');
-        }
-      }
-    }catch(e){}
-    if(!acts) acts = '<div class="ctx-ok">\u2713 Bekleyen bir \u015fey yok</div>';
-    H += sec('\ud83d\udd14 Bildirimler') + '<div class="ctx-card p0">'+acts+'</div>';
+    if(!acts) acts = '<div class="ctx-ok">\u2713 Bekleyen bir şey yok</div>';
+    H += sec('\ud83d\udd14 Bildirimler'
+          + (okunmamis ? '<span class="sec-say">'+okunmamis+'</span>' : '')
+          + (okunmamis ? '<span class="sec-ln" onclick="event.stopPropagation();ctxNotifHepsi()">tümünü okundu işaretle</span>' : ''))
+       + '<div class="ctx-card p0">'+acts+'</div>';
 
     // ---- SAYFAYA OZEL ----
     if(grup==='kasa'){
@@ -15691,7 +15738,18 @@ let notifSettings = {
   hedefEnabled: true,  hedefEsik: 80,
   gunlukEnabled: true, gunlukGun: 1,
   butceEnabled: true,  butceEsik: 90,
-  dususEnabled: true,  dususEsik: 20
+  dususEnabled: true,  dususEsik: 20,
+  // v359: yeni uyari tipleri (hepsi ayri ayri kapatilabilir)
+  musteriEnabled: true,                    // onay bekleyen / gecikmis onay
+  eldenEnabled: true,   eldenEsik: 0,      // acik elden (esik: TL, 0 = herhangi)
+  anomaliEnabled: true,                    // masraf anomalisi
+  kasaAcikEnabled: true,                   // son sayimda kasa acigi
+  kasaSayimEnabled: true, kasaSayimGun: 7, // uzun suredir sayim yok
+  yedekEnabled: true,   yedekGun: 7,       // uzun suredir yedek yok
+  hedefYokEnabled: true,                   // bu ay hedef girilmemis
+  ayKapanisEnabled: true,                  // gecen ayin finansal kaydi yok
+  sermayeEnabled: true,                    // son kayitta sermaye eksilmis
+  toastEnabled: true                       // acilista baloncuk goster
 };
 let notifSeenKeys = {}; // {key: timestamp} - gösterilmiş bildirimleri takip et
 let notifHistory = []; // [{key, type, icon, title, msg, cat, seenAt, note}] geçmiş bildirimler
@@ -15842,6 +15900,151 @@ function collectAlerts() {
     }
   }
 
+  // ================= v359: YENİ UYARI TİPLERİ =================
+  // Not: toast:false olanlar açılışta balon çıkarmaz, sessizce listede birikir.
+  // Sadece gerçekten acil olanlar (gecikmiş onay, kasa açığı) balon çıkarır.
+
+  // --- 5. MÜŞTERİ ONAYLARI ---
+  if (notifSettings.musteriEnabled !== false) {
+    try{
+      if (typeof musteriler !== 'undefined' && Array.isArray(musteriler)) {
+        const bekleyenler = musteriler.filter(m => m && m.durum === 'bekliyor');
+        const gecikmis = bekleyenler.filter(m => m.aktivasyonTarihi && String(m.aktivasyonTarihi).slice(0,10) < today);
+        if (gecikmis.length) {
+          alerts.push({ key:'onay_gecikmis_'+today, type:'danger', icon:'⏰', cat:'musteri',
+            title: `${gecikmis.length} onay gecikti`,
+            msg: `Aktivasyon günü geçmiş ${gecikmis.length} müşteri hâlâ onay bekliyor.`,
+            git: "openMusteriRaporFiltered('bekliyor','hepsi','hepsi','gecikmis')" });
+        }
+        const kalan = bekleyenler.length - gecikmis.length;
+        if (kalan > 0) {
+          alerts.push({ key:'onay_bekleyen_'+today, type:'warn', icon:'⏳', cat:'musteri', toast:false,
+            title: `${kalan} müşteri onay bekliyor`,
+            msg: 'Onay listesini açıp durumlarını güncelleyin.',
+            git: "openMusteriRaporFiltered('bekliyor','hepsi','hepsi')" });
+        }
+      }
+    }catch(e){}
+  }
+
+  // --- 6. AÇIK ELDEN ---
+  if (notifSettings.eldenEnabled !== false) {
+    try{
+      if (typeof eldenAcikToplam === 'function') {
+        const ea = eldenAcikToplam();
+        const esik = Number(notifSettings.eldenEsik) || 0;
+        if (ea > 0 && ea >= esik) {
+          const adet = (typeof eldenData!=='undefined' && Array.isArray(eldenData)) ? eldenData.length : 0;
+          alerts.push({ key:'elden_acik_'+today, type:'warn', icon:'💸', cat:'kasa', toast:false,
+            title: `Açık elden: ${fmt(ea)}`,
+            msg: `${adet} kayıt hâlâ kapatılmamış.`,
+            git: 'openEldenModal()' });
+        }
+      }
+    }catch(e){}
+  }
+
+  // --- 7. MASRAF ANOMALİSİ ---
+  if (notifSettings.anomaliEnabled !== false) {
+    try{
+      const an = (typeof checkMasrafAnomali === 'function') ? checkMasrafAnomali() : [];
+      if (an.length) {
+        const sonAn = an[an.length-1];
+        const etk = (typeof monthLabel==='function') ? monthLabel(sonAn.ym) : sonAn.ym;
+        alerts.push({ key:'masraf_anomali_'+an.length+'_'+sonAn.ym, type:'warn', icon:'🚨', cat:'masraf', toast:false,
+          title: `${an.length} ayda masraf anomalisi`,
+          msg: `Son: ${etk}. Masraf, yıl ortalamasının belirgin üzerine çıkmış.`,
+          git: 'openAnomaliPopup()' });
+      }
+    }catch(e){}
+  }
+
+  // --- 8. KASA AÇIĞI / SAYIM ---
+  try{
+    if (typeof kasaData !== 'undefined' && Array.isArray(kasaData) && kasaData.length) {
+      const sirali = [...kasaData].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+      const son = sirali[sirali.length-1];
+      if (notifSettings.kasaAcikEnabled !== false && typeof _kasaFark === 'function') {
+        const fark = _kasaFark(son);
+        if (fark != null && fark < 0) {
+          alerts.push({ key:'kasa_acik_'+(son.date||''), type:'danger', icon:'🧮', cat:'kasa',
+            title: `Kasa açığı: ${fmt(Math.abs(fark))}`,
+            msg: `${son.date} sayımında kasa eksik çıktı.`,
+            git: "switchPage('kasa')" });
+        }
+      }
+      if (notifSettings.kasaSayimEnabled !== false && son.date) {
+        const gun = Math.floor((new Date(today) - new Date(son.date)) / 86400000);
+        const limit = Number(notifSettings.kasaSayimGun) || 7;
+        if (gun >= limit) {
+          alerts.push({ key:'kasa_sayim_'+son.date, type:'warn', icon:'📦', cat:'kasa', toast:false,
+            title: `${gun} gündür kasa sayımı yok`,
+            msg: `Son sayım: ${son.date}. Yeni sayım eklemeyi düşünün.`,
+            git: "switchPage('kasa')" });
+        }
+      }
+    }
+  }catch(e){}
+
+  // --- 9. YEDEK ---
+  if (notifSettings.yedekEnabled !== false) {
+    try{
+      const sonYedek = (typeof getLastBackupDate === 'function') ? getLastBackupDate() : null;
+      const limit = Number(notifSettings.yedekGun) || 7;
+      if (!sonYedek) {
+        alerts.push({ key:'yedek_hic', type:'warn', icon:'💾', cat:'sistem', toast:false,
+          title: 'Henüz hiç yedek alınmamış',
+          msg: 'Verilerinizi kaybetmemek için yedek alın.', git: 'backupData()' });
+      } else {
+        const gun = Math.floor((Date.now() - new Date(sonYedek).getTime()) / 86400000);
+        if (gun >= limit) {
+          alerts.push({ key:'yedek_'+sonYedek.slice(0,10), type:'warn', icon:'💾', cat:'sistem', toast:false,
+            title: `${gun} gündür yedek alınmadı`,
+            msg: `Son yedek: ${new Date(sonYedek).toLocaleDateString('tr-TR')}.`, git: 'backupData()' });
+        }
+      }
+    }catch(e){}
+  }
+
+  // --- 10. BU AY HEDEF GİRİLMEMİŞ ---
+  if (notifSettings.hedefYokEnabled !== false) {
+    try{
+      if (!hedefler[curYm] || hedefler[curYm] <= 0) {
+        alerts.push({ key:'hedef_yok_'+curYm, type:'warn', icon:'🎯', cat:'hedef', toast:false,
+          title: 'Bu ay için hedef girilmemiş',
+          msg: 'Aylık hedef belirlerseniz ilerlemeyi takip edebilirsiniz.',
+          git: "switchPage('hedef')" });
+      }
+    }catch(e){}
+  }
+
+  // --- 11. AY KAPANIŞI / SERMAYE ---
+  try{
+    if (typeof finansData !== 'undefined' && Array.isArray(finansData) && finansData.length) {
+      const fs = [...finansData].sort((a,b)=>String(a.ym||'').localeCompare(String(b.ym||'')));
+      if (notifSettings.ayKapanisEnabled !== false) {
+        const varMi = fs.some(f => f.ym === prevYm);
+        if (!varMi) {
+          alerts.push({ key:'ay_kapanis_'+prevYm, type:'warn', icon:'🗓️', cat:'finans', toast:false,
+            title: `${prevYm} ayının finansal kaydı yok`,
+            msg: 'Geçen ayın kapanışı henüz girilmemiş görünüyor.',
+            git: 'openFinansAyModal()' });
+        }
+      }
+      if (notifSettings.sermayeEnabled !== false) {
+        const sonF = fs[fs.length-1];
+        const sf = Number(sonF.sermayeFarki) || 0;
+        if (sf < 0) {
+          const etk = (typeof monthLabel==='function' && sonF.ym) ? monthLabel(sonF.ym) : sonF.ym;
+          alerts.push({ key:'sermaye_eksik_'+sonF.ym, type:'warn', icon:'📉', cat:'finans', toast:false,
+            title: `Sermaye eksildi: ${fmt(Math.abs(sf))}`,
+            msg: `${etk} kaydında beklenen sermayenin altında kalınmış.`,
+            git: "switchPage('finans')" });
+        }
+      }
+    }
+  }catch(e){}
+
   return alerts;
 }
 
@@ -15851,7 +16054,8 @@ function updateNotifBadge(alerts) {
   const btn = document.getElementById('notifPanelBtn');
   // v261: 'floatNotifBtn' referansı kaldırıldı — böyle bir element hiçbir yerde oluşturulmuyordu.
   // Sadece okunmamış warn/danger alertleri say
-  const unread = alerts.filter(a => a.type !== 'ok' && !isNotifSeen('panel_read_'+a.key, 720)).length;
+  // v359: 72 saat — bildirim penceresi ve sag panel de ayni degeri kullaniyor (once 720 idi, celisiyordu)
+  const unread = alerts.filter(a => a.type !== 'ok' && !isNotifSeen('panel_read_'+a.key, 72)).length;
   if (unread > 0) {
     if(badge){ badge.style.display = 'inline'; badge.textContent = unread; }
     if(floatBadge){ floatBadge.style.display = 'inline'; floatBadge.textContent = unread; }
@@ -15861,6 +16065,8 @@ function updateNotifBadge(alerts) {
     if(floatBadge) floatBadge.style.display = 'none';
     if(btn) btn.classList.remove('notif-has-alert');
   }
+  // v359: ust menudeki zil aynasi 1sn beklemesin, aninda esitlensin (mobilde erken cikar)
+  try{ if(typeof _deskStatusTick === 'function') _deskStatusTick(); }catch(e){}
 }
 
 function renderNotifActiveList(alerts) {
@@ -16045,11 +16251,17 @@ function runStartupNotifCheck() {
   requestNotifPermission();
   setTimeout(() => {
     const alerts = checkAllNotifications();
-    alerts.filter(a => a.type !== 'ok').forEach((a, i) => {
-      if (!isNotifSeen('toast_'+a.key, 4)) {
-        setTimeout(() => { showNotifToast(a); markNotifSeen('toast_'+a.key); }, 1800 + i * 700);
-      }
-    });
+    // v359: BALON YAGMURU OLMASIN. Yeni uyari tipleri toast:false ile isaretli —
+    // sessizce listede birikirler. Sadece gercekten acil olanlar (gecikmis onay,
+    // kasa acigi) ve eskiden beri balon cikaran 4 tip balon cikarir.
+    // notifSettings.toastEnabled=false ise hicbiri cikmaz.
+    if (notifSettings.toastEnabled !== false) {
+      alerts.filter(a => a.type !== 'ok' && a.toast !== false).forEach((a, i) => {
+        if (!isNotifSeen('toast_'+a.key, 4)) {
+          setTimeout(() => { showNotifToast(a); markNotifSeen('toast_'+a.key); }, 1800 + i * 700);
+        }
+      });
+    }
     // Hedef %100 aşıldıysa push bildirim gönder
     alerts.filter(a => a.cat === 'hedef').forEach(a => {
       if(!isNotifSeen('push_'+a.key, 24)){
@@ -19879,6 +20091,18 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v359',
+    date: '19.07.2026',
+    items: [
+      { type: 'new', text: 'BILDIRIM SISTEMI ELDEN GECTI. Onceden IKI AYRI sistem vardi: zil rozeti bir listeyi sayiyordu, sag paneldeki kart bambaska 3 sey gosteriyordu, birbirlerini gormuyorlardi. Artik TEK KAYNAK: zil, sag panel ve bildirim penceresi ayni listeyi gosteriyor, sayi ile liste asla celismiyor.' },
+      { type: 'new', text: 'YENI UYARI TIPLERI (hepsi mevcut veriden): gecikmis onay (aktivasyon gunu gecmis), onay bekleyen musteri, acik elden (esikli), masraf anomalisi, kasa acigi, uzun suredir kasa sayimi yok, yedek alinmamis, bu ay hedef girilmemis, gecen ayin finansal kaydi yok, sermaye eksilmis. Her biri ayarlardan ayri ayri kapatilabilir.' },
+      { type: 'fix', text: 'OKUNDU/OKUNMADI DUZELTILDI. Okunmamis bildirimin yaninda "Okundu" yazan bir dugme vardi — etiket mi dugme mi belli degildi. Artik: OKUNMAMIS belirgin (sol kenarda onem rengiyle serit, kalin baslik, canli mavi nokta), OKUNMUS soluk ve gri "okundu" etiketli. Bildirime tiklayinca hem okundu isaretlenir hem ilgili yer acilir.' },
+      { type: 'fix', text: 'BALON YAGMURU ONLENDI. Acilista her uyari icin ekrana baloncuk firlatiliyordu; 10 yeni tip eklenince her acilista 10 balon patlayacakti. Artik yeni tipler sessizce listede birikiyor, balon sadece GERCEKTEN ACIL olanlara cikiyor (gecikmis onay, kasa acigi). Ayarlardan tamamen kapatilabilir.' },
+      { type: 'fix', text: 'Rozet ile listeler farkli "okundu" suresi kullaniyordu (720 saat / 72 saat) — pencere "okunmadi" derken rozet "okundu" sayabiliyordu. Ikisi de 72 saate esitlendi.' },
+      { type: 'new', text: 'TELEFON: tasarim/duzen HIC degismedi. Bildirimlere yine hamburger menudeki zilden ulasiliyor; sadece liste zenginlesti ve rozet artik dogru sayiyor. Acilista balon yagmuru yok.' },
+    ]
+  },
   {
     version: 'v358',
     date: '19.07.2026',
