@@ -1127,7 +1127,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 @media(min-width:701px){
   .context-panel{
     width:280px; flex-shrink:0; height:100vh; overflow-y:auto;
-    background:#161819; border-left:1px solid #242628;
+    background:var(--bg); border-left:1px solid var(--line);
     box-sizing:border-box; padding:14px 12px;
     display:flex; flex-direction:column; gap:11px;
   }
@@ -1136,22 +1136,22 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
     color:#8896a0; font-weight:700; padding:0 4px 2px;
   }
   .context-panel .ctx-card{
-    background:#1c1f22; border:1px solid #262a2e; border-radius:12px; padding:11px 13px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 13px;
   }
   .context-panel .ctx-card h4{
     margin:0 0 8px; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
-    color:#7f8894; font-weight:700; display:flex; align-items:center; gap:6px;
+    color:var(--muted); font-weight:700; display:flex; align-items:center; gap:6px;
   }
   .context-panel .ctx-row{
     display:flex; justify-content:space-between; align-items:baseline;
     gap:8px; padding:3px 0; font-size:12.5px;
   }
-  .context-panel .ctx-row .lbl{ color:#9aa0a8; }
-  .context-panel .ctx-row .val{ color:#eef1f4; font-weight:700; font-variant-numeric:tabular-nums; }
+  .context-panel .ctx-row .lbl{ color:var(--muted); }
+  .context-panel .ctx-row .val{ color:var(--txt); font-weight:700; font-variant-numeric:tabular-nums; }
   .context-panel .ctx-row .val.pos{ color:#3ecb5f; }
   .context-panel .ctx-row .val.neg{ color:#ff6a60; }
-  .context-panel .ctx-empty{ color:#5f676f; font-size:11.5px; text-align:center; padding:4px 0; }
-  .context-panel .ctx-note{ font-size:11px; color:#8a929b; margin-top:6px; line-height:1.4; }
+  .context-panel .ctx-empty{ color:var(--muted); font-size:11.5px; text-align:center; padding:4px 0; }
+  .context-panel .ctx-note{ font-size:11px; color:var(--muted); margin-top:6px; line-height:1.4; }
   .context-panel .ctx-badge{
     display:inline-flex; align-items:center; gap:5px; background:rgba(255,159,10,0.1);
     border:1px solid rgba(255,159,10,0.28); color:#ffb04a; font-size:11.5px; font-weight:700;
@@ -1227,6 +1227,41 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 @media(max-width:700px){
   .deskbar{ display:none!important; }
   #deskDrawerOverlay{ display:none!important; }
+}
+
+/* ===== v346: MASAÜSTÜ GÖRSEL YENİLEME — SADECE GENİŞ EKRAN ===== */
+@media(min-width:701px){
+  /* 1) Hangi sayfadayız üst menüde yazıyor → sayfa içi başlıklar gereksiz yer kaplıyordu */
+  .desk-page-title{ display:none!important; }
+
+  /* 2) Oval gövde: içerik ve sağ panel, koyu çerçeve üzerinde ayrı kartlar gibi dursun */
+  .app{ background:#161819; padding:8px; gap:8px; box-sizing:border-box; }
+  .app > .main{
+    background:var(--bg); border:1px solid #23262a;
+    border-radius:14px; overflow:hidden;
+  }
+  .context-panel{
+    border:1px solid #23262a; border-left:1px solid #23262a;
+    border-radius:14px; padding:12px 11px;
+  }
+  .deskbar{ border-bottom:none; }
+
+  /* 3) Anasayfa butonları: açık pastel renkler koyu temada sırıtıyordu → temaya uyumlu, sade */
+  #dashNavRow button{
+    background:var(--panel2)!important; border:1px solid var(--line)!important;
+    color:var(--txt)!important; border-radius:9px!important;
+    padding:6px 11px!important; font-size:11px!important; font-weight:600!important;
+    min-width:0!important; flex-direction:row!important; gap:6px!important;
+    box-shadow:none!important; transition:background .12s,border-color .12s!important;
+  }
+  #dashNavRow button:hover{ background:var(--hover)!important; border-color:var(--accent)!important; }
+  #dashNavRow button > span{ font-size:12.5px!important; }
+
+  /* 4) Prim araç çubuğu sağ panel yüzünden taşıyordu → alt satıra sarsın, hiçbiri kesilmesin */
+  #primToolBar{
+    flex-wrap:wrap!important; overflow-x:visible!important;
+    row-gap:5px!important; padding-bottom:6px!important;
+  }
 }
 .sticky-header{position:sticky;top:0;background:var(--bg);z-index:20;padding:8px 0 6px;margin:0}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;min-height:34px}
@@ -2028,7 +2063,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div style="background:var(--bg);padding:10px 0 8px;position:sticky;top:0;z-index:40;border-bottom:1px solid var(--line);margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
-            <h2 style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
+            <h2 class="desk-page-title" style="margin:0;font-size:18px;font-weight:800">ER-TECH İLETİŞİM</h2>
             <div id="versionInfoBtn" onclick="toggleChangelog()" style="font-size:10px;color:var(--muted);margin-top:1px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none" title="Sürüm notlarını göster">⏳ Yükleniyor... <span id="deployDateSpan"></span> <span style="font-size:9px;opacity:.6">▼</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dashSubtitle">Yükleniyor...</div>
           </div>
@@ -2050,7 +2085,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div id="page-prim" style="display:none;flex-direction:column;height:100vh">
     <!-- Sabit başlık -->
     <div id="primTitleBar" style="background:var(--bg);padding:10px 20px 4px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px;z-index:40">
-      <h2 style="margin:0;font-size:15px;white-space:nowrap">Prim Sayfası</h2>
+      <h2 class="desk-page-title" style="margin:0;font-size:15px;white-space:nowrap">Prim Sayfası</h2>
       <div style="display:flex;gap:10px;align-items:center;flex-shrink:0">
         <div id="clock" style="text-align:right;line-height:1.3;color:#8fe3a8;font-variant-numeric:tabular-nums;flex-shrink:0"></div>
       </div>
@@ -2225,7 +2260,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div id="page-finans" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
       <div class="sticky-header" style="margin-top:0;top:0">
         <div class="topbar">
-          <h2>Finansal Analiz</h2>
+          <h2 class="desk-page-title">Finansal Analiz</h2>
           <div class="finans-toolbar">
             <div class="entity-filter-top" id="finansEntityFilterTop"></div>
             <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
@@ -2243,7 +2278,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <!-- ==================== GELİR TAKİBİ SAYFASI ==================== -->
     <div id="page-gelir" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
       <div id="gelirTitleBar" style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40">
-        <h2 style="margin:0;font-size:15px">💰 Gelir Takibi</h2>
+        <h2 class="desk-page-title" style="margin:0;font-size:15px">💰 Gelir Takibi</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <select id="gelirYilSel" onchange="renderGelir()" style="font-size:12px;padding:4px 8px"></select>
           <button class="btn-hero" onclick="openGelirModal()">➕ Gelir / Gider Ekle</button>
@@ -2285,7 +2320,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <!-- ==================== NOT & ETİKET SAYFASI ==================== -->
     <div id="page-not" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
       <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40">
-        <h2 style="margin:0;font-size:15px">🏷️ Not & Etiket</h2>
+        <h2 class="desk-page-title" style="margin:0;font-size:15px">🏷️ Not & Etiket</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <input type="text" id="notAraInput" placeholder="🔍 Not veya etikette ara..." oninput="renderNotPage()" style="font-size:12px;padding:5px 10px;width:200px">
           <button class="btn-hero" onclick="openNotModal()">✏️ Not / Etiket Ekle</button>
@@ -2439,7 +2474,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <!-- ==================== KASA SAYIMI TAKİBİ SAYFASI (v151) ==================== -->
     <div id="page-kasa" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
       <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;flex-wrap:wrap;gap:8px">
-        <h2 style="margin:0;font-size:15px">🧮 Kasa Sayımı Takibi</h2>
+        <h2 class="desk-page-title" style="margin:0;font-size:15px">🧮 Kasa Sayımı Takibi</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <select id="kasaAySel" onchange="renderKasa()" style="font-size:12px;padding:4px 8px"></select>
           <button class="btn-hero" onclick="openKasaSayimModal()" style="background:linear-gradient(135deg,#2fae4e,#1f7f37);border:none;color:#fff;box-shadow:0 2px 8px rgba(47,174,78,0.35)">➕ Yeni Sayım</button>
@@ -3324,7 +3359,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v345';
+const APP_VERSION = 'v346';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3437,7 +3472,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '18.07.2026 21:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '18.07.2026 22:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -8475,7 +8510,6 @@ function renderContextPanel(page){
     var grup = page;
     if(page==='hedef'||page==='rapor'||page==='trend') grup='prim';
 
-    var isim = {dash:'Anasayfa',prim:'Prim',finans:'Finansal Analiz',kasa:'Kasa Sayımı',gelir:'Gelir Takibi',not:'Not & Etiket',hedef:'Hedef',rapor:'Rapor',trend:'Trend'}[page] || 'Özet';
 
     // ---- yardımcılar (hepsi savunmacı) ----
     function _fmt(n){ try{ return (typeof fmt==='function') ? fmt(n) : (Math.round(n*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' \u20ba'; }catch(e){ return '-'; } }
@@ -8488,7 +8522,7 @@ function renderContextPanel(page){
     var _bugun = (typeof todayStr==='function') ? todayStr() : '';
 
     var H = '';
-    H += '<div class="ctx-title">'+isim+'</div>';
+    // v346: sayfa adı üst menüde zaten yazıyor — panelde tekrar etmiyoruz.
 
     // ---- Bildirimler kartı (her sayfada üstte) ----
     var bildirimHTML = '';
@@ -19210,6 +19244,18 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v346',
+    date: '18.07.2026',
+    items: [
+      { type: 'new', text: 'MASAUSTU gorsel yenileme: Sayfa ici basliklar ("Prim Sayfasi", "Finansal Analiz", "Kasa Sayimi Takibi", "ER-TECH ILETISIM" vb.) kaldirildi — hangi sayfada oldugun zaten ust menude yaziyor, bosuna yer kapliyordu. Sag paneldeki tekrar eden sayfa adi da kaldirildi.' },
+      { type: 'new', text: 'Icerik alani ve sag panel artik OVAL KOSELI kartlar halinde, koyu cerceve uzerinde duruyor.' },
+      { type: 'fix', text: 'Anasayfadaki butonlar (Prim Girisi, Finansal, Hedef, Gelir, Yatirilan, Ay Kapanisi, Ay Kapat) acik pastel renkliydi ve koyu temada siritiyordu — artik temaya uyumlu, sade ve daha kucuk.' },
+      { type: 'fix', text: 'Prim sayfasindaki arac cubugu sag panel yuzunden tasiyor, sondaki butonlar kesiliyordu — artik alt satira sariyor, hepsi gorunuyor.' },
+      { type: 'fix', text: 'Sag panel renkleri sabit koyuydu; artik temayla birlikte degisiyor (acik modda da dogru gorunuyor).' },
+      { type: 'new', text: 'TELEFON GORUNUMU YINE HIC DEGISMEDI.' },
+    ]
+  },
   {
     version: 'v345',
     date: '18.07.2026',
