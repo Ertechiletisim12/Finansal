@@ -1308,6 +1308,79 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   /* F) Başlıklar kalkınca kontroller sola düşmüştü → sağa hizala (eski yerlerine) */
   #gelirTitleBar, #kasaTitleBar, #notTitleBar{ justify-content:flex-end!important; }
 }
+
+/* ===== v349: MODERN AYARLAR PANELİ (çekmece) — SADECE GENİŞ EKRAN ===== */
+.desk-settings{ display:none; }
+@media(min-width:701px){
+  /* Tema kartları için biraz daha geniş çekmece */
+  #mainSidebar{ width:288px!important; }
+
+  /* Masaüstünde gereksizler: navigasyon (üst menüde var) + tema/gizli düğmeleri (kartlara taşındı) */
+  #sidebarNav{ display:none!important; }
+  #mainSidebar #themeBtn, #mainSidebar .gizli-mod-btn{ display:none!important; }
+
+  .desk-settings{ display:block; padding:14px 12px 4px; }
+  .ds-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .ds-head-t{ font-size:14px; font-weight:800; color:#eef1f4; letter-spacing:.02em; }
+  .ds-x{
+    background:rgba(255,255,255,0.06); border:1px solid #2f3236; color:#9aa0a8;
+    width:26px; height:26px; border-radius:7px; cursor:pointer; font-size:12px; line-height:1;
+  }
+  .ds-x:hover{ background:rgba(255,255,255,0.13); color:#fff; }
+  .ds-sec-t{
+    font-size:9px; letter-spacing:.12em; text-transform:uppercase;
+    color:#7f8894; font-weight:700; margin:0 0 7px 2px;
+  }
+
+  /* Tema kartları */
+  .ds-themes{ display:flex; gap:7px; margin-bottom:16px; }
+  .ds-theme{ flex:1; cursor:pointer; user-select:none; }
+  .ds-pv{
+    height:38px; border-radius:9px; border:2px solid #2f3236;
+    overflow:hidden; position:relative; transition:border-color .15s, transform .1s;
+  }
+  .ds-theme:hover .ds-pv{ transform:translateY(-1px); }
+  .ds-pv i{ position:absolute; left:0; right:0; top:0; height:11px; display:block; }
+  .ds-pv b{ position:absolute; left:5px; right:5px; top:17px; height:5px; border-radius:3px; display:block; }
+  .pv-light{ background:#f0f2f5; } .pv-light i{ background:#161819; } .pv-light b{ background:#c7ccd4; }
+  .pv-dark{ background:#26282b; }  .pv-dark i{ background:#161819; }  .pv-dark b{ background:#484c52; }
+  .pv-auto{ background:linear-gradient(105deg,#f0f2f5 0 50%,#26282b 50% 100%); }
+  .pv-auto i{ background:#161819; }
+  .pv-auto b{ background:linear-gradient(105deg,#c7ccd4 0 50%,#484c52 50% 100%); }
+  .ds-theme-n{ font-size:10.5px; color:#9aa0a8; text-align:center; margin-top:5px; font-weight:600; }
+  .ds-theme.on .ds-pv{ border-color:var(--red); }
+  .ds-theme.on .ds-theme-n{ color:#eef1f4; font-weight:700; }
+
+  /* Toggle satırı */
+  .ds-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:#1c1f22; border:1px solid #2a2e32; border-radius:10px;
+    padding:9px 11px; cursor:pointer; margin-bottom:14px;
+  }
+  .ds-row:hover{ background:#22262a; }
+  .ds-row-h{ font-size:12px; color:#e8ebee; font-weight:600; }
+  .ds-row-s{ font-size:9.5px; color:#7f8894; margin-top:2px; }
+  .ds-sw{
+    width:38px; height:21px; border-radius:11px; background:#3a3f45;
+    position:relative; flex-shrink:0; transition:background .16s;
+  }
+  .ds-sw i{
+    position:absolute; top:2.5px; left:2.5px; width:16px; height:16px;
+    border-radius:50%; background:#fff; transition:left .16s;
+  }
+  .ds-sw.on{ background:var(--green); }
+  .ds-sw.on i{ left:19.5px; }
+
+  /* Kalan araç düğmeleri (Veri Yönetimi / Sistem) biraz daha modern */
+  #mainSidebar .tool-btn{
+    border-radius:9px!important; padding:8px 11px!important;
+    background:rgba(255,255,255,0.04)!important; border-color:rgba(255,255,255,0.09)!important;
+  }
+  #mainSidebar .tool-btn:hover{ background:rgba(255,255,255,0.10)!important; }
+}
+@media(max-width:700px){
+  .desk-settings{ display:none!important; }
+}
 .sticky-header{position:sticky;top:0;background:var(--bg);z-index:20;padding:8px 0 6px;margin:0}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;min-height:34px}
 .topbar h2{margin:0;font-size:18px;font-weight:700;white-space:nowrap}
@@ -1989,6 +2062,39 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <div class="app">
   <div class="sidebar" id="mainSidebar">
 
+    <!-- v349: MASAÜSTÜ AYARLAR PANELİ — mobilde tamamen gizli (mobil menü aynı sidebar'ı kullanıyor) -->
+    <div class="desk-settings" id="deskSettings">
+      <div class="ds-head">
+        <span class="ds-head-t">⚙ Ayarlar</span>
+        <button class="ds-x" onclick="closeDeskDrawer()" title="Kapat (Esc)">✕</button>
+      </div>
+
+      <div class="ds-sec-t">Tema</div>
+      <div class="ds-themes">
+        <div class="ds-theme" id="dsThemeLight" onclick="setTheme('light')" title="Açık tema">
+          <div class="ds-pv pv-light"><i></i><b></b></div>
+          <div class="ds-theme-n">Açık</div>
+        </div>
+        <div class="ds-theme" id="dsThemeDark" onclick="setTheme('dark')" title="Koyu tema">
+          <div class="ds-pv pv-dark"><i></i><b></b></div>
+          <div class="ds-theme-n">Koyu</div>
+        </div>
+        <div class="ds-theme" id="dsThemeAuto" onclick="setTheme('auto')" title="Cihaz ayarını takip et">
+          <div class="ds-pv pv-auto"><i></i><b></b></div>
+          <div class="ds-theme-n">Otomatik</div>
+        </div>
+      </div>
+
+      <div class="ds-sec-t">Gizlilik</div>
+      <div class="ds-row" onclick="toggleGizliMod()">
+        <div class="ds-row-l">
+          <div class="ds-row-h">Tutarları gizle</div>
+          <div class="ds-row-s">Tüm tutarlar maskelenir</div>
+        </div>
+        <div class="ds-sw" id="dsSwGizli"><i></i></div>
+      </div>
+    </div>
+
     <!-- Başlık - sadece bildirim zili -->
     <div style="padding:12px 14px 10px;border-bottom:1px solid #242628;display:flex;align-items:center;justify-content:flex-end">
       <button onclick="toggleNotifPanel()" style="background:rgba(255,255,255,0.05);border:1px solid #2a2d30;color:#5a6068;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:13px;position:relative;flex-shrink:0" title="Bildirimler">
@@ -1997,7 +2103,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     </div>
 
     <!-- Navigasyon -->
-    <div style="padding:6px 0 8px;border-bottom:1px solid #242628">
+    <div id="sidebarNav" style="padding:6px 0 8px;border-bottom:1px solid #242628">
       <div class="nav-item active" id="navDash" onclick="switchPage('dash')">🏠 Anasayfa</div>
       <div class="nav-item" id="navPrim" onclick="switchPage('prim')">📊 Prim Sayfası</div>
       <div class="nav-item" id="navFinans" onclick="switchPage('finans')">💹 Finansal Analiz</div>
@@ -3406,7 +3512,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v348';
+const APP_VERSION = 'v349';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3519,7 +3625,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 00:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 01:15'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -3893,6 +3999,8 @@ function guncelleGizliModButon(){
   document.querySelectorAll('.gizli-mod-btn-mob').forEach(b=>{
     b.textContent = gizliMod ? '🙈' : '👁';
   });
+  // v349: masaustu ayarlar panelindeki anahtar da ayni kaynaktan guncellensin
+  try{ const sw=document.getElementById('dsSwGizli'); if(sw) sw.classList.toggle('on', !!gizliMod); }catch(e){}
 }
 function fmt(n){ if(gizliMod) return PARA_MASKE; return (Math.round(n*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + " \u20ba"; }
 function ymKey(d){ return d.slice(0,7); }
@@ -6381,8 +6489,10 @@ function toggleTheme(){
 }
 function loadTheme(){
   try{
-    const saved = localStorage.getItem('vf_theme');
+    let saved = localStorage.getItem('vf_theme');
     if(!saved) localStorage.setItem('vf_theme', 'dark');
+    // v349: 'auto' => cihaz ayarina gore coz (kayit 'auto' olarak kalir)
+    if(saved === 'auto') saved = _temaOto();
     const btn = document.getElementById('themeBtn');
     const mobileBtn = document.getElementById('mobileThemeBtn');
     if(saved === 'light'){
@@ -8491,6 +8601,46 @@ function renderHedefOzet(){
 // asagidaki kazaniyordu — buradaki kod hicbir zaman calismiyordu, sadece fazladan bir
 // resize listener'i ekliyordu. Gecerli tanim ve resize/orientationchange dinleyicileri
 // dosyanin sonundaki acilis blogunda.
+// ==================== v349: MODERN AYARLAR PANELİ (SADECE GENİŞ EKRAN) ====================
+// Cihaz temasi (auto icin)
+function _temaOto(){
+  try{ return (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark'; }
+  catch(e){ return 'dark'; }
+}
+// Tema sec: 'light' | 'dark' | 'auto'  → kaydeder, loadTheme() uygular (eski butonlar da guncellenir)
+function setTheme(mode){
+  try{ localStorage.setItem('vf_theme', mode); }catch(e){}
+  try{ loadTheme(); }catch(e){}
+  try{ syncThemeCards(); }catch(e){}
+}
+// Secili tema kartini isaretle
+function syncThemeCards(){
+  try{
+    let m='dark';
+    try{ m = localStorage.getItem('vf_theme') || 'dark'; }catch(e){}
+    if(['light','dark','auto'].indexOf(m)===-1) m='dark';
+    const map={light:'dsThemeLight',dark:'dsThemeDark',auto:'dsThemeAuto'};
+    Object.keys(map).forEach(function(k){
+      const el=document.getElementById(map[k]);
+      if(el) el.classList.toggle('on', k===m);
+    });
+  }catch(e){}
+}
+// Panel acilirken her sey guncel olsun
+function syncDeskSettings(){
+  try{ syncThemeCards(); }catch(e){}
+  try{ const sw=document.getElementById('dsSwGizli');
+       if(sw && typeof gizliMod!=='undefined') sw.classList.toggle('on', !!gizliMod); }catch(e){}
+}
+// Cihaz temasi degisirse ve 'auto' secilise, aninda uygula
+try{
+  if(window.matchMedia){
+    const _mq = window.matchMedia('(prefers-color-scheme: light)');
+    const _h = function(){ try{ if(localStorage.getItem('vf_theme')==='auto'){ loadTheme(); syncThemeCards(); } }catch(e){} };
+    if(_mq.addEventListener) _mq.addEventListener('change',_h); else if(_mq.addListener) _mq.addListener(_h);
+  }
+}catch(e){}
+
 // ==================== v345: ÜST MENÜ + SIDEBAR ÇEKMECESİ (SADECE GENİŞ EKRAN) ====================
 // Mobilde bu fonksiyonlar hiçbir şey yapmaz (innerWidth<=700 => erken çıkış).
 function openDeskDrawer(){
@@ -8500,6 +8650,7 @@ function openDeskDrawer(){
     var ov = document.getElementById('deskDrawerOverlay');
     if(sb) sb.classList.add('sb-drawer-open');
     if(ov) ov.classList.add('on');
+    try{ syncDeskSettings(); }catch(e){}   // v349
   }catch(e){}
 }
 function closeDeskDrawer(){
@@ -19295,6 +19446,17 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v349',
+    date: '19.07.2026',
+    items: [
+      { type: 'new', text: 'MASAUSTU: "Araclar" cekmecesi artik MODERN BIR AYARLAR PANELI. Ustte "Ayarlar" basligi + kapat dugmesi.' },
+      { type: 'new', text: 'TEMA SECICI GORSEL KARTLAR: Acik / Koyu / Otomatik. Her kart temanin kucuk bir onizlemesini gosterir, secili olan kirmizi cerceveli. "Otomatik" cihazin (Windows/telefon) tema ayarini takip eder ve cihaz temasi degisince aninda uyum saglar — bu YENI bir ozellik, once sadece Acik/Koyu vardi.' },
+      { type: 'new', text: '"Tutarlari gizle" artik dugme degil, modern bir ACMA/KAPAMA ANAHTARI. PIN korumasi aynen calisiyor.' },
+      { type: 'fix', text: 'Cekmecedeki navigasyon (Anasayfa/Prim/...) masaustunde gizlendi — zaten ust menude var, bosuna tekrar ediyordu. Cekmece tema kartlari icin biraz genisletildi.' },
+      { type: 'new', text: 'TELEFON GORUNUMU YINE HIC DEGISMEDI: mobil hamburger menu ayni sidebar\'i kullandigi icin eski yapiya hic dokunulmadi — yeni panel mobilde tamamen gizli.' },
+    ]
+  },
+  {
     version: 'v348',
     date: '19.07.2026',
     items: [
@@ -21565,6 +21727,8 @@ function toggleChangelog(){
   try{ if(typeof renderContextPanel==='function') renderContextPanel(typeof currentPage!=='undefined'?currentPage:'dash'); }catch(e){}
   // v345: açılışta üst menü aktif göstergesini eşitle
   try{ if(typeof syncTopNav==='function') syncTopNav(typeof currentPage!=='undefined'?currentPage:'dash'); }catch(e){}
+  // v349: açılışta ayarlar panelini eşitle
+  try{ if(typeof syncDeskSettings==='function') syncDeskSettings(); }catch(e){}
 })();
 </script>
 
