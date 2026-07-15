@@ -1455,6 +1455,22 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   .entity-filter-top .qbtn:hover{ background:var(--hover)!important; }
   .entity-filter-top .qbtn.active{ background:var(--red)!important; }
 }
+/* v357: Prim çubuğu 12 buton — dar masaüstünde sığması için kademeli küçülme.
+   Geniş ekranda anasayfayla aynı boyda kalır. */
+@media(min-width:701px) and (max-width:1560px){
+  #primToolBar{ gap:6px!important; }
+  #primToolBar .prim-tool-pill{
+    height:31px!important; padding:0 11px 0 4px!important; gap:6px!important; font-size:11px!important;
+  }
+  #primToolBar .prim-tool-pill > .bi{ width:22px!important; height:22px!important; font-size:11px!important; }
+}
+@media(min-width:701px) and (max-width:1400px){
+  #primToolBar{ gap:5px!important; }
+  #primToolBar .prim-tool-pill{
+    height:29px!important; padding:0 9px 0 3px!important; gap:5px!important; font-size:10.5px!important;
+  }
+  #primToolBar .prim-tool-pill > .bi{ width:20px!important; height:20px!important; font-size:10px!important; }
+}
 
 /* ===== v349/v350: MODERN AYARLAR PANELİ (sağ panelde) — SADECE GENİŞ EKRAN ===== */
 @media(min-width:701px){
@@ -2435,20 +2451,20 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     </div>
     <!-- Prim Araç Çubuğu: modal pencereler + alt sayfa erişimi -->
     <div id="primToolBar" style="background:var(--bg);padding:4px 20px 8px;flex-shrink:0;display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none;z-index:39;-webkit-overflow-scrolling:touch">
-      <button class="prim-tool-pill" data-ton="amber" onclick="openKapanisRaporu()" style="background:rgba(252,211,77,0.12);border-color:rgba(252,211,77,0.4);color:#fcd34d;white-space:nowrap;font-weight:700"><span class="bi">📑</span> Kapanış Raporu</button>
-      <button class="prim-tool-pill" data-ton="gold" onclick="openYatirilanModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:var(--gold);white-space:nowrap;font-weight:700"><span class="bi">💰</span> Yatırılan Prim</button>
-      <button class="prim-tool-pill" data-ton="accent" onclick="openPrimAraModal()" style="background:rgba(63,208,255,0.12);border-color:rgba(63,208,255,0.35);color:var(--accent)"><span class="bi">🔍</span> Müşteri Ara</button>
-      <button class="prim-tool-pill" data-ton="gold" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:var(--gold)"><span class="bi">🎯</span> Kampanyalar <span id="kampanyaSayiBadge" style="display:none;background:var(--gold);color:#1a1a1a;border-radius:10px;padding:0 6px;font-size:10px;margin-left:2px;font-weight:800"></span></button>
-      <button class="prim-tool-pill" data-ton="accent" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent)"><span class="bi">👥</span> Müşteri Takibi <span id="musteriTakipBadgeTop" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:9px;margin-left:2px"></span></button>
+      <button class="prim-tool-pill" data-ton="amber" onclick="openKapanisRaporu()" style="background:rgba(252,211,77,0.12);border-color:rgba(252,211,77,0.4);color:#fcd34d;white-space:nowrap;font-weight:700" title="Kapanış Raporu"><span class="bi">📑</span> Kapanış</button>
+      <button class="prim-tool-pill" data-ton="gold" onclick="openYatirilanModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:var(--gold);white-space:nowrap;font-weight:700" title="Yatırılan Prim"><span class="bi">💰</span> Yatırılan</button>
+      <button class="prim-tool-pill" data-ton="accent" onclick="openPrimAraModal()" style="background:rgba(63,208,255,0.12);border-color:rgba(63,208,255,0.35);color:var(--accent)" title="Müşteri Ara"><span class="bi">🔍</span> Ara</button>
+      <button class="prim-tool-pill" data-ton="gold" onclick="openKampanyaModal()" style="background:rgba(255,183,77,0.12);border-color:rgba(255,183,77,0.35);color:var(--gold)" title="Kampanyalar"><span class="bi">🎯</span> Kampanya <span id="kampanyaSayiBadge" style="display:none;background:var(--gold);color:#1a1a1a;border-radius:10px;padding:0 6px;font-size:10px;margin-left:2px;font-weight:800"></span></button>
+      <button class="prim-tool-pill" data-ton="accent" onclick="openMusteriRapor()" style="background:rgba(63,208,255,0.1);border-color:rgba(63,208,255,0.3);color:var(--accent)" title="Müşteri Takibi"><span class="bi">👥</span> Müşteri <span id="musteriTakipBadgeTop" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:0 6px;font-size:9px;margin-left:2px"></span></button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
-      <button class="prim-tool-pill" onclick="openCmpModal()"><span class="bi">📊</span> Ay Karşılaştırma</button>
-      <button class="prim-tool-pill" onclick="openTablolarModal()"><span class="bi">📋</span> Prim Detayları</button>
-      <button class="prim-tool-pill" onclick="openSaatModal()"><span class="bi">⏱</span> Saat Analizi</button>
-      <button class="prim-tool-pill" onclick="openFiyatModal()"><span class="bi">💰</span> Fiyatlar & Veri</button>
+      <button class="prim-tool-pill" onclick="openCmpModal()" title="Ay Karşılaştırma"><span class="bi">📊</span> Karşılaştır</button>
+      <button class="prim-tool-pill" onclick="openTablolarModal()" title="Prim Detayları"><span class="bi">📋</span> Detaylar</button>
+      <button class="prim-tool-pill" onclick="openSaatModal()" title="Saat Analizi"><span class="bi">⏱</span> Saat</button>
+      <button class="prim-tool-pill" onclick="openFiyatModal()" title="Fiyatlar & Veri"><span class="bi">💰</span> Fiyatlar</button>
       <span style="width:1px;height:20px;background:var(--line);flex-shrink:0;margin:0 2px"></span>
-      <button class="prim-tool-pill" data-ton="green" onclick="switchPage('hedef')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964"><span class="bi">🎯</span> Hedef Yönetimi</button>
-      <button class="prim-tool-pill" data-ton="green" onclick="switchPage('rapor')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964"><span class="bi">📅</span> Haftalık / Yıllık</button>
-      <button class="prim-tool-pill" data-ton="green" onclick="switchPage('trend')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964"><span class="bi">📈</span> Trend Analizi</button>
+      <button class="prim-tool-pill" data-ton="green" onclick="switchPage('hedef')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964" title="Hedef Yönetimi"><span class="bi">🎯</span> Hedef</button>
+      <button class="prim-tool-pill" data-ton="green" onclick="switchPage('rapor')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964" title="Haftalık / Yıllık"><span class="bi">📅</span> Rapor</button>
+      <button class="prim-tool-pill" data-ton="green" onclick="switchPage('trend')" style="background:rgba(47,174,78,0.12);border-color:rgba(47,174,78,0.35);color:#4cd964" title="Trend Analizi"><span class="bi">📈</span> Trend</button>
       <span id="gunlukHedefChip" data-ton="gold" style="display:none;flex-shrink:0;margin-left:auto;font-size:10.5px;font-weight:700;padding:5px 10px;border-radius:20px;background:rgba(255,183,77,0.12);border:1px solid rgba(255,183,77,0.35);color:var(--gold);white-space:nowrap;cursor:pointer" onclick="openGunlukKirilimModal()" title="Günlük kırılım: bugün kaç TL / kaç adet gerekiyor?"></span>
     </div>
     <!-- Mobil filterbar - sabit, screenshot stili -->
@@ -3702,7 +3718,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v356';
+const APP_VERSION = 'v357';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3815,7 +3831,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 08:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 09:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -19841,6 +19857,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v357',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'PRIM ARAC CUBUGU EKRANA SIGDIRILDI. 12 buton uzun isimlerle sigmiyordu (icerik 1678px, alan 1272px) — sondaki "Trend Analizi" kesiliyordu. Sadece kucultmek yetmedi; masaustu cubugundaki isimler kisaltildi: Kapanis, Yatirilan, Ara, Kampanya, Musteri, Karsilastir, Detaylar, Saat, Fiyatlar, Hedef, Rapor, Trend. TAM ISIMLER kayip degil — butonun uzerine gelince tooltip olarak cikiyor.' },
+      { type: 'new', text: 'Butonlar ANASAYFADAKI ile ayni boyda (34px hap). Pencere daraldikca (1560px ve 1400px altinda) otomatik olarak kademeli kuculuyorlar, boylece 1400px\'e kadar hepsi ekrana sigiyor.' },
+      { type: 'new', text: 'NOT: Bu kisaltma sadece MASAUSTU cubugunu etkiler — telefon kendi ayri arac cubugunu kullaniyor ve oradaki yazilar/olculer hic degismedi.' },
+    ]
+  },
   {
     version: 'v356',
     date: '19.07.2026',
