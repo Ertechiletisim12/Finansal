@@ -1126,21 +1126,17 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 .context-panel{ display:none; }
 @media(min-width:701px){
   .context-panel{
-    width:280px; flex-shrink:0; height:100vh; overflow-y:auto;
+    width:302px; flex-shrink:0; height:100vh; overflow-y:auto;
     background:var(--bg); border-left:1px solid var(--line);
     box-sizing:border-box; padding:14px 12px;
-    display:flex; flex-direction:column; gap:11px;
+    display:block;
   }
   .context-panel .ctx-title{
     font-size:9.5px; letter-spacing:.11em; text-transform:uppercase;
     color:#8896a0; font-weight:700; padding:0 4px 2px;
   }
   .context-panel .ctx-card{
-    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 13px;
-  }
-  .context-panel .ctx-card h4{
-    margin:0 0 8px; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
-    color:var(--muted); font-weight:700; display:flex; align-items:center; gap:6px;
+    background:var(--panel); border-radius:13px; padding:11px 13px;
   }
   .context-panel .ctx-row{
     display:flex; justify-content:space-between; align-items:baseline;
@@ -1153,10 +1149,11 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   .context-panel .ctx-empty{ color:var(--muted); font-size:11.5px; text-align:center; padding:4px 0; }
   .context-panel .ctx-note{ font-size:11px; color:var(--muted); margin-top:6px; line-height:1.4; }
   .context-panel .ctx-badge{
-    display:inline-flex; align-items:center; gap:5px; background:rgba(255,159,10,0.1);
-    border:1px solid rgba(255,159,10,0.28); color:#ffb04a; font-size:11.5px; font-weight:700;
-    border-radius:8px; padding:6px 9px; margin-bottom:5px; width:100%; box-sizing:border-box;
+    display:flex; align-items:center; gap:6px; background:rgba(255,159,10,0.12);
+    color:#ffb04a; font-size:11.5px; font-weight:700;
+    border-radius:9px; padding:7px 10px; margin-bottom:6px; width:100%; box-sizing:border-box;
   }
+  .context-panel .ctx-badge:last-child{ margin-bottom:0; }
 }
 @media(min-width:701px) and (max-width:1000px){
   .context-panel{ width:225px!important; padding:12px 9px!important; }
@@ -1232,6 +1229,10 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
     border:1px solid #23262a; border-left:1px solid #23262a;
     border-radius:14px; padding:12px 11px;
   }
+  /* v351: flex cocuklari sikismasin — icerik uzunsa panel KAYSIN (tehlikeli bolge kirpiliyordu) */
+  .context-panel > *{ flex-shrink:0; }
+  /* Ayarlar modunda normal blok akisi: kendi bosluklarim + duzgun kaydirma */
+  .context-panel.set-mode{ display:block; }
   .deskbar{ border-bottom:none; }
 
   /* 3) Anasayfa butonları: açık pastel renkler koyu temada sırıtıyordu → temaya uyumlu, sade */
@@ -1331,95 +1332,109 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   }
   .deskbar .db-btn.on{ background:var(--red)!important; border-color:var(--red)!important; color:#fff!important; }
 
-  /* --- Sağ paneldeki ayarlar --- */
-  .ds-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .ds-head-t{ font-size:14px; font-weight:800; color:var(--txt); letter-spacing:.02em; }
+  /* --- Sağ paneldeki ayarlar (v351: görsel yenileme) --- */
+  .ds-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .ds-head-t{ font-size:15px; font-weight:800; color:var(--txt); letter-spacing:.01em; }
   .ds-x{
-    background:var(--panel2); border:1px solid var(--line); color:var(--muted);
-    width:26px; height:26px; border-radius:7px; cursor:pointer; font-size:12px; line-height:1;
+    background:transparent; border:none; color:var(--muted);
+    width:28px; height:28px; border-radius:8px; cursor:pointer; font-size:13px; line-height:1;
+    transition:background .12s,color .12s;
   }
   .ds-x:hover{ background:var(--hover); color:var(--txt); }
   .ds-sec-t{
-    font-size:9px; letter-spacing:.12em; text-transform:uppercase;
-    color:var(--muted); font-weight:700; margin:14px 0 7px 2px;
+    font-size:9px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted); font-weight:700; margin:18px 0 8px 3px; opacity:.85;
   }
-  .ds-sec-t:first-of-type{ margin-top:0; }
-  .ds-sec-t.st-dang-t{ color:#ff6a60; }
+  .ds-sec-t.st-dang-t{ color:#ff6a60; opacity:1; }
 
-  /* Ayar satırı grupları (tek kart, ince ayraçlarla) */
-  .st-group{
-    background:var(--panel); border:1px solid var(--line);
-    border-radius:12px; overflow:hidden;
-  }
+  /* Satır grupları: tek zemin + saç teli ayraç (çerçeve kalabalığı yok) */
+  .st-group{ background:var(--panel); border-radius:13px; overflow:hidden; }
   .st-row{
-    display:flex; align-items:center; gap:10px; padding:9px 11px;
-    cursor:pointer; border-top:1px solid var(--line); transition:background .12s;
+    display:flex; align-items:center; gap:11px; padding:10px 12px;
+    cursor:pointer; transition:background .12s;
   }
-  .st-group > .st-row:first-child{ border-top:none; }
+  .st-row + .st-row{ box-shadow:inset 0 1px 0 rgba(128,136,148,0.16); }
   .st-row:hover{ background:var(--hover); }
   .st-ico{
-    width:26px; height:26px; border-radius:7px; background:var(--panel2);
-    display:flex; align-items:center; justify-content:center; font-size:12.5px; flex-shrink:0;
+    width:29px; height:29px; border-radius:9px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:13.5px;
+    background:var(--panel2);
   }
+  .st-ico.b{ background:rgba(58,130,246,0.16); }
+  .st-ico.g{ background:rgba(52,199,89,0.16); }
+  .st-ico.p{ background:rgba(175,82,222,0.16); }
+  .st-ico.o{ background:rgba(255,159,10,0.16); }
+  .st-ico.r{ background:rgba(255,69,58,0.14); }
   .st-txt{ display:flex; flex-direction:column; min-width:0; flex:1; }
-  .st-t{ font-size:12px; font-weight:600; color:var(--txt); }
-  .st-s{ font-size:9.5px; color:var(--muted); margin-top:1px; }
-  .st-ch{ color:var(--muted); font-size:13px; flex-shrink:0; }
+  .st-t{ font-size:12.5px; font-weight:600; color:var(--txt); line-height:1.25; }
+  .st-s{ font-size:9.5px; color:var(--muted); margin-top:2px; line-height:1.25; }
+  .st-ch{ color:var(--muted); font-size:14px; flex-shrink:0; opacity:.5; }
+  .st-row:hover .st-ch{ opacity:.9; }
   .st-badge{
     background:var(--red); color:#fff; font-size:9px; font-weight:800;
     border-radius:8px; padding:1px 5px; flex-shrink:0;
   }
   .st-dang .st-t{ color:#ff6a60; }
-  .st-dang .st-ico{ background:rgba(255,106,96,0.12); }
 
-  /* Bulut satırı + depolama çubuğu */
-  .st-line{
-    background:var(--panel); border:1px solid var(--line); border-radius:10px;
-    padding:8px 11px; font-size:10.5px; color:var(--muted); margin-bottom:7px;
+  /* Durum kartı: bulut + depolama tek yerde */
+  .st-stat-card{ background:var(--panel); border-radius:13px; padding:11px 12px; }
+  .st-line{ font-size:11px; color:var(--txt); font-weight:600; }
+  .st-depo{ margin-top:10px; }
+  .st-depo-h{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size:9.5px; color:var(--muted); margin-bottom:6px;
   }
-  .st-depo{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:9px 11px; }
-  .st-depo-h{ display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-bottom:5px; }
   .st-depo-tr{ height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; }
   .st-depo-bar{ height:100%; width:0%; background:var(--green); border-radius:3px; transition:width .4s; }
 
-  /* Tema kartları */
-  .ds-themes{ display:flex; gap:7px; margin-bottom:16px; }
+  /* Tema kartları: gerçek bir mini arayüz önizlemesi */
+  .ds-themes{ display:flex; gap:8px; }
   .ds-theme{ flex:1; cursor:pointer; user-select:none; }
   .ds-pv{
-    height:38px; border-radius:9px; border:2px solid var(--line);
-    overflow:hidden; position:relative; transition:border-color .15s, transform .1s;
+    height:46px; border-radius:10px; overflow:hidden; position:relative;
+    box-shadow:0 0 0 1.5px var(--line); transition:box-shadow .15s, transform .1s;
   }
   .ds-theme:hover .ds-pv{ transform:translateY(-1px); }
-  .ds-pv i{ position:absolute; left:0; right:0; top:0; height:11px; display:block; }
-  .ds-pv b{ position:absolute; left:5px; right:5px; top:17px; height:5px; border-radius:3px; display:block; }
-  .pv-light{ background:#f0f2f5; } .pv-light i{ background:#161819; } .pv-light b{ background:#c7ccd4; }
-  .pv-dark{ background:#26282b; }  .pv-dark i{ background:#161819; }  .pv-dark b{ background:#484c52; }
-  .pv-auto{ background:linear-gradient(105deg,#f0f2f5 0 50%,#26282b 50% 100%); }
+  .ds-pv i, .ds-pv b{ position:absolute; display:block; }
+  .ds-pv i{ left:0; right:0; top:0; height:9px; }
+  .ds-pv b{ left:6px; top:15px; width:11px; bottom:6px; border-radius:2px; }
+  .ds-pv::after{
+    content:''; position:absolute; left:21px; right:6px; top:15px; height:4px;
+    border-radius:2px; box-shadow:0 8px 0 currentColor, 0 16px 0 currentColor;
+    background:currentColor;
+  }
+  .pv-light{ background:#f0f2f5; color:#ccd1d9; }
+  .pv-light i{ background:#161819; } .pv-light b{ background:#dde1e7; }
+  .pv-dark{ background:#26282b; color:#41454b; }
+  .pv-dark i{ background:#161819; } .pv-dark b{ background:#33363a; }
+  .pv-auto{ background:linear-gradient(105deg,#f0f2f5 0 50%,#26282b 50% 100%); color:#8b8f96; }
   .pv-auto i{ background:#161819; }
-  .pv-auto b{ background:linear-gradient(105deg,#c7ccd4 0 50%,#484c52 50% 100%); }
-  .ds-theme-n{ font-size:10.5px; color:var(--muted); text-align:center; margin-top:5px; font-weight:600; }
-  .ds-theme.on .ds-pv{ border-color:var(--red); }
+  .pv-auto b{ background:linear-gradient(105deg,#dde1e7 0 50%,#33363a 50% 100%); }
+  .ds-theme-n{ font-size:10.5px; color:var(--muted); text-align:center; margin-top:6px; font-weight:600; }
+  .ds-theme.on .ds-pv{ box-shadow:0 0 0 2px var(--red); }
   .ds-theme.on .ds-theme-n{ color:var(--txt); font-weight:700; }
 
-  /* Toggle satırı */
+  /* Gizlilik anahtarı */
   .ds-row{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
-    background:var(--panel); border:1px solid var(--line); border-radius:10px;
-    padding:9px 11px; cursor:pointer;
+    background:var(--panel); border-radius:13px; padding:10px 12px; cursor:pointer;
+    transition:background .12s;
   }
   .ds-row:hover{ background:var(--hover); }
-  .ds-row-h{ font-size:12px; color:var(--txt); font-weight:600; }
+  .ds-row-h{ font-size:12.5px; color:var(--txt); font-weight:600; }
   .ds-row-s{ font-size:9.5px; color:var(--muted); margin-top:2px; }
   .ds-sw{
-    width:38px; height:21px; border-radius:11px; background:var(--line);
-    position:relative; flex-shrink:0; transition:background .16s;
+    width:40px; height:22px; border-radius:11px; background:var(--panel2);
+    box-shadow:inset 0 0 0 1px rgba(128,136,148,0.28);
+    position:relative; flex-shrink:0; transition:background .16s, box-shadow .16s;
   }
   .ds-sw i{
-    position:absolute; top:2.5px; left:2.5px; width:16px; height:16px;
+    position:absolute; top:3px; left:3px; width:16px; height:16px;
     border-radius:50%; background:#fff; transition:left .16s;
+    box-shadow:0 1px 3px rgba(0,0,0,0.35);
   }
-  .ds-sw.on{ background:var(--green); }
-  .ds-sw.on i{ left:19.5px; }
+  .ds-sw.on{ background:var(--green); box-shadow:none; }
+  .ds-sw.on i{ left:21px; }
 
 }
 .sticky-header{position:sticky;top:0;background:var(--bg);z-index:20;padding:8px 0 6px;margin:0}
@@ -3529,7 +3544,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v350';
+const APP_VERSION = 'v351';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3642,7 +3657,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 02:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 03:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -8677,6 +8692,7 @@ function openSettingsPanel(){
   try{
     if(window.innerWidth <= 700) return;
     ctxMode='settings';
+    try{ document.getElementById('contextPanel').classList.add('set-mode'); }catch(e){}
     renderSettingsPanel();
     var b=document.getElementById('deskSetBtn'); if(b) b.classList.add('on');
     if(_setTick) clearInterval(_setTick);
@@ -8686,6 +8702,7 @@ function openSettingsPanel(){
 function closeSettingsPanel(){
   try{
     ctxMode='context';
+    try{ document.getElementById('contextPanel').classList.remove('set-mode'); }catch(e){}
     if(_setTick){ clearInterval(_setTick); _setTick=null; }
     var b=document.getElementById('deskSetBtn'); if(b) b.classList.remove('on');
     renderContextPanel(typeof currentPage!=='undefined'?currentPage:'dash');
@@ -8711,9 +8728,9 @@ function renderSettingsPanel(){
     if(!el) return;
     if(window.innerWidth <= 700){ el.innerHTML=''; return; }
 
-    function row(ico, baslik, alt, onclick, extra){
+    function row(ico, baslik, alt, onclick, extra, renk){
       return '<div class="st-row" onclick="'+onclick+'">'
-        + '<span class="st-ico">'+ico+'</span>'
+        + '<span class="st-ico'+(renk?' '+renk:'')+'">'+ico+'</span>'
         + '<span class="st-txt"><span class="st-t">'+baslik+'</span>'
         + (alt? '<span class="st-s">'+alt+'</span>':'') + '</span>'
         + (extra||'') + '<span class="st-ch">›</span></div>';
@@ -8738,37 +8755,39 @@ function renderSettingsPanel(){
 
     // --- BULUT & DEPOLAMA (oturum/bildirim art\u0131k \u00fcst men\u00fcde) ---
     H += '<div class="ds-sec-t">Bulut &amp; Depolama</div>'
-       + '<div class="st-line"><span id="stBulut">\u2014</span></div>'
+       + '<div class="st-stat-card">'
+       + '<div class="st-line" id="stBulut">\u2014</div>'
        + '<div class="st-depo"><div class="st-depo-h"><span>Depolama</span><span id="stDepoT">\u2014</span></div>'
-       + '<div class="st-depo-tr"><div class="st-depo-bar" id="stDepoBar"></div></div></div>';
+       + '<div class="st-depo-tr"><div class="st-depo-bar" id="stDepoBar"></div></div></div>'
+       + '</div>';
 
     // --- VERİ YÖNETİMİ ---
     H += '<div class="ds-sec-t">Veri Y\u00f6netimi</div><div class="st-group">'
-       + row('\ud83d\udcbe','Yedekle','T\u00fcm veriyi dosyaya kaydet','backupData()')
-       + row('\ud83d\udd04','G\u00fcncelle','Yeni s\u00fcr\u00fcm\u00fc kontrol et','openGithubGuncelleModal()')
-       + '<label class="st-row" style="cursor:pointer"><span class="st-ico">\ud83d\udcc2</span>'
+       + row('\ud83d\udcbe','Yedekle','T\u00fcm veriyi dosyaya kaydet','backupData()',null,'b')
+       + row('\ud83d\udd04','G\u00fcncelle','Yeni s\u00fcr\u00fcm\u00fc kontrol et','openGithubGuncelleModal()',null,'g')
+       + '<label class="st-row" style="cursor:pointer"><span class="st-ico p">\ud83d\udcc2</span>'
        + '<span class="st-txt"><span class="st-t">Geri Y\u00fckle</span><span class="st-s">Yedek dosyas\u0131ndan y\u00fckle</span></span>'
        + '<span class="st-ch">\u203a</span><input type="file" accept=".json" onchange="restoreData(event)" style="display:none"></label>'
-       + row('\ud83d\udcc1','Oto. Yedek Klas\u00f6r\u00fc','<span id="stOtoYedek">Kapal\u0131</span>','chooseBackupFolder()')
+       + row('\ud83d\udcc1','Oto. Yedek Klas\u00f6r\u00fc','<span id="stOtoYedek">Kapal\u0131</span>','chooseBackupFolder()',null,'o')
        + '</div>';
 
     // --- SİSTEM ---
     H += '<div class="ds-sec-t">Sistem</div><div class="st-group">'
-       + row('\ud83d\udcc4','Y\u00f6netici Raporu','Yazd\u0131r\u0131labilir \u00f6zet','printManagerReport()')
-       + row('\ud83d\udd10','Kilit / PIN Ayar\u0131','Uygulama kilidi','openPinModal()')
-       + row('\ud83d\udccb','Giri\u015f Loglar\u0131','Ge\u00e7mi\u015f giri\u015fler','openGirisLogModal()')
+       + row('\ud83d\udcc4','Y\u00f6netici Raporu','Yazd\u0131r\u0131labilir \u00f6zet','printManagerReport()',null,'b')
+       + row('\ud83d\udd10','Kilit / PIN Ayar\u0131','Uygulama kilidi','openPinModal()',null,'p')
+       + row('\ud83d\udccb','Giri\u015f Loglar\u0131','Ge\u00e7mi\u015f giri\u015fler','openGirisLogModal()',null,'g')
        + '</div>';
 
     // --- PWA kurulum (sadece kurulabilir durumdaysa) ---
     if(_gorunur('pwaInstallBtn')){
       H += '<div class="ds-sec-t">Uygulama</div><div class="st-group">'
-         + row('\ud83d\udcf2','Uygulamay\u0131 Kur','Masa\u00fcst\u00fcne ekle','installPWA()') + '</div>';
+         + row('\ud83d\udcf2','Uygulamay\u0131 Kur','Masa\u00fcst\u00fcne ekle','installPWA()',null,'g') + '</div>';
     }
 
     // --- TEHLİKELİ ---
     H += '<div class="ds-sec-t st-dang-t">Tehlikeli B\u00f6lge</div><div class="st-group st-dang">'
-       + row('\u21ba','Finansal Veriyi S\u0131f\u0131rla','Geri al\u0131namaz','resetFinansData()')
-       + row('\u26a0','T\u00fcm Verileri S\u0131f\u0131rla','Geri al\u0131namaz','clearAllData()')
+       + row('\u21ba','Finansal Veriyi S\u0131f\u0131rla','Geri al\u0131namaz','resetFinansData()',null,'r')
+       + row('\u26a0','T\u00fcm Verileri S\u0131f\u0131rla','Geri al\u0131namaz','clearAllData()',null,'r')
        + '</div><div style="height:8px"></div>';
 
     el.innerHTML=H;
@@ -8858,7 +8877,7 @@ function renderContextPanel(page){
     // ---- yardımcılar (hepsi savunmacı) ----
     function _fmt(n){ try{ return (typeof fmt==='function') ? fmt(n) : (Math.round(n*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' \u20ba'; }catch(e){ return '-'; } }
     function row(lbl,val,cls){ return '<div class="ctx-row"><span class="lbl">'+lbl+'</span><span class="val'+(cls?' '+cls:'')+'">'+val+'</span></div>'; }
-    function card(baslik,ic){ return '<div class="ctx-card"><h4>'+baslik+'</h4>'+ic+'</div>'; }
+    function card(baslik,ic){ return '<div class="ds-sec-t">'+baslik+'</div><div class="ctx-card">'+ic+'</div>'; }
     var _entries = (typeof entries!=='undefined' && Array.isArray(entries)) ? entries : [];
     var _finans  = (typeof finansData!=='undefined' && Array.isArray(finansData)) ? finansData : [];
     var _kasa    = (typeof kasaData!=='undefined' && Array.isArray(kasaData)) ? kasaData : [];
@@ -19587,6 +19606,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v351',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'HATA: Ayarlar panelinde "Tehlikeli Bolge" asagi tasiyor ve kaydirilamiyordu. Sebep: panel flex oldugu icin icerik KAYDIRILMIYOR, zorla SIKISTIRILIYORDU (tema kartlari da bu yuzden ezilmisti). Panel artik normal blok akisinda ve icerik uzunsa duzgun kayiyor.' },
+      { type: 'new', text: 'AYARLAR PANELI GORSEL YENILEME: Tema kartlari artik gercek bir mini arayuz onizlemesi gosteriyor (ust serit + yan blok + icerik satirlari). Ikonlar renkli (yedek mavi, guncelle yesil, geri yukle mor, klasor turuncu, sifirlama kirmizi). Satir gruplari tek yuzey + ince ayrac oldu — cerceve kalabaligi kalkti. Anahtar buyudu ve yumusadi. Panel biraz genisledi (280 -> 302px).' },
+      { type: 'new', text: 'Sag panelin SAYFA OZETI modu da ayni dile getirildi: bolum basliklari kartin disina cikti, kartlar cercevesiz tek yuzey oldu, bildirim rozetleri yumusadi. Iki mod artik tutarli.' },
+      { type: 'new', text: 'TELEFON GORUNUMU YINE HIC DEGISMEDI.' },
+    ]
+  },
   {
     version: 'v350',
     date: '19.07.2026',
