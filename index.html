@@ -1121,6 +1121,49 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 .sidebar-divider{height:1px;background:#2e3136;margin:6px 0}
 
 .main{flex:1;padding:0;min-width:0;height:100vh;overflow:hidden;box-sizing:border-box;display:flex;flex-direction:column}
+
+/* ===== v344: SAĞ BAĞLAM PANELİ — SADECE GENİŞ EKRAN (mobil ASLA etkilenmez) ===== */
+.context-panel{ display:none; }
+@media(min-width:701px){
+  .context-panel{
+    width:280px; flex-shrink:0; height:100vh; overflow-y:auto;
+    background:#161819; border-left:1px solid #242628;
+    box-sizing:border-box; padding:14px 12px;
+    display:flex; flex-direction:column; gap:11px;
+  }
+  .context-panel .ctx-title{
+    font-size:9.5px; letter-spacing:.11em; text-transform:uppercase;
+    color:#8896a0; font-weight:700; padding:0 4px 2px;
+  }
+  .context-panel .ctx-card{
+    background:#1c1f22; border:1px solid #262a2e; border-radius:12px; padding:11px 13px;
+  }
+  .context-panel .ctx-card h4{
+    margin:0 0 8px; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:#7f8894; font-weight:700; display:flex; align-items:center; gap:6px;
+  }
+  .context-panel .ctx-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    gap:8px; padding:3px 0; font-size:12.5px;
+  }
+  .context-panel .ctx-row .lbl{ color:#9aa0a8; }
+  .context-panel .ctx-row .val{ color:#eef1f4; font-weight:700; font-variant-numeric:tabular-nums; }
+  .context-panel .ctx-row .val.pos{ color:#3ecb5f; }
+  .context-panel .ctx-row .val.neg{ color:#ff6a60; }
+  .context-panel .ctx-empty{ color:#5f676f; font-size:11.5px; text-align:center; padding:4px 0; }
+  .context-panel .ctx-note{ font-size:11px; color:#8a929b; margin-top:6px; line-height:1.4; }
+  .context-panel .ctx-badge{
+    display:inline-flex; align-items:center; gap:5px; background:rgba(255,159,10,0.1);
+    border:1px solid rgba(255,159,10,0.28); color:#ffb04a; font-size:11.5px; font-weight:700;
+    border-radius:8px; padding:6px 9px; margin-bottom:5px; width:100%; box-sizing:border-box;
+  }
+}
+@media(min-width:701px) and (max-width:1000px){
+  .context-panel{ width:225px!important; padding:12px 9px!important; }
+}
+@media(max-width:700px){
+  .context-panel{ display:none!important; }
+}
 .sticky-header{position:sticky;top:0;background:var(--bg);z-index:20;padding:8px 0 6px;margin:0}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;min-height:34px}
 .topbar h2{margin:0;font-size:18px;font-weight:700;white-space:nowrap}
@@ -2527,6 +2570,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     </div>
 
   </div>
+
+  <!-- v344: SAĞ BAĞLAM PANELİ (sadece geniş ekranda görünür; mobilde CSS ile gizli) -->
+  <aside class="context-panel" id="contextPanel"></aside>
 </div>
 
 <!-- YATIRILAN PRİM MODALI -->
@@ -3197,7 +3243,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v343';
+const APP_VERSION = 'v344';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3310,7 +3356,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '18.07.2026 18:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '18.07.2026 20:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -8279,6 +8325,128 @@ function renderHedefOzet(){
 // asagidaki kazaniyordu — buradaki kod hicbir zaman calismiyordu, sadece fazladan bir
 // resize listener'i ekliyordu. Gecerli tanim ve resize/orientationchange dinleyicileri
 // dosyanin sonundaki acilis blogunda.
+// ==================== v344: SAĞ BAĞLAM PANELİ (SADECE GENİŞ EKRAN) ====================
+// Not: Tüm gövde try/catch ile korunur — bu fonksiyon ASLA switchPage'i bozmaz.
+function renderContextPanel(page){
+  try{
+    var el = document.getElementById('contextPanel');
+    if(!el) return;
+    // Mobilde panel zaten CSS ile gizli; içerik üretme (boşuna iş yapma, mobili etkileme).
+    if(window.innerWidth <= 700){ el.innerHTML=''; return; }
+
+    // Alt sayfaları ana grupla eşle (hedef/rapor/trend → prim mantığı)
+    var grup = page;
+    if(page==='hedef'||page==='rapor'||page==='trend') grup='prim';
+
+    var isim = {dash:'Anasayfa',prim:'Prim',finans:'Finansal Analiz',kasa:'Kasa Sayımı',gelir:'Gelir Takibi',not:'Not & Etiket',hedef:'Hedef',rapor:'Rapor',trend:'Trend'}[page] || 'Özet';
+
+    // ---- yardımcılar (hepsi savunmacı) ----
+    function _fmt(n){ try{ return (typeof fmt==='function') ? fmt(n) : (Math.round(n*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' \u20ba'; }catch(e){ return '-'; } }
+    function row(lbl,val,cls){ return '<div class="ctx-row"><span class="lbl">'+lbl+'</span><span class="val'+(cls?' '+cls:'')+'">'+val+'</span></div>'; }
+    function card(baslik,ic){ return '<div class="ctx-card"><h4>'+baslik+'</h4>'+ic+'</div>'; }
+    var _entries = (typeof entries!=='undefined' && Array.isArray(entries)) ? entries : [];
+    var _finans  = (typeof finansData!=='undefined' && Array.isArray(finansData)) ? finansData : [];
+    var _kasa    = (typeof kasaData!=='undefined' && Array.isArray(kasaData)) ? kasaData : [];
+    var _tm = (typeof thisMonthKey==='function') ? thisMonthKey() : '';
+    var _bugun = (typeof todayStr==='function') ? todayStr() : '';
+
+    var H = '';
+    H += '<div class="ctx-title">'+isim+'</div>';
+
+    // ---- Bildirimler kartı (her sayfada üstte) ----
+    var bildirimHTML = '';
+    try{
+      if(typeof musteriler!=='undefined' && Array.isArray(musteriler)){
+        var bekleyen = musteriler.filter(function(m){ return m && m.durum==='bekliyor'; }).length;
+        if(bekleyen>0) bildirimHTML += '<div class="ctx-badge">\u23f3 '+bekleyen+' MNP onay bekliyor</div>';
+      }
+    }catch(e){}
+    try{
+      if(typeof eldenAcikToplam==='function'){
+        var _ea = eldenAcikToplam();
+        if(_ea>0) bildirimHTML += '<div class="ctx-badge">\ud83d\udcb8 A\u00e7\u0131k elden: '+_fmt(_ea)+'</div>';
+      }
+    }catch(e){}
+    if(!bildirimHTML) bildirimHTML = '<div class="ctx-empty">Bekleyen bildirim yok</div>';
+    H += card('\ud83d\udd14 Bildirimler', bildirimHTML);
+
+    // ---- Sayfaya özel kart(lar) ----
+    if(grup==='kasa'){
+      if(_kasa.length){
+        var son = _kasa[_kasa.length-1];
+        var ic = row('Tarih', (son.date||'-'));
+        ic += row('Say\u0131lan', _fmt(son.toplam||0));
+        var fark = (typeof _kasaFark==='function') ? _kasaFark(son) : null;
+        if(fark!=null) ic += row('Fark', _fmt(fark), fark<0?'neg':(fark>0?'pos':''));
+        H += card('\ud83e\uddee Son Say\u0131m', ic);
+      } else {
+        H += card('\ud83e\uddee Son Say\u0131m', '<div class="ctx-empty">Hen\u00fcz say\u0131m yok</div>');
+      }
+      var eaic='';
+      try{
+        var eaT = (typeof eldenAcikToplam==='function') ? eldenAcikToplam() : 0;
+        var eaN = (typeof eldenData!=='undefined' && Array.isArray(eldenData)) ? eldenData.length : 0;
+        eaic += row('Toplam', _fmt(eaT), eaT>0?'neg':'');
+        eaic += row('Kay\u0131t', eaN+' adet');
+      }catch(e){ eaic='<div class="ctx-empty">-</div>'; }
+      H += card('\ud83d\udcb8 A\u00e7\u0131k Elden', eaic);
+    }
+    else if(grup==='prim'){
+      var bugunAdet=0, ayAdet=0;
+      _entries.forEach(function(e){
+        var c = Number(e && e.count)||0;
+        if(e && e.date===_bugun) bugunAdet+=c;
+        if(e && e.date && e.date.slice(0,7)===_tm) ayAdet+=c;
+      });
+      var gun = 1; try{ gun = Math.max(1, (typeof nowTR==='function'?nowTR():new Date()).getDate()); }catch(e){}
+      var ort = Math.round((ayAdet/gun)*10)/10;
+      var pic = row('Bug\u00fcn', bugunAdet+' adet');
+      pic += row('Bu ay', ayAdet+' adet');
+      pic += row('G\u00fcnl\u00fck ort.', ort+' adet');
+      H += card('\ud83d\udcca Prim Adedi', pic);
+      var hic='';
+      try{
+        var _hedef = (typeof hedefler!=='undefined' && hedefler && hedefler[_tm]) ? hedefler[_tm] : 0;
+        if(_hedef>0){ hic += row('Ayl\u0131k hedef', _fmt(_hedef)); }
+        else hic = '<div class="ctx-empty">Bu ay i\u00e7in hedef girilmemi\u015f</div>';
+      }catch(e){ hic='<div class="ctx-empty">-</div>'; }
+      H += card('\ud83c\udfaf Hedef', hic);
+    }
+    else if(grup==='finans'){
+      if(_finans.length){
+        var f = _finans[_finans.length-1];
+        var ayEt = (typeof monthLabel==='function' && f.ym) ? monthLabel(f.ym) : (f.ay||f.ym||'-');
+        var fic = row('D\u00f6nem', ayEt);
+        fic += row('Mevcut sermaye', _fmt(f.mevcutSermaye||0));
+        H += card('\ud83d\udcb9 Son Kay\u0131t', fic);
+        var sf = Number(f.sermayeFarki)||0;
+        var kz = Number(f.topKarZarar)||0;
+        var aic = row('Sermaye fark\u0131', _fmt(sf), Math.abs(sf)>0.5?(sf<0?'neg':'pos'):'');
+        aic += row('Kar / Zarar', _fmt(kz), kz<0?'neg':(kz>0?'pos':''));
+        if(Math.abs(sf) > 5000) aic += '<div class="ctx-note">\u26a0\ufe0f Sermaye fark\u0131 y\u00fcksek \u2014 kontrol edilebilir.</div>';
+        H += card('\ud83d\udcc8 Analiz', aic);
+      } else {
+        H += card('\ud83d\udcb9 Son Kay\u0131t', '<div class="ctx-empty">Kay\u0131t yok</div>');
+      }
+    }
+    else {
+      // dash / gelir / not vb. — genel bakış
+      var gic='';
+      try{
+        if(_finans.length){ gic += row('Son sermaye', _fmt(_finans[_finans.length-1].mevcutSermaye||0)); }
+        var ayA=0; _entries.forEach(function(e){ if(e && e.date && e.date.slice(0,7)===_tm) ayA+=Number(e.count)||0; });
+        gic += row('Bu ay prim', ayA+' adet');
+        var eaT2 = (typeof eldenAcikToplam==='function') ? eldenAcikToplam() : 0;
+        if(eaT2>0) gic += row('A\u00e7\u0131k elden', _fmt(eaT2), 'neg');
+      }catch(e){}
+      if(!gic) gic = '<div class="ctx-empty">\u00d6zet i\u00e7in veri yok</div>';
+      H += card('\ud83d\udccb Genel Bak\u0131\u015f', gic);
+    }
+
+    el.innerHTML = H;
+  }catch(e){ /* panel asla uygulamay\u0131 bozmaz */ try{ console.warn('ctxPanel:',e); }catch(_){} }
+}
+
 function switchPage(page, yon, animsiz){
   const _eski = (typeof currentPage!=='undefined') ? currentPage : null;
   currentPage = page;
@@ -8332,6 +8500,7 @@ function switchPage(page, yon, animsiz){
   if(page==='hedef') renderHedefPage();
   if(page==='trend') renderTrend();
   if(page==='kasa') renderKasa();
+  try{ renderContextPanel(page); }catch(e){}   // v344: sağ bağlam paneli
   if(window.innerWidth <= 700) closeMobileMenu();
 }
 
@@ -18903,6 +19072,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v344',
+    date: '18.07.2026',
+    items: [
+      { type: 'new', text: 'MASAUSTU (genis ekran): Sagda yeni bir BAGLAM PANELI eklendi. Acik olan sayfaya gore ozet gosterir — Kasa\'da son sayim + acik elden, Prim\'de bugun/bu ay adet ve aylik hedef, Finansal\'da son sermaye + sermaye farki + kar/zarar. Ustte bekleyen bildirimler (MNP onay, acik elden hatirlatmasi). TELEFON GORUNUMU HIC DEGISMEDI — panel sadece genis ekranda gorunur, dar ekranda tamamen gizli.' },
+    ]
+  },
+  {
     version: 'v343',
     date: '18.07.2026',
     items: [
@@ -21119,6 +21295,8 @@ function toggleChangelog(){
       btn.innerHTML = txt + ' <span style="font-size:9px;opacity:.6">&#9660;</span>';
     });
   } catch(e){ console.warn('Versiyon hatası:',e); }
+  // v344: açılışta sağ bağlam panelini bir kez doldur (geniş ekranda)
+  try{ if(typeof renderContextPanel==='function') renderContextPanel(typeof currentPage!=='undefined'?currentPage:'dash'); }catch(e){}
 })();
 </script>
 
