@@ -1371,6 +1371,88 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   #gelirTitleBar, #kasaTitleBar, #notTitleBar{ justify-content:flex-end!important; }
 }
 
+/* ===== v355: ORTAK BUTON DİLİ — SADECE GENİŞ EKRAN ===== */
+@media(min-width:701px){
+  /* Tarih zaten üst menüdeki saatte yazıyor → bu satır tekrardı */
+  #dashSubtitle{ display:none!important; }
+
+  /* --- Anasayfa aksiyon butonları --- */
+  /* Prim / Finansal / Gelir sadece switchPage yapıyor = üst menünün birebir kopyası.
+     Mobilde üst menü YOK, orada kısayol olarak gerekliler → sadece masaüstünde gizle. */
+  #dashNavRow button[onclick*="switchPage('prim')"],
+  #dashNavRow button[onclick*="switchPage('finans')"],
+  #dashNavRow button[onclick*="switchPage('gelir')"]{ display:none!important; }
+
+  #dashNavRow{ gap:7px!important; }
+  #dashNavRow button{
+    background:var(--panel)!important; border:1px solid var(--line)!important;
+    color:var(--txt)!important; border-radius:9px!important;
+    height:34px!important; padding:0 13px!important; min-width:0!important;
+    font-size:11.5px!important; font-weight:600!important; font-family:inherit!important;
+    flex-direction:row!important; align-items:center!important; gap:7px!important;
+    box-shadow:none!important;
+    transition:background .14s, border-color .14s, transform .14s!important;
+  }
+  #dashNavRow button:hover{
+    background:var(--hover)!important;
+    border-color:rgba(226,35,26,0.45)!important;
+    transform:translateY(-1px)!important;
+  }
+  #dashNavRow button > span{ font-size:13.5px!important; }
+  /* "Ay Kapat" ayın kapanış işlemi — tek vurgulu buton */
+  #dashNavRow button[onclick*="openAyKapat"]{
+    background:rgba(47,174,78,0.12)!important; border-color:rgba(47,174,78,0.4)!important;
+    color:var(--green)!important;
+  }
+  #dashNavRow button[onclick*="openAyKapat"]:hover{
+    background:rgba(47,174,78,0.2)!important; border-color:var(--green)!important;
+  }
+
+  /* --- Prim araç çubuğu: gökkuşağı yerine sakin yüzey, renk emojide kalsın --- */
+  #primToolBar .prim-tool-pill{
+    background:var(--panel)!important; border:1px solid var(--line)!important;
+    color:var(--txt)!important; border-radius:8px!important;
+    height:29px!important; padding:0 10px!important;
+    font-size:11px!important; font-weight:600!important;
+    display:inline-flex!important; align-items:center!important; gap:6px!important;
+    box-shadow:none!important;
+    transition:background .14s, border-color .14s, transform .14s!important;
+  }
+  #primToolBar .prim-tool-pill:hover{
+    background:var(--hover)!important; border-color:rgba(226,35,26,0.4)!important;
+    transform:translateY(-1px)!important;
+  }
+
+  /* --- Filtre butonları (tarih aralığı, yıllar) --- */
+  .qbtn{
+    border:1px solid var(--line)!important; background:var(--panel)!important;
+    border-radius:8px!important; padding:6px 11px!important;
+    font-size:11px!important; font-weight:600!important;
+    transition:background .14s, border-color .14s!important;
+  }
+  .qbtn:hover{ background:var(--hover)!important; border-color:rgba(226,35,26,0.4)!important; }
+  .qbtn.active{ background:var(--red)!important; border-color:var(--red)!important; color:#fff!important; }
+  .entity-filter-top .qbtn{ border-color:transparent!important; background:transparent!important; }
+  .entity-filter-top .qbtn:hover{ background:var(--hover)!important; }
+  .entity-filter-top .qbtn.active{ background:var(--red)!important; }
+
+  /* --- Yumuşak butonlar --- */
+  .btn-soft{
+    border-radius:9px!important; height:32px!important; padding:0 12px!important;
+    font-size:11.5px!important; box-shadow:none!important;
+    transition:background .14s, border-color .14s, transform .14s!important;
+  }
+  .btn-soft:hover{ transform:translateY(-1px)!important; border-color:rgba(226,35,26,0.45)!important; }
+
+  /* --- Ana aksiyon butonları (Yeni Sayım, Gelir/Gider Ekle, Not Ekle) --- */
+  .btn-hero{
+    border-radius:9px!important; height:34px!important; padding:0 15px!important;
+    font-size:12px!important; font-weight:700!important;
+    transition:transform .14s, box-shadow .14s, filter .14s!important;
+  }
+  .btn-hero:hover{ transform:translateY(-1px)!important; filter:brightness(1.08)!important; }
+}
+
 /* ===== v349/v350: MODERN AYARLAR PANELİ (sağ panelde) — SADECE GENİŞ EKRAN ===== */
 @media(min-width:701px){
   /* --- Üst menü: oturum sayacı + bildirim zili --- */
@@ -3617,7 +3699,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v354';
+const APP_VERSION = 'v355';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3730,7 +3812,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 06:10'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 07:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -19756,6 +19838,17 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v355',
+    date: '19.07.2026',
+    items: [
+      { type: 'new', text: 'MASAUSTU: TUM BUTONLAR ortak bir dile getirildi — ayni yukseklik, ayni kose yuvarlakligi, ayni yazi boyutu; uzerine gelince hafifce kalkiyor ve kirmizi kenarlik aliyor. Anasayfa butonlari, prim arac cubugu, tarih/yil filtreleri, "Ay Kapanisi" ve "Yeni Sayim / Ekle" butonlari artik ayni sistemi kullaniyor.' },
+      { type: 'fix', text: 'Prim arac cubugu her butonu ayri renkteydi (gokkusagi gibi). Artik yuzeyler sakin, renk sadece emojide ve sayac rozetlerinde. "Ay Kapat" tek vurgulu buton olarak yesil kaldi.' },
+      { type: 'fix', text: 'Anasayfadaki "15 Temmuz 2026 · Guncel Durum" satiri kaldirildi (masaustunde) — tarih zaten ust menudeki saatte yaziyor, bu satir tekrardi ve bir satir yer kapliyordu. (Telefonda zaten gizliydi.)' },
+      { type: 'fix', text: 'Anasayfadaki "Prim Girisi / Finansal / Gelir" butonlari sadece o sayfaya gidiyordu — yani ust menunun birebir kopyasiydi. Masaustunde kaldirildi; geriye 4 GERCEK aksiyon kaldi: Hedef, Yatirilan, Ay Kapanisi, Ay Kapat. TELEFONDA UST MENU OLMADIGI ICIN 7 BUTONUN HEPSI AYNEN DURUYOR.' },
+      { type: 'new', text: 'TELEFON GORUNUMU YINE HIC DEGISMEDI.' },
+    ]
+  },
   {
     version: 'v354',
     date: '19.07.2026',
