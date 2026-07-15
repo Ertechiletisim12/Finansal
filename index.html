@@ -1167,7 +1167,6 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 
 /* ===== v345: ÜST YATAY MENÜ + SIDEBAR ÇEKMECESİ — SADECE GENİŞ EKRAN ===== */
 .deskbar{ display:none; }
-#deskDrawerOverlay{ display:none; }
 @media(min-width:701px){
   .deskbar{
     display:flex; align-items:center; gap:8px;
@@ -1205,20 +1204,10 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   /* v344 paneli 100vh idi; .app artık 52px kısaldığı için alt kısmı taşardı */
   .context-panel{ height:100%; }
 
-  /* Sidebar → masaüstünde çekmece (tüm araçlar korunuyor, sadece gizli duruyor) */
-  .sidebar{
-    position:fixed; top:0; left:0; z-index:650;
-    transform:translateX(-101%); transition:transform .22s ease;
-    box-shadow:2px 0 26px rgba(0,0,0,0.55);
-  }
-  /* Çekmece artık yan yana durmadığı için daralmasına gerek yok:
-     aşağıdaki eski .sidebar{width:160px/130px !important} kurallarını ID önceliğiyle ez. */
-  #mainSidebar{ width:220px!important; }
-  .sidebar.sb-drawer-open{ transform:translateX(0); }
-  #deskDrawerOverlay{
-    position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:600;
-  }
-  #deskDrawerOverlay.on{ display:block; }
+  /* v350: Masaüstünde sol menü tamamen kalktı — her şey sağ panelde / üst menüde.
+     Elemanlar DOM'da duruyor (mobil menü aynı sidebar'ı kullanıyor + canlı değerleri
+     buradan okuyoruz), sadece görünmüyorlar. */
+  .sidebar{ display:none!important; }
 }
 @media(min-width:701px) and (max-width:1000px){
   .deskbar .db-brand{ display:none!important; }
@@ -1226,7 +1215,6 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 }
 @media(max-width:700px){
   .deskbar{ display:none!important; }
-  #deskDrawerOverlay{ display:none!important; }
 }
 
 /* ===== v346: MASAÜSTÜ GÖRSEL YENİLEME — SADECE GENİŞ EKRAN ===== */
@@ -1309,34 +1297,96 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   #gelirTitleBar, #kasaTitleBar, #notTitleBar{ justify-content:flex-end!important; }
 }
 
-/* ===== v349: MODERN AYARLAR PANELİ (çekmece) — SADECE GENİŞ EKRAN ===== */
-.desk-settings{ display:none; }
+/* ===== v349/v350: MODERN AYARLAR PANELİ (sağ panelde) — SADECE GENİŞ EKRAN ===== */
 @media(min-width:701px){
-  /* Tema kartları için biraz daha geniş çekmece */
-  #mainSidebar{ width:288px!important; }
+  /* --- Üst menü: oturum sayacı + bildirim zili --- */
+  .deskbar .db-sess{
+    display:flex; align-items:center; gap:6px;
+    background:rgba(255,255,255,0.05); border:1px solid #2a2d30;
+    border-radius:8px; padding:3px 7px; height:32px; box-sizing:border-box;
+  }
+  .deskbar .db-sess.warn{ border-color:rgba(255,159,10,0.55); background:rgba(255,159,10,0.10); }
+  .deskbar .db-sess-i{ font-size:10px; opacity:.5; }
+  .deskbar .db-sess-b{ display:flex; flex-direction:column; align-items:center; line-height:1; }
+  .deskbar .db-sess-l{ font-size:6.5px; color:#8b9299; font-weight:700; letter-spacing:.05em; }
+  .deskbar .db-sess-v{ font-size:11.5px; font-weight:800; color:#fff; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .deskbar .db-sess-v.ok{ color:var(--green); }
+  .deskbar .db-sess-sep{ width:1px; height:16px; background:#33373b; }
+  .deskbar .db-lock{
+    background:none; border:none; color:rgba(255,110,110,0.65);
+    font-size:12px; cursor:pointer; padding:2px; line-height:1;
+  }
+  .deskbar .db-lock:hover{ color:#ff6b6b; }
+  .deskbar .db-bell{
+    position:relative; background:rgba(255,255,255,0.05); border:1px solid #2a2d30;
+    color:#c8cdd3; width:32px; height:32px; border-radius:8px; cursor:pointer;
+    font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .deskbar .db-bell:hover{ background:rgba(255,255,255,0.11); }
+  .deskbar .db-bell-b{
+    position:absolute; top:-5px; right:-5px; min-width:15px; height:15px;
+    border-radius:8px; background:var(--red); color:#fff;
+    font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center;
+    padding:0 3px; border:1.5px solid #161819;
+  }
+  .deskbar .db-btn.on{ background:var(--red)!important; border-color:var(--red)!important; color:#fff!important; }
 
-  /* Masaüstünde gereksizler: navigasyon (üst menüde var) + tema/gizli düğmeleri (kartlara taşındı) */
-  #sidebarNav{ display:none!important; }
-  #mainSidebar #themeBtn, #mainSidebar .gizli-mod-btn{ display:none!important; }
-
-  .desk-settings{ display:block; padding:14px 12px 4px; }
+  /* --- Sağ paneldeki ayarlar --- */
   .ds-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .ds-head-t{ font-size:14px; font-weight:800; color:#eef1f4; letter-spacing:.02em; }
+  .ds-head-t{ font-size:14px; font-weight:800; color:var(--txt); letter-spacing:.02em; }
   .ds-x{
-    background:rgba(255,255,255,0.06); border:1px solid #2f3236; color:#9aa0a8;
+    background:var(--panel2); border:1px solid var(--line); color:var(--muted);
     width:26px; height:26px; border-radius:7px; cursor:pointer; font-size:12px; line-height:1;
   }
-  .ds-x:hover{ background:rgba(255,255,255,0.13); color:#fff; }
+  .ds-x:hover{ background:var(--hover); color:var(--txt); }
   .ds-sec-t{
     font-size:9px; letter-spacing:.12em; text-transform:uppercase;
-    color:#7f8894; font-weight:700; margin:0 0 7px 2px;
+    color:var(--muted); font-weight:700; margin:14px 0 7px 2px;
   }
+  .ds-sec-t:first-of-type{ margin-top:0; }
+  .ds-sec-t.st-dang-t{ color:#ff6a60; }
+
+  /* Ayar satırı grupları (tek kart, ince ayraçlarla) */
+  .st-group{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:12px; overflow:hidden;
+  }
+  .st-row{
+    display:flex; align-items:center; gap:10px; padding:9px 11px;
+    cursor:pointer; border-top:1px solid var(--line); transition:background .12s;
+  }
+  .st-group > .st-row:first-child{ border-top:none; }
+  .st-row:hover{ background:var(--hover); }
+  .st-ico{
+    width:26px; height:26px; border-radius:7px; background:var(--panel2);
+    display:flex; align-items:center; justify-content:center; font-size:12.5px; flex-shrink:0;
+  }
+  .st-txt{ display:flex; flex-direction:column; min-width:0; flex:1; }
+  .st-t{ font-size:12px; font-weight:600; color:var(--txt); }
+  .st-s{ font-size:9.5px; color:var(--muted); margin-top:1px; }
+  .st-ch{ color:var(--muted); font-size:13px; flex-shrink:0; }
+  .st-badge{
+    background:var(--red); color:#fff; font-size:9px; font-weight:800;
+    border-radius:8px; padding:1px 5px; flex-shrink:0;
+  }
+  .st-dang .st-t{ color:#ff6a60; }
+  .st-dang .st-ico{ background:rgba(255,106,96,0.12); }
+
+  /* Bulut satırı + depolama çubuğu */
+  .st-line{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:8px 11px; font-size:10.5px; color:var(--muted); margin-bottom:7px;
+  }
+  .st-depo{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:9px 11px; }
+  .st-depo-h{ display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-bottom:5px; }
+  .st-depo-tr{ height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; }
+  .st-depo-bar{ height:100%; width:0%; background:var(--green); border-radius:3px; transition:width .4s; }
 
   /* Tema kartları */
   .ds-themes{ display:flex; gap:7px; margin-bottom:16px; }
   .ds-theme{ flex:1; cursor:pointer; user-select:none; }
   .ds-pv{
-    height:38px; border-radius:9px; border:2px solid #2f3236;
+    height:38px; border-radius:9px; border:2px solid var(--line);
     overflow:hidden; position:relative; transition:border-color .15s, transform .1s;
   }
   .ds-theme:hover .ds-pv{ transform:translateY(-1px); }
@@ -1347,21 +1397,21 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   .pv-auto{ background:linear-gradient(105deg,#f0f2f5 0 50%,#26282b 50% 100%); }
   .pv-auto i{ background:#161819; }
   .pv-auto b{ background:linear-gradient(105deg,#c7ccd4 0 50%,#484c52 50% 100%); }
-  .ds-theme-n{ font-size:10.5px; color:#9aa0a8; text-align:center; margin-top:5px; font-weight:600; }
+  .ds-theme-n{ font-size:10.5px; color:var(--muted); text-align:center; margin-top:5px; font-weight:600; }
   .ds-theme.on .ds-pv{ border-color:var(--red); }
-  .ds-theme.on .ds-theme-n{ color:#eef1f4; font-weight:700; }
+  .ds-theme.on .ds-theme-n{ color:var(--txt); font-weight:700; }
 
   /* Toggle satırı */
   .ds-row{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
-    background:#1c1f22; border:1px solid #2a2e32; border-radius:10px;
-    padding:9px 11px; cursor:pointer; margin-bottom:14px;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:9px 11px; cursor:pointer;
   }
-  .ds-row:hover{ background:#22262a; }
-  .ds-row-h{ font-size:12px; color:#e8ebee; font-weight:600; }
-  .ds-row-s{ font-size:9.5px; color:#7f8894; margin-top:2px; }
+  .ds-row:hover{ background:var(--hover); }
+  .ds-row-h{ font-size:12px; color:var(--txt); font-weight:600; }
+  .ds-row-s{ font-size:9.5px; color:var(--muted); margin-top:2px; }
   .ds-sw{
-    width:38px; height:21px; border-radius:11px; background:#3a3f45;
+    width:38px; height:21px; border-radius:11px; background:var(--line);
     position:relative; flex-shrink:0; transition:background .16s;
   }
   .ds-sw i{
@@ -1371,15 +1421,6 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   .ds-sw.on{ background:var(--green); }
   .ds-sw.on i{ left:19.5px; }
 
-  /* Kalan araç düğmeleri (Veri Yönetimi / Sistem) biraz daha modern */
-  #mainSidebar .tool-btn{
-    border-radius:9px!important; padding:8px 11px!important;
-    background:rgba(255,255,255,0.04)!important; border-color:rgba(255,255,255,0.09)!important;
-  }
-  #mainSidebar .tool-btn:hover{ background:rgba(255,255,255,0.10)!important; }
-}
-@media(max-width:700px){
-  .desk-settings{ display:none!important; }
 }
 .sticky-header{position:sticky;top:0;background:var(--bg);z-index:20;padding:8px 0 6px;margin:0}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;min-height:34px}
@@ -2052,48 +2093,24 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="db-item"        id="navTopNot"    onclick="switchPage('not')">🏷️ Not & Etiket</div>
   </div>
   <div class="db-tools">
+    <!-- v350: aktif oturum (sidebar gizli; degerler oradan aynalanir) -->
+    <div class="db-sess" id="deskSess" style="display:none">
+      <span class="db-sess-i">🔐</span>
+      <span class="db-sess-b"><span class="db-sess-l">KİLİT</span><span class="db-sess-v" id="deskKilit">10:00</span></span>
+      <span class="db-sess-sep"></span>
+      <span class="db-sess-b"><span class="db-sess-l">AÇIK</span><span class="db-sess-v ok" id="deskAcik">0:00</span></span>
+      <button class="db-lock" onclick="oturumKapat()" title="Oturumu kilitle">🔒</button>
+    </div>
+    <!-- v350: bildirim zili -->
+    <button class="db-bell" onclick="toggleNotifPanel()" title="Bildirimler">🔔<span class="db-bell-b" id="deskNotifB" style="display:none">0</span></button>
     <div class="db-clock" id="clockTop"></div>
     <div class="db-ver" id="deskVerBtn" onclick="toggleChangelog()" title="Sürüm notlarını göster">⋯</div>
-    <button class="db-btn" onclick="toggleDeskDrawer()" title="Araçlar: bildirimler, tema, yedekleme, sistem">☰ Araçlar</button>
+    <button class="db-btn" id="deskSetBtn" onclick="toggleSettingsPanel()" title="Ayarlar: tema, gizlilik, veri yönetimi, sistem">⚙ Ayarlar</button>
   </div>
 </nav>
-<div id="deskDrawerOverlay" onclick="closeDeskDrawer()"></div>
 
 <div class="app">
   <div class="sidebar" id="mainSidebar">
-
-    <!-- v349: MASAÜSTÜ AYARLAR PANELİ — mobilde tamamen gizli (mobil menü aynı sidebar'ı kullanıyor) -->
-    <div class="desk-settings" id="deskSettings">
-      <div class="ds-head">
-        <span class="ds-head-t">⚙ Ayarlar</span>
-        <button class="ds-x" onclick="closeDeskDrawer()" title="Kapat (Esc)">✕</button>
-      </div>
-
-      <div class="ds-sec-t">Tema</div>
-      <div class="ds-themes">
-        <div class="ds-theme" id="dsThemeLight" onclick="setTheme('light')" title="Açık tema">
-          <div class="ds-pv pv-light"><i></i><b></b></div>
-          <div class="ds-theme-n">Açık</div>
-        </div>
-        <div class="ds-theme" id="dsThemeDark" onclick="setTheme('dark')" title="Koyu tema">
-          <div class="ds-pv pv-dark"><i></i><b></b></div>
-          <div class="ds-theme-n">Koyu</div>
-        </div>
-        <div class="ds-theme" id="dsThemeAuto" onclick="setTheme('auto')" title="Cihaz ayarını takip et">
-          <div class="ds-pv pv-auto"><i></i><b></b></div>
-          <div class="ds-theme-n">Otomatik</div>
-        </div>
-      </div>
-
-      <div class="ds-sec-t">Gizlilik</div>
-      <div class="ds-row" onclick="toggleGizliMod()">
-        <div class="ds-row-l">
-          <div class="ds-row-h">Tutarları gizle</div>
-          <div class="ds-row-s">Tüm tutarlar maskelenir</div>
-        </div>
-        <div class="ds-sw" id="dsSwGizli"><i></i></div>
-      </div>
-    </div>
 
     <!-- Başlık - sadece bildirim zili -->
     <div style="padding:12px 14px 10px;border-bottom:1px solid #242628;display:flex;align-items:center;justify-content:flex-end">
@@ -3512,7 +3529,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v349';
+const APP_VERSION = 'v350';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3625,7 +3642,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 01:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 02:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -7248,6 +7265,39 @@ function clock(){
   // v348: ust menudeki saat (genis ekran) - ayni html, tek kaynak
   const ct = document.getElementById('clockTop');
   if(ct) ct.innerHTML = html;
+  try{ _deskStatusTick(); }catch(e){}   // v350: oturum + bildirim aynasi
+}
+
+// v350: Sidebar masaustunde gizli; oradaki CANLI degerleri ust menuye aynala.
+// ID kopyalamiyoruz - sadece deger okuyoruz (tekil elemanlar bozulmasin).
+function _deskStatusTick(){
+  try{
+    if(window.innerWidth <= 700) return;
+    const sess = document.getElementById('deskSess');
+    const box  = document.getElementById('sidebarOturumBox');
+    if(sess && box){
+      const acik = (box.style.display||'') !== 'none';
+      sess.style.display = acik ? 'flex' : 'none';
+      if(acik){
+        const k=document.getElementById('deskKilit'), a=document.getElementById('deskAcik');
+        const ks=document.getElementById('sidebarKalanSure'), as=document.getElementById('sidebarAcikSure');
+        if(k&&ks && k.textContent!==ks.textContent) k.textContent=ks.textContent;
+        if(a&&as && a.textContent!==as.textContent) a.textContent=as.textContent;
+        const u=document.getElementById('sidebarUyari');
+        const uyari=(u&&u.textContent||'').trim();
+        sess.classList.toggle('warn', !!uyari);
+        sess.title = uyari || 'Aktif oturum';
+      }
+    }
+    const nb=document.getElementById('notifBadge');
+    const dn=document.getElementById('deskNotifB');
+    if(dn){
+      const say=(nb&&nb.textContent||'').trim();
+      const gorunur = !!say && say!=='0' && ((nb.style.display||'')!=='none');
+      dn.textContent = say||'0';
+      dn.style.display = gorunur ? 'flex' : 'none';
+    }
+  }catch(e){}
 }
 setInterval(clock,1000); clock();
 
@@ -8601,7 +8651,133 @@ function renderHedefOzet(){
 // asagidaki kazaniyordu — buradaki kod hicbir zaman calismiyordu, sadece fazladan bir
 // resize listener'i ekliyordu. Gecerli tanim ve resize/orientationchange dinleyicileri
 // dosyanin sonundaki acilis blogunda.
-// ==================== v349: MODERN AYARLAR PANELİ (SADECE GENİŞ EKRAN) ====================
+// ==================== v350: SAĞ PANEL — AYARLAR MODU (SADECE GENİŞ EKRAN) ====================
+// Sağ panelin iki modu var: 'context' (sayfa özeti) | 'settings' (ayarlar)
+var ctxMode = 'context';
+var _setTick = null;
+
+// Canlı durum elemanlarının DEĞERLERİNİ okur (ID'lerini ASLA kopyalamayız — tekilller,
+// getElementById ile güncelleniyorlar; ikinci bir kopya onları bozardı).
+function _oku(id, alan){
+  try{ var e=document.getElementById(id); if(!e) return ''; return (alan==='html'? e.innerHTML : (e.textContent||'')).trim(); }
+  catch(e){ return ''; }
+}
+function _gorunur(id){
+  try{ var e=document.getElementById(id); if(!e) return false;
+       return (e.style.display||'') !== 'none'; }catch(e){ return false; }
+}
+
+function toggleSettingsPanel(){
+  try{
+    if(window.innerWidth <= 700) return;
+    if(ctxMode==='settings') closeSettingsPanel(); else openSettingsPanel();
+  }catch(e){}
+}
+function openSettingsPanel(){
+  try{
+    if(window.innerWidth <= 700) return;
+    ctxMode='settings';
+    renderSettingsPanel();
+    var b=document.getElementById('deskSetBtn'); if(b) b.classList.add('on');
+    if(_setTick) clearInterval(_setTick);
+    _setTick = setInterval(function(){ try{ if(ctxMode==='settings') _setCanliGuncelle(); }catch(e){} }, 1000);
+  }catch(e){}
+}
+function closeSettingsPanel(){
+  try{
+    ctxMode='context';
+    if(_setTick){ clearInterval(_setTick); _setTick=null; }
+    var b=document.getElementById('deskSetBtn'); if(b) b.classList.remove('on');
+    renderContextPanel(typeof currentPage!=='undefined'?currentPage:'dash');
+  }catch(e){}
+}
+
+// Sadece canlı değerleri tazele (tüm paneli yeniden çizme — tıklama/odak bozulmasın)
+function _setCanliGuncelle(){
+  try{
+    var set=function(id,val){ var e=document.getElementById(id); if(e && e.textContent!==val) e.textContent=val; };
+    set('stBulut', _oku('cloudSyncIndicator')||'—');
+    var ab=_oku('autoBackupStatus'); set('stOtoYedek', ab||'Kapalı');
+    set('stDepoT', _oku('storageText')||'—');
+    var bar=document.getElementById('stDepoBar');
+    var src=document.getElementById('storageBarFill');
+    if(bar && src){ bar.style.width=src.style.width||'0%'; bar.style.background=src.style.background||'#4cd964'; }
+  }catch(e){}
+}
+
+function renderSettingsPanel(){
+  try{
+    var el=document.getElementById('contextPanel');
+    if(!el) return;
+    if(window.innerWidth <= 700){ el.innerHTML=''; return; }
+
+    function row(ico, baslik, alt, onclick, extra){
+      return '<div class="st-row" onclick="'+onclick+'">'
+        + '<span class="st-ico">'+ico+'</span>'
+        + '<span class="st-txt"><span class="st-t">'+baslik+'</span>'
+        + (alt? '<span class="st-s">'+alt+'</span>':'') + '</span>'
+        + (extra||'') + '<span class="st-ch">›</span></div>';
+    }
+
+    var H='';
+    H += '<div class="ds-head"><span class="ds-head-t">\u2699 Ayarlar</span>'
+       + '<button class="ds-x" onclick="closeSettingsPanel()" title="Kapat (Esc)">\u2715</button></div>';
+
+    // --- TEMA ---
+    H += '<div class="ds-sec-t">Tema</div><div class="ds-themes">'
+       + '<div class="ds-theme" id="dsThemeLight" onclick="setTheme(\'light\')" title="A\u00e7\u0131k tema"><div class="ds-pv pv-light"><i></i><b></b></div><div class="ds-theme-n">A\u00e7\u0131k</div></div>'
+       + '<div class="ds-theme" id="dsThemeDark" onclick="setTheme(\'dark\')" title="Koyu tema"><div class="ds-pv pv-dark"><i></i><b></b></div><div class="ds-theme-n">Koyu</div></div>'
+       + '<div class="ds-theme" id="dsThemeAuto" onclick="setTheme(\'auto\')" title="Cihaz ayar\u0131n\u0131 takip et"><div class="ds-pv pv-auto"><i></i><b></b></div><div class="ds-theme-n">Otomatik</div></div>'
+       + '</div>';
+
+    // --- GİZLİLİK ---
+    H += '<div class="ds-sec-t">Gizlilik</div>'
+       + '<div class="ds-row" onclick="toggleGizliMod()"><div class="ds-row-l">'
+       + '<div class="ds-row-h">Tutarlar\u0131 gizle</div><div class="ds-row-s">T\u00fcm tutarlar maskelenir</div>'
+       + '</div><div class="ds-sw" id="dsSwGizli"><i></i></div></div>';
+
+    // --- BULUT & DEPOLAMA (oturum/bildirim art\u0131k \u00fcst men\u00fcde) ---
+    H += '<div class="ds-sec-t">Bulut &amp; Depolama</div>'
+       + '<div class="st-line"><span id="stBulut">\u2014</span></div>'
+       + '<div class="st-depo"><div class="st-depo-h"><span>Depolama</span><span id="stDepoT">\u2014</span></div>'
+       + '<div class="st-depo-tr"><div class="st-depo-bar" id="stDepoBar"></div></div></div>';
+
+    // --- VERİ YÖNETİMİ ---
+    H += '<div class="ds-sec-t">Veri Y\u00f6netimi</div><div class="st-group">'
+       + row('\ud83d\udcbe','Yedekle','T\u00fcm veriyi dosyaya kaydet','backupData()')
+       + row('\ud83d\udd04','G\u00fcncelle','Yeni s\u00fcr\u00fcm\u00fc kontrol et','openGithubGuncelleModal()')
+       + '<label class="st-row" style="cursor:pointer"><span class="st-ico">\ud83d\udcc2</span>'
+       + '<span class="st-txt"><span class="st-t">Geri Y\u00fckle</span><span class="st-s">Yedek dosyas\u0131ndan y\u00fckle</span></span>'
+       + '<span class="st-ch">\u203a</span><input type="file" accept=".json" onchange="restoreData(event)" style="display:none"></label>'
+       + row('\ud83d\udcc1','Oto. Yedek Klas\u00f6r\u00fc','<span id="stOtoYedek">Kapal\u0131</span>','chooseBackupFolder()')
+       + '</div>';
+
+    // --- SİSTEM ---
+    H += '<div class="ds-sec-t">Sistem</div><div class="st-group">'
+       + row('\ud83d\udcc4','Y\u00f6netici Raporu','Yazd\u0131r\u0131labilir \u00f6zet','printManagerReport()')
+       + row('\ud83d\udd10','Kilit / PIN Ayar\u0131','Uygulama kilidi','openPinModal()')
+       + row('\ud83d\udccb','Giri\u015f Loglar\u0131','Ge\u00e7mi\u015f giri\u015fler','openGirisLogModal()')
+       + '</div>';
+
+    // --- PWA kurulum (sadece kurulabilir durumdaysa) ---
+    if(_gorunur('pwaInstallBtn')){
+      H += '<div class="ds-sec-t">Uygulama</div><div class="st-group">'
+         + row('\ud83d\udcf2','Uygulamay\u0131 Kur','Masa\u00fcst\u00fcne ekle','installPWA()') + '</div>';
+    }
+
+    // --- TEHLİKELİ ---
+    H += '<div class="ds-sec-t st-dang-t">Tehlikeli B\u00f6lge</div><div class="st-group st-dang">'
+       + row('\u21ba','Finansal Veriyi S\u0131f\u0131rla','Geri al\u0131namaz','resetFinansData()')
+       + row('\u26a0','T\u00fcm Verileri S\u0131f\u0131rla','Geri al\u0131namaz','clearAllData()')
+       + '</div><div style="height:8px"></div>';
+
+    el.innerHTML=H;
+    syncDeskSettings();
+    _setCanliGuncelle();
+  }catch(e){ try{ console.warn('ayarPaneli:',e); }catch(_){} }
+}
+
+// ==================== v349: TEMA / GİZLİLİK MANTIĞI ====================
 // Cihaz temasi (auto icin)
 function _temaOto(){
   try{ return (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark'; }
@@ -8642,32 +8818,6 @@ try{
 }catch(e){}
 
 // ==================== v345: ÜST MENÜ + SIDEBAR ÇEKMECESİ (SADECE GENİŞ EKRAN) ====================
-// Mobilde bu fonksiyonlar hiçbir şey yapmaz (innerWidth<=700 => erken çıkış).
-function openDeskDrawer(){
-  try{
-    if(window.innerWidth <= 700) return;
-    var sb = document.getElementById('mainSidebar');
-    var ov = document.getElementById('deskDrawerOverlay');
-    if(sb) sb.classList.add('sb-drawer-open');
-    if(ov) ov.classList.add('on');
-    try{ syncDeskSettings(); }catch(e){}   // v349
-  }catch(e){}
-}
-function closeDeskDrawer(){
-  try{
-    var sb = document.getElementById('mainSidebar');
-    var ov = document.getElementById('deskDrawerOverlay');
-    if(sb) sb.classList.remove('sb-drawer-open');
-    if(ov) ov.classList.remove('on');
-  }catch(e){}
-}
-function toggleDeskDrawer(){
-  try{
-    if(window.innerWidth <= 700) return;
-    var sb = document.getElementById('mainSidebar');
-    if(sb && sb.classList.contains('sb-drawer-open')) closeDeskDrawer(); else openDeskDrawer();
-  }catch(e){}
-}
 // Üst menüde aktif sayfayı işaretle (sidebar'daki nav-item mantığının aynısı)
 function syncTopNav(page){
   try{
@@ -8682,19 +8832,10 @@ function syncTopNav(page){
     }
   }catch(e){}
 }
-// Çekmecedeki bir araca/menüye tıklanınca çekmece kapansın (modallar üstte kalsın)
+// v350: Esc -> ayarlar panelini kapat (sag panel sayfa ozetine doner)
 try{
-  document.addEventListener('click', function(e){
-    try{
-      if(window.innerWidth <= 700) return;
-      var sb = document.getElementById('mainSidebar');
-      if(!sb || !sb.classList.contains('sb-drawer-open')) return;
-      if(!sb.contains(e.target)) return;
-      if(e.target.closest('button, label.tool-btn, .nav-item')) closeDeskDrawer();
-    }catch(_){}
-  }, true);
   document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape') closeDeskDrawer();
+    try{ if(e.key === 'Escape' && ctxMode === 'settings') closeSettingsPanel(); }catch(_){}
   });
 }catch(e){}
 
@@ -8704,6 +8845,8 @@ function renderContextPanel(page){
   try{
     var el = document.getElementById('contextPanel');
     if(!el) return;
+    // v350: ayarlar modu acikken sayfa degistirmek paneli ezmesin
+    if(ctxMode === 'settings' && window.innerWidth > 700){ renderSettingsPanel(); return; }
     // Mobilde panel zaten CSS ile gizli; içerik üretme (boşuna iş yapma, mobili etkileme).
     if(window.innerWidth <= 700){ el.innerHTML=''; return; }
 
@@ -8874,7 +9017,6 @@ function switchPage(page, yon, animsiz){
   if(page==='kasa') renderKasa();
   try{ renderContextPanel(page); }catch(e){}   // v344: sağ bağlam paneli
   try{ syncTopNav(page); }catch(e){}           // v345: üst menü aktif göstergesi
-  try{ if(window.innerWidth > 700) closeDeskDrawer(); }catch(e){}  // v345: çekmeceyi kapat
   if(window.innerWidth <= 700) closeMobileMenu();
 }
 
@@ -19445,6 +19587,18 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v350',
+    date: '19.07.2026',
+    items: [
+      { type: 'new', text: 'MASAUSTU: SOL MENU TAMAMEN KALKTI. Cekmece de yok. Artik her sey ya UST MENUDE ya da SAG PANELDE.' },
+      { type: 'new', text: '"Ayarlar" butonuna basinca ayarlar SAG PANELDE aciliyor (gorev notundaki webmail ilhaminin ta kendisi). Tema kartlari, gizlilik anahtari, bulut durumu, depolama cubugu, veri yonetimi ve sistem — hepsi tek, duzenli bir panelde. Tekrar basinca (veya Esc) sayfa ozetine donuyor.' },
+      { type: 'new', text: 'AKTIF OTURUM (Kilit / Acik sure + kilitle dugmesi) ve BILDIRIM ZILI (sayacli) artik UST MENUDE — her sayfadan gorunuyor.' },
+      { type: 'new', text: 'Ayar satirlari modern hale geldi: ikon + baslik + aciklama, tek kart icinde ince ayraclarla gruplanmis. "Tehlikeli Bolge" (sifirlama) ayrica kirmizi ile ayrildi. Panel artik temayla birlikte renk degistiriyor.' },
+      { type: 'fix', text: 'Icinde tek bir bulut satiri kalan "Gorunum" bolumu ve masaustunde tekrar eden navigasyon kaldirildi.' },
+      { type: 'new', text: 'TELEFON GORUNUMU YINE HIC DEGISMEDI: sol menu DOM\'da duruyor (mobil hamburger menu onu kullaniyor), masaustunde sadece gizli. Canli degerler (oturum, bildirim, depolama, bulut) oradan OKUNUYOR — kopyalanmiyor, boylece hicbir sayac bozulmuyor.' },
+    ]
+  },
   {
     version: 'v349',
     date: '19.07.2026',
