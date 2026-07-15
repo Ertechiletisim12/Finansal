@@ -1142,6 +1142,17 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
     display:flex; justify-content:space-between; align-items:baseline;
     gap:8px; padding:3px 0; font-size:12.5px;
   }
+  /* v352: tiklanabilir satirlar */
+  .context-panel .ctx-row.go{
+    cursor:pointer; border-radius:8px; margin:0 -6px; padding:4px 6px;
+    transition:background .12s;
+  }
+  .context-panel .ctx-row.go:hover{ background:var(--hover); }
+  .context-panel .go-ch{ color:var(--muted); font-size:12px; opacity:.45; margin-left:2px; }
+  .context-panel .go:hover .go-ch{ opacity:.9; }
+  .context-panel .ctx-badge.go{ cursor:pointer; transition:background .12s; }
+  .context-panel .ctx-badge.go:hover{ background:rgba(255,159,10,0.22); }
+  .context-panel .ctx-badge .go-ch{ margin-left:auto; color:#ffb04a; }
   .context-panel .ctx-row .lbl{ color:var(--muted); }
   .context-panel .ctx-row .val{ color:var(--txt); font-weight:700; font-variant-numeric:tabular-nums; }
   .context-panel .ctx-row .val.pos{ color:#3ecb5f; }
@@ -3544,7 +3555,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v351';
+const APP_VERSION = 'v352';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3657,7 +3668,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 03:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 04:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -8876,7 +8887,11 @@ function renderContextPanel(page){
 
     // ---- yardımcılar (hepsi savunmacı) ----
     function _fmt(n){ try{ return (typeof fmt==='function') ? fmt(n) : (Math.round(n*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' \u20ba'; }catch(e){ return '-'; } }
-    function row(lbl,val,cls){ return '<div class="ctx-row"><span class="lbl">'+lbl+'</span><span class="val'+(cls?' '+cls:'')+'">'+val+'</span></div>'; }
+    function row(lbl,val,cls,git){
+      return '<div class="ctx-row'+(git?' go':'')+'"'+(git?' onclick="'+git+'"':'')+'>'
+        + '<span class="lbl">'+lbl+'</span><span class="val'+(cls?' '+cls:'')+'">'+val+'</span>'
+        + (git?'<span class="go-ch">\u203a</span>':'') + '</div>';
+    }
     function card(baslik,ic){ return '<div class="ds-sec-t">'+baslik+'</div><div class="ctx-card">'+ic+'</div>'; }
     var _entries = (typeof entries!=='undefined' && Array.isArray(entries)) ? entries : [];
     var _finans  = (typeof finansData!=='undefined' && Array.isArray(finansData)) ? finansData : [];
@@ -8892,13 +8907,13 @@ function renderContextPanel(page){
     try{
       if(typeof musteriler!=='undefined' && Array.isArray(musteriler)){
         var bekleyen = musteriler.filter(function(m){ return m && m.durum==='bekliyor'; }).length;
-        if(bekleyen>0) bildirimHTML += '<div class="ctx-badge">\u23f3 '+bekleyen+' MNP onay bekliyor</div>';
+        if(bekleyen>0) bildirimHTML += '<div class="ctx-badge go" onclick="switchPage(\'prim\')">\u23f3 '+bekleyen+' MNP onay bekliyor<span class="go-ch">\u203a</span></div>';
       }
     }catch(e){}
     try{
       if(typeof eldenAcikToplam==='function'){
         var _ea = eldenAcikToplam();
-        if(_ea>0) bildirimHTML += '<div class="ctx-badge">\ud83d\udcb8 A\u00e7\u0131k elden: '+_fmt(_ea)+'</div>';
+        if(_ea>0) bildirimHTML += '<div class="ctx-badge go" onclick="openEldenModal()">\ud83d\udcb8 A\u00e7\u0131k elden: '+_fmt(_ea)+'<span class="go-ch">\u203a</span></div>';
       }
     }catch(e){}
     if(!bildirimHTML) bildirimHTML = '<div class="ctx-empty">Bekleyen bildirim yok</div>';
@@ -8908,7 +8923,7 @@ function renderContextPanel(page){
     if(grup==='kasa'){
       if(_kasa.length){
         var son = _kasa[_kasa.length-1];
-        var ic = row('Tarih', (son.date||'-'));
+        var ic = row('Tarih', (son.date||'-'), '', 'switchPage(\'kasa\')');
         ic += row('Say\u0131lan', _fmt(son.toplam||0));
         var fark = (typeof _kasaFark==='function') ? _kasaFark(son) : null;
         if(fark!=null) ic += row('Fark', _fmt(fark), fark<0?'neg':(fark>0?'pos':''));
@@ -8920,7 +8935,7 @@ function renderContextPanel(page){
       try{
         var eaT = (typeof eldenAcikToplam==='function') ? eldenAcikToplam() : 0;
         var eaN = (typeof eldenData!=='undefined' && Array.isArray(eldenData)) ? eldenData.length : 0;
-        eaic += row('Toplam', _fmt(eaT), eaT>0?'neg':'');
+        eaic += row('Toplam', _fmt(eaT), eaT>0?'neg':'', 'openEldenModal()');
         eaic += row('Kay\u0131t', eaN+' adet');
       }catch(e){ eaic='<div class="ctx-empty">-</div>'; }
       H += card('\ud83d\udcb8 A\u00e7\u0131k Elden', eaic);
@@ -8940,9 +8955,16 @@ function renderContextPanel(page){
       H += card('\ud83d\udcca Prim Adedi', pic);
       var hic='';
       try{
-        var _hedef = (typeof hedefler!=='undefined' && hedefler && hedefler[_tm]) ? hedefler[_tm] : 0;
-        if(_hedef>0){ hic += row('Ayl\u0131k hedef', _fmt(_hedef)); }
-        else hic = '<div class="ctx-empty">Bu ay i\u00e7in hedef girilmemi\u015f</div>';
+        var g = (typeof _gunlukHedefHesap==='function') ? _gunlukHedefHesap() : null;
+        if(g && g.hedef>0){
+          var yuzde = Math.round((g.realized/g.hedef)*100);
+          hic += row('Ayl\u0131k hedef', _fmt(g.hedef), '', 'switchPage(\'hedef\')');
+          hic += row('Ger\u00e7ekle\u015fen', _fmt(g.realized)+' \u00b7 %'+yuzde);
+          hic += row('Kalan', _fmt(Math.max(0,g.kalan)), g.kalan>0?'neg':'pos');
+          hic += row('G\u00fcnde gerekli', _fmt(g.gunluk)+' \u00b7 '+g.kalanGun+' g\u00fcn');
+        } else {
+          hic = '<div class="ctx-empty">Bu ay i\u00e7in hedef girilmemi\u015f</div>';
+        }
       }catch(e){ hic='<div class="ctx-empty">-</div>'; }
       H += card('\ud83c\udfaf Hedef', hic);
     }
@@ -8959,6 +8981,18 @@ function renderContextPanel(page){
         aic += row('Kar / Zarar', _fmt(kz), kz<0?'neg':(kz>0?'pos':''));
         if(Math.abs(sf) > 5000) aic += '<div class="ctx-note">\u26a0\ufe0f Sermaye fark\u0131 y\u00fcksek \u2014 kontrol edilebilir.</div>';
         H += card('\ud83d\udcc8 Analiz', aic);
+        // Anomali uyar\u0131lar\u0131 (g\u00f6rev notu: finansta anomali g\u00f6ster)
+        try{
+          var an = (typeof checkMasrafAnomali==='function') ? checkMasrafAnomali() : [];
+          if(an.length){
+            var son = an[an.length-1];
+            var etk = (typeof monthLabel==='function') ? monthLabel(son.ym) : son.ym;
+            var anic = row('Toplam', an.length+' ay', 'neg', 'openAnomaliPopup()');
+            anic += row('Son', etk);
+            anic += '<div class="ctx-note">Masraf, y\u0131l ortalamas\u0131n\u0131n %50 \u00fczerine \u00e7\u0131kt\u0131. Detay i\u00e7in t\u0131kla.</div>';
+            H += card('\ud83d\udea8 Masraf Anomalisi', anic);
+          }
+        }catch(e){}
       } else {
         H += card('\ud83d\udcb9 Son Kay\u0131t', '<div class="ctx-empty">Kay\u0131t yok</div>');
       }
@@ -8967,11 +9001,11 @@ function renderContextPanel(page){
       // dash / gelir / not vb. — genel bakış
       var gic='';
       try{
-        if(_finans.length){ gic += row('Son sermaye', _fmt(_finans[_finans.length-1].mevcutSermaye||0)); }
+        if(_finans.length){ gic += row('Son sermaye', _fmt(_finans[_finans.length-1].mevcutSermaye||0), '', 'switchPage(\'finans\')'); }
         var ayA=0; _entries.forEach(function(e){ if(e && e.date && e.date.slice(0,7)===_tm) ayA+=Number(e.count)||0; });
-        gic += row('Bu ay prim', ayA+' adet');
+        gic += row('Bu ay prim', ayA+' adet', '', 'switchPage(\'prim\')');
         var eaT2 = (typeof eldenAcikToplam==='function') ? eldenAcikToplam() : 0;
-        if(eaT2>0) gic += row('A\u00e7\u0131k elden', _fmt(eaT2), 'neg');
+        if(eaT2>0) gic += row('A\u00e7\u0131k elden', _fmt(eaT2), 'neg', 'openEldenModal()');
       }catch(e){}
       if(!gic) gic = '<div class="ctx-empty">\u00d6zet i\u00e7in veri yok</div>';
       H += card('\ud83d\udccb Genel Bak\u0131\u015f', gic);
@@ -19606,6 +19640,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v352',
+    date: '19.07.2026',
+    items: [
+      { type: 'new', text: 'Sag paneldeki kartlar artik TIKLANABILIR: "MNP onay bekliyor" -> Prim sayfasi, "Acik elden" -> elden verilenler penceresi, "Son sermaye" -> Finansal Analiz, "Bu ay prim" -> Prim, "Aylik hedef" -> Hedef sayfasi, "Son sayim" -> Kasa. Tiklanabilir olanlarin sonunda kucuk bir ok var.' },
+      { type: 'new', text: 'PRIM paneli tamamlandi: artik sadece aylik hedefi degil, GERCEKLESEN (+yuzde), KALAN ve GUNDE GEREKLI tutari da (kac gun kaldigiyla birlikte) gosteriyor.' },
+      { type: 'new', text: 'FINANSAL paneline MASRAF ANOMALISI uyarisi eklendi: kac ayda anomali var, sonuncusu hangi ay. Tiklayinca detay penceresi aciliyor. (Masraf, yil ortalamasinin %50 uzerine ciktiginda anomali sayilir.)' },
+      { type: 'new', text: 'TELEFON GORUNUMU YINE HIC DEGISMEDI.' },
+    ]
+  },
   {
     version: 'v351',
     date: '19.07.2026',
