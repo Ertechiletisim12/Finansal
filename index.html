@@ -1256,12 +1256,57 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   }
   #dashNavRow button:hover{ background:var(--hover)!important; border-color:var(--accent)!important; }
   #dashNavRow button > span{ font-size:12.5px!important; }
+}
 
-  /* 4) Prim araç çubuğu sağ panel yüzünden taşıyordu → alt satıra sarsın, hiçbiri kesilmesin */
-  #primToolBar{
-    flex-wrap:wrap!important; overflow-x:visible!important;
-    row-gap:5px!important; padding-bottom:6px!important;
+/* ===== v348: ÜST MENÜDE SAAT + SÜRÜM, SAYFA ÇUBUKLARI DÜZENİ — SADECE GENİŞ EKRAN ===== */
+@media(min-width:701px){
+  /* A) Üst menüde saat — koyu şerit üzerinde okunaklı renk */
+  .deskbar .db-clock{
+    color:#e6e9ec; text-align:right; line-height:1.15;
+    font-variant-numeric:tabular-nums; white-space:nowrap;
+    padding-right:10px; margin-right:2px; border-right:1px solid #2a2d30;
   }
+  /* B) Üst menüde sürüm rozeti — her sayfadan tıklanır, notları açar */
+  .deskbar .db-ver{
+    color:var(--gold); background:rgba(255,183,77,0.14);
+    border:1px solid rgba(255,183,77,0.30); border-radius:8px;
+    padding:3px 8px; font-size:10.5px; font-weight:700;
+    cursor:pointer; white-space:nowrap; user-select:none;
+  }
+  .deskbar .db-ver:hover{ background:rgba(255,183,77,0.26); }
+
+  /* C) Saat/sürüm artık üstte → sayfa içindeki kopyaları gizle */
+  #clockDash, #clockFinans{ display:none!important; }
+  #page-dash #versionInfoBtn{ display:none!important; }
+  /* Prim başlık çubuğunda sadece başlık + saat vardı; ikisi de gitti → çubuğu tamamen kaldır */
+  #primTitleBar{ display:none!important; }
+
+  /* D) Prim araç çubuğu: alt satıra kayması kötü duruyordu → tek satır, kompakt */
+  #primToolBar{
+    flex-wrap:nowrap!important; overflow-x:auto!important;
+    row-gap:0!important; padding-top:8px!important;
+  }
+  #primToolBar .prim-tool-pill{
+    padding:5px 9px!important; font-size:10.5px!important; flex-shrink:0!important;
+  }
+
+  /* E) Finansal Analiz: filtreler yılların hizasında, sağda, yıl butonu boyutunda */
+  #page-finans .sticky-header{
+    display:flex!important; flex-direction:row-reverse!important;
+    align-items:center!important; justify-content:space-between!important;
+    gap:10px!important; flex-wrap:wrap!important;
+  }
+  #page-finans .finans-toolbar{ gap:6px!important; }
+  #page-finans .finans-toolbar .btn-soft,
+  #page-finans .finans-toolbar > div > button{
+    padding:6px 10px!important; font-size:11px!important;
+    border-radius:5px!important; box-shadow:none!important; font-weight:600!important;
+  }
+  #page-finans .entity-filter-top{ padding:2px!important; border-radius:5px!important; }
+  #page-finans .entity-filter-top .qbtn{ padding:5px 10px!important; font-size:11px!important; }
+
+  /* F) Başlıklar kalkınca kontroller sola düşmüştü → sağa hizala (eski yerlerine) */
+  #gelirTitleBar, #kasaTitleBar, #notTitleBar{ justify-content:flex-end!important; }
 }
 .sticky-header{position:sticky;top:0;background:var(--bg);z-index:20;padding:8px 0 6px;margin:0}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;min-height:34px}
@@ -1934,6 +1979,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <div class="db-item"        id="navTopNot"    onclick="switchPage('not')">🏷️ Not & Etiket</div>
   </div>
   <div class="db-tools">
+    <div class="db-clock" id="clockTop"></div>
+    <div class="db-ver" id="deskVerBtn" onclick="toggleChangelog()" title="Sürüm notlarını göster">⋯</div>
     <button class="db-btn" onclick="toggleDeskDrawer()" title="Araçlar: bildirimler, tema, yedekleme, sistem">☰ Araçlar</button>
   </div>
 </nav>
@@ -2041,7 +2088,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
   <div style="flex:1;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <span onclick="toggleChangelog()" id="mobileVerBadge" title="Sürüm notları" style="font-size:9px;font-weight:700;color:var(--gold);background:rgba(255,183,77,0.15);border:1px solid rgba(255,183,77,0.3);border-radius:8px;padding:1px 6px;cursor:pointer;white-space:nowrap;flex-shrink:0">v191</span>
+    <span onclick="toggleChangelog()" id="mobileVerBadge" title="Sürüm notları" style="font-size:9px;font-weight:700;color:var(--gold);background:rgba(255,183,77,0.15);border:1px solid rgba(255,183,77,0.3);border-radius:8px;padding:1px 6px;cursor:pointer;white-space:nowrap;flex-shrink:0">⋯</span>
   </div>
   <span id="mobileVersionInfo" style="display:none"></span>
   <!-- Offline göstergesi -->
@@ -2319,7 +2366,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
     <!-- ==================== NOT & ETİKET SAYFASI ==================== -->
     <div id="page-not" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
-      <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40">
+      <div id="notTitleBar" style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40">
         <h2 class="desk-page-title" style="margin:0;font-size:15px">🏷️ Not & Etiket</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <input type="text" id="notAraInput" placeholder="🔍 Not veya etikette ara..." oninput="renderNotPage()" style="font-size:12px;padding:5px 10px;width:200px">
@@ -2473,7 +2520,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
     <!-- ==================== KASA SAYIMI TAKİBİ SAYFASI (v151) ==================== -->
     <div id="page-kasa" style="display:none;overflow-y:auto;flex:1;padding:0 20px 18px">
-      <div style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;flex-wrap:wrap;gap:8px">
+      <div id="kasaTitleBar" style="background:var(--bg);padding:12px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;flex-wrap:wrap;gap:8px">
         <h2 class="desk-page-title" style="margin:0;font-size:15px">🧮 Kasa Sayımı Takibi</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <select id="kasaAySel" onchange="renderKasa()" style="font-size:12px;padding:4px 8px"></select>
@@ -3359,7 +3406,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v346';
+const APP_VERSION = 'v348';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3472,7 +3519,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '18.07.2026 22:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 00:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -7088,6 +7135,9 @@ function clock(){
   if(cf) cf.innerHTML = html;
   const cd = document.getElementById('clockDash');
   if(cd) cd.innerHTML = html;
+  // v348: ust menudeki saat (genis ekran) - ayni html, tek kaynak
+  const ct = document.getElementById('clockTop');
+  if(ct) ct.innerHTML = html;
 }
 setInterval(clock,1000); clock();
 
@@ -19245,6 +19295,25 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v348',
+    date: '19.07.2026',
+    items: [
+      { type: 'new', text: 'MASAUSTU: Saat/tarih ve SURUM ROZETI artik UST MENUDE — her sayfadan gorunuyor ve tiklayinca surum notlari aciliyor. Koyu serit uzerinde okunakli renkte.' },
+      { type: 'fix', text: 'Prim sayfasindaki saat kaldirildi (uste tasindi); geriye sadece saat kalan baslik cubugu tamamen kalkti — bir satir yer kazanildi. Anasayfa ve Finansal sayfasindaki saat kopyalari da gizlendi.' },
+      { type: 'fix', text: 'Prim arac cubugunun alt satira kaymasi kotu goruniyordu — artik tek satirda, butonlar daha kompakt.' },
+      { type: 'fix', text: 'Finansal Analiz: filtreler (Tumu/Vodafone/MIXY, Ay Kapanisi, cop kutusu) artik yillarla AYNI SATIRDA ve saga hizali; boyutlari yil butonlariyla ayni. Oradaki saat kaldirildi.' },
+      { type: 'fix', text: 'Basliklar kalkinca Kasa / Gelir / Not sayfalarinda kontroller sola dusmustu — tekrar saga hizalandi.' },
+      { type: 'new', text: 'TELEFON GORUNUMU YINE HIC DEGISMEDI.' },
+    ]
+  },
+  {
+    version: 'v347',
+    date: '18.07.2026',
+    items: [
+      { type: 'fix', text: 'Telefonda sayfa yenilenirken / guncelleme sirasinda ust roze bir an "v191" gosteriyordu. Sebep: HTML icinde yer tutucu olarak v191 yazili kalmisti; gercek surumu JS sonradan yaziyordu, arada eski deger goruluyordu. Yer tutucu notr hale getirildi — artik yanlis surum hic gorunmuyor. (Uygulama zaten v191 degildi, sadece yukleme aninda oyle yaziyordu.)' },
+    ]
+  },
+  {
     version: 'v346',
     date: '18.07.2026',
     items: [
@@ -21488,6 +21557,9 @@ function toggleChangelog(){
     document.querySelectorAll('#versionInfoBtn').forEach(function(btn){
       btn.innerHTML = txt + ' <span style="font-size:9px;opacity:.6">&#9660;</span>';
     });
+    // v348: ust menudeki surum rozeti (genis ekran) - kisa metin, tam bilgi tooltip'te
+    const dvb = document.getElementById('deskVerBtn');
+    if(dvb){ dvb.textContent = v; dvb.title = txt + ' — surum notlari icin tikla'; }
   } catch(e){ console.warn('Versiyon hatası:',e); }
   // v344: açılışta sağ bağlam panelini bir kez doldur (geniş ekranda)
   try{ if(typeof renderContextPanel==='function') renderContextPanel(typeof currentPage!=='undefined'?currentPage:'dash'); }catch(e){}
