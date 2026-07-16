@@ -3793,7 +3793,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v360';
+const APP_VERSION = 'v361';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3906,7 +3906,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 13:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 14:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -4221,6 +4221,121 @@ const STORE_KEY_FINANS = 'vf_finans_data_v1';
 const STORE_KEY_HEDEF = 'vf_prim_hedef_v1'; // Aylık hedefler: {ym: tutar}
 const STORE_KEY_GELIR = 'vf_gelir_data_v1'; // Gelir/Gider kayıtları
 const STORE_KEY_NOTLAR = 'vf_notlar_v1'; // Not/Etiket kayıtları: [{id,tip,tarih,ym,kategori,tutar,aciklama}]
+function openIslemLogModal(){
+  let m = document.getElementById('islemLogModal');
+  if(!m){
+    m = document.createElement('div');
+    m.id = 'islemLogModal';
+    m.style.cssText = 'position:fixed;z-index:9999;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = '<div style="background:var(--panel);border-radius:14px;max-width:620px;width:100%;max-height:82vh;overflow-y:auto;padding:18px 20px">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+      +   '<span style="font-size:18px">\ud83d\udd0e</span>'
+      +   '<span style="font-size:15px;font-weight:800">\u0130\u015flem Ge\u00e7mi\u015fi</span>'
+      +   '<button onclick="closeIslemLogModal()" style="margin-left:auto;background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer">\u2715</button>'
+      + '</div>'
+      + '<div style="font-size:11.5px;color:var(--muted);margin-bottom:12px">Silinen ve d\u00fczenlenen kay\u0131tlar (son 200). '
+      +   '<b style="color:var(--txt)">Bu bir geri alma sistemi de\u011fildir</b> \u2014 sadece ne oldu\u011funu kaydeder.</div>'
+      + '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap" id="islemLogFiltre"></div>'
+      + '<div id="islemLogList"></div>'
+      + '<div style="display:flex;gap:8px;margin-top:14px">'
+      +   '<button onclick="clearIslemLog()" style="flex:1;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:7px;padding:9px;font-size:12px;cursor:pointer">Ge\u00e7mi\u015fi Temizle</button>'
+      +   '<button onclick="closeIslemLogModal()" style="flex:2;background:var(--red);color:#fff;border:none;border-radius:7px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer">Kapat</button>'
+      + '</div></div>';
+    document.body.appendChild(m);
+  }
+  _islemLogFiltre = 'hepsi';
+  renderIslemLog();
+  m.style.display = 'flex';
+}
+function closeIslemLogModal(){ const m=document.getElementById('islemLogModal'); if(m) m.style.display='none'; }
+async function clearIslemLog(){
+  if(typeof appConfirm==='function'){ if(!await appConfirm('İşlem geçmişi silinsin mi? (Kayıtların kendisi etkilenmez)')) return; }
+  islemLog = []; saveIslemLog(); renderIslemLog();
+  try{ renderContextPanel(typeof currentPage!=='undefined'?currentPage:'dash'); }catch(e){}
+}
+let _islemLogFiltre = 'hepsi';
+function setIslemLogFiltre(t){ _islemLogFiltre = t; renderIslemLog(); }
+function renderIslemLog(){
+  const el = document.getElementById('islemLogList');
+  if(!el) return;
+  const fEl = document.getElementById('islemLogFiltre');
+  const turler = ['hepsi'].concat([...new Set(islemLog.map(x=>x.tur))]);
+  if(fEl) fEl.innerHTML = turler.map(t=>{
+    const aktif = _islemLogFiltre===t;
+    const say = t==='hepsi' ? islemLog.length : islemLog.filter(x=>x.tur===t).length;
+    return '<button onclick="setIslemLogFiltre(\''+t+'\')" style="background:'+(aktif?'var(--red)':'var(--panel2)')
+      + ';color:'+(aktif?'#fff':'var(--txt)')+';border:none;border-radius:999px;padding:4px 11px;font-size:11px;font-weight:600;cursor:pointer">'
+      + (t==='hepsi'?'Tümü':t) + ' ' + say + '</button>';
+  }).join('');
+  const liste = _islemLogFiltre==='hepsi' ? islemLog : islemLog.filter(x=>x.tur===_islemLogFiltre);
+  if(!liste.length){
+    el.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:22px 0">Henüz kayıt yok.<br><span style="font-size:11px">Bir kaydı silip düzenlediğinde burada görünecek.</span></div>';
+    return;
+  }
+  el.innerHTML = liste.map(function(x){
+    const dt = new Date(x.ts).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const silme = x.islem==='sil';
+    const renk = silme ? '#ff6a60' : '#ffb04a';
+    const etiket = silme ? 'SİLİNDİ' : 'DÜZENLENDİ';
+    const detay = (x.detay||[]).map(function(d){
+      return '<div style="display:flex;gap:6px;align-items:baseline;font-size:11px;margin-top:3px;flex-wrap:wrap">'
+        + '<span style="color:var(--muted);min-width:74px">'+d.alan+'</span>'
+        + '<span style="color:#ff6a60;text-decoration:line-through;opacity:.8">'+d.eski+'</span>'
+        + '<span style="color:var(--muted)">→</span>'
+        + '<span style="color:var(--green);font-weight:700">'+d.yeni+'</span></div>';
+    }).join('');
+    return '<div style="background:var(--panel2);border-radius:9px;padding:9px 11px;margin-bottom:6px;border-left:3px solid '+renk+'">'
+      + '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">'
+      +   '<span style="font-size:8.5px;font-weight:800;letter-spacing:.05em;color:'+renk+';background:'+(silme?'rgba(255,106,96,0.14)':'rgba(255,176,74,0.14)')+';border-radius:5px;padding:1px 5px">'+etiket+'</span>'
+      +   '<span style="font-size:10px;color:var(--muted);background:var(--panel);border-radius:5px;padding:1px 6px">'+x.tur+'</span>'
+      +   '<span style="font-size:12px;font-weight:700;color:var(--txt)">'+x.ad+'</span>'
+      +   '<span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap">'+dt+'</span>'
+      + '</div>'
+      + (x.ozet ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">'+x.ozet+'</div>' : '')
+      + detay + '</div>';
+  }).join('');
+}
+
+// ==================== v361: İŞLEM GEÇMİŞİ (silinen / düzenlenen kaydı) ====================
+// Amaç: "bu kayıt niye değişmiş, ben mi sildim?" sorusunu cevaplamak.
+// NOT: Bu bir GERİ ALMA sistemi değil — sadece ne olduğunu kaydeder.
+const STORE_KEY_ISLOG = 'vf_islem_log_v1';
+let islemLog = [];
+try{ islemLog = JSON.parse(localStorage.getItem(STORE_KEY_ISLOG) || '[]'); }catch(e){ islemLog = []; }
+function saveIslemLog(){ try{ localStorage.setItem(STORE_KEY_ISLOG, JSON.stringify(islemLog)); }catch(e){} }
+
+// tur: 'Prim','Müşteri','Kasa','Elden','Gelir/Gider','Not','Finansal','Hedef','Kampanya','Tarife','Kategori','Fiyat'
+// islem: 'sil' | 'duzenle'
+// ad: kaydı tanıtan kısa metin (tarih, isim vb.)
+// detay: [{alan, eski, yeni}]  (silmede boş bırakılabilir, ozet kullanılır)
+function logIslem(tur, islem, ad, detay, ozet){
+  try{
+    islemLog.unshift({
+      ts: Date.now(), tur: tur||'?', islem: islem||'?',
+      ad: String(ad||'').slice(0,80),
+      detay: Array.isArray(detay) ? detay.slice(0,12) : [],
+      ozet: ozet ? String(ozet).slice(0,160) : ''
+    });
+    if(islemLog.length > 200) islemLog = islemLog.slice(0,200);
+    saveIslemLog();
+  }catch(e){}
+}
+
+// İki kaydı karşılaştırıp DEĞİŞEN alanları döndür (düzenleme logu için)
+function _fark(eski, yeni, alanlar){
+  const out = [];
+  try{
+    (alanlar || Object.keys(yeni||{})).forEach(function(k){
+      if(k==='id') return;
+      const a = eski ? eski[k] : undefined, b = yeni ? yeni[k] : undefined;
+      if(typeof a === 'object' || typeof b === 'object') return;
+      const as = (a===undefined||a===null)?'':String(a), bs = (b===undefined||b===null)?'':String(b);
+      if(as !== bs) out.push({ alan:k, eski:as, yeni:bs });
+    });
+  }catch(e){}
+  return out;
+}
+
 const STORE_KEY_TRASH = 'vf_finans_trash_v1'; // Silinen finans kayıtları çöp kutusu
 const KDV_ORANI = 0.20;
 
@@ -6435,7 +6550,13 @@ function saveTrashStore(){ try{ localStorage.setItem(STORE_KEY_TRASH, JSON.strin
 function onHedefEdit(el){
   const ym = el.dataset.ym;
   const raw = el.textContent.trim();
+  const _eski = hedefler[ym];   // v361
   if(!raw){ delete hedefler[ym]; } else { hedefler[ym] = parseTLNumber(raw); }
+  try{
+    const a0 = _eski==null?'':String(_eski), b0 = hedefler[ym]==null?'':String(hedefler[ym]);
+    if(a0!==b0) logIslem('Hedef', raw?'duzenle':'sil', monthLabel(ym)+' hedefi',
+      [{alan:'Tutar', eski:a0?fmtF(parseFloat(a0)):'(yok)', yeni:b0?fmtF(parseFloat(b0)):'(silindi)'}]);
+  }catch(e){}
   saveHedefStore();
   render();
 }
@@ -6602,6 +6723,13 @@ function changeCount(cat, delta, activationDate, isMnp){
 // Zincir: musteriler.logId -> entryLog.id -> entryLog.entryId -> entries.id
 // Yoksa (eski/hızlı kayıtlar) eski değerlerle güvenli arama yapılır. Bulunamazsa hiçbir şey bozulmaz.
 function propagateMusteriEdit(m, eski){
+  try{
+    const ALAN = { ad:'Ad', tel:'Telefon', cat:'Kategori', tip:'Tip', tarife:'Tarife',
+                   durum:'Durum', entryDate:'İşlem tarihi', aktivasyonTarihi:'Aktivasyon', not:'Not' };
+    const d = _fark(eski, m, Object.keys(ALAN));
+    if(d.length) logIslem('Müşteri','duzenle', m.ad||eski.ad||'-',
+      d.map(x=>({ alan: ALAN[x.alan]||x.alan, eski: x.eski||'(boş)', yeni: x.yeni||'(boş)' })));
+  }catch(e){}
   const oldMnp = eski.tip==='mnp', newMnp = m.tip==='mnp';
   const oldTar = eski.tarife||'',  newTar = m.tarife||'';
   const degisti = (eski.entryDate!==m.entryDate) || (eski.cat!==m.cat) || (oldMnp!==newMnp) || (oldTar!==newTar);
@@ -9035,6 +9163,8 @@ function renderSettingsPanel(){
        + row('\ud83d\udcc4','Y\u00f6netici Raporu','Yazd\u0131r\u0131labilir \u00f6zet','printManagerReport()',null,'b')
        + row('\ud83d\udd10','Kilit / PIN Ayar\u0131','Uygulama kilidi','openPinModal()',null,'p')
        + row('\ud83d\udccb','Giri\u015f Loglar\u0131','Ge\u00e7mi\u015f giri\u015fler','openGirisLogModal()',null,'g')
+       + row('\ud83d\udd0e','\u0130\u015flem Ge\u00e7mi\u015fi','Silinen ve d\u00fczenlenenler','openIslemLogModal()',
+             (typeof islemLog!=='undefined' && islemLog.length ? '<span class="st-badge" style="background:var(--panel2);color:var(--muted)">'+islemLog.length+'</span>' : ''), 'p')
        + '</div>';
 
     // --- PWA kurulum (sadece kurulabilir durumdaysa) ---
@@ -11893,16 +12023,27 @@ function recomputeAllFinans(){
   });
 }
 
+const FINANS_ALAN_ADI = { vodKarTutari:'Vodafone Kâr', mixyKarTutari:'MİXY Kâr', vodMasraf:'Vodafone Masraf',
+  mixyMasraf:'MİXY Masraf', mevcutSermaye:'Mevcut Sermaye', aciklama:'Açıklama' };
 function onFinansCellEdit(el){
   const ym = el.dataset.ym;
   const field = el.dataset.field;
   const d = finansData.find(r=>r.ym===ym);
   if(!d) return;
+  const _eski = d[field];   // v361: degisiklik kaydi icin
   if(field==='aciklama'){
     d.aciklama = el.textContent.trim();
   } else {
     d[field] = parseTLNumber(el.textContent);
   }
+  try{
+    const a0 = (_eski==null?'':String(_eski)), b0 = (d[field]==null?'':String(d[field]));
+    if(a0 !== b0){
+      const bicim = (field==='aciklama') ? (x=>x||'(boş)') : (x=>fmtF(parseFloat(x)||0));
+      logIslem('Finansal','duzenle', monthLabel(ym)+' kaydı',
+        [{ alan: FINANS_ALAN_ADI[field]||field, eski: bicim(a0), yeni: bicim(b0) }]);
+    }
+  }catch(e){}
   recomputeAllFinans();
   saveFinansStore();
   renderFinans();
@@ -12261,6 +12402,8 @@ async function deleteFinansAyModal() {
 
   const topKar = (d.vodKarTutari||0) + (d.mixyKarTutari||0);
   const topMasraf = (d.vodMasraf||0) + (d.mixyMasraf||0);
+  try{ logIslem('Finansal','sil', monthLabel(d.ym)+' kaydı', [],
+       'Kâr: '+fmtF(topKar)+' · Masraf: '+fmtF(topMasraf)+' · Sermaye: '+fmtF(d.mevcutSermaye||0)+' (çöp kutusuna taşındı)'); }catch(e){}
   const step2 = await appConfirm(
     `🗑️ KAYIT SİLME — 2. ADIM (SON ONAY)\n\n` +
     `Silinecek kayıt özeti:\n` +
@@ -12330,6 +12473,8 @@ async function deleteFinansRow(ym){
   if(!await appConfirm(`🗑️ KAYIT SİLME — 1. ADIM\n\nAy: ${monthLabel(ym)}\n\nBu kaydı silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz! (Çöp kutusundan geri yüklenebilir)`)) return;
   const topKar = (d.vodKarTutari||0) + (d.mixyKarTutari||0);
   const topMasraf = (d.vodMasraf||0) + (d.mixyMasraf||0);
+  try{ logIslem('Finansal','sil', monthLabel(d.ym)+' kaydı', [],
+       'Kâr: '+fmtF(topKar)+' · Masraf: '+fmtF(topMasraf)+' · Sermaye: '+fmtF(d.mevcutSermaye||0)+' (çöp kutusuna taşındı)'); }catch(e){}
   if(!await appConfirm(
     `🗑️ KAYIT SİLME — 2. ADIM (SON ONAY)\n\n` +
     `• Ay: ${monthLabel(ym)}\n` +
@@ -12886,6 +13031,9 @@ async function deleteEntryDirect(cat, date, isMnp, btn){
     '\nKalan: ' + e.count + ' adet'
   )) return;
 
+  try{ logIslem('Prim','sil', cat+tip+' — '+date,
+       [{alan:'adet', eski:String(e.count), yeni:String(e.count-1)}],
+       '1 adet silindi'+(e.count-1===0?' (kayıt tamamen kalktı)':'')); }catch(err){}
   e.count--;
   if(e.count === 0) entries.splice(entries.indexOf(e), 1);
 
@@ -13699,6 +13847,8 @@ function saveKampanya(){
 async function deleteKampanya(id){
   const k = kampanyaData.find(x=>x.id===id);
   if(!k) return;
+  const _kLog = ()=>{ try{ logIslem('Kampanya','sil', k.ad||('Kampanya '+(k.cat||'')), [],
+    (k.ym||'')+((k.catList&&k.catList.length)?' · '+k.catList.join(', '):(k.cat?' · '+k.cat:''))+(k.fiyat!=null?' · '+fmt(k.fiyat):'')); }catch(e){} };
   // v156: Kampanya döneminde ilgili kategori(ler)de kayıt varsa SİLİNEMEZ — hesap bütünlüğü korunur
   const catlar = (k.catList && k.catList.length) ? k.catList : [k.cat];
   const kullanım = entries.filter(e=>
@@ -13711,6 +13861,7 @@ async function deleteKampanya(id){
     return;
   }
   if(!await appConfirm('Bu kampanyayı silmek istiyor musunuz?')) return;
+  _kLog();
   markDeleted('kmp', id); // v181: silme işareti
   kampanyaData = kampanyaData.filter(x=>x.id!==id);
   saveKampanyaStore();
@@ -14467,6 +14618,8 @@ async function deleteMusteriKayit(id){
   if(!m) return;
   if(!await appConfirm('Bu müşteri kaydını ve ilgili prim kaydını silmek istiyor musunuz?')) return;
 
+  try{ logIslem('Müşteri','sil', m.ad||'-', [],
+       (m.tel||'')+' · '+(m.cat||'')+' · '+(m.durum||'')+(m.aktivasyonTarihi?' · akt: '+String(m.aktivasyonTarihi).slice(0,10):'')); }catch(e){}
   // Müşteriyi sil
   markDeleted('mus', id); // v181
   musteriler = musteriler.filter(x=>x.id!==id);
@@ -14710,6 +14863,9 @@ function editNotFromDetail() {
 async function deleteNot() {
   if (!notDetailId) return;
   if (!await appConfirm('Bu notu silmek istiyor musunuz?')) return;
+  try{ const n0 = notlarData.find(x=>x.id===notDetailId);
+       if(n0) logIslem('Not','sil', (n0.baslik||n0.metin||'Not').slice(0,40), [],
+         (n0.tarih||'')+(n0.etiketler&&n0.etiketler.length?' · #'+n0.etiketler.join(' #'):'')); }catch(e){}
   notlarData = notlarData.filter(n => n.id !== notDetailId);
   saveNotlarStore();
   closeNotDetailModal();
@@ -15189,6 +15345,7 @@ async function deleteKasaSayim(id){
   const k = kasaData.find(x=>x.id===id);
   if(!k) return;
   if(!await appConfirm(`${k.date} tarihli sayım silinecek. Emin misiniz?`)) return;
+  try{ logIslem('Kasa','sil', k.date+' sayımı', [], 'Sayılan: '+fmt(k.toplam||0)+(k.beklenen!=null?' · Beklenen: '+fmt(k.beklenen):'')+(k.eldenToplam?' · Elden: '+fmt(k.eldenToplam):'')); }catch(e){}
   kasaData = kasaData.filter(x=>x.id!==id);
   saveKasaStore();
   renderKasa();
@@ -15512,7 +15669,16 @@ function saveGelirEdit() {
   if (!kategori) { alert('Önce bir kategori ekleyin (⚙️ Kategorileri Düzenle).'); return; }
   const idx = gelirData.findIndex(g => g.id === gelirEditId);
   if (idx >= 0) {
+    const _eski = { ...gelirData[idx] };   // v361
     gelirData[idx] = { ...gelirData[idx], tip: gelirEditTipCur, tarih, ym: tarih.slice(0,7), kategori, tutar, aciklama };
+    try{
+      const ALAN = { tip:'Tip', tarih:'Tarih', kategori:'Kategori', tutar:'Tutar', aciklama:'Açıklama' };
+      const d = _fark(_eski, gelirData[idx], Object.keys(ALAN));
+      if(d.length) logIslem('Gelir/Gider','duzenle', (kategori||'-')+' · '+tarih,
+        d.map(x=>({ alan: ALAN[x.alan]||x.alan,
+                    eski: x.alan==='tutar'? fmtF(parseFloat(x.eski)||0) : (x.eski||'(boş)'),
+                    yeni: x.alan==='tutar'? fmtF(parseFloat(x.yeni)||0) : (x.yeni||'(boş)') })));
+    }catch(e){}
   }
   saveGelirStore();
   // Not & Etiket güncelle veya oluştur
@@ -15541,6 +15707,9 @@ function saveGelirEdit() {
 
 function deleteGelirEntry() {
   if (!gelirEditId) return;
+  try{ const g0 = gelirData.find(x=>x.id===gelirEditId);
+       if(g0) logIslem('Gelir/Gider','sil', (g0.tip==='gider'?'Gider: ':'Gelir: ')+(g0.kategori||'-'), [],
+         g0.tarih+' · '+fmt(g0.tutar||0)+(g0.aciklama?' · '+g0.aciklama:'')); }catch(e){}
   gelirData = gelirData.filter(g => g.id !== gelirEditId);
   saveGelirStore();
   closeGelirEditModal();
@@ -20168,6 +20337,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v361',
+    date: '19.07.2026',
+    items: [
+      { type: 'new', text: 'ISLEM GECMISI EKLENDI. Silinen ve duzenlenen kayitlar artik tutuluyor: ne zaman, hangi tur, hangi kayit, DUZENLEMEDE ESKI DEGER -> YENI DEGER. Ayarlar > Sistem > "Islem Gecmisi" (son 200 islem, ture gore filtrelenebilir, temizlenebilir).' },
+      { type: 'new', text: 'Kapsanan yerler: Prim silme · Musteri silme ve duzenleme · Kasa sayimi silme · Gelir/Gider silme ve duzenleme · Not silme · Finansal kayit silme ve hucre duzenleme · Hedef girme/degistirme/silme · Kampanya silme. Silmelerde kaydin ozeti de yazilir (orn. "Sayilan: 24.640 ₺ · Beklenen: 25.945 ₺ · Elden: 1.330 ₺") — boylece ne gittigi belli olur.' },
+      { type: 'fix', text: 'ONEMLI NOT: Bu bir GERI ALMA sistemi DEGILDIR — sadece ne oldugunu kaydeder. (Finansal kayitlarin zaten bir cop kutusu var, oradan geri yuklenebiliyor.)' },
+      { type: 'new', text: 'TELEFON: gorunum degismedi. Islem gecmisi kayitlari telefonda da tutulur (ayni kod), sadece goruntuleme ekrani su an masaustundeki ayarlar panelinde.' },
+    ]
+  },
   {
     version: 'v360',
     date: '19.07.2026',
