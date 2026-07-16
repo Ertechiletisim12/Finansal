@@ -2267,7 +2267,10 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <style>
   /* Kilitliyken gövde hiç görünmesin (kilit ekranı zaten opak, bu ekstra güvence) */
   html.kilitli #lockScreen{ display:flex!important; }
-  html.kilitli body > .app, html.kilitli body > .deskbar{ visibility:hidden!important; }
+  /* v368: visibility:hidden yetmiyordu — tarayici gizli de olsa TUM uygulamanin
+     yerlesimini hesapliyor ve kilit ekrani ~1.2sn gec boyaniyordu.
+     display:none ile kilitliyken sadece kilit ekrani hesaplanir → aninda gorunur. */
+  html.kilitli body > .app, html.kilitli body > .deskbar, html.kilitli body > #mobileTopBar{ display:none!important; }
 </style>
 </head>
 <body>
@@ -3834,7 +3837,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v367';
+const APP_VERSION = 'v368';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3947,7 +3950,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 20:50'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 22:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -4343,8 +4346,27 @@ function renderIslemLog(){
 const STORE_KEY_ISLOG = 'vf_islem_log_v1';
 let islemLog = [];
 try{ islemLog = JSON.parse(localStorage.getItem(STORE_KEY_ISLOG) || '[]'); }catch(e){ islemLog = []; }
+// v368: Islem gecmisi iki cihazda da AYRI birikir. Buluttan gelen listeyi
+// uzerine YAZMAK olmaz (karsi cihazin kayitlari silinir) — BIRLESTIRIYORUZ.
+// Ayni kayit iki kez gorunmesin diye zaman damgasi+tur+islem+ad ile tekillestirilir.
+function mergeIslemLog(yerel, bulut){
+  try{
+    const hepsi = [].concat(Array.isArray(yerel)?yerel:[], Array.isArray(bulut)?bulut:[]);
+    hepsi.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+    const gorulen = {}; const out = [];
+    hepsi.forEach(function(x){
+      if(!x || !x.ts) return;
+      const k = x.ts+'|'+(x.tur||'')+'|'+(x.islem||'')+'|'+(x.ad||'');
+      if(gorulen[k]) return;
+      gorulen[k] = 1; out.push(x);
+    });
+    return out.slice(0,200);
+  }catch(e){ return Array.isArray(yerel)?yerel:[]; }
+}
+
 function saveIslemLog(){
   try{ localStorage.setItem(STORE_KEY_ISLOG, JSON.stringify(islemLog)); }catch(e){}
+  try{ if(typeof scheduleCloudSync==='function') scheduleCloudSync(); }catch(e){}   // v368: diger cihaza da gitsin
   try{ const b=document.getElementById('islemLogSayi');
        if(b){ b.textContent = islemLog.length; b.style.display = islemLog.length ? '' : 'none'; } }catch(e){}
 }
@@ -6378,6 +6400,12 @@ async function pullFromCloud(){
     if(data.finansData) finansData = data.finansData;
     if(data.gelirData)  gelirData  = data.gelirData;
     if(data.notlarData) notlarData = data.notlarData;
+    // v368: islem gecmisi BIRLESTIRILIR (uzerine yazilmaz)
+    if(data.islemLog && typeof islemLog!=='undefined'){
+      const _o = islemLog.length;
+      islemLog = mergeIslemLog(islemLog, data.islemLog);
+      if(islemLog.length !== _o){ try{ localStorage.setItem(STORE_KEY_ISLOG, JSON.stringify(islemLog)); }catch(e){} }
+    }
     if(data.kampanyaData) kampanyaData = data.kampanyaData;
     if(data.tarifeData) tarifeData = data.tarifeData;
     if(data.finansTrash) finansTrash = data.finansTrash;
@@ -7381,6 +7409,12 @@ async function tryUnlock(){
     if(window._lockObserver){ window._lockObserver.disconnect(); window._lockObserver = null; }
     sessionStorage.setItem('unlocked','1');
     try{ document.documentElement.classList.remove('kilitli'); }catch(e){}   // v365
+    // v368: kilitliyken uygulama display:none oldugu icin olculemiyordu — simdi yenile
+    try{ setTimeout(function(){
+      try{ if(typeof ayarlaTopbarBoslugu==='function') ayarlaTopbarBoslugu(); }catch(e){}
+      try{ if(typeof renderContextPanel==='function') renderContextPanel(typeof currentPage!=='undefined'?currentPage:'dash'); }catch(e){}
+      try{ window.dispatchEvent(new Event('resize')); }catch(e){}
+    }, 60); }catch(e){}
     sessionStorage.setItem('oturumBaslangic', Date.now());
     startOturumTimer();
     const card = document.querySelector('.lock-card');
@@ -7455,7 +7489,7 @@ function exportActivityListToExcel(){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, tombstones, kasaData: (typeof kasaData!=='undefined'?kasaData:[]), eldenData: (typeof eldenData!=='undefined'?eldenData:[]), pinHash: getPinHash(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, tombstones, islemLog: (typeof islemLog!=='undefined'?islemLog:[]), kasaData: (typeof kasaData!=='undefined'?kasaData:[]), eldenData: (typeof eldenData!=='undefined'?eldenData:[]), pinHash: getPinHash(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
 }
 function timeStr(){
   const d = new Date();
@@ -7515,6 +7549,10 @@ function restoreData(event){
       hedefler = data.hedefler || {};
       gelirData = data.gelirData || [];
       notlarData = data.notlarData || [];
+      if(data.islemLog && typeof islemLog!=='undefined'){
+        islemLog = mergeIslemLog(islemLog, data.islemLog);   // v368
+        try{ localStorage.setItem(STORE_KEY_ISLOG, JSON.stringify(islemLog)); }catch(e){}
+      }
       kampanyaData = data.kampanyaData || [];
       musteriler   = data.musteriler   || [];
       if(data.kasaData && typeof kasaData!=='undefined'){ kasaData = data.kasaData; try{ localStorage.setItem(STORE_KEY_KASA, JSON.stringify(kasaData)); }catch(e){} }
@@ -20572,6 +20610,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v368',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'ISLEM GECMISI CIHAZLAR ARASI SENKRON OLMUYORDU. Sebep: gecmis kayitlari sadece cihazin kendi hafizasinda tutuluyordu — buluta hic gonderilmiyordu. Artik yedek/bulut paketine dahil. PC de yaptigin telefonda, telefonda yaptigin PC de gorunuyor.' },
+      { type: 'new', text: 'Onemli detay: iki cihazin gecmisi UZERINE YAZILMIYOR, BIRLESTIRILIYOR. Buluttan gelen liste yereli ezseydi karsi cihazin kayitlari silinirdi. Ayni kayit iki kez gorunmesin diye zaman damgasiyla tekillestiriliyor, en yeni ustte, son 200 kayit tutuluyor. Yedekten geri yuklerken de birlesiyor.' },
+      { type: 'fix', text: 'Kilitliyken uygulama artik display:none (once visibility:hidden idi) — tarayici kilit ekrani disinda hicbir yerlesim hesaplamiyor. Kilit acilinca olculer otomatik yenileniyor.' },
+    ]
+  },
   {
     version: 'v367',
     date: '19.07.2026',
