@@ -3888,7 +3888,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v369';
+const APP_VERSION = 'v370';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4001,7 +4001,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 23:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '20.07.2026 00:15'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -4321,7 +4321,9 @@ function openIslemLogModal(){
   if(!m){
     m = document.createElement('div');
     m.id = 'islemLogModal';
-    m.style.cssText = 'position:fixed;z-index:9999;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;padding:16px';
+    // v370: z-index 9999 IDI -> uygulamanin onay penceresi (appDialogModal, 9500) BU PENCERENIN
+    // ARKASINDA kaliyordu; "Gecmisi Temizle" onayi gorunmuyordu. 9000'e cekildi.
+    m.style.cssText = 'position:fixed;z-index:9000;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;padding:16px';
     m.innerHTML = '<div style="background:var(--panel);border-radius:14px;max-width:620px;width:100%;max-height:82vh;overflow-y:auto;padding:18px 20px">'
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
       +   '<span style="font-size:18px">\ud83d\udd0e</span>'
@@ -20718,6 +20720,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v370',
+    date: '20.07.2026',
+    items: [
+      { type: 'fix', text: '"Gecmisi Temizle" onayi goze gorunmuyordu. Sebep: Islem Gecmisi penceresine z-index 9999 vermisim, uygulamanin onay penceresi ise 9500 — yani onay ARKADA kaliyordu, butona basilamiyordu. Pencerem 9000\'e cekildi; onay artik ustte ve tiklanabilir (test: butonun uzerine gercekten dokunuluyor mu diye kontrol edildi, gecmis 2 kayittan 0\'a indi).' },
+      { type: 'new', text: 'Ayni tuzak baska yerde var mi diye tarandi: "Tum Verileri Sifirla" ve "Finansal Veriyi Sifirla" pencereleri de 9999 ama onlar onay sormadan ONCE kendi penceresini kapatiyor — cakisma yok, sorunsuz.' },
+    ]
+  },
   {
     version: 'v369',
     date: '19.07.2026',
