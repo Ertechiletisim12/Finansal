@@ -3834,7 +3834,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v366';
+const APP_VERSION = 'v367';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3947,7 +3947,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 19:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 20:50'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13628,6 +13628,8 @@ async function deleteTarife(ad, cat){
     return;
   }
   if(!await appConfirm(ad + (cat==='Diğer'?' kampanyasını':' tarifesini') + ' silmek istiyor musunuz?')) return;
+  try{ const _t=(tarifeData[cat]||[]).find(x=>x.ad===ad);
+       logIslem('Tarife','sil', ad, [], cat+(_t&&_t.fiyat!=null?' · '+fmt(_t.fiyat):'')); }catch(e){}
   tarifeData[cat] = tarifeData[cat].filter(t=>t.ad!==ad);
   saveTarifeStore();
   if(typeof scheduleCloudSync==='function') scheduleCloudSync();
@@ -13799,6 +13801,8 @@ async function deleteTarifeDonem(idx){
     return;
   }
   if(!await appConfirm('📅 ' + (d.s||'?') + ' → ' + (d.e||'?') + ' dönemi (' + d.fiyat.toLocaleString('tr-TR') + ' ₺) silinsin mi?\nBu tarihlerdeki kayıtlar temel fiyata döner.')) return;
+  try{ logIslem('Tarife','sil', _donemAd+' — dönem', [],
+       (d.s||'?')+' → '+(d.e||'?')+' · '+fmt(d.fiyat||0)+' ('+_donemCat+')'); }catch(e){}
   t.donemler.splice(idx, 1);
   saveTarifeStore();
   if(typeof scheduleCloudSync==='function') scheduleCloudSync();
@@ -15228,6 +15232,53 @@ function eldenModalSatirEkle(tarih, tutar, aciklama){
     <button type="button" title="Tahsil edildi — sil" onclick="if(confirm('Bu elden verileni sil? (Tahsil edildiyse kasadan düşmez olur)')){this.parentElement.remove();_eldenModalToplamGuncelle();}" style="flex:0 0 auto;background:transparent;border:none;color:#ff5252;font-size:14px;cursor:pointer;padding:0 2px;line-height:1">🗑</button>`;
   liste.appendChild(row);
 }
+// v367: Elden verilenlerin AYRI bir "sil" fonksiyonu yok — modal listeyi komple
+// yeniden yaziyor. O yuzden silme/duzenlemeyi ESKI ve YENI listeyi karsilastirarak
+// buluyoruz. Kayitlarda id olmadigi icin icerik eslestirmesi yapiyoruz:
+//   1) birebir ayni olanlari ele  2) tarih+aciklama ayni ama tutar farkli -> duzenlendi
+//   3) tarih+tutar ayni ama aciklama farkli -> duzenlendi  4) eskide kalan -> silindi
+// (Ekleme bilerek loglanmiyor — istenen sadece silme ve duzenleme.)
+function _eldenFarkLogla(eski, yeni){
+  const ad = function(e){ return (e.aciklama || 'Elden') + ' — ' + (e.tarih||''); };
+  let E = (eski||[]).slice(), Y = (yeni||[]).slice();
+
+  // 1) birebir ayniları ele
+  E = E.filter(function(e){
+    const i = Y.findIndex(function(y){
+      return y.tarih===e.tarih && Number(y.tutar)===Number(e.tutar) && (y.aciklama||'')===(e.aciklama||'');
+    });
+    if(i>=0){ Y.splice(i,1); return false; }
+    return true;
+  });
+
+  // 2) tarih+aciklama ayni -> tutar degismis
+  E = E.filter(function(e){
+    const i = Y.findIndex(function(y){ return y.tarih===e.tarih && (y.aciklama||'')===(e.aciklama||''); });
+    if(i>=0){
+      const y = Y[i];
+      logIslem('Elden','duzenle', ad(e), [{alan:'Tutar', eski:fmt(e.tutar||0), yeni:fmt(y.tutar||0)}]);
+      Y.splice(i,1); return false;
+    }
+    return true;
+  });
+
+  // 3) tarih+tutar ayni -> aciklama degismis
+  E = E.filter(function(e){
+    const i = Y.findIndex(function(y){ return y.tarih===e.tarih && Number(y.tutar)===Number(e.tutar); });
+    if(i>=0){
+      const y = Y[i];
+      logIslem('Elden','duzenle', ad(e), [{alan:'Açıklama', eski:e.aciklama||'(boş)', yeni:y.aciklama||'(boş)'}]);
+      Y.splice(i,1); return false;
+    }
+    return true;
+  });
+
+  // 4) eskide kalanlar -> silinmis
+  E.forEach(function(e){
+    logIslem('Elden','sil', ad(e), [], fmt(e.tutar||0) + (e.tarih?' · '+e.tarih:''));
+  });
+}
+
 function _eldenModalTopla(){
   const arr = [];
   document.querySelectorAll('#eldenModalListe .elden-modal-row').forEach(row=>{
@@ -15249,7 +15300,9 @@ function _eldenModalToplamGuncelle(){
   document.getElementById('eldenModalToplam').textContent = (Math.round(t*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2}) + ' ₺';
 }
 function saveEldenModal(){
+  const _eskiElden = (Array.isArray(eldenData) ? eldenData.map(function(e){ return {tarih:e.tarih, tutar:e.tutar, aciklama:e.aciklama}; }) : []);
   eldenData = _eldenModalTopla();
+  try{ _eldenFarkLogla(_eskiElden, eldenData); }catch(e){}   // v367
   saveEldenStore();
   closeEldenModal();
   if(typeof renderKasa==='function') renderKasa();
@@ -15958,6 +16011,8 @@ async function deleteKategori(idx) {
     ? `"${kat}" kategorisi ${kayitSayisi} kayıtta kullanılıyor.\nKategori listeden silinir ama mevcut kayıtlar SİLİNMEZ, kategori adları üzerlerinde kalır.\n\nSilmek istiyor musunuz?`
     : `"${kat}" kategorisini silmek istiyor musunuz?`;
   if(!await appConfirm(uyari)) return;
+  try{ logIslem('Kategori','sil', kat, [],
+       (katYonetimTip==='gelir'?'Gelir':'Gider')+' kategorisi'+(kayitSayisi>0?' · '+kayitSayisi+' kayıtta kullanılıyordu (kayıtlar silinmedi)':'')); }catch(e){}
   list.splice(idx, 1);
   saveGelirKategoriler();
   renderKatYonetimListesi();
@@ -20517,6 +20572,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v367',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'ELDEN VERILENLER ISLEM GECMISINE DUSMUYORDU. Sebep: elden verilenlerin ayri bir "sil" fonksiyonu yok — pencere listeyi komple yeniden yaziyor, o yuzden kancalanacak bir silme ani yoktu. Artik kaydederken ESKI ve YENI liste karsilastiriliyor: cikan kayit "silindi", tutari/aciklamasi degisen "duzenlendi" olarak gecmise dusuyor. Telefonda gercek akista test edildi.' },
+      { type: 'new', text: 'Ornek kayitlar: "[sil] Elden · Mamos Hocaoglu — 2026-07-16 · 500,00 ₺" ve "[duzenle] Elden · Yunus Gengoru · Tutar: 300,00 ₺ -> 750,00 ₺".' },
+      { type: 'new', text: 'Ayrica kancasiz kalan son 3 yer de baglandi: Kategori silme, Tarife silme ve Tarife Donemi silme.' },
+    ]
+  },
   {
     version: 'v366',
     date: '19.07.2026',
