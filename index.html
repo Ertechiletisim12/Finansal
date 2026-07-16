@@ -1215,6 +1215,57 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   .notif-alt .sec-ln:hover{ color:var(--txt); opacity:1; }
   .deskbar .db-bell.on{ background:var(--red)!important; border-color:var(--red)!important; color:#fff!important; }
 
+  /* v369: bildirim paneli — ozet seridi, filtre cipleri, onem gruplari */
+  .nf-ozet{ display:flex; gap:12px; margin-bottom:10px; padding:0 3px; }
+  .nf-o{ display:flex; align-items:center; gap:5px; font-size:10.5px; color:var(--muted); font-weight:600; }
+  .nf-o i{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .nf-o-r i{ background:#ff453a; box-shadow:0 0 5px rgba(255,69,58,.6); }
+  .nf-o-o i{ background:#ff9f0a; }
+  .nf-o-g i{ background:var(--muted); opacity:.5; }
+
+  .nf-cipler{ display:flex; gap:6px; margin-bottom:12px; }
+  .nf-cip{
+    flex:1; background:var(--panel); border:1px solid var(--line); color:var(--muted);
+    border-radius:999px; padding:5px 8px; font-size:10.5px; font-weight:600;
+    cursor:pointer; font-family:inherit; white-space:nowrap;
+    display:flex; align-items:center; justify-content:center; gap:5px;
+    transition:background .12s, color .12s, border-color .12s;
+  }
+  .nf-cip:hover{ background:var(--hover); color:var(--txt); }
+  .nf-cip.on{ background:var(--red); border-color:var(--red); color:#fff; }
+  .nf-cip-s{
+    background:var(--panel2); color:var(--muted); border-radius:8px;
+    padding:0 5px; font-size:9px; font-weight:800; min-width:14px;
+  }
+  .nf-cip.on .nf-cip-s{ background:rgba(255,255,255,.25); color:#fff; }
+
+  .nf-grup{
+    display:flex; align-items:center; gap:6px;
+    font-size:9px; letter-spacing:.13em; text-transform:uppercase; font-weight:700;
+    color:var(--muted); margin:14px 0 6px 3px;
+  }
+  .nf-grup::before{ content:''; width:6px; height:6px; border-radius:50%; flex-shrink:0; background:var(--muted); }
+  .nf-grup-danger{ color:#ff6a60; } .nf-grup-danger::before{ background:#ff453a; }
+  .nf-grup-warn{ color:#ffb04a; }   .nf-grup-warn::before{ background:#ff9f0a; }
+  .nf-grup-ok::before{ background:var(--green); }
+  .nf-grup-s{ margin-left:auto; margin-right:3px; opacity:.7; letter-spacing:0; }
+
+  .nf-kat{
+    display:inline-block; margin-top:5px; font-size:8.5px; font-weight:700;
+    letter-spacing:.04em; color:var(--muted); background:var(--panel2);
+    border-radius:5px; padding:1px 6px; width:fit-content;
+  }
+  .notif-row.okundu .nf-kat{ opacity:.7; }
+
+  .nf-bos{ text-align:center; padding:26px 12px; background:var(--panel); border-radius:13px; }
+  .nf-bos-i{
+    width:42px; height:42px; border-radius:50%; margin:0 auto 10px;
+    background:rgba(52,199,89,0.14); color:var(--green);
+    display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:800;
+  }
+  .nf-bos-t{ font-size:13px; font-weight:700; color:var(--txt); }
+  .nf-bos-s{ font-size:11px; color:var(--muted); margin-top:4px; }
+
   /* v353: hero istatistik */
   .ctx-hero{ }
   .ctx-hero.go{ cursor:pointer; }
@@ -3837,7 +3888,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v368';
+const APP_VERSION = 'v369';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3950,7 +4001,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 22:10'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 23:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -9216,51 +9267,108 @@ function renderNotifMod(){
     var el=document.getElementById('contextPanel');
     if(!el) return;
     if(window.innerWidth <= 700){ el.innerHTML=''; return; }
+
     var alerts = (typeof collectAlerts==='function') ? collectAlerts() : [];
     var oku = function(k){ try{ return isNotifSeen('panel_read_'+k, 72); }catch(e){ return false; } };
     try{ if(typeof updateNotifBadge==='function') updateNotifBadge(alerts); }catch(e){}
-    var onc={danger:0,warn:1,ok:2};
-    alerts = alerts.slice().sort(function(a,b){
-      var ra=oku(a.key)?1:0, rb=oku(b.key)?1:0;
-      if(ra!==rb) return ra-rb;
-      return (onc[a.type]==null?3:onc[a.type])-(onc[b.type]==null?3:onc[b.type]);
-    });
-    var okunmamis = alerts.filter(function(a){ return !oku(a.key) && a.type!=='ok'; }).length;
-    var gosterilecek = _notifGizleOkunan ? alerts.filter(function(a){ return !oku(a.key); }) : alerts;
-    var gizlenen = alerts.length - gosterilecek.length;
 
+    var KAT = { gunluk:'Günlük', masraf:'Masraf', musteri:'Müşteri', sistem:'Sistem',
+                hedef:'Hedef', finans:'Finansal', kasa:'Kasa', prim:'Prim' };
+    var TON = { danger:'r', warn:'o', ok:'g' };
+
+    var acilSay = alerts.filter(function(a){ return a.type==='danger'; }).length;
+    var uyariSay = alerts.filter(function(a){ return a.type==='warn'; }).length;
+    var okunmamis = alerts.filter(function(a){ return !oku(a.key) && a.type!=='ok'; }).length;
+
+    // --- filtre ---
+    var f = _notifFiltre || 'hepsi';
+    var liste = alerts.slice();
+    if(f==='okunmamis') liste = liste.filter(function(a){ return !oku(a.key); });
+    if(f==='acil')      liste = liste.filter(function(a){ return a.type==='danger'; });
+    if(_notifGizleOkunan) liste = liste.filter(function(a){ return !oku(a.key); });
+    var gizlenen = alerts.length - liste.length;
+
+    // --- başlık ---
     var H = '<div class="ds-head"><span class="ds-head-t">\ud83d\udd14 Bildirimler'
           + (okunmamis? '<span class="ds-head-say">'+okunmamis+'</span>':'') + '</span>'
           + '<button class="ds-x" onclick="closeNotifMod()" title="Kapat (Esc)">\u2715</button></div>';
 
-    if(!gosterilecek.length){
-      H += '<div class="ctx-card"><div class="ctx-ok" style="padding:22px 12px">\u2713 Bekleyen bir \u015fey yok</div></div>';
-      if(gizlenen) H += '<div class="notif-alt"><span class="sec-ln" onclick="notifOkunanlariGoster()">'+gizlenen+' okunmu\u015f bildirimi g\u00f6ster</span></div>';
+    // --- özet şeridi ---
+    if(alerts.length){
+      H += '<div class="nf-ozet">'
+         + (acilSay? '<span class="nf-o nf-o-r"><i></i>'+acilSay+' acil</span>':'')
+         + (uyariSay? '<span class="nf-o nf-o-o"><i></i>'+uyariSay+' uyarı</span>':'')
+         + '<span class="nf-o nf-o-g"><i></i>'+(alerts.length-okunmamis)+' okundu</span>'
+         + '</div>';
+      // --- filtre çipleri ---
+      var cip = function(k, ad, say){
+        return '<button class="nf-cip'+(f===k?' on':'')+'" onclick="setNotifFiltre(\''+k+'\')">'+ad
+             + '<span class="nf-cip-s">'+say+'</span></button>';
+      };
+      H += '<div class="nf-cipler">'
+         + cip('hepsi','Tümü', alerts.length)
+         + cip('okunmamis','Okunmamış', okunmamis)
+         + (acilSay? cip('acil','Acil', acilSay) : '')
+         + '</div>';
+    }
+
+    // --- boş durum ---
+    if(!liste.length){
+      H += '<div class="nf-bos">'
+         + '<div class="nf-bos-i">\u2713</div>'
+         + '<div class="nf-bos-t">'+(f==='hepsi'?'Her şey yolunda':'Bu filtrede bildirim yok')+'</div>'
+         + '<div class="nf-bos-s">'+(f==='hepsi'?'Bekleyen bir iş görünmüyor.':'Başka bir filtre deneyin.')+'</div>'
+         + '</div>';
+      if(gizlenen) H += '<div class="notif-alt"><span class="sec-ln" onclick="notifOkunanlariGoster()">'+gizlenen+' bildirimi göster</span></div>';
     } else {
-      var ton={danger:'r',warn:'o',ok:'g'};
-      var satirlar='';
-      gosterilecek.forEach(function(a){
-        var read=oku(a.key);
-        var git=a.git? String(a.git).replace(/"/g,'&quot;') : '';
-        satirlar += '<div class="ctx-act notif-row '+(read?'okundu':'yeni')+' t-'+(a.type||'warn')+'"'
-          + ' onclick="notifModAc(\''+a.key+'\')'+(git?'; '+git:'')+'">'
-          + '<span class="ctx-act-i '+(ton[a.type]||'o')+'">'+(a.icon||'\ud83d\udd14')+'</span>'
-          + '<span class="ctx-act-x"><span class="ctx-act-t">'+a.title+'</span>'
-          + '<span class="ctx-act-s">'+(a.msg||'')+'</span></span>'
-          + (read? '<span class="notif-etiket">okundu</span>' : '<span class="notif-nokta"></span>')
-          + '</div>';
+      // --- önem sırasına göre grupla ---
+      var gruplar = [
+        { tip:'danger', ad:'Acil',     ic:[] },
+        { tip:'warn',   ad:'Uyarılar', ic:[] },
+        { tip:'ok',     ad:'Bilgi',    ic:[] }
+      ];
+      liste.forEach(function(a){
+        var g = gruplar.find(function(x){ return x.tip===(a.type||'warn'); }) || gruplar[1];
+        g.ic.push(a);
       });
-      H += '<div class="ctx-card p0">'+satirlar+'</div>';
+      // okunmamışlar grup içinde üstte
+      gruplar.forEach(function(g){
+        g.ic.sort(function(a,b){ return (oku(a.key)?1:0) - (oku(b.key)?1:0); });
+      });
+
+      gruplar.forEach(function(g){
+        if(!g.ic.length) return;
+        H += '<div class="nf-grup nf-grup-'+g.tip+'">'+g.ad+'<span class="nf-grup-s">'+g.ic.length+'</span></div>';
+        var satirlar='';
+        g.ic.forEach(function(a){
+          var read = oku(a.key);
+          var git = a.git ? String(a.git).replace(/"/g,'&quot;') : '';
+          satirlar += '<div class="ctx-act notif-row '+(read?'okundu':'yeni')+' t-'+(a.type||'warn')+'"'
+            + ' onclick="notifModAc(\''+a.key+'\')'+(git?'; '+git:'')+'">'
+            + '<span class="ctx-act-i '+(TON[a.type]||'o')+'">'+(a.icon||'\ud83d\udd14')+'</span>'
+            + '<span class="ctx-act-x">'
+            +   '<span class="ctx-act-t">'+a.title+'</span>'
+            +   '<span class="ctx-act-s">'+(a.msg||'')+'</span>'
+            +   (a.cat && KAT[a.cat] ? '<span class="nf-kat">'+KAT[a.cat]+'</span>' : '')
+            + '</span>'
+            + (read ? '<span class="notif-etiket">okundu</span>' : '<span class="notif-nokta"></span>')
+            + '</div>';
+        });
+        H += '<div class="ctx-card p0">'+satirlar+'</div>';
+      });
+
       H += '<div class="notif-alt">'
-        + (okunmamis? '<button class="notif-btn" onclick="ctxNotifHepsi2()">T\u00fcm\u00fcn\u00fc okundu i\u015faretle</button>' : '')
+        + (okunmamis? '<button class="notif-btn" onclick="ctxNotifHepsi2()">Tümünü okundu işaretle</button>' : '')
         + '<button class="notif-btn" onclick="notifTemizle()">Temizle</button>'
         + '</div>';
-      if(gizlenen) H += '<div class="notif-alt"><span class="sec-ln" onclick="notifOkunanlariGoster()">'+gizlenen+' okunmu\u015f bildirimi g\u00f6ster</span></div>';
+      if(gizlenen && _notifGizleOkunan) H += '<div class="notif-alt"><span class="sec-ln" onclick="notifOkunanlariGoster()">'+gizlenen+' okunmuş bildirimi göster</span></div>';
     }
-    H += '<div class="notif-alt"><span class="sec-ln" onclick="toggleNotifPanel()">Bildirim ayarlar\u0131 ve ge\u00e7mi\u015f \u2192</span></div>';
+    H += '<div class="notif-alt"><span class="sec-ln" onclick="toggleNotifPanel()">Bildirim ayarları ve geçmiş \u2192</span></div>';
     el.innerHTML = H;
   }catch(e){ try{ console.warn('notifMod:',e); }catch(_){} }
 }
+let _notifFiltre = 'hepsi';
+function setNotifFiltre(k){ _notifFiltre = k; renderNotifMod(); }
 function ctxNotifHepsi2(){
   try{ if(typeof markAllNotifsRead==='function') markAllNotifsRead(); }catch(e){}
   renderNotifMod();
@@ -20610,6 +20718,17 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v369',
+    date: '19.07.2026',
+    items: [
+      { type: 'new', text: 'BILDIRIM PANELI ZENGINLESTI (zile basinca acilan sag panel). Eskiden duz bir listeydi; artik ustte OZET SERIDI var: "2 acil · 5 uyari · 1 okundu" (renkli noktalarla).' },
+      { type: 'new', text: 'FILTRE CIPLERI eklendi: Tumu / Okunmamis / Acil — her birinde sayac. Tek dokunusla sadece acil olanlari gorebilirsin.' },
+      { type: 'new', text: 'Bildirimler artik ONEM SIRASINA GORE GRUPLANIYOR: once "ACIL" (kirmizi), sonra "UYARILAR" (turuncu), her grubun basliginda kac tane oldugu yaziyor. Grup icinde okunmamislar ustte.' },
+      { type: 'new', text: 'Her bildirimin altinda KATEGORI ETIKETI var (Musteri · Kasa · Masraf · Finansal · Hedef · Sistem · Gunluk) — hangi konudan geldigi bir bakista belli.' },
+      { type: 'new', text: 'Bos durum guzellesti: yesil onay isareti + "Her sey yolunda". Okunmamis belirgin (renkli serit + mavi nokta), okunmus soluk ve "okundu" etiketli — iki temada da dogru.' },
+    ]
+  },
   {
     version: 'v368',
     date: '19.07.2026',
