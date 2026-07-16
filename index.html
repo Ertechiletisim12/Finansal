@@ -1501,6 +1501,34 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   #gelirTitleBar, #kasaTitleBar, #notTitleBar{ justify-content:flex-end!important; }
 }
 
+/* ===== v371: PENCERELER (MODAL) — ORTAK BUTON DİLİ, SADECE GENİŞ EKRAN =====
+   38 pencerenin butonları hâlâ v343 stilindeydi (köşeli, hover'sız). Burada SADECE
+   ŞEKİL ve HOVER birleştiriliyor; renklere DOKUNULMUYOR — "Sil" kırmızı, "Kaydet"
+   yeşil kalsın diye. (Renk ezmek .btn-hero'da beyaz-üstüne-beyaz felaketine yol
+   açmıştı — aynı hataya düşme.) */
+@media(min-width:701px){
+  [id$="Modal"] button,
+  [id$="Popup"] button{
+    border-radius:999px!important;
+    font-family:inherit!important;
+    font-weight:700!important;
+    transition:transform .13s ease, filter .13s ease!important;
+  }
+  [id$="Modal"] button:hover,
+  [id$="Popup"] button:hover{
+    transform:translateY(-1px)!important;
+    filter:brightness(1.07)!important;
+  }
+  [id$="Modal"] button:active,
+  [id$="Popup"] button:active{ transform:translateY(0)!important; }
+  /* Metin girisleri de yumusasin (butonlarla uyumlu dursun) */
+  [id$="Modal"] input[type="text"],
+  [id$="Modal"] input[type="password"],
+  [id$="Modal"] input[type="number"],
+  [id$="Modal"] input[type="date"],
+  [id$="Modal"] select{ border-radius:9px!important; }
+}
+
 /* ===== v356: BUTON DİLİ "C" — HAP + RENKLİ İKON — SADECE GENİŞ EKRAN ===== */
 @media(min-width:701px){
   /* Tarih zaten üst menüdeki saatte yazıyor → bu satır tekrardı */
@@ -3888,7 +3916,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v370';
+const APP_VERSION = 'v371';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4001,7 +4029,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '20.07.2026 00:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '20.07.2026 01:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -20720,6 +20748,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v371',
+    date: '20.07.2026',
+    items: [
+      { type: 'new', text: 'PENCERELER YENILENMEYE BASLADI. Uygulamada 38 pencere var (Musteri Raporu, Kampanyalar, Ay Kapat, Prim Detaylari, Saat Analizi...) ve OLCTUM: hepsi hala v343 stilindeydi — koseli butonlar, hover yok. Ust menu/panel/butonlar yenilenmisken pencere acinca eski tasarima donuluyordu; "yarim kalmis" hissinin sebebi buydu.' },
+      { type: 'new', text: 'Ilk adim (guvenli olan): 38 pencerenin TUM butonlari (148 adet) artik HAP seklinde ve uzerine gelince hafifce kalkiyor. Pencere icindeki metin kutulari da yumusadi. RENKLERE DOKUNULMADI — "Sil" kirmizi, "Kaydet" yesil kaldi; olcumle dogrulandi (4 farkli renk korundu).' },
+      { type: 'fix', text: 'Gorev notu (GOREV-masaustu-tasarim.md) 27 surum geride kalmisti — hala "Asama 1 den basla" diyordu. Yapilanlar, kalan isler, proje kurallari ve DUSULEN TUZAKLAR ile bastan yazildi. Yeni bir oturum acarsan artik dogru yerden devam eder.' },
+      { type: 'new', text: 'TELEFON: hicbir sey degismedi — olctum, pencere butonlari telefonda eski olculerinde (8px/20px kose).' },
+    ]
+  },
   {
     version: 'v370',
     date: '20.07.2026',
