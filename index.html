@@ -65,9 +65,11 @@
 </script>
 <!-- v265: SheetJS yerine xlsx-js-style (0.18.5 tabanli catal). Community surumu hucre stillerini
      SESSIZCE yok sayiyordu; renkli/formatli Excel icin bu gerekli. Yerel dosya = offline calisir. -->
-<script src="xlsx-style.min.js"></script>
+<!-- v365: defer -> bu 4 kutuphane sadece Excel/PDF ciktisi icin lazim; acilisi bloklamasinlar.
+     Kod zaten "kutuphane henuz yuklenmedi" kontrolu yapiyor. -->
+<script src="xlsx-style.min.js" defer></script>
 <!-- v265: PDF icin Turkce alt-kumelenmis Roboto (42 KB). jsPDF helvetica ile gisçöü cizemiyor. -->
-<script src="pdf-font-tr.js"></script>
+<script src="pdf-font-tr.js" defer></script>
 <style id="yazdirmaStilleri">
 /* v267: YAZDIRMA — popup yok, body sinif oyunu yok.
    Onceki surumde body'ye 'yazdirma-modu' sinifi eklenip 120ms sonra print() cagriliyordu;
@@ -162,8 +164,8 @@
               display:flex; justify-content:space-between; font-size:6.8pt; color:#828282 !important }
 }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
 <!-- v266: html2canvas KALDIRILDI — hicbir PDF artik ekran goruntusu kullanmiyor (~200 KB tasarruf) -->
 <style>
 :root{
@@ -1192,6 +1194,26 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
     color:var(--muted); cursor:pointer; text-decoration:underline; opacity:.8;
   }
   .ds-sec-t .sec-ln:hover{ color:var(--txt); opacity:1; }
+
+  /* v365: bildirim modu (zile basinca acilan sag panel) */
+  .ds-head-say{
+    background:var(--red); color:#fff; border-radius:9px; padding:1px 6px;
+    font-size:10px; font-weight:800; margin-left:7px; vertical-align:middle;
+  }
+  .notif-alt{ display:flex; gap:6px; margin-top:9px; }
+  .notif-btn{
+    flex:1; background:var(--panel); border:1px solid var(--line); color:var(--txt);
+    border-radius:999px; padding:7px 10px; font-size:11px; font-weight:600;
+    cursor:pointer; font-family:inherit; transition:background .12s, border-color .12s;
+  }
+  .notif-btn:hover{ background:var(--hover); border-color:rgba(226,35,26,0.4); }
+  .notif-alt .sec-ln{
+    float:none; margin:2px auto 0; text-align:center; width:100%;
+    text-transform:none; letter-spacing:0; font-size:10px; font-weight:600;
+    color:var(--muted); cursor:pointer; text-decoration:underline; opacity:.8;
+  }
+  .notif-alt .sec-ln:hover{ color:var(--txt); opacity:1; }
+  .deskbar .db-bell.on{ background:var(--red)!important; border-color:var(--red)!important; color:#fff!important; }
 
   /* v353: hero istatistik */
   .ctx-hero{ }
@@ -2229,6 +2251,24 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 .h-bar-col .h-val{font-size:9px;color:var(--muted);margin-bottom:1px;min-height:11px}
 .peak-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(63,208,255,0.12);border:1px solid rgba(63,208,255,0.3);border-radius:5px;padding:3px 10px;font-size:11px;color:var(--accent);font-weight:600}
 </style>
+<script>
+/* v365: ERKEN KİLİT KONTROLÜ.
+   Sorun: checkLock() dosyanın çok altında (17733. satır) çalışıyordu; tarayıcı önce
+   tüm sayfayı çizip TUTARLARI GÖSTERİYOR, sonra kilit ekranı üstüne biniyordu.
+   Bu script <head>'de, gövde boyanmadan önce çalışır → içerik bir an bile görünmez. */
+(function(){
+  try{
+    var pinVar = !!(localStorage.getItem('vf_pin_hash') || localStorage.getItem('vf_pin'));
+    var acik   = sessionStorage.getItem('unlocked') === '1';
+    if(pinVar && !acik){ document.documentElement.className += ' kilitli'; }
+  }catch(e){}
+})();
+</script>
+<style>
+  /* Kilitliyken gövde hiç görünmesin (kilit ekranı zaten opak, bu ekstra güvence) */
+  html.kilitli #lockScreen{ display:flex!important; }
+  html.kilitli body > .app, html.kilitli body > .deskbar{ visibility:hidden!important; }
+</style>
 </head>
 <body>
 <div id="lockScreen" style="display:none;">
@@ -2348,7 +2388,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button class="db-lock" onclick="oturumKapat()" title="Oturumu kilitle">🔒</button>
     </div>
     <!-- v350: bildirim zili -->
-    <button class="db-bell" onclick="toggleNotifPanel()" title="Bildirimler">🔔<span class="db-bell-b" id="deskNotifB" style="display:none">0</span></button>
+    <button class="db-bell" id="deskBellBtn" onclick="toggleNotifMod()" title="Bildirimler">🔔<span class="db-bell-b" id="deskNotifB" style="display:none">0</span></button>
     <div class="db-clock" id="clockTop"></div>
     <div class="db-ver" id="deskVerBtn" onclick="toggleChangelog()" title="Sürüm notlarını göster">⋯</div>
     <button class="db-btn" id="deskSetBtn" onclick="toggleSettingsPanel()" title="Ayarlar: tema, gizlilik, veri yönetimi, sistem">⚙ Ayarlar</button>
@@ -3794,7 +3834,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v364';
+const APP_VERSION = 'v365';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3907,7 +3947,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 17:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 18:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6083,6 +6123,7 @@ async function fbLoginSubmit(){
     await fbLogin(email, pass);
     hideLoginScreen();
     // Giris yapan kisi zaten sifreyle dogrulandi — ayni oturumda tekrar PIN sorma
+    try{ document.documentElement.classList.remove('kilitli'); }catch(e){}   // v365
     try{ sessionStorage.setItem('unlocked','1'); sessionStorage.setItem('oturumBaslangic', Date.now()); }catch(e){}
     var _ls = document.getElementById('lockScreen'); if(_ls) _ls.style.display='none';
     if(typeof startOturumTimer==='function') startOturumTimer();
@@ -7212,11 +7253,17 @@ document.addEventListener('keydown', function(e){
   document.addEventListener(ev, ()=>{ if(sessionStorage.getItem('unlocked')==='1') resetOtoKilit(); }, {passive:true});
 });
 function checkLock(){
-  if(!hasPinSet()){ return; }
+  // v365: erken kontrol <head>'de yapiliyor; burasi guvenlik agi + sinif temizligi
+  if(!hasPinSet()){
+    try{ document.documentElement.classList.remove('kilitli'); }catch(e){}
+    return;
+  }
   if(sessionStorage.getItem('unlocked') === '1'){
+    try{ document.documentElement.classList.remove('kilitli'); }catch(e){}
     startOturumTimer();
     return;
   }
+  try{ document.documentElement.classList.add('kilitli'); }catch(e){}
   document.getElementById('lockScreen').style.display = 'flex';
 }
 
@@ -7333,6 +7380,7 @@ async function tryUnlock(){
     logGiris(true);
     if(window._lockObserver){ window._lockObserver.disconnect(); window._lockObserver = null; }
     sessionStorage.setItem('unlocked','1');
+    try{ document.documentElement.classList.remove('kilitli'); }catch(e){}   // v365
     sessionStorage.setItem('oturumBaslangic', Date.now());
     startOturumTimer();
     const card = document.querySelector('.lock-card');
@@ -9087,6 +9135,99 @@ function _gorunur(id){
        return (e.style.display||'') !== 'none'; }catch(e){ return false; }
 }
 
+// v365: ZIL -> sag panel bildirim modu (Ayarlar gibi)
+function toggleNotifMod(){
+  try{
+    if(window.innerWidth <= 700){ toggleNotifPanel(); return; }   // mobil: eski pencere
+    if(ctxMode==='notif') closeNotifMod(); else openNotifMod();
+  }catch(e){}
+}
+function openNotifMod(){
+  try{
+    if(window.innerWidth <= 700) return;
+    ctxMode='notif';
+    try{ document.getElementById('contextPanel').classList.add('set-mode'); }catch(e){}
+    var b=document.getElementById('deskSetBtn'); if(b) b.classList.remove('on');
+    var z=document.getElementById('deskBellBtn'); if(z) z.classList.add('on');
+    if(_setTick){ clearInterval(_setTick); _setTick=null; }
+    renderNotifMod();
+  }catch(e){}
+}
+function closeNotifMod(){
+  try{
+    ctxMode='context';
+    try{ document.getElementById('contextPanel').classList.remove('set-mode'); }catch(e){}
+    var z=document.getElementById('deskBellBtn'); if(z) z.classList.remove('on');
+    renderContextPanel(typeof currentPage!=='undefined'?currentPage:'dash');
+  }catch(e){}
+}
+// "Temizle" -> hepsini okundu isaretle + okunanlari listeden gizle
+let _notifGizleOkunan = false;
+function notifTemizle(){
+  try{ if(typeof markAllNotifsRead==='function') markAllNotifsRead(); }catch(e){}
+  _notifGizleOkunan = true;
+  renderNotifMod();
+}
+function notifOkunanlariGoster(){ _notifGizleOkunan=false; renderNotifMod(); }
+function notifModAc(key, git){
+  try{ if(typeof markSingleNotif==='function') markSingleNotif(key); }catch(e){}
+  renderNotifMod();
+}
+function renderNotifMod(){
+  try{
+    var el=document.getElementById('contextPanel');
+    if(!el) return;
+    if(window.innerWidth <= 700){ el.innerHTML=''; return; }
+    var alerts = (typeof collectAlerts==='function') ? collectAlerts() : [];
+    var oku = function(k){ try{ return isNotifSeen('panel_read_'+k, 72); }catch(e){ return false; } };
+    try{ if(typeof updateNotifBadge==='function') updateNotifBadge(alerts); }catch(e){}
+    var onc={danger:0,warn:1,ok:2};
+    alerts = alerts.slice().sort(function(a,b){
+      var ra=oku(a.key)?1:0, rb=oku(b.key)?1:0;
+      if(ra!==rb) return ra-rb;
+      return (onc[a.type]==null?3:onc[a.type])-(onc[b.type]==null?3:onc[b.type]);
+    });
+    var okunmamis = alerts.filter(function(a){ return !oku(a.key) && a.type!=='ok'; }).length;
+    var gosterilecek = _notifGizleOkunan ? alerts.filter(function(a){ return !oku(a.key); }) : alerts;
+    var gizlenen = alerts.length - gosterilecek.length;
+
+    var H = '<div class="ds-head"><span class="ds-head-t">\ud83d\udd14 Bildirimler'
+          + (okunmamis? '<span class="ds-head-say">'+okunmamis+'</span>':'') + '</span>'
+          + '<button class="ds-x" onclick="closeNotifMod()" title="Kapat (Esc)">\u2715</button></div>';
+
+    if(!gosterilecek.length){
+      H += '<div class="ctx-card"><div class="ctx-ok" style="padding:22px 12px">\u2713 Bekleyen bir \u015fey yok</div></div>';
+      if(gizlenen) H += '<div class="notif-alt"><span class="sec-ln" onclick="notifOkunanlariGoster()">'+gizlenen+' okunmu\u015f bildirimi g\u00f6ster</span></div>';
+    } else {
+      var ton={danger:'r',warn:'o',ok:'g'};
+      var satirlar='';
+      gosterilecek.forEach(function(a){
+        var read=oku(a.key);
+        var git=a.git? String(a.git).replace(/"/g,'&quot;') : '';
+        satirlar += '<div class="ctx-act notif-row '+(read?'okundu':'yeni')+' t-'+(a.type||'warn')+'"'
+          + ' onclick="notifModAc(\''+a.key+'\')'+(git?'; '+git:'')+'">'
+          + '<span class="ctx-act-i '+(ton[a.type]||'o')+'">'+(a.icon||'\ud83d\udd14')+'</span>'
+          + '<span class="ctx-act-x"><span class="ctx-act-t">'+a.title+'</span>'
+          + '<span class="ctx-act-s">'+(a.msg||'')+'</span></span>'
+          + (read? '<span class="notif-etiket">okundu</span>' : '<span class="notif-nokta"></span>')
+          + '</div>';
+      });
+      H += '<div class="ctx-card p0">'+satirlar+'</div>';
+      H += '<div class="notif-alt">'
+        + (okunmamis? '<button class="notif-btn" onclick="ctxNotifHepsi2()">T\u00fcm\u00fcn\u00fc okundu i\u015faretle</button>' : '')
+        + '<button class="notif-btn" onclick="notifTemizle()">Temizle</button>'
+        + '</div>';
+      if(gizlenen) H += '<div class="notif-alt"><span class="sec-ln" onclick="notifOkunanlariGoster()">'+gizlenen+' okunmu\u015f bildirimi g\u00f6ster</span></div>';
+    }
+    H += '<div class="notif-alt"><span class="sec-ln" onclick="toggleNotifPanel()">Bildirim ayarlar\u0131 ve ge\u00e7mi\u015f \u2192</span></div>';
+    el.innerHTML = H;
+  }catch(e){ try{ console.warn('notifMod:',e); }catch(_){} }
+}
+function ctxNotifHepsi2(){
+  try{ if(typeof markAllNotifsRead==='function') markAllNotifsRead(); }catch(e){}
+  renderNotifMod();
+}
+
 function toggleSettingsPanel(){
   try{
     if(window.innerWidth <= 700) return;
@@ -9098,6 +9239,7 @@ function openSettingsPanel(){
     if(window.innerWidth <= 700) return;
     ctxMode='settings';
     try{ document.getElementById('contextPanel').classList.add('set-mode'); }catch(e){}
+    try{ var _z=document.getElementById('deskBellBtn'); if(_z) _z.classList.remove('on'); }catch(e){}
     renderSettingsPanel();
     var b=document.getElementById('deskSetBtn'); if(b) b.classList.add('on');
     if(_setTick) clearInterval(_setTick);
@@ -9261,7 +9403,11 @@ function syncTopNav(page){
 // v350: Esc -> ayarlar panelini kapat (sag panel sayfa ozetine doner)
 try{
   document.addEventListener('keydown', function(e){
-    try{ if(e.key === 'Escape' && ctxMode === 'settings') closeSettingsPanel(); }catch(_){}
+    try{
+      if(e.key !== 'Escape') return;
+      if(ctxMode === 'settings') closeSettingsPanel();
+      else if(ctxMode === 'notif') closeNotifMod();
+    }catch(_){}
   });
 }catch(e){}
 
@@ -9271,8 +9417,11 @@ function renderContextPanel(page){
   try{
     var el = document.getElementById('contextPanel');
     if(!el) return;
-    // v350: ayarlar modu acikken sayfa degistirmek paneli ezmesin
-    if(ctxMode === 'settings' && window.innerWidth > 700){ renderSettingsPanel(); return; }
+    // v350/v365: ayarlar veya bildirim modu acikken sayfa degistirmek paneli ezmesin
+    if(window.innerWidth > 700){
+      if(ctxMode === 'settings'){ renderSettingsPanel(); return; }
+      if(ctxMode === 'notif'){ renderNotifMod(); return; }
+    }
     // Mobilde panel zaten CSS ile gizli; içerik üretme (boşuna iş yapma, mobili etkileme).
     if(window.innerWidth <= 700){ el.innerHTML=''; return; }
 
@@ -9330,40 +9479,8 @@ function renderContextPanel(page){
         + '<div class="ctx-duo-v">'+deger+'<span class="ctx-duo-s">'+(birim||'')+'</span></div></div>';
     }
 
-    // ---- BİLDİRİMLER: tek kaynak = collectAlerts() motoru (v359) ----
-    // Zil rozeti, bu panel ve bildirim penceresi ARTIK AYNI listeyi gösterir.
-    var acts = '', okunmamis = 0;
-    try{
-      var alerts = (typeof collectAlerts === 'function') ? collectAlerts() : [];
-      var oku = function(k){ try{ return isNotifSeen('panel_read_'+k, 72); }catch(e){ return false; } };
-      var onc = { danger:0, warn:1, ok:2 };
-      alerts = alerts.slice().sort(function(a,b){
-        var ra = oku(a.key)?1:0, rb = oku(b.key)?1:0;
-        if(ra !== rb) return ra - rb;                       // okunmamışlar üstte
-        return (onc[a.type]==null?3:onc[a.type]) - (onc[b.type]==null?3:onc[b.type]);
-      });
-      var ton = { danger:'r', warn:'o', ok:'g' };
-      try{ if(typeof updateNotifBadge === 'function') updateNotifBadge(alerts); }catch(e){}  // rozet hep listeyle ayni
-      alerts.forEach(function(a){
-        var read = oku(a.key);
-        if(!read && a.type !== 'ok') okunmamis++;   // rozetle ayni kural
-        var git = a.git ? String(a.git).replace(/"/g,'&quot;') : '';
-        acts += '<div class="ctx-act notif-row '+(read?'okundu':'yeni')+' t-'+(a.type||'warn')+'"'
-             +  ' onclick="ctxNotifAc(\''+a.key+'\')'+(git?'; '+git:'')+'">'
-             +  '<span class="ctx-act-i '+(ton[a.type]||'o')+'">'+(a.icon||'🔔')+'</span>'
-             +  '<span class="ctx-act-x">'
-             +  '<span class="ctx-act-t">'+a.title+'</span>'
-             +  '<span class="ctx-act-s">'+(a.msg||'')+'</span>'
-             +  '</span>'
-             +  (read ? '<span class="notif-etiket">okundu</span>' : '<span class="notif-nokta"></span>')
-             +  '</div>';
-      });
-    }catch(e){}
-    if(!acts) acts = '<div class="ctx-ok">\u2713 Bekleyen bir şey yok</div>';
-    H += sec('\ud83d\udd14 Bildirimler'
-          + (okunmamis ? '<span class="sec-say">'+okunmamis+'</span>' : '')
-          + (okunmamis ? '<span class="sec-ln" onclick="event.stopPropagation();ctxNotifHepsi()">tümünü okundu işaretle</span>' : ''))
-       + '<div class="ctx-card p0">'+acts+'</div>';
+    // v365: Bildirimler buradan kaldirildi — artik ust menudeki ZILE basinca
+    // sag panel bildirim moduna geciyor (Ayarlar butonu gibi). Sayfa ozeti sade kaldi.
 
     // ---- SAYFAYA OZEL ----
     if(grup==='kasa'){
@@ -20398,6 +20515,17 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v365',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'GUVENLIK: PIN EKRANINDAN ONCE ICERIK GORUNUYORDU. Kilit kontrolu dosyanin en altinda (17733. satir) calisiyordu; tarayici once butun sayfayi cizip TUTARLARI GOSTERIYOR, kilit ekrani ancak ondan sonra ustune biniyordu. Kontrol artik <head> icinde, govde boyanmadan once calisiyor. Islemciyi 20 kat yavaslatip (telefon gibi) olctum: eskiden ilk karede icerik aciktaydi, artik ilk kareden itibaren kilit var — icerik bir an bile gorunmuyor.' },
+      { type: 'fix', text: 'ACILIS HIZLANDI. Excel/PDF kutuphaneleri (xlsx, jspdf, autotable, pdf font) acilisi BLOKLUYORDU — oysa sadece disa aktarirken lazimlar. Hepsine "defer" eklendi. Olcum (islemci 4x yavas): ilk icerik boyamasi 738ms -> 495ms, DOM hazir 1341ms -> 1094ms. Internet uzerinden jspdf indirildigi icin gercek cihazda kazanc daha buyuk. (Kod zaten "kutuphane henuz yuklenmedi" kontrolu yapiyordu, disa aktarma etkilenmedi.)' },
+      { type: 'new', text: 'BILDIRIMLER SAG PANELDEKI KARTTAN KALKTI. Sayfa ozeti artik sade. Bildirimler ust menudeki ZILE basinca aciliyor — tipki Ayarlar butonu gibi, sag panel bildirim moduna geciyor, zil kirmizi yaniyor. Tekrar basinca (veya Esc) sayfa ozetine donuyor.' },
+      { type: 'new', text: 'Bildirim panelinde "Tumunu okundu isaretle" ve "TEMIZLE" butonlari var. Temizle: hepsini okundu isaretler ve listeden gizler; istersen "N okunmus bildirimi goster" ile geri getirebilirsin. Okunmamis belirgin (renkli serit + mavi nokta), okunmus soluk ve "okundu" etiketli.' },
+      { type: 'new', text: 'TELEFON: gorunum degismedi. Zil telefonda yine eski bildirim penceresini aciyor (ust menu zaten sadece masaustunde).' },
+    ]
+  },
   {
     version: 'v364',
     date: '19.07.2026',
