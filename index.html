@@ -2441,6 +2441,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
       <div id="sbSistem" style="display:none;flex-direction:column;gap:6px;overflow:hidden">
         <button class="tool-btn" onclick="printManagerReport()">📄 Yönetici Raporu</button>
+        <button class="tool-btn" onclick="openIslemLogModal()">🔎 İşlem Geçmişi <span id="islemLogSayi" style="display:none;background:var(--panel2);color:var(--muted);border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
         <button class="tool-btn" id="notifPanelBtn" onclick="toggleNotifPanel()">🔔 Bildirimler <span id="notifBadge" style="display:none;background:#e2231a;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">0</span></button>
         <button class="tool-btn" onclick="openPinModal()">🔐 Kilit / PIN Ayarı</button>
         <button class="tool-btn" onclick="openGirisLogModal()">📋 Giriş Logları</button>
@@ -3793,7 +3794,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v361';
+const APP_VERSION = 'v363';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3906,7 +3907,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 14:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 16:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -4302,7 +4303,11 @@ function renderIslemLog(){
 const STORE_KEY_ISLOG = 'vf_islem_log_v1';
 let islemLog = [];
 try{ islemLog = JSON.parse(localStorage.getItem(STORE_KEY_ISLOG) || '[]'); }catch(e){ islemLog = []; }
-function saveIslemLog(){ try{ localStorage.setItem(STORE_KEY_ISLOG, JSON.stringify(islemLog)); }catch(e){} }
+function saveIslemLog(){
+  try{ localStorage.setItem(STORE_KEY_ISLOG, JSON.stringify(islemLog)); }catch(e){}
+  try{ const b=document.getElementById('islemLogSayi');
+       if(b){ b.textContent = islemLog.length; b.style.display = islemLog.length ? '' : 'none'; } }catch(e){}
+}
 
 // tur: 'Prim','Müşteri','Kasa','Elden','Gelir/Gider','Not','Finansal','Hedef','Kampanya','Tarife','Kategori','Fiyat'
 // islem: 'sil' | 'duzenle'
@@ -9161,10 +9166,10 @@ function renderSettingsPanel(){
     // --- SİSTEM ---
     H += '<div class="ds-sec-t">Sistem</div><div class="st-group">'
        + row('\ud83d\udcc4','Y\u00f6netici Raporu','Yazd\u0131r\u0131labilir \u00f6zet','printManagerReport()',null,'b')
-       + row('\ud83d\udd10','Kilit / PIN Ayar\u0131','Uygulama kilidi','openPinModal()',null,'p')
-       + row('\ud83d\udccb','Giri\u015f Loglar\u0131','Ge\u00e7mi\u015f giri\u015fler','openGirisLogModal()',null,'g')
        + row('\ud83d\udd0e','\u0130\u015flem Ge\u00e7mi\u015fi','Silinen ve d\u00fczenlenenler','openIslemLogModal()',
              (typeof islemLog!=='undefined' && islemLog.length ? '<span class="st-badge" style="background:var(--panel2);color:var(--muted)">'+islemLog.length+'</span>' : ''), 'p')
+       + row('\ud83d\udd10','Kilit / PIN Ayar\u0131','Uygulama kilidi','openPinModal()',null,'p')
+       + row('\ud83d\udccb','Giri\u015f Loglar\u0131','Ge\u00e7mi\u015f giri\u015fler','openGirisLogModal()',null,'g')
        + '</div>';
 
     // --- PWA kurulum (sadece kurulabilir durumdaysa) ---
@@ -11889,18 +11894,41 @@ function renderFinansTable(filtered){
   tbl.innerHTML = head + rows;
 }
 
+// v363: Turkce sayi ayrastirma duzeltildi.
+// ESKI HATA: "75.000" -> 75 (tek noktali sayiyi ondalik saniyordu; 75.000 ₺ yerine 75 ₺ giriliyordu).
+// Sadece 3 yerde kullaniliyor ve ucu de KULLANICININ ELLE YAZDIGI hucre: hedef, yatirilan, finansal.
+// Kurallar:
+//   virgul varsa      -> virgul ondalik, noktalar binlik    "1.015.765,93" -> 1015765.93
+//   2+ nokta varsa    -> hepsi binlik                        "1.000.000"    -> 1000000
+//   tek nokta varsa   -> BELIRSIZ, sezgi:
+//        tam sayi kismi 1-3 hane (0 ile baslamiyor) VE noktadan sonra TAM 3 hane
+//        -> binlik ayraci    "75.000" -> 75000 · "1.015" -> 1015
+//        aksi halde ondalik  "12.75" -> 12.75 · "0.001" -> 0.001 · "1234.567" -> 1234.567
 function parseTLNumber(str){
   if(str===null || str===undefined) return 0;
   let raw = String(str).trim().replace(/[^0-9.,-]/g,'');
   if(!raw) return 0;
-  if(raw.indexOf(',')!==-1){
-    raw = raw.replace(/\./g,'').replace(',', '.');
+  const eksi = raw.trim().startsWith('-');
+  raw = raw.replace(/-/g,'');
+  if(!raw) return 0;
+
+  if(raw.indexOf(',') !== -1){
+    // Virgul = ondalik ayraci (Turkce). Noktalar binlik ayraci.
+    raw = raw.replace(/\./g,'').replace(/,/g, '.');
   } else {
     const parts = raw.split('.');
-    if(parts.length>2){ raw = parts.join(''); }
+    if(parts.length > 2){
+      raw = parts.join('');                       // 1.000.000 -> 1000000
+    } else if(parts.length === 2){
+      const tam = parts[0], ondalik = parts[1];
+      if(/^[1-9]\d{0,2}$/.test(tam) && /^\d{3}$/.test(ondalik)){
+        raw = tam + ondalik;                      // 75.000 -> 75000  (binlik)
+      }                                            // aksi halde oldugu gibi birak (ondalik)
+    }
   }
   const num = parseFloat(raw);
-  return isNaN(num) ? 0 : num;
+  if(isNaN(num)) return 0;
+  return eksi ? -num : num;
 }
 
 // ---- Düzenlenebilir tablo hücreleri arasında klavyeyle gezinme (Enter / Ok tuşları) ----
@@ -20338,6 +20366,24 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v363',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'ONEMLI PARA GIRISI HATASI DUZELDI. Elle "75.000" yazdiginda 75.000 ₺ degil 75 ₺ olarak kaydediliyordu! Kod, tek noktali sayilari ondalik saniyordu. Ornekler: "75.000" -> 75 · "52.440" -> 52,44 · "12.750" -> 12,75 · "-75.000" -> -75. Virgulle yazinca ("75.000,00") sorun yoktu, o yuzden fark edilmesi zordu.' },
+      { type: 'fix', text: 'Artik Turkce kurallara gore okunuyor: virgul ondalik, nokta binlik. "75.000" -> 75000 · "1.000.000" -> 1000000 · "1.015.765,93" -> 1015765,93. Ondalik yazimlar bozulmadi: "12.75" -> 12,75 · "0.001" -> 0,001 · "0,5" -> 0,5. Negatif degerler de dogru.' },
+      { type: 'new', text: 'ETKILENEN YERLER: elle rakam yazdigin 3 hucre — Aylik Hedef, Yatirilan Prim ve Finansal Analiz tablosu. (Diger para alanlari farkli bir okuyucu kullaniyor, onlarda bu sorun yoktu.) 20 farkli girdiyle test edildi; 6\'si eskiden yanlisti, hepsi duzeldi, digerleri aynen calisiyor.' },
+    ]
+  },
+  {
+    version: 'v362',
+    date: '19.07.2026',
+    items: [
+      { type: 'new', text: 'ISLEM GECMISI ARTIK TELEFONDA DA ACILIYOR: Menu (☰) > Sistem > "🔎 Islem Gecmisi" — Yonetici Raporu\'nun hemen altinda, yaninda kayit sayaciyla. v361\'de kayitlar telefonda tutuluyordu ama goruntulenemiyordu.' },
+      { type: 'fix', text: 'Masaustu ayarlar panelinde de ayni sira: Yonetici Raporu > Islem Gecmisi > Kilit/PIN > Giris Loglari.' },
+      { type: 'new', text: 'TELEFONDA DEGISEN TEK SEY: menunun Sistem bolumune 1 buton eklendi (6 buton -> 7). Duzen, tasarim, olculer aynen duruyor.' },
+    ]
+  },
+  {
     version: 'v361',
     date: '19.07.2026',
     items: [
@@ -22744,6 +22790,9 @@ function toggleChangelog(){
   try{ if(typeof syncTopNav==='function') syncTopNav(typeof currentPage!=='undefined'?currentPage:'dash'); }catch(e){}
   // v349: açılışta ayarlar panelini eşitle
   try{ if(typeof syncDeskSettings==='function') syncDeskSettings(); }catch(e){}
+  // v362: işlem geçmişi sayacı (mobil menüdeki buton)
+  try{ const b=document.getElementById('islemLogSayi');
+       if(b && typeof islemLog!=='undefined'){ b.textContent = islemLog.length; b.style.display = islemLog.length ? '' : 'none'; } }catch(e){}
 })();
 </script>
 
