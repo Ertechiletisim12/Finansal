@@ -3834,7 +3834,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v365';
+const APP_VERSION = 'v366';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3947,7 +3947,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 18:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 19:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -12560,8 +12560,6 @@ async function deleteFinansAyModal() {
 
   const topKar = (d.vodKarTutari||0) + (d.mixyKarTutari||0);
   const topMasraf = (d.vodMasraf||0) + (d.mixyMasraf||0);
-  try{ logIslem('Finansal','sil', monthLabel(d.ym)+' kaydı', [],
-       'Kâr: '+fmtF(topKar)+' · Masraf: '+fmtF(topMasraf)+' · Sermaye: '+fmtF(d.mevcutSermaye||0)+' (çöp kutusuna taşındı)'); }catch(e){}
   const step2 = await appConfirm(
     `🗑️ KAYIT SİLME — 2. ADIM (SON ONAY)\n\n` +
     `Silinecek kayıt özeti:\n` +
@@ -12575,6 +12573,9 @@ async function deleteFinansAyModal() {
   );
   if(!step2) return;
 
+  // v366: log SON ONAYDAN SONRA — vazgecilirse "silindi" yazmasin
+  try{ logIslem('Finansal','sil', monthLabel(d.ym)+' kaydı', [],
+       'Kâr: '+fmtF(topKar)+' · Masraf: '+fmtF(topMasraf)+' · Sermaye: '+fmtF(d.mevcutSermaye||0)+' (çöp kutusuna taşındı)'); }catch(e){}
   // Çöp kutusuna ekle
   finansTrash.push({ ...d, _deletedAt: new Date().toISOString() });
   if(finansTrash.length > 50) finansTrash = finansTrash.slice(-50); // max 50 kayıt
@@ -12631,8 +12632,6 @@ async function deleteFinansRow(ym){
   if(!await appConfirm(`🗑️ KAYIT SİLME — 1. ADIM\n\nAy: ${monthLabel(ym)}\n\nBu kaydı silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz! (Çöp kutusundan geri yüklenebilir)`)) return;
   const topKar = (d.vodKarTutari||0) + (d.mixyKarTutari||0);
   const topMasraf = (d.vodMasraf||0) + (d.mixyMasraf||0);
-  try{ logIslem('Finansal','sil', monthLabel(d.ym)+' kaydı', [],
-       'Kâr: '+fmtF(topKar)+' · Masraf: '+fmtF(topMasraf)+' · Sermaye: '+fmtF(d.mevcutSermaye||0)+' (çöp kutusuna taşındı)'); }catch(e){}
   if(!await appConfirm(
     `🗑️ KAYIT SİLME — 2. ADIM (SON ONAY)\n\n` +
     `• Ay: ${monthLabel(ym)}\n` +
@@ -12642,6 +12641,9 @@ async function deleteFinansRow(ym){
     `⚠️ Sonraki ayların Gereken Sermaye değerleri yeniden hesaplanacaktır.\n\n` +
     `Kalıcı olarak silmek için TAMAM'a basın.`
   )) return;
+  // v366: log SON ONAYDAN SONRA — vazgecilirse "silindi" yazmasin
+  try{ logIslem('Finansal','sil', monthLabel(d.ym)+' kaydı', [],
+       'Kâr: '+fmtF(topKar)+' · Masraf: '+fmtF(topMasraf)+' · Sermaye: '+fmtF(d.mevcutSermaye||0)+' (çöp kutusuna taşındı)'); }catch(e){}
   finansTrash.push({ ...d, _deletedAt: new Date().toISOString() });
   if(finansTrash.length > 50) finansTrash = finansTrash.slice(-50);
   saveTrashStore();
@@ -20515,6 +20517,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v366',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'ISLEM GECMISI YALAN SOYLUYORDU. Finansal kayit silme IKI ADIMLI onay kullaniyor; log kancasini yanlislikla 1. ve 2. adimin ARASINA koymusum. Yani 2. adimda VAZGECSEN bile gecmise "silindi" yaziyordu. Kanca son onaydan sonraya alindi. Test: vazgecince ne siliniyor ne log dusuyor; ikisine de evet deyince ikisi de oluyor.' },
+      { type: 'fix', text: 'TUM SILME YOLLARI BASTAN TEST EDILDI (gercek tarayicida, gercek onay pencerelerinden gecerek): Kasa ✓ · Gelir/Gider ✓ · Not ✓ · Musteri ✓ · Kampanya ✓ · Finansal ✓ · Prim (3 ayri yol) ✓. Hepsi hem siliyor hem gecmise kaydediyor.' },
+    ]
+  },
   {
     version: 'v365',
     date: '19.07.2026',
