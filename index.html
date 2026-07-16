@@ -3794,7 +3794,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v363';
+const APP_VERSION = 'v364';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -3907,7 +3907,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '19.07.2026 16:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '19.07.2026 17:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6836,6 +6836,19 @@ function _doChangeCount(date, cat, delta, activationDate, isMnp, tarife){
     entryLog.push(logEntry);
 
   } else if(delta < 0){
+    // v364: silme kaydi (islem gecmisi) — bu dal confirmSil ve changeCount yolundan gelir
+    try{
+      const _e0 = useSubtype
+        ? entries.find(x => x.date===date && x.cat===cat && !!x.mnp===mnpFlag)
+        : entries.find(x => x.date===date && x.cat===cat);
+      const _tip = useSubtype ? (mnpFlag ? ' (MNP)' : ' (Yeni Tesis)') : '';
+      const _m = (typeof musteriler!=='undefined' && Array.isArray(musteriler))
+        ? musteriler.find(x => x.entryDate===date && x.cat===cat && (!useSubtype || x.tip===(mnpFlag?'mnp':'tesis')))
+        : null;
+      logIslem('Prim','sil', cat+_tip+' — '+date,
+        _e0 ? [{alan:'adet', eski:String(_e0.count), yeni:String(Math.max(0,_e0.count-1))}] : [],
+        '1 adet silindi'+(_m&&_m.ad?' · '+_m.ad:'')+(_e0&&_e0.tarife?' · '+_e0.tarife:''));
+    }catch(err){}
     // ── SİL: entryId zinciriyle doğru entry'yi bul ──
     let logIdx = -1;
     for(let i = entryLog.length-1; i >= 0; i--){
@@ -13112,6 +13125,26 @@ async function confirmDeleteIslem(btn){
 function deleteIslemLog(logRef, cat, date, isMnp){
   const mnpFlag = (isMnp === true || isMnp === 'true');
   const useSubtype = MNP_CATS.includes(cat);
+  // v364: silme kaydi (islem gecmisi) — Islem Listesi'ndeki silme bu yoldan gecer
+  try{
+    const _tip = useSubtype ? (mnpFlag ? ' (MNP)' : ' (Yeni Tesis)') : '';
+    const _refStr = String(logRef).trim();
+    let _l = entryLog.find(l => l.id && l.id === _refStr);
+    if(!_l){
+      for(let i=entryLog.length-1; i>=0; i--){
+        const l = entryLog[i];
+        if(l.date===date && l.cat===cat && (!useSubtype || !!l.mnp===mnpFlag)){ _l = l; break; }
+      }
+    }
+    const _m = (typeof musteriler!=='undefined' && Array.isArray(musteriler))
+      ? musteriler.find(x => x.entryDate===date && x.cat===cat && (!useSubtype || x.tip===(mnpFlag?'mnp':'tesis')))
+      : null;
+    const _parca = [];
+    if(_m && _m.ad) _parca.push(_m.ad);
+    if(_l && _l.tarife) _parca.push(_l.tarife);
+    if(_l && _l.time) _parca.push(_l.time);
+    logIslem('Prim','sil', cat+_tip+' — '+date, [], '1 adet silindi'+(_parca.length?' · '+_parca.join(' · '):''));
+  }catch(err){}
 
   // ── 1. LOG KAYDI BUL ──
   let logIdx = -1;
@@ -20365,6 +20398,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v364',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'ISLEM GECMISI PRIM SILMELERINI KACIRIYORDU. Prim silmenin UC AYRI YOLU varmis; v361\'de sadece birini baglamisim. Bu yuzden Islem Listesi\'ndeki cop kutusundan veya "−" butonundan silince gecmise hicbir sey dusmuyordu. Ucu de baglandi ve test edildi: kart "−" butonu · Islem Listesi 🗑 · onay penceresi yolu.' },
+      { type: 'new', text: 'Prim silme kaydi artik daha ayrintili: kategori, tip (MNP / Yeni Tesis), tarih, adet degisimi ve varsa MUSTERI ADI, TARIFE ve SAAT. Ornek: "Red (MNP) — 2026-07-16 · 1 adet silindi · Red 40 · 09:02".' },
+      { type: 'fix', text: 'NOT: Islem Gecmisi sadece SILME ve DUZENLEME kaydeder — yeni kayit EKLEMEK loglanmaz (istenen buydu). Kayit ekleyip sildiginde gecmiste sadece silme satirini gorursun.' },
+    ]
+  },
   {
     version: 'v363',
     date: '19.07.2026',
