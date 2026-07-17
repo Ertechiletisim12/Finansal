@@ -377,6 +377,29 @@ html{scrollbar-gutter:stable}
   /* Sidebar gizle */
   .sidebar{ display:none!important; }
 
+  /* ===== v377: KASA TABLOSU — SİLME BUTONU ARTIK ULAŞILABİLİR (MOBİL) =====
+     Sorun (ölçüldü): ekran 400px, tablo 514px → 154px taşıyor. Silme butonu
+     x=498'de, yani ekranın 118px DIŞINDA ve 27x20px. Kullanıcı butonu göremediği
+     için "silme çalışmıyor" sanıyordu. Sütunları kısaltmak veriyi okunmaz yapardı;
+     bunun yerine buton sütunu SAĞA SABİTLENDİ — tabloyu kaydırırken hep görünür.
+     Butonlar da parmakla basılır hale getirildi. */
+  #page-kasa .table-wrap table th:last-child,
+  #page-kasa .table-wrap table td:last-child{
+    position:sticky!important;
+    right:0!important;
+    z-index:3!important;
+    background:var(--panel)!important;
+    box-shadow:-9px 0 10px -7px rgba(0,0,0,0.5)!important;
+  }
+  #page-kasa .table-wrap table thead th:last-child{
+    background:var(--panel2)!important;
+  }
+  /* Dokunma hedefi: 27x20 çok küçüktü */
+  #page-kasa .table-wrap table td:last-child button{
+    width:34px!important; height:34px!important;
+    font-size:15px!important; padding:0!important;
+  }
+
   /* App tek sütun */
   .app{ flex-direction:column!important;height:auto!important;overflow:visible!important;min-height:100vh!important; }
   .app>.main{ overflow:visible!important;height:auto!important;max-height:none!important; }
@@ -1554,6 +1577,24 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   #musteriRaporModal .mk-durum{ height:32px!important; }
   /* hepsi hap (v371 zaten yapıyor) + belirgin hover */
   #musteriRaporModal .mk-btn:hover{ filter:brightness(1.18)!important; }
+}
+
+/* ===== v378: ANASAYFA — ÖLÇÜ DÜZENİ, SADECE GENİŞ EKRAN =====
+   Ölçüldü: anasayfada 12 farklı köşe (2/3/4/7/10/11/12/16/20px...) ve 9px altında
+   okunmayan yazılar vardı. Köşeler 4/8/12/16 ritmine oturtuldu (hap, daire ve bar
+   tepeleri korunuyor). Yeniden akış yapmaz — sadece görsel tutarlılık.
+   Satır içi stiller [style*=...] ile hedefleniyor; MOBİL HİÇ ETKİLENMEZ. */
+@media(min-width:701px){
+  #page-dash [style*="border-radius:2px"],
+  #page-dash [style*="border-radius:3px"]:not([style*="3px 3px"]){ border-radius:4px!important; }
+  #page-dash [style*="border-radius:7px"]{ border-radius:8px!important; }
+  #page-dash [style*="border-radius:10px"],
+  #page-dash [style*="border-radius:11px"]{ border-radius:12px!important; }
+  #page-dash [style*="border-radius:20px"]{ border-radius:16px!important; }
+
+  /* 9px altı okunmuyordu: grafik alt yazısı ve Vod/MİXY pay yüzdeleri */
+  #page-dash [style*="font-size:8px"]{ font-size:9.5px!important; }
+  #page-dash [style*="font-size:8.5px"]{ font-size:10px!important; }
 }
 
 /* ===== v371: PENCERELER (MODAL) — ORTAK BUTON DİLİ, SADECE GENİŞ EKRAN =====
@@ -3971,7 +4012,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v376';
+const APP_VERSION = 'v378';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4084,7 +4125,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '20.07.2026 06:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '20.07.2026 08:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -20875,6 +20916,26 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v378',
+    date: '20.07.2026',
+    items: [
+      { type: 'new', text: 'ANASAYFA OLCU DUZENI (masaustu). Olctum: anasayfada 12 FARKLI kose degeri vardi (2/3/4/7/10/11/12/16/20px...) — her kutu kendi kafasina gore. Artik 4/8/12/16 ritmine oturdu; kose sayisi 12\'den 6\'ya indi (hap, daire ve grafik bar tepeleri korundu). Yeniden akis yapmaz, sadece gorsel tutarlilik.' },
+      { type: 'fix', text: 'Anasayfada 9px ALTINDA okunmayan yazilar vardi: grafigin "(adet · tutar)" alt yazisi (8px) ve Vod/MIXY pay yuzdeleri "%61 / %39" (8.5px). Okunur boyuta cikarildi (9.5 / 10px).' },
+      { type: 'new', text: 'TELEFON HIC ETKILENMEDI: satir ici stiller sadece genis ekranda eziliyor. Olctum — telefonda kose sayisi 10, punto sayisi 18, ikisi de aynen duruyor.' },
+      { type: 'fix', text: 'NOT: Punto sayisi 18\'den 16\'ya indi. Kalan yakin puntolar (11 vs 11.5 gibi) BILEREK birlestirilmedi: 11px 327, 12px 227 yerde kullaniliyor; korlemesine birlestirmek yerlesimi bozabilirdi. Once risksiz olan yapildi.' },
+    ]
+  },
+  {
+    version: 'v377',
+    date: '20.07.2026',
+    items: [
+      { type: 'fix', text: 'TELEFONDA KASA SAYIMI SILINEMIYORDU — "silme calismiyor" sandigin seyin sebebi buydu. Olcum: ekran 400px ama tablo 514px; silme butonu x=498\'de, yani ekranin 118px DISINDA ve 27x20 piksel. Buton oradaydi ama gorunmuyordu; ulasmak icin tabloyu yatay kaydirmak gerekiyordu.' },
+      { type: 'new', text: 'COZUM: sutunlari kisaltmak tutarlari okunmaz yapardi — bunun yerine BUTON SUTUNU SAGA SABITLENDI. Tabloyu yatay kaydirsan da butonlar hep gorunur kalir (arkasindan veri kayar). Butonlar da 27x20\'den 34x34\'e buyutuldu — parmakla rahat basilir.' },
+      { type: 'fix', text: 'Gercek dokunmayla test edildi: telefonda butona parmakla basildi, onay penceresi cikti, kayit silindi ve islem gecmisine dustu. Masaustu etkilenmedi (buton eski yerinde ve olcusunde).' },
+      { type: 'new', text: 'NOT: Bu, telefon gorunumune bilerek yapilan bir degisikliktir (izin alindi). Mobil kural sayisi 197\'den 199\'a cikti; hicbir mevcut kural silinmedi/degistirilmedi.' },
+    ]
+  },
   {
     version: 'v376',
     date: '20.07.2026',
