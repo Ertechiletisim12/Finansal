@@ -1501,6 +1501,26 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   #gelirTitleBar, #kasaTitleBar, #notTitleBar{ justify-content:flex-end!important; }
 }
 
+/* ===== v374: PENCERE KAPLARI — SADECE GENİŞ EKRAN =====
+   Ölçüldü: 3 farklı köşe (16/12/0px — Kasa Sayımı keskin köşeliydi), 15 pencereden
+   14'ünde gölge yok (sayfaya yapışık duruyorlardı), perde koyuluğu 3 farklı değer.
+   Hepsi tek dile getiriliyor. Renklere/zemine dokunulmuyor. */
+@media(min-width:701px){
+  /* Perde: tek koyuluk + hafif bulanıklık (pencere öne çıksın) */
+  [id$="Modal"]{
+    background:rgba(0,0,0,0.62)!important;
+    backdrop-filter:blur(3px)!important;
+    -webkit-backdrop-filter:blur(3px)!important;
+  }
+  /* Kart: tek köşe + gerçek gölge (yüzsün).
+     first-of-type kullanılıyor: Kasa Sayımı penceresinin ilk çocuğu bir <style>
+     etiketi, kart ikinci sırada — :first-child onu ıskalıyordu. */
+  [id$="Modal"] > div:first-of-type{
+    border-radius:16px!important;
+    box-shadow:0 20px 56px rgba(0,0,0,0.45), 0 2px 10px rgba(0,0,0,0.22)!important;
+  }
+}
+
 /* ===== v373: MÜŞTERİ RAPORU SATIRI — SADECE GENİŞ EKRAN =====
    Aksiyonlar iki satıra bölünmüştü (Durum Güncelle üstte, Düzenle+Sil altta) ve
    dağınık duruyordu. Masaüstünde hepsi tek satırda; Düzenle/Sil ikon-only (adı
@@ -3941,7 +3961,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v373';
+const APP_VERSION = 'v374';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4054,7 +4074,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '20.07.2026 03:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '20.07.2026 04:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -20787,6 +20807,15 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v374',
+    date: '20.07.2026',
+    items: [
+      { type: 'new', text: 'TUM PENCERELER TEK DILE GETIRILDI. Olctum: 3 farkli kose degeri vardi (16px / 12px / bazilari keskin), 15 pencereden 14\'unde GOLGE YOKTU (sayfaya yapisik duruyorlardi) ve arka perde 3 farkli koyuluktaydi. Artik hepsi ayni: 16px kose, gercek golge (pencere sayfanin uzerinde yuzuyor) ve tek koyulukta perde + hafif bulaniklik — acik pencere one cikiyor, arkasi dinleniyor.' },
+      { type: 'new', text: 'Bu tek CSS bloguyla 38 pencerenin hepsi birden duzeldi; tek tek elle ugrasilmadi. Renklere ve zeminlere dokunulmadi.' },
+      { type: 'new', text: 'TELEFON: dokunulmadi — olctum, penceredeki kose/golge/perde telefonda eski degerlerinde.' },
+    ]
+  },
   {
     version: 'v373',
     date: '20.07.2026',
