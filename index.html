@@ -1597,6 +1597,18 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   #page-dash [style*="font-size:8.5px"]{ font-size:10px!important; }
 }
 
+/* ===== v379: PRİM SAYFASI — ÖLÇÜ DÜZENİ, SADECE GENİŞ EKRAN =====
+   Ölçüldü: 8px'lik "hariç: ... ₺" yazısı (KDV hariç tutar — gerçek bilgi,
+   okunmuyordu) ve tek başına duran 10px köşe.
+   NOT: 5px köşeler (buton/input/ok) satır içi DEĞİL, sınıflardan geliyor —
+   ayrıca 4px ile 5px farkı gözle seçilmiyor, yani kovalamaya değmez. */
+@media(min-width:701px){
+  #page-prim [style*="border-radius:10px"]{ border-radius:12px!important; }
+
+  /* KDV hariç tutar 8px'ti — okunmuyordu */
+  #page-prim [style*="font-size:8px"]{ font-size:9.5px!important; }
+}
+
 /* ===== v371: PENCERELER (MODAL) — ORTAK BUTON DİLİ, SADECE GENİŞ EKRAN =====
    38 pencerenin butonları hâlâ v343 stilindeydi (köşeli, hover'sız). Burada SADECE
    ŞEKİL ve HOVER birleştiriliyor; renklere DOKUNULMUYOR — "Sil" kırmızı, "Kaydet"
@@ -4012,7 +4024,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v378';
+const APP_VERSION = 'v379';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4125,7 +4137,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '20.07.2026 08:10'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '20.07.2026 09:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -20916,6 +20928,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v379',
+    date: '20.07.2026',
+    items: [
+      { type: 'fix', text: 'PRIM SAYFASINDA "hariç: ... ₺" yazisi 8px idi — yani her kategori kartinin altindaki KDV HARIC TUTAR okunmuyordu. Gercek bir bilgi oldugu icin okunur boyuta cikarildi (9.5px). Anasayfadaki "%61/%39" ile ayni sorundu.' },
+      { type: 'new', text: 'Prim sayfasinda tek basina duran 10px kose, anasayfayla ayni ritme (12px) getirildi.' },
+      { type: 'fix', text: 'DURUSTCE: 5px kose kovalanmadi. Olctum — buton/input/ok koseleri satir ici degil SINIFLARDAN geliyor, ustelik 4px ile 5px farki gozle secilmiyor. Duzeltmek "gurultu" diye elestirdigim seyin kendisi olurdu; calismayan kural dosyaya birakilmadi.' },
+      { type: 'new', text: 'TELEFON: dokunulmadi — olctum, punto ve kose sayilari aynen duruyor.' },
+    ]
+  },
   {
     version: 'v378',
     date: '20.07.2026',
