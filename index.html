@@ -3971,7 +3971,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v375';
+const APP_VERSION = 'v376';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4084,7 +4084,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '20.07.2026 05:10'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '20.07.2026 06:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -9789,8 +9789,66 @@ function renderContextPanel(page){
         H += sec('\ud83d\udcb9 Sermaye') + '<div class="ctx-card"><div class="ctx-empty">Kay\u0131t yok</div></div>';
       }
     }
+    else if(grup==='gelir'){
+      // v376: Gelir Takibi sayfasi genel sablona dusuyordu (panelde alakasiz
+      // "Sermaye / Prim" yaziyordu). Artik kendi ozeti var.
+      try{
+        var _g = (typeof gelirData!=='undefined' && Array.isArray(gelirData)) ? gelirData : [];
+        var _yil = _bugun.slice(0,4);
+        var yilKayit = _g.filter(function(x){ return x && String(x.tarih||'').slice(0,4)===_yil; });
+        var gelirT=0, giderT=0;
+        yilKayit.forEach(function(x){
+          var t=Number(x.tutar)||0;
+          if(x.tip==='gider') giderT+=t; else gelirT+=t;
+        });
+        var net = gelirT-giderT;
+        H += sec('\ud83d\udcb0 '+_yil+' \u00d6zeti') + '<div class="ctx-card p0">'
+           + duo(duoBox('Gelir', _fmt(gelirT), ''), duoBox('Gider', _fmt(giderT), ''))
+           + '<div class="ctx-foot">Net <b class="'+(net<0?'neg':'pos')+'">'+_fmt(net)+'</b> \u00b7 '+yilKayit.length+' kay\u0131t</div></div>';
+        // en cok gider yapilan kategori
+        var katT={};
+        yilKayit.filter(function(x){ return x.tip==='gider'; }).forEach(function(x){
+          var k=x.kategori||'Diğer'; katT[k]=(katT[k]||0)+(Number(x.tutar)||0);
+        });
+        var sirali = Object.keys(katT).sort(function(a,b){ return katT[b]-katT[a]; }).slice(0,3);
+        if(sirali.length){
+          var kic='';
+          sirali.forEach(function(k){ kic += row(k, _fmt(katT[k]), 'neg'); });
+          H += sec('\ud83d\udcc9 En \u00c7ok Gider') + '<div class="ctx-card">'+kic+'</div>';
+        } else {
+          H += sec('\ud83d\udcc9 En \u00c7ok Gider') + '<div class="ctx-card"><div class="ctx-empty">Bu y\u0131l gider kayd\u0131 yok</div></div>';
+        }
+      }catch(e){}
+    }
+    else if(grup==='not'){
+      // v376: Not & Etiket sayfasi da genel sablona dusuyordu.
+      try{
+        var _n = (typeof notlarData!=='undefined' && Array.isArray(notlarData)) ? notlarData : [];
+        var etiketler = {};
+        _n.forEach(function(x){ (x.etiketler||[]).forEach(function(t){ etiketler[t]=(etiketler[t]||0)+1; }); });
+        var etAd = Object.keys(etiketler);
+        H += sec('\ud83c\udff7\ufe0f Notlar') + '<div class="ctx-card p0">'
+           + duo(duoBox('Toplam', _n.length, 'not'), duoBox('Etiket', etAd.length, 'çeşit'))
+           + '</div>';
+        var enCok = etAd.sort(function(a,b){ return etiketler[b]-etiketler[a]; }).slice(0,4);
+        if(enCok.length){
+          var eic='';
+          enCok.forEach(function(t){ eic += row('#'+t, etiketler[t]+' not'); });
+          H += sec('\ud83d\udd16 En \u00c7ok Kullan\u0131lan') + '<div class="ctx-card">'+eic+'</div>';
+        }
+        var sonN = _n.slice().sort(function(a,b){ return String(b.tarih||'').localeCompare(String(a.tarih||'')); })[0];
+        if(sonN){
+          H += sec('\ud83d\udcdd Son Not') + '<div class="ctx-card">'
+             + hero(sonN.tarih||'-', (sonN.baslik||sonN.metin||'Not').slice(0,28),
+                    (sonN.etiketler&&sonN.etiketler.length? '#'+sonN.etiketler.slice(0,3).join(' #') : ''))
+             + '</div>';
+        } else {
+          H += sec('\ud83d\udcdd Son Not') + '<div class="ctx-card"><div class="ctx-empty">Hen\u00fcz not yok</div></div>';
+        }
+      }catch(e){}
+    }
     else {
-      // dash / gelir / not — genel bakis
+      // dash — genel bakis
       var gic='';
       try{
         if(_finans.length){
@@ -20817,6 +20875,16 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v376',
+    date: '20.07.2026',
+    items: [
+      { type: 'fix', text: 'GELIR TAKIBI ve NOT & ETIKET sayfalarinda sag panel ALAKASIZ bilgi gosteriyordu: o sayfalara ozel ozet hic yazilmamis, genel sablona dusuyorlardi — Gelir sayfasindayken panelde "Sermaye" ve "Prim" yaziyordu. Artik ikisinin de kendi ozeti var.' },
+      { type: 'new', text: 'GELIR paneli: yilin GELIR / GIDER toplami yan yana, altinda NET (zararda kirmizi) ve kayit sayisi. Ayrica EN COK GIDER yapilan ilk 3 kategori tutariyla birlikte.' },
+      { type: 'new', text: 'NOT paneli: toplam not ve etiket cesidi yan yana, EN COK KULLANILAN etiketler (kac notta gectigiyle) ve SON NOT (tarihi, basligi, etiketleri).' },
+      { type: 'new', text: 'Bu eksik, panelin her sayfada ne gosterdigini olcerek bulundu — Gelir ve Not sayfalarinin ikisinde de ayni "Sermaye · Prim" bolumleri cikinca fark edildi.' },
+    ]
+  },
   {
     version: 'v375',
     date: '20.07.2026',
