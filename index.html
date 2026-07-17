@@ -1501,6 +1501,31 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
   #gelirTitleBar, #kasaTitleBar, #notTitleBar{ justify-content:flex-end!important; }
 }
 
+/* ===== v373: MÜŞTERİ RAPORU SATIRI — SADECE GENİŞ EKRAN =====
+   Aksiyonlar iki satıra bölünmüştü (Durum Güncelle üstte, Düzenle+Sil altta) ve
+   dağınık duruyordu. Masaüstünde hepsi tek satırda; Düzenle/Sil ikon-only (adı
+   tooltip'te). Pencere mobilde de kullanıldığı için HTML'e dokunulmadı — sadece
+   sınıf eklendi, stil yalnızca burada. */
+@media(min-width:701px){
+  #musteriRaporModal .mk-aks{
+    flex-direction:row!important;
+    align-items:center!important;
+    gap:6px!important;
+  }
+  #musteriRaporModal .mk-aks2{ gap:4px!important; }
+  /* Düzenle ve Sil: sadece ikon, yazıyı gizle */
+  #musteriRaporModal .mk-duzenle > span,
+  #musteriRaporModal .mk-sil > span{ display:none!important; }
+  #musteriRaporModal .mk-duzenle,
+  #musteriRaporModal .mk-sil{
+    width:32px!important; height:32px!important; padding:0!important;
+    justify-content:center!important; gap:0!important; font-size:13px!important;
+  }
+  #musteriRaporModal .mk-durum{ height:32px!important; }
+  /* hepsi hap (v371 zaten yapıyor) + belirgin hover */
+  #musteriRaporModal .mk-btn:hover{ filter:brightness(1.18)!important; }
+}
+
 /* ===== v371: PENCERELER (MODAL) — ORTAK BUTON DİLİ, SADECE GENİŞ EKRAN =====
    38 pencerenin butonları hâlâ v343 stilindeydi (köşeli, hover'sız). Burada SADECE
    ŞEKİL ve HOVER birleştiriliyor; renklere DOKUNULMUYOR — "Sil" kırmızı, "Kaydet"
@@ -3916,7 +3941,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v371';
+const APP_VERSION = 'v373';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4029,7 +4054,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '20.07.2026 01:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '20.07.2026 03:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -14797,9 +14822,15 @@ function renderMusteriRapor(){
 
   list.innerHTML = filtered.map(m=>{
     const renk = m._gecikti ? '#ff5252' : (durumRenk[m.durum]||'#888');
-    const kalan = m.takipTarihi >= bugun
-      ? Math.ceil((new Date(m.takipTarihi)-new Date(bugun))/(86400000))+' gün kaldı'
-      : Math.ceil((new Date(bugun)-new Date(m.takipTarihi))/(86400000))+' gün geçti!';
+    // v372: takipTarihi bos olabilir (eski yedek / eski surumden gelen kayit).
+    // Korumasizdi -> ekranda "Takip: undefined (NaN gun gecti!)" yaziyordu.
+    // Ayni bilgiyi yazan diger kod zaten korumali; burasi gozden kacmis.
+    const _tt = m.takipTarihi;
+    const _ttGecerli = !!_tt && !isNaN(new Date(_tt).getTime());
+    const kalan = !_ttGecerli ? ''
+      : (_tt >= bugun
+          ? Math.ceil((new Date(_tt)-new Date(bugun))/(86400000))+' gün kaldı'
+          : Math.ceil((new Date(bugun)-new Date(_tt))/(86400000))+' gün geçti!');
 
     return `<div style="padding:12px 14px;border-bottom:1px solid var(--line)">
       <div style="display:flex;align-items:flex-start;gap:10px">
@@ -14817,11 +14848,11 @@ function renderMusteriRapor(){
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span style="font-size:11px;font-weight:700;color:${renk}">${durumIcon[m.durum]||'⏳'} ${durumLabel[m.durum]||m.durum}</span>
-            <span style="font-size:10px;color:${m._gecikti?'#ff5252':'var(--muted)'}">📆 Takip: ${m.takipTarihi} (${kalan})</span>
+            ${_ttGecerli?`<span style="font-size:10px;color:${m._gecikti?'#ff5252':'var(--muted)'}">📆 Takip: ${_tt} (${kalan})</span>`:''}
           </div>
           ${m.not?`<div style="font-size:10px;color:var(--muted);margin-top:4px;font-style:italic">💬 ${esc(m.not)}</div>`:''}
         </div>
-        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:flex-end">
+        <div class="mk-aks" style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:flex-end">
           <div style="display:flex;align-items:center;gap:6px;height:32px">
             ${m.durum==='aktif' || m.durum==='onaylandi' ?
               `<input type="checkbox" checked disabled style="width:16px;height:16px;cursor:default;accent-color:#4cd964;opacity:0.45;flex-shrink:0" title="Onaylandı">` :
@@ -14829,15 +14860,15 @@ function renderMusteriRapor(){
               `<input type="checkbox" class="mkSelectBox" data-id="${m.id}" style="width:16px;height:16px;cursor:pointer;accent-color:#4cd964;flex-shrink:0">` :
               `<div style="width:16px;flex-shrink:0"></div>`
             }
-            <button onclick="openMusteriDurum('${m.id}')" style="display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;height:32px">
+            <button class="mk-btn mk-durum" onclick="openMusteriDurum('${m.id}')" title="Durum Güncelle" style="display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;height:32px">
               📋 <span>Durum Güncelle</span>
             </button>
           </div>
-          <div style="display:flex;gap:5px">
-            <button onclick="openMusteriEdit('${m.id}')" style="display:flex;align-items:center;gap:4px;padding:5px 9px;background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.25);color:var(--accent);border-radius:7px;font-size:10px;font-weight:600;cursor:pointer">
+          <div class="mk-aks2" style="display:flex;gap:5px">
+            <button class="mk-btn mk-duzenle" onclick="openMusteriEdit('${m.id}')" title="Düzenle" style="display:flex;align-items:center;gap:4px;padding:5px 9px;background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.25);color:var(--accent);border-radius:7px;font-size:10px;font-weight:600;cursor:pointer">
               ✏️ <span>Düzenle</span>
             </button>
-            <button onclick="deleteMusteriKayit('${m.id}')" style="display:flex;align-items:center;gap:4px;padding:5px 9px;background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.2);color:#ff5252;border-radius:7px;font-size:10px;font-weight:600;cursor:pointer">
+            <button class="mk-btn mk-sil" onclick="deleteMusteriKayit('${m.id}')" title="Sil" style="display:flex;align-items:center;gap:4px;padding:5px 9px;background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.2);color:#ff5252;border-radius:7px;font-size:10px;font-weight:600;cursor:pointer">
               🗑 <span>Sil</span>
             </button>
           </div>
@@ -17030,8 +17061,12 @@ function renderRaporHaftalik(yilEntries, monthNames) {
   const amounts = rows.map(r=>r.amount);
   const maxAmt = Math.max(...amounts, 1);
   const avgAmt = amounts.length ? amounts.reduce((a,b)=>a+b,0)/amounts.length : 0;
-  const topRow = rows.reduce((a,b)=>b.amount>a.amount?b:a, rows[0]||{});
-  const botRow = rows.reduce((a,b)=>b.amount<a.amount?b:a, rows[0]||{});
+  // v372: veri yokken rows bos kaliyor, reduce baslangic degeri {} donuyordu.
+  // {} JavaScript'te TRUTHY oldugu icin asagidaki "topRow ? ... : '—'" korumasi
+  // hic devreye girmiyor, ekranda "Hafta undefined (NaN.NaN–NaN.NaN)" / "NaN ₺"
+  // yaziyordu. Bos ise null dondur ki koruma calissin.
+  const topRow = rows.length ? rows.reduce((a,b)=>b.amount>a.amount?b:a) : null;
+  const botRow = rows.length ? rows.reduce((a,b)=>b.amount<a.amount?b:a) : null;
 
   _renderRaporShared({
     chartTitle: `${raporYil} — Haftalık Prim Tutarı (KDV dahil · eşik bonusları hariç)`,
@@ -17113,8 +17148,12 @@ function renderRaporYillik(monthNames) {
   const amounts = rows.map(r=>r.amount);
   const maxAmt = Math.max(...amounts,1);
   const avgAmt = amounts.length ? amounts.reduce((a,b)=>a+b,0)/amounts.length : 0;
-  const topRow = rows.reduce((a,b)=>b.amount>a.amount?b:a, rows[0]||{});
-  const botRow = rows.reduce((a,b)=>b.amount<a.amount?b:a, rows[0]||{});
+  // v372: veri yokken rows bos kaliyor, reduce baslangic degeri {} donuyordu.
+  // {} JavaScript'te TRUTHY oldugu icin asagidaki "topRow ? ... : '—'" korumasi
+  // hic devreye girmiyor, ekranda "Hafta undefined (NaN.NaN–NaN.NaN)" / "NaN ₺"
+  // yaziyordu. Bos ise null dondur ki koruma calissin.
+  const topRow = rows.length ? rows.reduce((a,b)=>b.amount>a.amount?b:a) : null;
+  const botRow = rows.length ? rows.reduce((a,b)=>b.amount<a.amount?b:a) : null;
 
   const rowsWG = rows.map((r,i) => {
     const prev = rows[i-1];
@@ -20748,6 +20787,23 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v373',
+    date: '20.07.2026',
+    items: [
+      { type: 'new', text: 'MUSTERI RAPORU (bildirimdeki "onay bekliyor"a basinca acilan pencere) duzenlendi. Her musterinin aksiyonlari IKI SATIRA bolunmustu — "Durum Guncelle" ustte, "Duzenle" ve "Sil" altta — dagimik duruyordu. Artik masaustunde hepsi TEK SATIRDA: Durum Guncelle yazili, Duzenle ve Sil ikon-only (adlari uzerine gelince cikiyor). Satir yuksekligi 61px\'ten 32px\'e indi, liste cok daha derli toplu.' },
+      { type: 'new', text: 'TELEFON: bu pencere telefonda da kullanildigi icin HTML\'e dokunulmadi — sadece sinif eklendi, stil yalnizca genis ekranda. Olctum: telefonda aksiyonlar hala iki satir, butonlar yazili ve eski olculerinde.' },
+    ]
+  },
+  {
+    version: 'v372',
+    date: '20.07.2026',
+    items: [
+      { type: 'fix', text: 'HAFTALIK/YILLIK RAPORDA "Hafta undefined (NaN.NaN–NaN.NaN)" ve "NaN ₺" YAZIYORDU. Verisi olmayan bir yil sectiginde (ornegin 2019) veya hic prim kaydi yokken cikiyordu. Sebep: kod "en verimli hafta"yi bulurken veri yoksa BOS NESNE ({}) donuyordu; JavaScript bos nesneyi "dolu" saydigi icin oradaki koruma hic calismiyordu. Iki yerde de (Haftalik ve Yillik) duzeltildi — artik "—" yaziyor.' },
+      { type: 'fix', text: 'MUSTERI RAPORUNDA da ayni tur hata: takip tarihi olmayan bir kayit varsa "Takip: undefined (NaN gun gecti!)" yaziyordu. Uygulama kayitlari hep bu tarihi veriyor ama eski bir yedekten/eski surumden gelen kayitta bos olabilir. Artik tarih yoksa satir hic yazilmiyor. (Ayni bilgiyi yazan diger kod zaten korumaliydi; burasi gozden kacmis.)' },
+      { type: 'new', text: 'BU HATALAR NASIL BULUNDU: butun sayfalari ve 22 pencereyi tek tek acip ekranda "undefined / NaN" gecip gecmedigini tarayan bir kontrol yazildi. 9 sayfadan 8\'i ve 21 pencere temiz cikti; rapor sayfasi yakalandi. Ayni kontrol bundan sonra da kullanilabilir.' },
+    ]
+  },
   {
     version: 'v371',
     date: '20.07.2026',
