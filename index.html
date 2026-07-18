@@ -2924,6 +2924,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
         <div id="finansYearMonthFilterTop"></div>
       </div>
+      <div id="defterFinansHero"></div>
       <div id="finansContent"></div>
     </div><!-- /page-finans -->
 
@@ -4029,7 +4030,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v395';
+const APP_VERSION = 'v397';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20936,6 +20937,20 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v397',
+    date: '19.07.2026',
+    items: [
+      { type: 'new', text: 'Defter Temasi — Finansal Analiz ekraninin ustune prototipteki YENIDEN TASARIM ozeti eklendi: koyu gradyan hero kartinda mevcut sermaye ve aylik degisim, altinda temiz beyaz istatistik kartlari (donem basi→simdi, donem degisimi), Toplam Kar/Zarar karti (Kar/Masraf kirilimi) ve son 8 ay net grafigi. finansData\'dan hesaplanir; mevcut finans koduna dokunulmadi, ustune eklendi. Yalnizca Defter temasi acikken gorunur.' },
+    ]
+  },
+  {
+    version: 'v396',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'Defter Temasi: (1) Oturum suresi ("... acik") koyu ust cubukta koyu renk oldugu icin gorunmuyordu; acik renge alindi, artik okunuyor. (2) Versiyon rozeti fazla genisti; daraltilip yanindaki kare dugmelerle uyumlu hale getirildi.' },
+    ]
+  },
+  {
     version: 'v395',
     date: '19.07.2026',
     items: [
@@ -24465,6 +24480,99 @@ body.defter #defterScrim.show{ opacity:1; pointer-events:auto }
     try{ window.toggleDefterSheet(); }catch(e){}
     setTimeout(function(){ try{ if(typeof window[fn]==='function'){ arg!==undefined ? window[fn](arg) : window[fn](); } }catch(e){} }, 180);
   };
+})();
+</script>
+<style>
+/* ===== v396: oturum suresi gorunur + versiyon rozeti dar ===== */
+@media(max-width:860px){
+  /* koyu ust cubukta oturum yazilari acik renk olsun */
+  body.defter #mobileTopBar #mobileOturumSure{ color:#eef1f4 !important; }
+  body.defter #mobileTopBar #mobileAcikSure{ color:#9aa6b2 !important; }
+  /* versiyon rozetini daralt -> komsu kare dugmelerle uyumlu */
+  body.defter #mobileTopBar #mobileVerBadge{ padding:0 8px !important; font-size:11px !important; }
+}
+</style>
+<style>
+/* ===== v397: DEFTER — Finansal Analiz yeniden tasarim (hero + stat kartlari) ===== */
+#defterFinansHero{ display:none }
+body.defter #defterFinansHero{ display:block; margin:4px 0 14px }
+body.defter #defterFinansHero .dh-hero{ background:linear-gradient(145deg,#232e3a,#161d25); border-radius:24px; padding:20px; color:#fff; box-shadow:0 2px 8px rgba(35,28,14,.10),0 22px 50px rgba(35,28,14,.16); position:relative; overflow:hidden; margin-bottom:12px }
+body.defter #defterFinansHero .dh-hero::after{ content:""; position:absolute; right:-30px; top:-30px; width:150px; height:150px; border-radius:50%; background:radial-gradient(circle,rgba(224,165,60,.4),transparent 70%) }
+body.defter #defterFinansHero .dh-k{ font-size:12px; color:rgba(255,255,255,.6); font-weight:600 }
+body.defter #defterFinansHero .dh-big{ font-size:31px; font-weight:800; letter-spacing:-.03em; margin:5px 0 3px }
+body.defter #defterFinansHero .dh-chip{ display:inline-flex; align-items:center; gap:5px; border-radius:20px; padding:5px 12px; font-size:12.5px; font-weight:800; margin-top:8px }
+body.defter #defterFinansHero .dh-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px }
+body.defter #defterFinansHero .dh-stat{ background:#fff; border:1px solid #ece3d1; border-radius:20px; padding:14px 15px; box-shadow:0 1px 3px rgba(35,28,14,.05),0 12px 30px rgba(35,28,14,.09) }
+body.defter #defterFinansHero .dh-stat .k{ font-size:11px; color:#847c6d; font-weight:700 }
+body.defter #defterFinansHero .dh-stat .v{ font-size:19px; font-weight:800; letter-spacing:-.02em; margin-top:5px; color:#211d17 }
+body.defter #defterFinansHero .dh-stat .s{ font-size:11px; color:#847c6d; margin-top:2px }
+body.defter #defterFinansHero .dh-pnl{ background:#fff; border:1px solid #ece3d1; border-left:5px solid #2f9e5f; border-radius:22px; padding:16px 18px; box-shadow:0 1px 3px rgba(35,28,14,.05),0 12px 30px rgba(35,28,14,.09); margin-bottom:12px }
+body.defter #defterFinansHero .dh-pnl.neg{ border-left-color:#d0503a }
+body.defter #defterFinansHero .dh-pnl .v{ font-size:27px; font-weight:800; letter-spacing:-.02em; margin:5px 0 7px }
+body.defter #defterFinansHero .dh-pnl .sub{ display:flex; gap:16px; font-size:13px; font-weight:700 }
+body.defter #defterFinansHero .dh-chart{ background:#fff; border:1px solid #ece3d1; border-radius:22px; padding:14px 12px 6px; box-shadow:0 1px 3px rgba(35,28,14,.05),0 12px 30px rgba(35,28,14,.09) }
+.dh-pos{ color:#2f9e5f } .dh-neg{ color:#d0503a }
+</style>
+<script>
+/* ===== v397: DEFTER finans hero render (kendi icine kapali) ===== */
+(function(){
+  function fmt(n){ return Math.round(n).toLocaleString('tr-TR'); }
+  function kisa(n){ var a=Math.abs(n),s=n<0?'-':''; return a>=1e6?s+(a/1e6).toFixed(1).replace('.',',')+'M':a>=1e3?s+Math.round(a/1e3)+'B':s+Math.round(a); }
+  function pct(a,b){ return b? ((a-b)/Math.abs(b)*100) : 0; }
+
+  function chartSVG(d){
+    var hist=d.slice(-8), vals=hist.map(function(x){return +x.topKarZarar||0;}), lb=hist.map(function(x){return (x.ay||'').slice(0,3);});
+    var W=400,H=150,pT=16,pB=20,pX=4,iw=W-pX*2,ih=H-pT-pB;
+    var mx=Math.max.apply(null,vals.concat([0])),mn=Math.min.apply(null,vals.concat([0])),rg=(mx-mn)||1,y0=pT+(mx/rg)*ih,g=iw/vals.length,bw=g*0.54;
+    var s='<line x1="'+pX+'" y1="'+y0.toFixed(1)+'" x2="'+(W-pX)+'" y2="'+y0.toFixed(1)+'" stroke="#ece3d1" stroke-width="1"/>',i,x,y,h;
+    for(i=0;i<vals.length;i++){ x=pX+i*g+(g-bw)/2; y=vals[i]>=0?pT+((mx-vals[i])/rg)*ih:y0; h=Math.abs((pT+((mx-vals[i])/rg)*ih)-y0);
+      s+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(h,2).toFixed(1)+'" rx="5" fill="'+(vals[i]>=0?'#2f9e5f':'#d0503a')+'"/>';
+      s+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(vals[i]>=0?y-4:y+h+11).toFixed(1)+'" text-anchor="middle" font-size="8" fill="#847c6d">'+kisa(vals[i])+'</text>';
+      s+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle" font-size="8.5" fill="#847c6d">'+lb[i]+'</text>'; }
+    return '<svg viewBox="0 0 '+W+' '+H+'">'+s+'</svg>';
+  }
+
+  window.renderDefterFinansHero=function(){
+    var box=document.getElementById('defterFinansHero'); if(!box) return;
+    try{
+      if(typeof finansData==='undefined' || !Array.isArray(finansData) || finansData.length<2){ box.innerHTML=''; return; }
+      var d=finansData.filter(function(x){return x&&x.ym;}).slice().sort(function(a,b){return a.ym<b.ym?-1:(a.ym>b.ym?1:0);});
+      var last=d[d.length-1], prev=d[d.length-2], first=d[0];
+      var serm=+last.mevcutSermaye||0, sermP=+prev.mevcutSermaye||0, sermF=+first.mevcutSermaye||0;
+      var dAy=serm-sermP, dAyPct=pct(serm,sermP);
+      var dDon=serm-sermF, dDonPct=pct(serm,sermF);
+      var totKar=d.reduce(function(a,b){return a+(+b.topKarTutari||0);},0);
+      var totMas=d.reduce(function(a,b){return a+(+b.topMasrafTutari||0);},0);
+      var totKZ=d.reduce(function(a,b){return a+(+b.topKarZarar||0);},0);
+      var kzPos=totKZ>=0;
+      var ayPos=dAy>=0;
+      box.innerHTML=
+        '<div class="dh-hero"><div class="dh-k">Mevcut sermaye</div>'+
+          '<div class="dh-big">'+fmt(serm)+' ₺</div>'+
+          '<div class="dh-chip" style="background:'+(ayPos?'rgba(47,158,95,.2)':'rgba(224,80,58,.2)')+';color:'+(ayPos?'#7ee2a6':'#f6a99b')+'">'+(ayPos?'▲ +':'▼ ')+fmt(Math.abs(dAy))+' ₺ · %'+Math.abs(dAyPct).toFixed(0)+'</div>'+
+          ' <span style="font-size:12px;color:rgba(255,255,255,.55);margin-left:6px">'+(last.ay||'')+' '+(last.yil||'')+'</span>'+
+        '</div>'+
+        '<div class="dh-grid">'+
+          '<div class="dh-stat"><div class="k">Dönem başı → şimdi</div><div class="v">'+fmt(serm)+' ₺</div><div class="s">'+(first.ay||'')+' '+(first.yil||'')+' → '+(last.ay||'')+' '+(last.yil||'')+'</div></div>'+
+          '<div class="dh-stat"><div class="k">Dönem değişimi</div><div class="v '+(dDon>=0?'dh-pos':'dh-neg')+'">'+(dDon>=0?'+':'')+fmt(dDon)+' ₺</div><div class="s '+(dDon>=0?'dh-pos':'dh-neg')+'">%'+Math.abs(dDonPct).toFixed(1)+' '+(dDon>=0?'artış':'azalış')+'</div></div>'+
+        '</div>'+
+        '<div class="dh-pnl'+(kzPos?'':' neg')+'"><div class="dh-stat" style="all:unset"><div style="font-size:12px;color:#847c6d;font-weight:700">Toplam Kâr / Zarar</div>'+
+          '<div class="v '+(kzPos?'dh-pos':'dh-neg')+'">'+(kzPos?'▲ ':'▼ ')+fmt(Math.abs(totKZ))+' ₺</div>'+
+          '<div class="sub"><span class="dh-pos">↑ Kâr '+kisa(totKar)+'</span><span class="dh-neg">↓ Masraf '+kisa(totMas)+'</span></div></div></div>'+
+        '<div class="dh-chart"><div style="font-size:14px;font-weight:800;color:#211d17;padding:0 4px 2px">Net Kâr / Zarar</div><div style="font-size:11px;color:#847c6d;padding:0 4px 8px">Son 8 ay</div>'+chartSVG(d)+'</div>';
+    }catch(e){ console.warn('defter finans hero:', e); box.innerHTML=''; }
+  };
+
+  // renderFinans'i sar -> hero'yu da ciz
+  try{
+    if(typeof renderFinans==='function' && !renderFinans.__heroWrapped){
+      var _rf=renderFinans;
+      window.renderFinans=function(){ var r=_rf.apply(this,arguments); try{ window.renderDefterFinansHero(); }catch(e){} return r; };
+      window.renderFinans.__heroWrapped=true;
+    }
+  }catch(e){}
+  try{ window.renderDefterFinansHero(); }catch(e){}
+  window.addEventListener('load', function(){ try{ window.renderDefterFinansHero(); }catch(e){} });
 })();
 </script>
 </body>
