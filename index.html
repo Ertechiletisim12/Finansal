@@ -4029,7 +4029,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v388';
+const APP_VERSION = 'v389';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20936,6 +20936,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v389',
+    date: '18.07.2026',
+    items: [
+      { type: 'fix', text: 'Defter Temasi rotuslari: (1) sol ustteki ☰ menu dugmesi gizlendi (zaten altta Menu var), (2) ust cubuktaki "ER-TECH ILETISIM" yazisi gizlendi, (3) en ustteki kirmizi durum cubugu koyu lacivere cevrildi (tema rengi). Hepsi yalnizca Defter temasi acikken; kapatinca eski haline doner.' },
+    ]
+  },
+  {
     version: 'v388',
     date: '18.07.2026',
     items: [
@@ -24127,6 +24134,7 @@ body.defter #defterBtn, body.defter #defterBtnMobile{ color:var(--gold); border-
     try{
       var b1=document.getElementById('defterBtn'); if(b1) b1.textContent = on ? '🪙 Defter: Açık' : '🪙 Defter Teması';
       var b2=document.getElementById('defterBtnMobile'); if(b2) b2.style.opacity = on ? '1' : '0.75';
+      var mt=document.querySelector('meta[name="theme-color"]'); if(mt) mt.setAttribute('content', on ? '#1e2731' : '#e2231a');
     }catch(e){}
   }
   window.toggleDefter=function(){
@@ -24169,6 +24177,9 @@ body.defter #defterBtn, body.defter #defterBtnMobile{ color:var(--gold); border-
   body.defter #mobileTopBar > button, body.defter #mobileTopBar #mobileThemeBtn,
   body.defter #mobileTopBar #mobileGizliBtn{ background:#28323d !important; border-color:#3a4652 !important; color:#eef1f4 !important }
   body.defter #mobileTopBar #defterBtnMobile{ color:var(--gold) !important }
+  /* v389: defterde sol menu ve baslik gizli (altta Menu var) */
+  body.defter #mobileTopBar button[onclick="openMobileMenu()"]{ display:none !important }
+  body.defter #mobileTopBar #mobilePageTitle{ display:none !important }
 }
 #defterTabBar .dtab{ display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:#8b96a1;font-weight:600;cursor:pointer;flex:1;padding:2px 0 }
 #defterTabBar .dtab .dic{ font-size:19px;line-height:1 }
