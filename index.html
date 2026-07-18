@@ -4029,7 +4029,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v393';
+const APP_VERSION = 'v394';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20936,6 +20936,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v394',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'Finansal Analiz ust seridi mobilde "sarma yok" olarak sabitliydi, o yuzden butonlar (Sermaye Hedefi, Ay Kapanisi, cop) saga tasip kirpiliyordu. Artik Defter temasinda bu serit tam sariyor; tum butonlar alt satira gecip gorunur oluyor.' },
+    ]
+  },
+  {
     version: 'v393',
     date: '19.07.2026',
     items: [
@@ -24379,6 +24386,17 @@ body.defter .main div[style*="var(--panel)"]{
   }
   /* finans ust butonlari alt satira sarsin -> kesilmesin */
   body.defter .finans-toolbar > div[style*="margin-left:auto"]{ flex-wrap:wrap !important; justify-content:flex-end; row-gap:6px !important; }
+}
+</style>
+<style>
+/* ===== v394: finans ust seridi TAM SARSIN (butonlar kesilmesin) ===== */
+@media(max-width:860px){
+  body.defter #page-finans .topbar{ flex-wrap:wrap !important; }
+  body.defter #page-finans .finans-toolbar{ flex-wrap:wrap !important; flex-shrink:1 !important; width:100% !important; margin-top:6px !important; }
+  body.defter #page-finans .finans-toolbar > div[style*="margin-left:auto"]{
+    flex-wrap:wrap !important; margin-left:0 !important; justify-content:flex-start !important; width:100% !important; row-gap:6px !important;
+  }
+  body.defter #page-finans .finans-toolbar .btn-soft{ flex:0 0 auto !important; }
 }
 </style>
 </body>
