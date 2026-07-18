@@ -4029,7 +4029,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v387';
+const APP_VERSION = 'v388';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20936,6 +20936,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v388',
+    date: '18.07.2026',
+    items: [
+      { type: 'new', text: 'Defter Temasi artik sadece renk degil, YAPISAL: acikken (mobilde) ust cubuk koyu lacivert + altin cizgi olur, alta ortasinda altin "+" dugmesi olan sekme cubugu gelir (Ozet · Finans · + · Kasa · Menu). Prototipteki mobil uygulama hissi. Kapatinca eski gorunume doner; sadece Defter temasi acikken devrededir, mevcut yapi bozulmaz.' },
+    ]
+  },
+  {
     version: 'v387',
     date: '18.07.2026',
     items: [
@@ -24143,6 +24150,56 @@ body.defter #defterBtn, body.defter #defterBtnMobile{ color:var(--gold); border-
   }
   applyDefter();
   window.addEventListener('load', applyDefter);   // loadTheme'den sonra da uygula
+})();
+</script>
+<style>
+/* ===== v388: DEFTER TEMASI — yapisal kabuk (koyu ust cubuk + alt sekme cubugu) ===== */
+#defterTabBar{ display:none }
+@media(max-width:860px){
+  body.defter #defterTabBar{
+    display:flex; position:fixed; left:0; right:0; bottom:0; z-index:600;
+    background:#1e2731; border-top:1px solid #2f3a45;
+    justify-content:space-around; align-items:flex-end;
+    padding:8px 6px calc(10px + env(safe-area-inset-bottom));
+  }
+  body.defter .main [id^="page-"]{ padding-bottom:92px !important }
+  /* koyu ust cubuk + altin */
+  body.defter #mobileTopBar{ background:#1e2731 !important; border-bottom:2px solid var(--gold) !important }
+  body.defter #mobileTopBar #mobilePageTitle{ color:#eef1f4 !important }
+  body.defter #mobileTopBar > button, body.defter #mobileTopBar #mobileThemeBtn,
+  body.defter #mobileTopBar #mobileGizliBtn{ background:#28323d !important; border-color:#3a4652 !important; color:#eef1f4 !important }
+  body.defter #mobileTopBar #defterBtnMobile{ color:var(--gold) !important }
+}
+#defterTabBar .dtab{ display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:#8b96a1;font-weight:600;cursor:pointer;flex:1;padding:2px 0 }
+#defterTabBar .dtab .dic{ font-size:19px;line-height:1 }
+#defterTabBar .dtab.on{ color:var(--gold) }
+#defterTabBar .dfab{ width:58px;height:58px;border-radius:50%;background:var(--gold);color:#2a2010;display:grid;place-items:center;font-size:29px;font-weight:800;margin-top:-22px;box-shadow:0 6px 18px rgba(207,149,48,.55);flex:0 0 auto;cursor:pointer }
+</style>
+<div id="defterTabBar">
+  <div class="dtab" data-p="dash" onclick="switchPage('dash')"><div class="dic">▦</div>Özet</div>
+  <div class="dtab" data-p="finans" onclick="switchPage('finans')"><div class="dic">📊</div>Finans</div>
+  <div class="dfab" onclick="switchPage('prim')">+</div>
+  <div class="dtab" data-p="kasa" onclick="switchPage('kasa')"><div class="dic">🧮</div>Kasa</div>
+  <div class="dtab" onclick="openMobileMenu()"><div class="dic">☰</div>Menü</div>
+</div>
+<script>
+/* ===== v388: alt sekme cubugu aktif-vurgu (switchPage'i sararak) ===== */
+(function(){
+  function dtHighlight(p){
+    try{ var bar=document.getElementById('defterTabBar'); if(!bar) return;
+      bar.querySelectorAll('.dtab').forEach(function(t){ t.classList.remove('on'); });
+      var el=bar.querySelector('.dtab[data-p="'+p+'"]'); if(el) el.classList.add('on');
+    }catch(e){}
+  }
+  window.__dtHighlight=dtHighlight;
+  try{
+    if(typeof switchPage==='function' && !switchPage.__defterWrapped){
+      var _sp=switchPage;
+      window.switchPage=function(p){ var r=_sp.apply(this,arguments); dtHighlight(p); return r; };
+      window.switchPage.__defterWrapped=true;
+    }
+  }catch(e){}
+  try{ dtHighlight(typeof currentPage!=='undefined'?currentPage:'dash'); }catch(e){}
 })();
 </script>
 </body>
