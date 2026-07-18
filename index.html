@@ -4027,7 +4027,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v384';
+const APP_VERSION = 'v386';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -6603,6 +6603,7 @@ async function pullFromCloud(){
     if(data.finansTrash) finansTrash = data.finansTrash;
     if(data.kasaData && typeof kasaData!=='undefined') kasaData = data.kasaData;
     if(data.eldenData && typeof eldenData!=='undefined') eldenData = data.eldenData;
+    if(data.sermayeHedef !== undefined && data.sermayeHedef !== null){ try{ localStorage.setItem('vf_sermaye_hedef_v1', JSON.stringify(data.sermayeHedef)); if(typeof renderSermayeHedef==='function') renderSermayeHedef(); }catch(e){} }
     lastSyncedEntries = JSON.parse(JSON.stringify(entries));
     try{
       localStorage.setItem(STORE_KEY_ENTRIES,   JSON.stringify(entries));
@@ -7681,7 +7682,7 @@ function exportActivityListToExcel(){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, tombstones, islemLog: (typeof islemLog!=='undefined'?islemLog:[]), kasaData: (typeof kasaData!=='undefined'?kasaData:[]), eldenData: (typeof eldenData!=='undefined'?eldenData:[]), pinHash: getPinHash(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, tombstones, islemLog: (typeof islemLog!=='undefined'?islemLog:[]), kasaData: (typeof kasaData!=='undefined'?kasaData:[]), eldenData: (typeof eldenData!=='undefined'?eldenData:[]), sermayeHedef: (function(){try{return JSON.parse(localStorage.getItem('vf_sermaye_hedef_v1')||'null');}catch(e){return null;}})(), pinHash: getPinHash(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
 }
 function timeStr(){
   const d = new Date();
@@ -7751,6 +7752,7 @@ function restoreData(event){
       if(data.eldenData && typeof eldenData!=='undefined'){ eldenData = data.eldenData; try{ localStorage.setItem(STORE_KEY_ELDEN, JSON.stringify(eldenData)); }catch(e){} }
       if(data.eldenData && typeof eldenData!=='undefined'){ eldenData = data.eldenData; try{ localStorage.setItem(STORE_KEY_ELDEN, JSON.stringify(eldenData)); }catch(e){} }
       if(data.finansData) finansData = data.finansData;
+      if(data.sermayeHedef !== undefined && data.sermayeHedef !== null){ try{ localStorage.setItem('vf_sermaye_hedef_v1', JSON.stringify(data.sermayeHedef)); }catch(e){} }
       saveEntries(); saveEntryLog(); savePricesStore(); saveYatirilanStore(); saveGelirStore(); saveNotlarStore(); saveFinansStore(); saveHedefStore();
       render();
       if(currentPage==='finans') renderFinans();
@@ -20932,6 +20934,22 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v386',
+    date: '18.07.2026',
+    items: [
+      { type: 'new', text: 'YENI: Hatirlaticilar. Mevcut 🔔 Bildirimler paneline iki yeni uyari eklendi: (1) Kampanya bitisi yaklasanlar — bitisine 7 gun ve daha az kalan kampanyalar (2 gun ve altinda kirmizi). Tiklayinca kampanya ekrani acilir. (2) Musteri 3-ay takibi — takip tarihi gecmis ya da yaklasan musteriler (iptal olanlar haric). Tiklayinca musteri raporu acilir. Kampanya ve musteri verisi zaten buluta senkronlu oldugu icin hatirlaticilar da tum cihazlarda guncel calisir.' },
+      { type: 'fix', text: 'Uyarilar mevcut bildirim sistemine eklendi (kendi icine kapali sarmalayici); bildirim sisteminin kodu degistirilmedi. Acilista balon cikarmaz, sessizce cana birikir.' },
+    ]
+  },
+  {
+    version: 'v385',
+    date: '18.07.2026',
+    items: [
+      { type: 'fix', text: 'BULUT: Yil sonu sermaye hedefi artik buluta senkronlaniyor ve yedek dosyasina dahil ediliyor. Bir cihazda belirledigin hedef, giris yaptigin diger cihazlarda da gorunur; yedekten geri yukleyince de geri gelir. (Onceden sadece o cihaza kayitliydi.)' },
+      { type: 'fix', text: 'Ongoru ve Ay Ozeti modulleri zaten mevcut finans verisini okudugu icin ayrica senkron gerektirmiyordu; onlar da bulut verisiyle guncel calisir.' },
+    ]
+  },
+  {
     version: 'v384',
     date: '18.07.2026',
     items: [
@@ -23894,6 +23912,7 @@ function toggleChangelog(){
   function parseNum(s){ return parseFloat(String(s).replace(/[^0-9]/g,''))||0; }
   function loadHedef(){ try{ return JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ return null; } }
   function saveHedef(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){}
+    try{ if(typeof scheduleCloudSync==='function') scheduleCloudSync(); }catch(e){}
     try{ if(typeof scheduleAutoBackup==='function') scheduleAutoBackup(); }catch(e){} }
   function linreg(ys){ var n=ys.length,mx=(n-1)/2,my=0,i;
     for(i=0;i<n;i++)my+=ys[i]; my/=n; var num=0,den=0;
@@ -23983,6 +24002,95 @@ function toggleChangelog(){
     var mm=document.getElementById('sermayeHedefModal');
     if(mm) mm.addEventListener('click', function(e){ if(e.target===mm) window.closeSermayeHedefModal(); });
   }catch(e){}
+})();
+</script>
+<script>
+/* ===== v386: HATIRLATICILAR — kampanya bitisi + musteri 3-ay takibi (mevcut bildirim sistemine eklenir) ===== */
+(function(){
+  function _today(){ try{ return (typeof todayStr==='function')? todayStr() : new Date().toISOString().slice(0,10); }catch(e){ return new Date().toISOString().slice(0,10); } }
+  function _gunFark(a,b){ return Math.floor((new Date(b)-new Date(a))/86400000); }
+
+  function buildHatirlaticiAlerts(){
+    var out=[]; var today=_today(); var UFUK=7;
+    // 1) Kampanya bitisi yaklasan
+    try{
+      if(typeof kampanyaData!=='undefined' && Array.isArray(kampanyaData)){
+        var bitenler=[];
+        kampanyaData.forEach(function(k){
+          if(!k || !k.endDate) return;
+          var end=String(k.endDate).slice(0,10);
+          if(end < today) return;                 // gecmisi atla
+          var kalan=_gunFark(today,end);
+          if(kalan<=UFUK) bitenler.push({k:k, end:end, kalan:kalan});
+        });
+        bitenler.sort(function(a,b){ return a.kalan-b.kalan; });
+        if(bitenler.length>3){
+          var enYakin=bitenler[0];
+          out.push({ key:'kampanya_bitis_coklu_'+today, type:'warn', icon:'🎯', cat:'kampanya', toast:false,
+            title: bitenler.length+' kampanya bu hafta bitiyor',
+            msg: 'En yakını '+(enYakin.kalan===0?'bugün':enYakin.kalan+' gün')+' içinde ('+(enYakin.k.cat||'')+'). Kampanyalar ekranından kontrol edin.',
+            git: 'openKampanyaModal()' });
+        } else {
+          bitenler.forEach(function(b){
+            out.push({ key:'kampanya_bitis_'+(b.k.id||((b.k.cat||'')+'_'+b.end)), type:(b.kalan<=2?'danger':'warn'), icon:'🎯', cat:'kampanya', toast:false,
+              title: 'Kampanya bitiyor: '+(b.k.cat||'kampanya')+' ('+(b.kalan===0?'bugün':b.kalan+' gün')+')',
+              msg: (b.k.aciklama? b.k.aciklama+' — ':'')+'Bitiş tarihi: '+b.end,
+              git: 'openKampanyaModal()' });
+          });
+        }
+      }
+    }catch(e){ console.warn('kampanya hatirlatici:', e); }
+
+    // 2) Musteri 3-ay takibi (yaklasan + suresi gecmis) — iptal olanlar haric
+    try{
+      if(typeof musteriler!=='undefined' && Array.isArray(musteriler)){
+        var gecti=0, yakin=0;
+        musteriler.forEach(function(m){
+          if(!m || !m.takipTarihi) return;
+          if(m.durum==='iptal') return;
+          var tt=String(m.takipTarihi).slice(0,10);
+          var f=_gunFark(today,tt);
+          if(tt < today) gecti++;
+          else if(f<=UFUK) yakin++;
+        });
+        if(gecti>0){
+          out.push({ key:'takip_gecti_'+today, type:'warn', icon:'📅', cat:'musteri', toast:false,
+            title: gecti+' müşteride takip zamanı geçti',
+            msg: '3 aylık takip tarihi geçmiş müşteriler var; arayıp durumlarını gözden geçirin.',
+            git: "openMusteriRaporFiltered('hepsi','hepsi','hepsi')" });
+        }
+        if(yakin>0){
+          out.push({ key:'takip_yakin_'+today, type:'warn', icon:'📅', cat:'musteri', toast:false,
+            title: yakin+' müşteri takibi yaklaşıyor',
+            msg: 'Önümüzdeki günlerde 3 aylık takip zamanı gelecek müşteriler var.',
+            git: "openMusteriRaporFiltered('hepsi','hepsi','gelecek')" });
+        }
+      }
+    }catch(e){ console.warn('takip hatirlatici:', e); }
+
+    return out;
+  }
+  window.buildHatirlaticiAlerts = buildHatirlaticiAlerts;
+
+  // collectAlerts'i orijinaline dokunmadan sar → uyarilarimi ekle
+  try{
+    if(typeof collectAlerts==='function' && !collectAlerts.__hatirlaticiWrapped){
+      var _origCollect = collectAlerts;
+      window.collectAlerts = function(){
+        var alerts = _origCollect.apply(this, arguments) || [];
+        try{
+          if(typeof notifSettings==='undefined' || notifSettings.hatirlaticiEnabled !== false){
+            alerts = alerts.concat(buildHatirlaticiAlerts());
+          }
+        }catch(e){}
+        return alerts;
+      };
+      window.collectAlerts.__hatirlaticiWrapped = true;
+    }
+  }catch(e){ console.warn('hatirlatici wrap:', e); }
+
+  // Ekledikten sonra badge/listeyi bir tazele
+  try{ if(typeof checkAllNotifications==='function') setTimeout(checkAllNotifications, 300); }catch(e){}
 })();
 </script>
 </body>
