@@ -4029,7 +4029,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v389';
+const APP_VERSION = 'v390';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20936,6 +20936,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v390',
+    date: '18.07.2026',
+    items: [
+      { type: 'new', text: 'Defter Temasi sikligi: (1) Ust cubuga altin cerceveli "ER" logosu + zarif "Er-Tech" ismi ve "prim · finans · analiz" alt yazisi eklendi. (2) Bu temada TUM kart ve butonlarin tarzi degisti: kartlar daha yuvarlak (18px) ve yumusak golgeli; butonlar/pill-ler yuvarlatildi; giris alanlari yumusatildi. Hepsi yalnizca Defter temasi acikken; kapatinca eski gorunume doner.' },
+    ]
+  },
+  {
     version: 'v389',
     date: '18.07.2026',
     items: [
@@ -24211,6 +24218,58 @@ body.defter #defterBtn, body.defter #defterBtnMobile{ color:var(--gold); border-
     }
   }catch(e){}
   try{ dtHighlight(typeof currentPage!=='undefined'?currentPage:'dash'); }catch(e){}
+})();
+</script>
+<style>
+/* ===== v390: DEFTER TEMASI — sik ust cubuk (logo+isim) + tum kart/buton restyle ===== */
+/* ust cubuk logo + isim */
+#defterBrand{ display:none }
+body.defter #defterBrand{ display:flex; align-items:center; gap:10px }
+#defterBrand .db-logo{ width:38px;height:38px;border-radius:11px;border:2px solid var(--gold);display:grid;place-items:center;color:var(--gold);font-weight:900;font-size:13px;flex-shrink:0 }
+#defterBrand .db-nm{ font-size:16px;font-weight:800;color:#eef1f4;letter-spacing:-.01em;line-height:1.05 }
+#defterBrand .db-sub{ font-size:10px;color:#9aa6b2;margin-top:2px;letter-spacing:.01em }
+@media(max-width:860px){
+  body.defter #mobileTopBar{ padding-top:10px !important; padding-bottom:10px !important }
+  body.defter #mobileTopBar #mobileVerBadge{ display:none }
+}
+/* KARTLAR: daha yuvarlak + yumusak golge */
+body.defter .ctx-card,
+body.defter .chart-box,
+body.defter .bottom-card,
+body.defter .kapanis-kart,
+body.defter .note-panel,
+body.defter .ktip-kart,
+body.defter .st-stat-card{
+  border-radius:18px !important;
+  border:1px solid var(--line) !important;
+  box-shadow:0 1px 2px rgba(40,32,16,.04), 0 8px 22px rgba(40,32,16,.06) !important;
+}
+/* BUTONLAR: yuvarlak, sik */
+body.defter .btn-soft{ border-radius:14px !important; font-weight:700 !important; box-shadow:0 1px 2px rgba(40,32,16,.05) !important; }
+body.defter .prim-tool-pill{ border-radius:22px !important; padding:6px 14px !important; }
+body.defter .tool-btn{ border-radius:12px !important; }
+body.defter .seg-btn{ border-radius:18px !important; }
+body.defter .m-kapat{ border-radius:9px !important; }
+/* aktif hap/pill altin vurgu */
+body.defter .prim-tool-pill.active, body.defter .seg-btn.active{ background:var(--gold) !important; color:#2a2010 !important; border-color:var(--gold) !important; }
+/* FAB'a hafif ic parlaklik zaten var; giris alanlarini da yuvarlat */
+body.defter input, body.defter select, body.defter textarea{ border-radius:11px !important; }
+</style>
+<script>
+/* ===== v390: ust cubuga logo+isim enjekte et (kendi icine kapali) ===== */
+(function(){
+  function ensureBrand(){
+    try{
+      var bar=document.getElementById('mobileTopBar'); if(!bar) return;
+      if(document.getElementById('defterBrand')) return;
+      var el=document.createElement('div');
+      el.id='defterBrand';
+      el.innerHTML='<div class="db-logo">ER</div><div><div class="db-nm">Er-Tech</div><div class="db-sub">prim · finans · analiz</div></div>';
+      bar.insertBefore(el, bar.firstChild);
+    }catch(e){}
+  }
+  ensureBrand();
+  window.addEventListener('load', ensureBrand);
 })();
 </script>
 </body>
