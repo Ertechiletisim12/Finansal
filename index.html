@@ -4030,7 +4030,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v397';
+const APP_VERSION = 'v398';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20937,6 +20937,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v398',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'Defter Temasi: Finansal Analiz ustundeki yeni tasarim ozet ile eski ozet ayni bilgiyi iki kez gosteriyordu. Artik eskisinin tekrar eden kismi (Ozet basligi + sermaye kartlari + Toplam Kar/Zarar) Defter temasinda gizleniyor; Ortalama Kar Marji ve En Iyi/Kotu Ay kartlari kaliyor. Ayrica icerik alt bosluk artirildi, yuzen menunun altinda kalmiyor.' },
+    ]
+  },
+  {
     version: 'v397',
     date: '19.07.2026',
     items: [
@@ -24575,5 +24582,15 @@ body.defter #defterFinansHero .dh-chart{ background:#fff; border:1px solid #ece3
   window.addEventListener('load', function(){ try{ window.renderDefterFinansHero(); }catch(e){} });
 })();
 </script>
+<style>
+/* ===== v398: Defter finans — tekrar eden eski ozeti gizle + alt bosluk ===== */
+/* "Ozet" basligi + sermaye kartlari satiri (hero ile birebir tekrar) */
+body.defter #finansContent > .section-title:first-child{ display:none !important; }
+body.defter #finansContent > .section-title:first-child + .stats-row{ display:none !important; }
+/* ikinci satirdaki Toplam Kar/Zarar karti (hero'da var); marj + en iyi/kotu KALSIN */
+body.defter #finansContent > .section-title:first-child + .stats-row + .stats-row > .stat:first-child{ display:none !important; }
+/* icerik yuzen dock'un altinda kalmasin */
+@media(max-width:860px){ body.defter .main [id^="page-"]{ padding-bottom:140px !important } }
+</style>
 </body>
 </html>
