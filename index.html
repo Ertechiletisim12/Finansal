@@ -2919,6 +2919,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
         <div id="finansYearMonthFilterTop"></div>
       </div>
+      <div id="ongoruPanelWrap" style="margin:10px 0 0"></div>
       <div id="finansContent"></div>
     </div><!-- /page-finans -->
 
@@ -4024,7 +4025,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v380';
+const APP_VERSION = 'v381';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20929,6 +20930,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v381',
+    date: '18.07.2026',
+    items: [
+      { type: 'new', text: 'YENI: Finansal Analiz sayfasina "Ongoru — Trend & Tahmin" paneli eklendi. Gecmis sermaye ve net kar/zarar verisine bakarak onumuzdeki 3 ayi mekanik olarak izdusurur; grafikte mavi kesikli bolge gelecegi gosterir. 4 ozet kart (son sermaye, son net K/Z, 3 ay ort., gelecek ay tahmini) + net K/Z ve sermaye grafikleri. Tahmin bir finansal tavsiye degil, yon gostergesidir.' },
+      { type: 'new', text: 'Panel kendi icine kapalidir: bir hata olsa bile uygulamanin geri kalanini etkilemez. Mevcut finans sayfasi kodu degistirilmedi, sadece uzerine eklendi. En az 4 aylik veri yoksa panel gizlenir.' },
+    ]
+  },
+  {
     version: 'v380',
     date: '18.07.2026',
     items: [
@@ -23570,6 +23579,136 @@ function toggleChangelog(){
       history.back();
     });
   } catch(e){ console.warn('Geri tuşu yöneticisi hatası:', e); }
+})();
+</script>
+<script>
+/* ===== v381: ÖNGÖRÜ PANELİ — Finansal Analiz sayfası (kendi içine kapalı) ===== */
+(function(){
+  function fmtTL(n){ return Math.round(n).toLocaleString('tr-TR'); }
+  function sgn(n){ return (n>=0?'+':'')+fmtTL(n); }
+  function linreg(ys){
+    var n=ys.length, mx=(n-1)/2, my=0, i;
+    for(i=0;i<n;i++) my+=ys[i]; my/=n;
+    var num=0,den=0;
+    for(i=0;i<n;i++){ num+=(i-mx)*(ys[i]-my); den+=(i-mx)*(i-mx); }
+    var m=den?num/den:0, b=my-m*mx;
+    return function(x){ return m*x+b; };
+  }
+  function project(ys, back, fwd){
+    var h=ys.slice(-back), f=linreg(h), o=[], i;
+    for(i=0;i<fwd;i++) o.push(f(h.length+i));
+    return o;
+  }
+  function nextMonths(ym,k){
+    var p=ym.split('-'), y=+p[0], m=+p[1], r=[], i;
+    for(i=0;i<k;i++){ m++; if(m>12){m=1;y++;} r.push(y+'-'+String(m).padStart(2,'0')); }
+    return r;
+  }
+
+  function netChartSVG(hist, proj, projLabels){
+    var vals=hist.map(function(d){return d.net;});
+    var W=760,H=200,padL=8,padR=8,padT=14,padB=24,iw=W-padL-padR,ih=H-padT-padB;
+    var all=vals.concat(proj);
+    var maxV=Math.max.apply(null,all.concat([0])), minV=Math.min.apply(null,all.concat([0]));
+    var range=(maxV-minV)||1, y0=padT+(maxV/range)*ih;
+    var total=vals.length+proj.length, bw=iw/total*0.7, gap=iw/total;
+    function yFor(v){ return padT+((maxV-v)/range)*ih; }
+    var bars='',fut='',i,x,y,h;
+    for(i=0;i<vals.length;i++){ x=padL+i*gap+(gap-bw)/2; y=vals[i]>=0?yFor(vals[i]):y0; h=Math.abs(yFor(vals[i])-y0);
+      bars+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(h,1).toFixed(1)+'" rx="2" fill="'+(vals[i]>=0?'var(--pos,#34d399)':'var(--neg,#f87171)')+'"/>'; }
+    var fx=padL+vals.length*gap;
+    fut+='<rect x="'+fx.toFixed(1)+'" y="'+padT+'" width="'+(iw-(fx-padL)).toFixed(1)+'" height="'+ih+'" fill="var(--accent,#3fd0ff)" opacity="0.06"/>';
+    fut+='<line x1="'+fx.toFixed(1)+'" y1="'+padT+'" x2="'+fx.toFixed(1)+'" y2="'+(padT+ih)+'" stroke="var(--accent,#3fd0ff)" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>';
+    for(i=0;i<proj.length;i++){ x=fx+i*gap+(gap-bw)/2; y=proj[i]>=0?yFor(proj[i]):y0; h=Math.abs(yFor(proj[i])-y0);
+      fut+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(h,1).toFixed(1)+'" rx="2" fill="var(--accent,#3fd0ff)" opacity="0.5"/>'; }
+    var labels=hist.map(function(d){return d.ym;}).concat(projLabels), xl='';
+    for(i=0;i<labels.length;i++){ if(i%3===0){ x=padL+i*gap+bw/2; xl+='<text x="'+x.toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" fill="var(--muted,#9aa0a8)" font-size="9">'+labels[i].slice(2)+'</text>'; } }
+    return '<svg viewBox="0 0 '+W+' '+H+'" style="display:block;width:100%;height:auto;overflow:visible">'+fut+
+      '<line x1="'+padL+'" y1="'+y0.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y0.toFixed(1)+'" stroke="var(--line,#3a3d42)" stroke-width="1"/>'+bars+xl+'</svg>';
+  }
+
+  function capChartSVG(hist, capProj, projLabels){
+    var vals=hist.map(function(d){return d.sermaye;});
+    var W=760,H=170,padL=8,padR=8,padT=12,padB=24,iw=W-padL-padR,ih=H-padT-padB;
+    var all=vals.concat(capProj), maxV=Math.max.apply(null,all), minV=Math.min.apply(null,all), range=(maxV-minV)||1;
+    var total=all.length;
+    function xFor(i){ return padL+(i/(total-1))*iw; }
+    function yFor(v){ return padT+((maxV-v)/range)*ih; }
+    var pts=vals.map(function(v,i){return xFor(i).toFixed(1)+','+yFor(v).toFixed(1);}).join(' ');
+    var s=vals.length-1, projPts=[xFor(s).toFixed(1)+','+yFor(vals[s]).toFixed(1)]
+      .concat(capProj.map(function(v,i){return xFor(s+1+i).toFixed(1)+','+yFor(v).toFixed(1);})).join(' ');
+    var fx=xFor(s);
+    var fut='<rect x="'+fx.toFixed(1)+'" y="'+padT+'" width="'+(padL+iw-fx).toFixed(1)+'" height="'+ih+'" fill="var(--accent,#3fd0ff)" opacity="0.06"/>';
+    var area=pts+' '+xFor(s).toFixed(1)+','+(padT+ih).toFixed(1)+' '+padL.toFixed(1)+','+(padT+ih).toFixed(1);
+    var labels=hist.map(function(d){return d.ym;}).concat(projLabels), xl='', i;
+    for(i=0;i<labels.length;i++){ if(i%3===0){ xl+='<text x="'+xFor(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" fill="var(--muted,#9aa0a8)" font-size="9">'+labels[i].slice(2)+'</text>'; } }
+    return '<svg viewBox="0 0 '+W+' '+H+'" style="display:block;width:100%;height:auto;overflow:visible">'+fut+
+      '<polyline points="'+area+'" fill="var(--gold,#ffb74d)" opacity="0.08" stroke="none"/>'+
+      '<polyline points="'+pts+'" fill="none" stroke="var(--gold,#ffb74d)" stroke-width="2"/>'+
+      '<polyline points="'+projPts+'" fill="none" stroke="var(--accent,#3fd0ff)" stroke-width="2" stroke-dasharray="4 4" opacity="0.7"/>'+xl+'</svg>';
+  }
+
+  window.renderOngoruPanel = function(){
+    try{
+      var wrap=document.getElementById('ongoruPanelWrap');
+      if(!wrap) return;
+      if(typeof finansData==='undefined' || !Array.isArray(finansData)){ wrap.innerHTML=''; return; }
+      var d=finansData.slice().filter(function(x){return x && x.ym;})
+        .sort(function(a,b){ return a.ym<b.ym?-1:(a.ym>b.ym?1:0); })
+        .map(function(x){ return { ym:x.ym, ay:x.ay, yil:x.yil,
+          sermaye:+x.mevcutSermaye||0, net:+x.topKarZarar||0 }; });
+      if(d.length < 4){ wrap.innerHTML=''; return; }
+      var N=Math.min(24,d.length), hist=d.slice(-N);
+      var nets=d.map(function(x){return x.net;}), caps=d.map(function(x){return x.sermaye;});
+      var netProj=project(nets,Math.min(12,d.length),3), capProj=project(caps,Math.min(12,d.length),3);
+      var last=d[d.length-1];
+      var avg3=(d.slice(-3).reduce(function(a,b){return a+b.net;},0))/Math.min(3,d.length);
+      var projLabels=nextMonths(last.ym,3);
+
+      var kpi=[
+        {l:'Son sermaye', v:fmtTL(last.sermaye)+' ₺', f:last.ay+' '+last.yil, c:'var(--txt,#e8eaed)'},
+        {l:'Son net K/Z', v:sgn(last.net)+' ₺', f:last.ay, c:last.net>=0?'var(--pos,#34d399)':'var(--neg,#f87171)'},
+        {l:'3 ay ort.', v:sgn(avg3)+' ₺', f:'net', c:avg3>=0?'var(--pos,#34d399)':'var(--neg,#f87171)'},
+        {l:'Tahmin · gelecek ay', v:sgn(netProj[0])+' ₺', f:'mekanik', c:netProj[0]>=0?'var(--pos,#34d399)':'var(--neg,#f87171)'}
+      ];
+      var kpiHtml=kpi.map(function(k){
+        return '<div style="background:var(--panel2,#212326);border:1px solid var(--line,#3a3d42);border-radius:10px;padding:9px 11px">'+
+          '<div style="font-size:9.5px;color:var(--muted,#9aa0a8);font-weight:700;text-transform:uppercase;letter-spacing:.04em">'+k.l+'</div>'+
+          '<div style="font-size:16px;font-weight:800;margin-top:4px;color:'+k.c+'">'+k.v+'</div>'+
+          '<div style="font-size:10px;color:var(--muted,#9aa0a8);margin-top:2px">'+k.f+'</div></div>';
+      }).join('');
+
+      wrap.innerHTML =
+        '<div style="background:var(--panel,#2e3134);border:1px solid var(--line,#3a3d42);border-radius:14px;padding:14px 15px 10px;color:var(--txt,#e8eaed);font-variant-numeric:tabular-nums">'+
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">'+
+            '<h3 style="font-size:14.5px;font-weight:700;margin:0">📈 Öngörü — Trend & Tahmin</h3>'+
+            '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,183,77,.12);border:1px solid rgba(255,183,77,.35);color:var(--gold,#ffb74d)">◔ mekanik tahmin</span>'+
+          '</div>'+
+          '<p style="font-size:11px;color:var(--muted,#9aa0a8);margin:0 0 10px">Geçmişe bakıp önümüzdeki 3 ayı izdüşürür. Mavi kesikli bölge = gelecek. Karar değil, yön göstergesidir.</p>'+
+          '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">'+kpiHtml+'</div>'+
+          '<div style="font-size:11.5px;font-weight:700;margin:2px 0 4px">Net Kâr / Zarar — aylık</div>'+
+          netChartSVG(hist, netProj, projLabels)+
+          '<div style="font-size:11.5px;font-weight:700;margin:10px 0 4px">Sermaye gidişatı</div>'+
+          capChartSVG(hist, capProj, projLabels)+
+        '</div>';
+    }catch(e){ console.warn('Öngörü paneli:', e); }
+  };
+
+  // renderFinans'ı orijinaline dokunmadan sar
+  try{
+    if(typeof renderFinans === 'function' && !renderFinans.__ongoruWrapped){
+      var _origRF = renderFinans;
+      window.renderFinans = function(){
+        var r = _origRF.apply(this, arguments);
+        try{ window.renderOngoruPanel(); }catch(e){}
+        return r;
+      };
+      window.renderFinans.__ongoruWrapped = true;
+    }
+  }catch(e){ console.warn('Öngörü wrap:', e); }
+
+  // Açılıştaki mevcut durumu da bir kez çiz
+  try{ window.renderOngoruPanel(); }catch(e){}
 })();
 </script>
 </body>
