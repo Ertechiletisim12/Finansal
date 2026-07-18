@@ -2642,6 +2642,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
       <div id="sbGorunum" style="display:flex;flex-direction:column;gap:6px;overflow:hidden;transition:all .2s">
         <button class="tool-btn" id="themeBtn" onclick="toggleTheme()">🌙 Koyu Mod</button>
+        <button class="tool-btn" id="defterBtn" onclick="toggleDefter()">🪙 Defter Teması</button>
         <button class="tool-btn gizli-mod-btn" onclick="toggleGizliMod()">👁 Tutarları Gizle</button>
         <div id="cloudSyncIndicator" style="font-size:10px;padding:2px 6px;color:var(--muted)">☁️ Bağlanıyor...</div>
       </div>
@@ -2695,6 +2696,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <div id="mobileOfflineIndicator" style="display:none;background:#ff5252;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;flex-shrink:0">📵 Çevrimdışı</div>
   <!-- Tema toggle -->
   <button onclick="toggleTheme()" id="mobileThemeBtn" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:16px;flex-shrink:0">🌙</button>
+  <button onclick="toggleDefter()" id="defterBtnMobile" title="Defter teması" style="background:var(--panel2);border:1px solid var(--line);color:var(--gold);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;flex-shrink:0">🪙</button>
   <button onclick="toggleGizliMod()" id="mobileGizliBtn" class="gizli-mod-btn-mob" title="Tutarları gizle/göster" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;flex-shrink:0">👁</button>
   <div id="mobileOturumBox" style="display:none;align-items:center;gap:6px;flex-shrink:0">
     <div style="text-align:right">
@@ -4027,7 +4029,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v386';
+const APP_VERSION = 'v387';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20934,6 +20936,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v387',
+    date: '18.07.2026',
+    items: [
+      { type: 'new', text: 'YENI: "Defter Temasi" (🪙). Ust menudeki (ve mobilde 🪙) dugmeyle acilir/kapanir. Tum uygulamayi sicak krem + altin vurgulu bir gorunume gecirir; tercih kaydedilir, uygulamayi tekrar acinca hatirlanir. Bu ilk adim renk/doku katmanidir — mevcut yapiya/butonlara dokunulmadi, sadece palet degisiyor. Koyu ust cubuk ve alttaki + dugmeli sekme cubugu gibi yapisal degisiklikler sonraki adima birakildi.' },
+    ]
+  },
+  {
     version: 'v386',
     date: '18.07.2026',
     items: [
@@ -24091,6 +24100,49 @@ function toggleChangelog(){
 
   // Ekledikten sonra badge/listeyi bir tazele
   try{ if(typeof checkAllNotifications==='function') setTimeout(checkAllNotifications, 300); }catch(e){}
+})();
+</script>
+<style>
+/* ===== v387: DEFTER TEMASI — sicak krem + altin palet (acik temanin uzerine biner) ===== */
+body.defter{
+  --bg:#e9e2d2; --panel:#faf6ee; --panel2:#f1ead9; --line:#e2dbc9;
+  --txt:#2b2720; --muted:#8a8272; --accent:#c98f2a; --gold:#cf9530;
+  --red:#c0503a; --red-d:#a3402d; --green:#3f9d5f;
+  --th-bg:#e2dbc9; --th-txt:#2b2720; --hover:#f0e8d8;
+}
+/* defterde altin dugme aktif gorunumu */
+body.defter #defterBtn, body.defter #defterBtnMobile{ color:var(--gold); border-color:var(--gold); }
+</style>
+<script>
+/* ===== v387: DEFTER TEMASI gecisi (kendi icine kapali) ===== */
+(function(){
+  function upd(on){
+    try{
+      var b1=document.getElementById('defterBtn'); if(b1) b1.textContent = on ? '🪙 Defter: Açık' : '🪙 Defter Teması';
+      var b2=document.getElementById('defterBtnMobile'); if(b2) b2.style.opacity = on ? '1' : '0.75';
+    }catch(e){}
+  }
+  window.toggleDefter=function(){
+    var on=document.body.classList.toggle('defter');
+    if(on){ document.body.classList.add('light'); }
+    else{
+      try{ var t=localStorage.getItem('vf_theme')||'dark';
+        if(t==='light') document.body.classList.add('light');
+        else if(t!=='auto') document.body.classList.remove('light');
+      }catch(e){}
+    }
+    try{ localStorage.setItem('vf_defter', on?'1':'0'); }catch(e){}
+    upd(on);
+    try{ if(typeof showToast==='function') showToast(on?'🪙 Defter teması açıldı':'Defter teması kapatıldı','ok'); }catch(e){}
+  };
+  function applyDefter(){
+    try{
+      if(localStorage.getItem('vf_defter')==='1'){ document.body.classList.add('light'); document.body.classList.add('defter'); }
+      upd(document.body.classList.contains('defter'));
+    }catch(e){}
+  }
+  applyDefter();
+  window.addEventListener('load', applyDefter);   // loadTheme'den sonra da uygula
 })();
 </script>
 </body>
