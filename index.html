@@ -4024,7 +4024,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v379';
+const APP_VERSION = 'v380';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4137,7 +4137,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '20.07.2026 09:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '18.07.2026 09:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -20928,6 +20928,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v380',
+    date: '18.07.2026',
+    items: [
+      { type: 'fix', text: 'GUVENLIK: Finansal analiz gecmisi (2021-2026, 64 aylik sermaye/kar-zarar verisi) artik uygulama kodunun icinde DUZ METIN olarak durmuyordu — koda gomuluydu ve dosya paylasildiginda tum is gecmisi de gidiyordu. Bu veri koddan cikarildi; uygulama artik verisini yalnizca cihazdan/buluttan yukluyor. Senin verine dokunulmadi, mevcut kayitlarin yerinde.' },
+      { type: 'fix', text: 'Bunun sonucu olarak "Sifirla" artik seni eski gomulu veriye degil, gercekten bos duruma dondurur (dogru davranis).' },
+    ]
+  },
   {
     version: 'v379',
     date: '20.07.2026',
