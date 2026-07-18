@@ -2912,6 +2912,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
             <div class="entity-filter-top" id="finansEntityFilterTop"></div>
             <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
               <button class="btn-soft" onclick="openOngoruModal()" title="Trend ve tahmin panelini aç"><span class="btn-soft-ico">📈</span><span>Öngörü</span></button>
+              <button class="btn-soft" onclick="openAyOzetModal()" title="Ay kapanış özetini gör"><span class="btn-soft-ico">📋</span><span>Ay Özeti</span></button>
               <button class="btn-soft" onclick="openFinansAyModal()" title="Seçilen ayın kapanış verilerini gir"><span class="btn-soft-ico">🗓️</span><span>Ay Kapanışı</span></button>
               <button onclick="openFinansTrashModal()" style="background:rgba(122,31,31,0.25);border:1px solid rgba(226,35,26,0.45);color:#ff7070;border-radius:8px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px" title="Silinen kayıtları görüntüle ve geri yükle" id="trashBtn">🗑️ <span id="trashCount" style="background:#7a1f1f;color:#fff;border-radius:10px;padding:1px 7px;font-size:10.5px;margin-left:2px;display:none">0</span></button>
             </div>
@@ -4025,7 +4026,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v382';
+const APP_VERSION = 'v383';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20930,6 +20931,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v383',
+    date: '18.07.2026',
+    items: [
+      { type: 'new', text: 'YENI: "Ay Kapanis Ozeti". Ay kapatma sihirbazini tamamlayinca otomatik olarak acilir; ayrica Finansal Analiz sayfasindaki "📋 Ay Ozeti" butonuyla istedigin an bakabilirsin. Icinde: ayin net kar/zarari, gecen aya gore fark ve yuzde, sermaye degisimi, Vodafone/Mixy net katkilari ve "bu ayi ne belirledi" ozeti (masraf sicramasi, agir taraf, ayin notu). Onceki/sonraki ay oklariyla gecmis aylari da gezebilirsin.' },
+      { type: 'fix', text: 'Kendi icine kapalidir; ay kapatma akisina dokunulmadi, sadece tamamlaninca ozet gosterilecek sekilde uzerine eklendi.' },
+    ]
+  },
+  {
     version: 'v382',
     date: '18.07.2026',
     items: [
@@ -23736,6 +23745,127 @@ function toggleChangelog(){
     var mm=document.getElementById('ongoruModal');
     if(mm) mm.addEventListener('click', function(e){ if(e.target===mm) window.closeOngoruModal(); });
   }catch(e){}
+})();
+</script>
+<div id="ayOzetModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1200;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:0;max-width:560px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="position:sticky;top:0;background:linear-gradient(135deg,#34d399,#137a52);padding:14px 18px;border-radius:14px 14px 0 0;display:flex;align-items:center;justify-content:space-between;z-index:2">
+      <span style="font-size:15px;font-weight:800;color:#00301f">📋 Ay Kapanış Özeti</span>
+      <button class="m-kapat" onclick="closeAyOzetModal()" style="background:rgba(0,0,0,0.15);border:none;color:#00301f;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
+    </div>
+    <div id="ayOzetModalBody" style="padding:16px 16px 20px"></div>
+  </div>
+</div>
+<script>
+/* ===== v383: AY KAPANIS OZETI — modal + otomatik acilis ===== */
+(function(){
+  var _ozetYm = null;
+  function fmtTL(n){ return Math.round(n).toLocaleString('tr-TR'); }
+  function sgn(n){ return (n>=0?'+':'')+fmtTL(n); }
+  function pct(a,b){ if(!b) return null; return (a-b)/Math.abs(b)*100; }
+  var MONTHS=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+
+  function kpi(l,v,c,f){
+    return '<div style="background:var(--panel2,#212326);border:1px solid var(--line,#3a3d42);border-radius:10px;padding:10px 11px">'+
+      '<div style="font-size:9.5px;color:var(--muted,#9aa0a8);font-weight:700;text-transform:uppercase;letter-spacing:.04em">'+l+'</div>'+
+      '<div style="font-size:16px;font-weight:800;margin-top:4px;color:'+c+'">'+v+'</div>'+
+      (f?'<div style="font-size:10px;color:var(--muted,#9aa0a8);margin-top:2px">'+f+'</div>':'')+'</div>';
+  }
+
+  window.renderAyOzet = function(ym){
+    var body=document.getElementById('ayOzetModalBody'); if(!body) return;
+    try{
+      if(typeof finansData==='undefined' || !Array.isArray(finansData) || !finansData.length){
+        body.innerHTML='<p style="color:var(--muted,#9aa0a8);font-size:12px">Henüz kapanmış ay yok.</p>'; return; }
+      var recs=finansData.filter(function(x){return x && x.ym;}).slice().sort(function(a,b){return a.ym<b.ym?-1:(a.ym>b.ym?1:0);});
+      var yms=recs.map(function(x){return x.ym;});
+      if(!ym || yms.indexOf(ym)<0) ym=yms[yms.length-1];
+      _ozetYm=ym;
+      var idx=yms.indexOf(ym);
+      var cur=recs[idx], prev= idx>0 ? recs[idx-1] : null;
+
+      var net=+cur.topKarZarar||0, netPrev=prev?(+prev.topKarZarar||0):null;
+      var dNet= prev!=null ? net-netPrev : null;
+      var pctNet= prev!=null ? pct(net,netPrev) : null;
+      var iyiKotu = prev==null ? '' : (net>=netPrev?'daha iyi':'daha zayıf');
+      var verdictCls = net>=0?'var(--pos,#34d399)':'var(--neg,#f87171)';
+
+      var serm=+cur.mevcutSermaye||0, sermPrev=prev?(+prev.mevcutSermaye||0):null;
+      var dSerm= prev!=null ? serm-sermPrev : null;
+      var masraf=+cur.topMasrafTutari||0, masrafPrev=prev?(+prev.topMasrafTutari||0):null;
+      var dMasraf= prev!=null ? masraf-masrafPrev : null;
+      var vodNet=+cur.vodKarZarar||0, mixyNet=+cur.mixyKarZarar||0;
+      var buyuk = Math.abs(vodNet)>=Math.abs(mixyNet)?'Vodafone':'Mixy';
+
+      // navigasyon
+      var nav='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'+
+        '<button onclick="ayOzetGez(-1)" '+(idx<=0?'disabled':'')+' style="background:var(--panel2,#212326);border:1px solid var(--line,#3a3d42);color:var(--txt,#e8eaed);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;'+(idx<=0?'opacity:.35;cursor:default':'')+'">‹</button>'+
+        '<div style="font-size:15px;font-weight:800">'+cur.ay+' '+cur.yil+'</div>'+
+        '<button onclick="ayOzetGez(1)" '+(idx>=yms.length-1?'disabled':'')+' style="background:var(--panel2,#212326);border:1px solid var(--line,#3a3d42);color:var(--txt,#e8eaed);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;'+(idx>=yms.length-1?'opacity:.35;cursor:default':'')+'">›</button>'+
+        '</div>';
+
+      // ana hüküm
+      var verdict='<div style="background:var(--panel2,#212326);border:1px solid var(--line,#3a3d42);border-radius:12px;padding:13px 15px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px">'+
+        '<div><div style="font-size:11px;color:var(--muted,#9aa0a8);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Net Kâr / Zarar</div>'+
+        (prev!=null?'<div style="font-size:12px;color:var(--muted,#9aa0a8);margin-top:3px">geçen aya göre <b style="color:'+(net>=netPrev?'var(--pos,#34d399)':'var(--neg,#f87171)')+'">'+iyiKotu+'</b>'+(pctNet!=null?' (%'+Math.abs(pctNet).toFixed(0)+')':'')+'</div>':'')+'</div>'+
+        '<div style="font-size:22px;font-weight:800;color:'+verdictCls+';white-space:nowrap">'+sgn(net)+' ₺</div></div>';
+
+      // kpi ızgara
+      var grid='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'+
+        kpi('Geçen aya fark', prev!=null?sgn(dNet)+' ₺':'—', prev!=null?(dNet>=0?'var(--pos,#34d399)':'var(--neg,#f87171)'):'var(--muted,#9aa0a8)', prev?(prev.ay+'→'+cur.ay):'ilk ay')+
+        kpi('Sermaye değişimi', prev!=null?sgn(dSerm)+' ₺':fmtTL(serm)+' ₺', prev!=null?(dSerm>=0?'var(--pos,#34d399)':'var(--neg,#f87171)'):'var(--txt,#e8eaed)', 'bu ay: '+fmtTL(serm)+' ₺')+
+        kpi('Vodafone net', sgn(vodNet)+' ₺', vodNet>=0?'var(--pos,#34d399)':'var(--neg,#f87171)', '')+
+        kpi('Mixy net', sgn(mixyNet)+' ₺', mixyNet>=0?'var(--pos,#34d399)':'var(--neg,#f87171)', '')+
+        '</div>';
+
+      // ne belirledi
+      var drivers=[];
+      if(prev!=null && masrafPrev>0 && masraf > masrafPrev*1.5)
+        drivers.push('Masraf geçen aya göre belirgin arttı ('+fmtTL(masrafPrev)+' → '+fmtTL(masraf)+' ₺).');
+      drivers.push('Bu ayı ağırlıkla <b>'+buyuk+'</b> tarafı belirledi.');
+      if(cur.aciklama) drivers.push('Ayın notu: "'+cur.aciklama+'".');
+      var driversHtml='<div style="background:rgba(63,208,255,0.06);border:1px solid rgba(63,208,255,0.2);border-radius:10px;padding:11px 13px">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--accent,#3fd0ff);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Bu ayı ne belirledi?</div>'+
+        drivers.map(function(t){return '<div style="font-size:12px;color:var(--txt,#e8eaed);line-height:1.5;margin-bottom:2px">• '+t+'</div>';}).join('')+'</div>';
+
+      body.innerHTML = nav + verdict + grid + driversHtml;
+    }catch(e){ console.warn('Ay özeti:', e); body.innerHTML='<p style="color:var(--muted,#9aa0a8);font-size:12px">Özet çizilemedi.</p>'; }
+  };
+
+  window.ayOzetGez = function(yon){
+    try{
+      var recs=finansData.filter(function(x){return x && x.ym;}).map(function(x){return x.ym;}).sort();
+      var i=recs.indexOf(_ozetYm); if(i<0) return;
+      var ni=i+yon; if(ni<0||ni>=recs.length) return;
+      window.renderAyOzet(recs[ni]);
+    }catch(e){}
+  };
+  window.openAyOzetModal = function(ym){
+    try{ window.renderAyOzet(ym); }catch(e){}
+    var m=document.getElementById('ayOzetModal'); if(m) m.style.display='flex';
+  };
+  window.closeAyOzetModal = function(){
+    var m=document.getElementById('ayOzetModal'); if(m) m.style.display='none';
+  };
+  try{
+    var mm=document.getElementById('ayOzetModal');
+    if(mm) mm.addEventListener('click', function(e){ if(e.target===mm) window.closeAyOzetModal(); });
+  }catch(e){}
+
+  // Ay kapatma sihirbazi 3. adim bitince otomatik ozet ac (orijinale dokunmadan sar)
+  try{
+    if(typeof ayKapatIleri === 'function' && !ayKapatIleri.__ozetWrapped){
+      var _origAK = ayKapatIleri;
+      window.ayKapatIleri = function(){
+        var son3 = (typeof ayKapatStep!=='undefined' && ayKapatStep===3);
+        var kapananYm = (typeof ayKapatYm2!=='undefined') ? ayKapatYm2 : null;
+        var r = _origAK.apply(this, arguments);
+        if(son3){ try{ setTimeout(function(){ window.openAyOzetModal(kapananYm||undefined); }, 450); }catch(e){} }
+        return r;
+      };
+      window.ayKapatIleri.__ozetWrapped = true;
+    }
+  }catch(e){ console.warn('Ay ozeti wrap:', e); }
 })();
 </script>
 </body>
