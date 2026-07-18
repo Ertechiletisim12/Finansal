@@ -4029,7 +4029,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v390';
+const APP_VERSION = 'v391';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20936,6 +20936,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v391',
+    date: '18.07.2026',
+    items: [
+      { type: 'new', text: 'Defter Temasi — kart ve butonlarda KOKLU yeniden tasarim: kartlar cok daha ferah (20px kose, genis ic bosluk, katmanli yumusak golge, aralarinda nefes), butonlar yukseltilmis ve yuvarlak (guclu tipografi, hafif golge), pill filtreler buyuk hap seklinde (secili olan altin), modallar daha yuvarlak. Amac prototipteki ferah ve sik hissi yakalamak. Yalnizca Defter temasi acikken; kapatinca eski sik/yogun gorunum geri gelir.' },
+    ]
+  },
+  {
     version: 'v390',
     date: '18.07.2026',
     items: [
@@ -24272,5 +24279,60 @@ body.defter input, body.defter select, body.defter textarea{ border-radius:11px 
   window.addEventListener('load', ensureBrand);
 })();
 </script>
+<style>
+/* ===== v391: DEFTER TEMASI — KOKLU kart/buton yeniden tasarimi ===== */
+/* KARTLAR: ferah, buyuk kose, katmanli golge */
+body.defter .ctx-card,
+body.defter .bottom-card,
+body.defter .kapanis-kart,
+body.defter .note-panel,
+body.defter .ktip-kart,
+body.defter .st-stat-card{
+  border-radius:20px !important;
+  padding:17px 18px !important;
+  background:#fbf8f1 !important;
+  border:1px solid #ece3d1 !important;
+  box-shadow:0 1px 2px rgba(45,36,18,.05), 0 12px 30px rgba(45,36,18,.09) !important;
+}
+/* kartlar arasi ferah bosluk */
+body.defter .context-panel .ctx-card{ margin-bottom:13px !important; }
+/* grafik kutusu: kose+golge, ic bosluga dokunma */
+body.defter .chart-box{
+  border-radius:20px !important;
+  background:#fbf8f1 !important;
+  border:1px solid #ece3d1 !important;
+  box-shadow:0 1px 2px rgba(45,36,18,.05), 0 12px 30px rgba(45,36,18,.09) !important;
+}
+
+/* BUTONLAR: yukseltilmis, yuvarlak, guclu tipografi */
+body.defter .btn-soft{
+  border-radius:15px !important;
+  padding:11px 16px !important;
+  font-size:12.5px !important;
+  font-weight:700 !important;
+  border:1px solid #e7dece !important;
+  box-shadow:0 2px 7px rgba(45,36,18,.09) !important;
+}
+body.defter .btn-soft:active{ transform:translateY(1px); }
+/* pill filtreler: buyuk yuvarlak hap */
+body.defter .prim-tool-pill{
+  border-radius:22px !important;
+  padding:9px 17px !important;
+  font-size:12px !important;
+  font-weight:700 !important;
+  box-shadow:0 1px 3px rgba(45,36,18,.06) !important;
+}
+body.defter .prim-tool-pill.active{ background:var(--gold) !important; color:#2a2010 !important; border-color:var(--gold) !important; box-shadow:0 3px 10px rgba(207,149,48,.35) !important; }
+/* ust menu dugmeleri */
+body.defter .tool-btn{ border-radius:13px !important; padding:8px 12px !important; font-weight:700 !important; }
+body.defter .seg-btn{ border-radius:20px !important; padding:8px 16px !important; font-weight:700 !important; }
+body.defter .m-kapat{ border-radius:10px !important; }
+/* segment secili */
+body.defter .seg-btn.active{ background:var(--gold) !important; color:#2a2010 !important; }
+/* giris alanlari */
+body.defter input, body.defter select, body.defter textarea{ border-radius:12px !important; padding:9px 12px !important; }
+/* modal govdeleri de yuvarlak+ferah */
+body.defter [id$="Modal"] > div{ border-radius:22px !important; }
+</style>
 </body>
 </html>
