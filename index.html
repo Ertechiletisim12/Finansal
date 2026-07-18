@@ -4029,7 +4029,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v392';
+const APP_VERSION = 'v393';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20936,6 +20936,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v393',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'Defter Temasi: (1) Versiyon rozeti yanindaki dugmelerle ayni koyu yukseltilmis gorunume getirildi (uyumlu). (2) Finansal Analiz ust seridindeki butonlar artik alt satira sariyor, sagda kesilmiyor. (3) Kartlar krem zemine cok yakindi; beyaza cekildi ve golge guclendirildi, artik belirgin kabariyorlar.' },
+    ]
+  },
+  {
     version: 'v392',
     date: '18.07.2026',
     items: [
@@ -24353,6 +24360,26 @@ body.defter .main div[style*="var(--panel)"]{
   box-shadow:0 1px 2px rgba(45,36,18,.04), 0 8px 22px rgba(45,36,18,.07) !important;
 }
 body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
+</style>
+<style>
+/* ===== v393: rozet uyumu + finans buton sarma + kartlar beyaza ===== */
+/* kartlar beyaza -> krem zeminde belirgin kabarma */
+body.defter{ --panel:#fefdfb; }
+body.defter .main div[style*="var(--panel)"]{
+  border-radius:18px !important;
+  background:#fefdfb !important;
+  box-shadow:0 1px 3px rgba(45,36,18,.06), 0 14px 34px rgba(45,36,18,.11) !important;
+}
+/* versiyon rozetini komsu koyu dugmelerle ayni yap (defter) */
+@media(max-width:860px){
+  body.defter #mobileTopBar #mobileVerBadge{
+    background:#28323d !important; border:1px solid #3a4652 !important; color:var(--gold) !important;
+    border-radius:10px !important; padding:0 11px !important; font-size:12px !important; height:34px !important;
+    display:inline-flex !important; align-items:center !important; box-shadow:0 1px 2px rgba(0,0,0,.2) !important;
+  }
+  /* finans ust butonlari alt satira sarsin -> kesilmesin */
+  body.defter .finans-toolbar > div[style*="margin-left:auto"]{ flex-wrap:wrap !important; justify-content:flex-end; row-gap:6px !important; }
+}
 </style>
 </body>
 </html>
