@@ -4030,7 +4030,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v403';
+const APP_VERSION = 'v404';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20937,6 +20937,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v404',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'Hero ust bosluk KESIN cozuldu: sabit basligi surekli izleyen bir gozlemci (ResizeObserver) eklendi; yil/ay filtresi secilince baslik uzasa bile bosluk otomatik guncelleniyor, hero artik kesilmiyor (yalnizca Defter\'de, klasik degismez). Ayrica "Donem basi -> simdi" karti hero ile ayni degeri gosterip tekrar ediyordu; artik gercekten donem basindaki sermayeyi gosteriyor.' },
+    ]
+  },
+  {
     version: 'v403',
     date: '19.07.2026',
     items: [
@@ -24896,6 +24903,78 @@ body.defter #dhInner .dh-pos{ color:#2f9e5f } body.defter #dhInner .dh-neg{ colo
   // bosluk hack'ini etkisiz kil (app kendi ayarlasin, klasik degismesin)
   window.__syncFinansTop=function(){};
   try{ window.renderDefterFinansHero(); }catch(e){}
+})();
+</script>
+<script>
+/* ===== v404: hero ust bosluk ResizeObserver ile kesin cozum + "Donem basi" kart duzelt ===== */
+(function(){
+  function fmt(n){ return Math.round(n).toLocaleString('tr-TR'); }
+  function pct(a,b){ return b? ((a-b)/Math.abs(b)*100):0; }
+  function buildHero(){
+    if(typeof finansData==='undefined'||!Array.isArray(finansData)||!finansData.length) return '';
+    var yf=(typeof finansYearFilter!=='undefined')?finansYearFilter:'all';
+    var mf=(typeof finansMonthFilter!=='undefined')?finansMonthFilter:'all';
+    var ef=(typeof finansEntityFilter!=='undefined')?finansEntityFilter:'all';
+    var kzF=ef==='vodafone'?'vodKarZarar':(ef==='mixy'?'mixyKarZarar':'topKarZarar');
+    var karF=ef==='vodafone'?'vodKarTutari':(ef==='mixy'?'mixyKarTutari':'topKarTutari');
+    var masF=ef==='vodafone'?'vodMasraf':(ef==='mixy'?'mixyMasraf':'topMasrafTutari');
+    var elabel=ef==='vodafone'?' · Vodafone':(ef==='mixy'?' · MİXY':'');
+    var d=finansData.filter(function(x){return x&&x.ym;}).slice().sort(function(a,b){return a.ym<b.ym?-1:(a.ym>b.ym?1:0);});
+    if(yf!=='all') d=d.filter(function(x){return String(x.yil)===String(yf);});
+    if(mf!=='all') d=d.filter(function(x){return String(x.ayNo||'')===String(mf);});
+    if(!d.length) return '';
+    var last=d[d.length-1], prev=d.length>1?d[d.length-2]:last, first=d[0];
+    var serm=+last.mevcutSermaye||0, sermP=+prev.mevcutSermaye||0, sermF=+first.mevcutSermaye||0;
+    var dAy=serm-sermP, dAyPct=pct(serm,sermP), dDon=serm-sermF, dDonPct=pct(serm,sermF);
+    var totKar=d.reduce(function(a,b){return a+(+b[karF]||0);},0);
+    var totMas=d.reduce(function(a,b){return a+(+b[masF]||0);},0);
+    var totKZ=d.reduce(function(a,b){return a+(+b[kzF]||0);},0);
+    var kzPos=totKZ>=0, ayPos=dAy>=0, donetiket=(yf==='all')?'Tüm zamanlar':(''+yf);
+    return '<div class="dh-hero"><div class="dh-k">Mevcut sermaye'+elabel+'</div>'+
+      '<div class="dh-big">'+fmt(serm)+' ₺</div>'+
+      '<div class="dh-chip" style="background:'+(ayPos?'rgba(47,158,95,.2)':'rgba(224,80,58,.2)')+';color:'+(ayPos?'#7ee2a6':'#f6a99b')+'">'+(ayPos?'▲ +':'▼ ')+fmt(Math.abs(dAy))+' ₺ · %'+Math.abs(dAyPct).toFixed(0)+'</div>'+
+      ' <span style="font-size:12px;color:rgba(255,255,255,.55);margin-left:6px">'+(last.ay||'')+' '+(last.yil||'')+'</span></div>'+
+      '<div class="dh-grid">'+
+        '<div class="dh-stat"><div class="k">Dönem başı sermaye</div><div class="v">'+fmt(sermF)+' ₺</div><div class="s">'+(first.ay||'')+' '+(first.yil||'')+'</div></div>'+
+        '<div class="dh-stat"><div class="k">Dönem değişimi</div><div class="v '+(dDon>=0?'dh-pos':'dh-neg')+'">'+(dDon>=0?'+':'')+fmt(dDon)+' ₺</div><div class="s '+(dDon>=0?'dh-pos':'dh-neg')+'">%'+Math.abs(dDonPct).toFixed(1)+' '+(dDon>=0?'artış':'azalış')+'</div></div>'+
+      '</div>'+
+      '<div class="dh-pnl'+(kzPos?'':' neg')+'"><div style="font-size:12px;color:#847c6d;font-weight:700">Toplam Kâr / Zarar'+elabel+' · '+donetiket+'</div>'+
+        '<div class="v '+(kzPos?'dh-pos':'dh-neg')+'">'+(kzPos?'▲ ':'▼ ')+fmt(Math.abs(totKZ))+' ₺</div>'+
+        '<div class="sub"><span class="dh-pos">↑ Kâr: '+fmt(totKar)+' ₺</span><span class="dh-neg">↓ Masraf: '+fmt(totMas)+' ₺</span></div></div>';
+  }
+  window.renderDefterFinansHero=function(){
+    try{
+      var fc=document.getElementById('finansContent'); if(!fc) return;
+      var old=fc.querySelector('#dhInner'); if(old) old.remove();
+      if(!document.body.classList.contains('defter')) return;
+      var st=fc.querySelector('.section-title'); if(st) st.style.display='none';
+      var rows=fc.querySelectorAll('.stats-row');
+      if(rows[0]) rows[0].style.display='none';
+      if(rows[1]){ var fsx=rows[1].querySelector('.stat'); if(fsx) fsx.style.display='none'; }
+      var h=buildHero(); if(h) fc.insertAdjacentHTML('afterbegin','<div id="dhInner">'+h+'</div>');
+    }catch(e){ console.warn('defter hero v404:', e); }
+  };
+
+  // --- ResizeObserver: sabit basligin boyu degistikce ust boslugu guncelle (SADECE defter) ---
+  function ensureObserver(){
+    try{
+      var pg=document.getElementById('page-finans'); if(!pg) return;
+      var sh=pg.querySelector('.sticky-header'); if(!sh) return;
+      if(pg.__roAttached) return;
+      function apply(){
+        try{
+          if(window.innerWidth>700) return;
+          if(!document.body.classList.contains('defter')) return;
+          pg.style.setProperty('padding-top',(sh.getBoundingClientRect().height+8)+'px','important');
+        }catch(e){}
+      }
+      if(window.ResizeObserver){ var ro=new ResizeObserver(apply); ro.observe(sh); pg.__roAttached=true; apply(); }
+      else { [100,400,800].forEach(function(t){ setTimeout(apply,t); }); }
+    }catch(e){}
+  }
+  ensureObserver();
+  window.addEventListener('load', ensureObserver);
+  try{ window.renderDefterFinansHero(); ensureObserver(); }catch(e){}
 })();
 </script>
 </body>
