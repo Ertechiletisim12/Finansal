@@ -4030,7 +4030,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v398';
+const APP_VERSION = 'v399';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20937,6 +20937,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v399',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'Defter finans hero duzeltmeleri: (1) FILTRE UYUMU: hero artik aktif filtreye (yil + Vodafone/Mixy) gore hesaplaniyor, alttaki verilerle tutarli. (2) Para birimleri artik KISALTILMIYOR, tam rakam gosteriliyor (or. Kar/Masraf tam TL). (3) Alttaki kalan kartlar (Ortalama Kar Marji, En Iyi/Kotu Ay) da yeni beyaz-yuvarlak tarza uyduruldu, artik eski gorunmuyor. (4) Alt bosluk artirildi.' },
+    ]
+  },
+  {
     version: 'v398',
     date: '19.07.2026',
     items: [
@@ -24592,5 +24599,75 @@ body.defter #finansContent > .section-title:first-child + .stats-row + .stats-ro
 /* icerik yuzen dock'un altinda kalmasin */
 @media(max-width:860px){ body.defter .main [id^="page-"]{ padding-bottom:140px !important } }
 </style>
+<style>
+/* ===== v399: kalan finans kartlarini yeni tarza uydur + alt bosluk ===== */
+body.defter #finansContent .section-title{ font-size:12.5px !important; font-weight:800 !important; color:#847c6d !important; text-transform:uppercase; letter-spacing:.05em; margin:16px 4px 10px !important; }
+body.defter #finansContent .stats-row{ display:grid !important; grid-template-columns:1fr 1fr !important; gap:12px !important; }
+body.defter #finansContent .stat{ background:#fff !important; border:1px solid #ece3d1 !important; border-radius:20px !important; padding:15px 16px !important; box-shadow:0 1px 3px rgba(35,28,14,.05),0 12px 30px rgba(35,28,14,.09) !important; min-width:0 !important; }
+@media(max-width:860px){ body.defter .main [id^="page-"]{ padding-bottom:150px !important } }
+</style>
+<script>
+/* ===== v399: hero filtreye duyarli + tam rakam (redefine) ===== */
+(function(){
+  function fmt(n){ return Math.round(n).toLocaleString('tr-TR'); }
+  function pct(a,b){ return b? ((a-b)/Math.abs(b)*100) : 0; }
+
+  window.renderDefterFinansHero=function(){
+    var box=document.getElementById('defterFinansHero'); if(!box) return;
+    try{
+      if(typeof finansData==='undefined' || !Array.isArray(finansData) || finansData.length<1){ box.innerHTML=''; return; }
+      // aktif filtreler
+      var yf = (typeof finansYearFilter!=='undefined') ? finansYearFilter : 'all';
+      var mf = (typeof finansMonthFilter!=='undefined') ? finansMonthFilter : 'all';
+      var ef = (typeof finansEntityFilter!=='undefined') ? finansEntityFilter : 'all';
+      var kzF = ef==='vodafone'?'vodKarZarar':(ef==='mixy'?'mixyKarZarar':'topKarZarar');
+      var karF= ef==='vodafone'?'vodKarTutari':(ef==='mixy'?'mixyKarTutari':'topKarTutari');
+      var masF= ef==='vodafone'?'vodMasraf':(ef==='mixy'?'mixyMasraf':'topMasrafTutari');
+      var elabel = ef==='vodafone'?' · Vodafone':(ef==='mixy'?' · MİXY':'');
+
+      var d=finansData.filter(function(x){return x&&x.ym;}).slice().sort(function(a,b){return a.ym<b.ym?-1:(a.ym>b.ym?1:0);});
+      if(yf!=='all') d=d.filter(function(x){return String(x.yil)===String(yf);});
+      if(mf!=='all') d=d.filter(function(x){return String(x.ayNo||'')===String(mf);});
+      if(!d.length){ box.innerHTML=''; return; }
+
+      var last=d[d.length-1], prev=d.length>1?d[d.length-2]:last, first=d[0];
+      var serm=+last.mevcutSermaye||0, sermP=+prev.mevcutSermaye||0, sermF=+first.mevcutSermaye||0;
+      var dAy=serm-sermP, dAyPct=pct(serm,sermP);
+      var dDon=serm-sermF, dDonPct=pct(serm,sermF);
+      var totKar=d.reduce(function(a,b){return a+(+b[karF]||0);},0);
+      var totMas=d.reduce(function(a,b){return a+(+b[masF]||0);},0);
+      var totKZ=d.reduce(function(a,b){return a+(+b[kzF]||0);},0);
+      var kzPos=totKZ>=0, ayPos=dAy>=0;
+      var donetiket = (yf==='all')?'Tüm zamanlar':(''+yf);
+
+      // grafik (etiketsiz cubuklar -> kisaltma yok)
+      var hist=d.slice(-8), vals=hist.map(function(x){return +x[kzF]||0;}), lb=hist.map(function(x){return (x.ay||'').slice(0,3);});
+      var W=400,H=140,pT=12,pB=20,pX=4,iw=W-pX*2,ih=H-pT-pB;
+      var mx=Math.max.apply(null,vals.concat([0])),mn=Math.min.apply(null,vals.concat([0])),rg=(mx-mn)||1,y0=pT+(mx/rg)*ih,g=iw/(vals.length||1),bw=g*0.54;
+      var cs='<line x1="'+pX+'" y1="'+y0.toFixed(1)+'" x2="'+(W-pX)+'" y2="'+y0.toFixed(1)+'" stroke="#ece3d1" stroke-width="1"/>',i,x,y,h;
+      for(i=0;i<vals.length;i++){ x=pX+i*g+(g-bw)/2; y=vals[i]>=0?pT+((mx-vals[i])/rg)*ih:y0; h=Math.abs((pT+((mx-vals[i])/rg)*ih)-y0);
+        cs+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(h,2).toFixed(1)+'" rx="5" fill="'+(vals[i]>=0?'#2f9e5f':'#d0503a')+'"/>';
+        cs+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle" font-size="8.5" fill="#847c6d">'+lb[i]+'</text>'; }
+      var chart='<svg viewBox="0 0 '+W+' '+H+'">'+cs+'</svg>';
+
+      box.innerHTML=
+        '<div class="dh-hero"><div class="dh-k">Mevcut sermaye'+elabel+'</div>'+
+          '<div class="dh-big">'+fmt(serm)+' ₺</div>'+
+          '<div class="dh-chip" style="background:'+(ayPos?'rgba(47,158,95,.2)':'rgba(224,80,58,.2)')+';color:'+(ayPos?'#7ee2a6':'#f6a99b')+'">'+(ayPos?'▲ +':'▼ ')+fmt(Math.abs(dAy))+' ₺ · %'+Math.abs(dAyPct).toFixed(0)+'</div>'+
+          ' <span style="font-size:12px;color:rgba(255,255,255,.55);margin-left:6px">'+(last.ay||'')+' '+(last.yil||'')+'</span>'+
+        '</div>'+
+        '<div class="dh-grid">'+
+          '<div class="dh-stat"><div class="k">Dönem başı → şimdi</div><div class="v">'+fmt(serm)+' ₺</div><div class="s">'+(first.ay||'')+' '+(first.yil||'')+' → '+(last.ay||'')+' '+(last.yil||'')+'</div></div>'+
+          '<div class="dh-stat"><div class="k">Dönem değişimi</div><div class="v '+(dDon>=0?'dh-pos':'dh-neg')+'">'+(dDon>=0?'+':'')+fmt(dDon)+' ₺</div><div class="s '+(dDon>=0?'dh-pos':'dh-neg')+'">%'+Math.abs(dDonPct).toFixed(1)+' '+(dDon>=0?'artış':'azalış')+'</div></div>'+
+        '</div>'+
+        '<div class="dh-pnl'+(kzPos?'':' neg')+'"><div class="dh-stat" style="all:unset"><div style="font-size:12px;color:#847c6d;font-weight:700">Toplam Kâr / Zarar'+elabel+' · '+donetiket+'</div>'+
+          '<div class="v '+(kzPos?'dh-pos':'dh-neg')+'">'+(kzPos?'▲ ':'▼ ')+fmt(Math.abs(totKZ))+' ₺</div>'+
+          '<div class="sub"><span class="dh-pos">↑ Kâr: '+fmt(totKar)+' ₺</span><span class="dh-neg">↓ Masraf: '+fmt(totMas)+' ₺</span></div></div></div>'+
+        '<div class="dh-chart"><div style="font-size:14px;font-weight:800;color:#211d17;padding:0 4px 2px">Net Kâr / Zarar'+elabel+'</div><div style="font-size:11px;color:#847c6d;padding:0 4px 8px">Son 8 ay</div>'+chart+'</div>';
+    }catch(e){ console.warn('defter finans hero v399:', e); box.innerHTML=''; }
+  };
+  try{ window.renderDefterFinansHero(); }catch(e){}
+})();
+</script>
 </body>
 </html>
