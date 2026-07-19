@@ -4030,7 +4030,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v401';
+const APP_VERSION = 'v402';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20937,6 +20937,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v402',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'Onemli duzeltme: ust bosluk ayari yanlislikla KLASIK temayi da etkiliyordu (bosluk artiyordu). Artik klasik tema hic degismiyor (app ile ayni deger); boslugu yalnizca Defter icin hesapliyorum ve tema gecince yeniden olcuyorum, boylece siyah hero kart butonlarin altinda kalmiyor. Ayrica alttaki kartlarin fontu ust kartlarla birlesti, ic kutucuklarin krem zemin/sert kenar renkleri Defter tonuna (beyaza yakin + yumusak kenar) uyduruldu.' },
+    ]
+  },
+  {
     version: 'v401',
     date: '19.07.2026',
     items: [
@@ -24747,6 +24754,62 @@ body.defter #finansContent .stat{ min-width:240px !important; flex:1 1 240px !im
   };
   window.addEventListener('resize', fixTopSpace);
   try{ window.renderDefterFinansHero(); }catch(e){}
+})();
+</script>
+<style>
+/* ===== v402: alt kartlarin font/renk/kenar uyumu (Defter) ===== */
+/* font birligi -> ust kartlarla ayni */
+body.defter #finansContent, body.defter #finansContent *{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif !important; }
+/* ic alt-kutucuklar (krem) -> beyaza yakin + tutarli kenar */
+body.defter #finansContent .stat [style*="var(--panel2)"],
+body.defter #finansContent .stat [style*="#f0e8d8"],
+body.defter #finansContent .stat [style*="#efe"]{
+  background:#fbf7ef !important; border-color:#ece3d1 !important; border-radius:13px !important;
+}
+/* kenar renkleri: sert tan kenarlar -> yumusak tutarli ton */
+body.defter #finansContent .stat{ border-color:#ece3d1 !important; }
+</style>
+<script>
+/* ===== v402: finans ust bosluk -> SADECE dogru degeri (klasik degismez), defter gecisinde yenile ===== */
+(function(){
+  function syncTop(){
+    try{
+      if(window.innerWidth>700) return;
+      var pg=document.getElementById('page-finans'); if(!pg) return;
+      if(pg.style.display==='none') return;
+      var sh=pg.querySelector('.sticky-header'); if(!sh) return;
+      var buf = document.body.classList.contains('defter') ? 14 : 10; // klasikte app ile ayni (+10)
+      pg.style.setProperty('padding-top',(sh.getBoundingClientRect().height+buf)+'px','important');
+    }catch(e){}
+  }
+  window.__syncFinansTop=syncTop;
+  // defter acilip/kapaninca finans'i yenile + bosluk yeniden hesapla
+  try{
+    if(typeof toggleDefter==='function' && !toggleDefter.__syncWrapped){
+      var _td=toggleDefter;
+      window.toggleDefter=function(){
+        var r=_td.apply(this,arguments);
+        try{ var pg=document.getElementById('page-finans'); if(pg && pg.style.display!=='none' && typeof renderFinans==='function') renderFinans(); }catch(e){}
+        [60,220,480].forEach(function(t){ setTimeout(syncTop,t); });
+        return r;
+      };
+      window.toggleDefter.__syncWrapped=true;
+    }
+  }catch(e){}
+  window.addEventListener('resize', syncTop);   // en son calisir -> onceki sizinti degerini duzeltir
+  [220,520].forEach(function(t){ setTimeout(syncTop,t); });
+})();
+</script>
+<script>
+/* ===== v402b: her hero render sonrasi DOGRU boslugu uygula (eski +16 sizintisini bastir) ===== */
+(function(){
+  try{
+    if(typeof window.renderDefterFinansHero==='function' && !window.renderDefterFinansHero.__syncAfter){
+      var _rh=window.renderDefterFinansHero;
+      window.renderDefterFinansHero=function(){ var r=_rh.apply(this,arguments); try{ if(window.__syncFinansTop){[200,420].forEach(function(t){setTimeout(window.__syncFinansTop,t);});} }catch(e){} return r; };
+      window.renderDefterFinansHero.__syncAfter=true;
+    }
+  }catch(e){}
 })();
 </script>
 </body>
