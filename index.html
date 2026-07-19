@@ -4030,7 +4030,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v399';
+const APP_VERSION = 'v400';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20937,6 +20937,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v400',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'Defter finans: v399\'da tum kartlar zorla 2\'li izgaraya sokulunca Pay Dagilimi / Donem Bazli / Aylik Ortalama gibi karmasik kartlar dar alana sigmayip ust uste biniyordu. Izgara geri alindi; kartlar dogal genisligine dondu, mobilde alt alta tasmadan diziliyor. Beyaz-yuvarlak sik gorunum korundu.' },
+    ]
+  },
+  {
     version: 'v399',
     date: '19.07.2026',
     items: [
@@ -24669,5 +24676,14 @@ body.defter #finansContent .stat{ background:#fff !important; border:1px solid #
   try{ window.renderDefterFinansHero(); }catch(e){}
 })();
 </script>
+<style>
+/* ===== v400: kartlari daraltip ust uste bindiren izgarayi geri al ===== */
+body.defter #finansContent .stats-row{ display:flex !important; flex-wrap:wrap !important; gap:12px !important; align-items:stretch !important; }
+body.defter #finansContent .stat{ min-width:240px !important; flex:1 1 240px !important; }
+/* cok sutunlu ic bloklar mobilde tasmasin */
+@media(max-width:520px){
+  body.defter #finansContent .stat{ flex:1 1 100% !important; }
+}
+</style>
 </body>
 </html>
