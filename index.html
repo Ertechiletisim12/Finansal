@@ -4030,7 +4030,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v404';
+const APP_VERSION = 'v405';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -6215,7 +6215,7 @@ function _fbKeyMissing(){ return !FIREBASE_API_KEY || FIREBASE_API_KEY.indexOf('
 function fbUrl(token){ return FIREBASE_URL + '?auth=' + encodeURIComponent(token); }
 // v210: kucuk 'meta' dugumu — sadece son degisiklik zaman damgasi tutar (birkac bayt)
 function fbMetaUrl(token){ return FIREBASE_URL.replace('/data.json','/meta.json') + '?auth=' + encodeURIComponent(token); }
-let lastMetaT = null;   // en son gorulen bulut degisiklik zamani
+let lastMetaT = (function(){ try{ var v=parseInt(localStorage.getItem('vf_last_meta_t')||'',10); return isNaN(v)?null:v; }catch(e){ return null; } })();   // en son gorulen bulut degisiklik zamani (KALICI)
 let _pollSayac = 0;     // yoklama sayaci (periyodik tam senkron icin)
 
 async function fbLogin(email, password){
@@ -6521,6 +6521,23 @@ async function pushToCloud(){
       if(!fbIsLoggedIn()) showLoginScreen();
       return;
     }
+    // ═══ v405: BAYAT VERI EZME KORUMASI ═══
+    // Bulut, bu cihazin en son gordugu durumdan DAHA YENIyse, bu cihazin verisi
+    // eski bir bulut haline dayaniyor demektir (ornek: eski tarayici/PC). Uzerine
+    // YAZMA — once buluttan cek. Boylece bayat veri guncel veriyi asla silemez.
+    try{
+      const _gmr = await fetch(fbMetaUrl(_tok), { cache:'no-store' });
+      if(_gmr.ok){
+        const _gm = await _gmr.json();
+        if(_gm && _gm.t != null && (lastMetaT == null || _gm.t > lastMetaT)){
+          isPushingToCloud = false;
+          userChangedData = false;              // yerel bayat kabul edilir; bulut = gercek
+          updateCloudIndicator('saving');
+          setTimeout(()=>{ try{ pullFromCloud(); }catch(e){} }, 120);
+          return;
+        }
+      }
+    }catch(_ge){ /* meta cekilemezse (ilk kurulum/ag) mevcut davranisa devam */ }
     const res = await fetch(fbUrl(_tok), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -6532,6 +6549,7 @@ async function pushToCloud(){
       try{ localStorage.removeItem('vf_pending_sync'); }catch(e){}
       lastCloudHash = hash;
       lastMetaT = _syncT;
+      try{ localStorage.setItem('vf_last_meta_t', String(_syncT)); }catch(e){}
       // v210: kucuk meta'yi guncelle — diger cihazlar tum veriyi indirmeden "degisti mi" anlar
       try{ fetch(fbMetaUrl(_tok), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ t: _syncT, p: getPlatformName() }) }); }catch(e){}
       lastSyncedEntries = JSON.parse(JSON.stringify(entries));
@@ -6579,6 +6597,7 @@ async function pullFromCloud(){
     if(hash === lastCloudHash){ lastMetaT = (data.syncT != null) ? data.syncT : lastMetaT; updateCloudIndicator('saved'); return false; }
     lastCloudHash = hash;
     lastMetaT = (data.syncT != null) ? data.syncT : Date.now(); // v210
+    try{ localStorage.setItem('vf_last_meta_t', String(lastMetaT)); }catch(e){}
     // ═══ v185: TEK DOĞRU KAYNAK ═══
     // Firebase = gerçek. Gelen veriyi MERGE ETMEDEN doğrudan uygula.
     // (Eski merge/tombstone katmanı kaldırıldı — silme artık Firebase'den doğrudan gelir,
@@ -6607,6 +6626,8 @@ async function pullFromCloud(){
     if(data.kasaData && typeof kasaData!=='undefined') kasaData = data.kasaData;
     if(data.eldenData && typeof eldenData!=='undefined') eldenData = data.eldenData;
     if(data.sermayeHedef !== undefined && data.sermayeHedef !== null){ try{ localStorage.setItem('vf_sermaye_hedef_v1', JSON.stringify(data.sermayeHedef)); if(typeof renderSermayeHedef==='function') renderSermayeHedef(); }catch(e){} }
+    if(data.gelirKategoriler && typeof GELIR_KATEGORILER!=='undefined'){ try{ GELIR_KATEGORILER=data.gelirKategoriler.gelir||GELIR_KATEGORILER; GIDER_KATEGORILER=data.gelirKategoriler.gider||GIDER_KATEGORILER; localStorage.setItem(STORE_KEY_GELIR_KAT, JSON.stringify({gelir:GELIR_KATEGORILER,gider:GIDER_KATEGORILER})); }catch(e){} }
+    if(data.notifSettings && typeof notifSettings!=='undefined'){ try{ notifSettings={...notifSettings,...data.notifSettings}; localStorage.setItem(STORE_KEY_NOTIF, JSON.stringify(notifSettings)); }catch(e){} }
     lastSyncedEntries = JSON.parse(JSON.stringify(entries));
     try{
       localStorage.setItem(STORE_KEY_ENTRIES,   JSON.stringify(entries));
@@ -7685,7 +7706,7 @@ function exportActivityListToExcel(){
 
 // ---- yedekleme / geri yükleme ----
 function getBackupData(){
-  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, tombstones, islemLog: (typeof islemLog!=='undefined'?islemLog:[]), kasaData: (typeof kasaData!=='undefined'?kasaData:[]), eldenData: (typeof eldenData!=='undefined'?eldenData:[]), sermayeHedef: (function(){try{return JSON.parse(localStorage.getItem('vf_sermaye_hedef_v1')||'null');}catch(e){return null;}})(), pinHash: getPinHash(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
+  return { entries, entryLog, prices, yatirilan, hedefler, hedefKatData, hedefAciklamaData, finansData, gelirData, notlarData, finansTrash, kampanyaData, tarifeData, musteriler, tombstones, islemLog: (typeof islemLog!=='undefined'?islemLog:[]), kasaData: (typeof kasaData!=='undefined'?kasaData:[]), eldenData: (typeof eldenData!=='undefined'?eldenData:[]), gelirKategoriler: {gelir:(typeof GELIR_KATEGORILER!=='undefined'?GELIR_KATEGORILER:[]), gider:(typeof GIDER_KATEGORILER!=='undefined'?GIDER_KATEGORILER:[])}, notifSettings: (typeof notifSettings!=='undefined'?notifSettings:null), sermayeHedef: (function(){try{return JSON.parse(localStorage.getItem('vf_sermaye_hedef_v1')||'null');}catch(e){return null;}})(), pinHash: getPinHash(), exportedAt: new Date().toISOString(), version: 5, lastPlatform: getPlatformName(), lastSavedAt: nowTR().toLocaleString('tr-TR') };
 }
 function timeStr(){
   const d = new Date();
@@ -7756,6 +7777,8 @@ function restoreData(event){
       if(data.eldenData && typeof eldenData!=='undefined'){ eldenData = data.eldenData; try{ localStorage.setItem(STORE_KEY_ELDEN, JSON.stringify(eldenData)); }catch(e){} }
       if(data.finansData) finansData = data.finansData;
       if(data.sermayeHedef !== undefined && data.sermayeHedef !== null){ try{ localStorage.setItem('vf_sermaye_hedef_v1', JSON.stringify(data.sermayeHedef)); }catch(e){} }
+      if(data.gelirKategoriler && typeof GELIR_KATEGORILER!=='undefined'){ try{ GELIR_KATEGORILER=data.gelirKategoriler.gelir||[]; GIDER_KATEGORILER=data.gelirKategoriler.gider||[]; localStorage.setItem(STORE_KEY_GELIR_KAT, JSON.stringify({gelir:GELIR_KATEGORILER,gider:GIDER_KATEGORILER})); }catch(e){} }
+      if(data.notifSettings && typeof notifSettings!=='undefined'){ try{ notifSettings={...notifSettings,...data.notifSettings}; localStorage.setItem(STORE_KEY_NOTIF, JSON.stringify(notifSettings)); }catch(e){} }
       saveEntries(); saveEntryLog(); savePricesStore(); saveYatirilanStore(); saveGelirStore(); saveNotlarStore(); saveFinansStore(); saveHedefStore();
       render();
       if(currentPage==='finans') renderFinans();
@@ -20936,6 +20959,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v405',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'KRITIK — VERI KAYBI KORUMASI: Eski tarayici/PC\'den (bayat yerel veriyle) girince, guncel bulut verisi eziliyor ve son ayin verileri kayboluyordu. Artik bu cihaz push yapmadan ONCE buluta bakiyor; bulut bu cihazin en son gordugunden daha yeniyse UZERINE YAZMIYOR, once cekiyor. Bunun icin son senkron damgasi (lastMetaT) kalici saklaniyor. Yani bayat bir cihaz artik guncel veriyi silemez; Firebase gercek kaynak.' },
+      { type: 'fix', text: 'YEDEK KAPSAMI: Yedek ve senkrona gelir/gider KATEGORILERI ve BILDIRIM AYARLARI da eklendi (onceden yedek disindaydi). Boylece yedek daha eksiksiz.' },
+    ]
+  },
   {
     version: 'v404',
     date: '19.07.2026',
