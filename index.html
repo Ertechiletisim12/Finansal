@@ -2654,6 +2654,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
       <div id="sbVeri" style="display:flex;flex-direction:column;gap:6px;overflow:hidden;transition:all .2s">
         <button class="tool-btn" onclick="backupData()">💾 Yedekle</button>
+        <button class="tool-btn" onclick="resetDeviceFromCloud()" title="Bu cihazdaki yerel veriyi silip buluttan yeniden yükle (eski/bayat cihazlar için)">☁️ Buluttan Sıfırla</button>
         <button class="tool-btn" onclick="openGithubGuncelleModal()" style="background:rgba(63,208,255,0.07);border-color:rgba(63,208,255,0.18);color:#4a9bb5;font-weight:600">🔄 Güncelle</button>
         <label class="tool-btn" style="cursor:pointer">📂 Geri Yükle<input type="file" accept=".json" onchange="restoreData(event)" style="display:none"></label>
         <button class="tool-btn" onclick="chooseBackupFolder()">📁 Oto. Yedek Klasörü</button>
@@ -4030,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v406';
+const APP_VERSION = 'v407';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -6670,6 +6671,50 @@ async function pullFromCloud(){
     updateCloudIndicator('saved', platformInfo || '—');
     return true;
   } catch(e){ updateCloudIndicator('error'); return false; }
+}
+
+// ═══ v406: ACILISTA BULUTTAN TAZE CEK ═══
+// Bulut = gercek kaynak. Bulut bu cihazin en son gordugunden yeniyse, bekleyen bayat
+// push'u iptal edip once buluttan cekeriz. Boylece her acilista guncel veriyle baslarsin.
+async function initialCloudSync(){
+  try{
+    if(!fbIsLoggedIn()){ showLoginScreen(); return; }
+    const _tok = await fbGetToken();
+    if(_tok){
+      try{
+        const _mr = await fetch(fbMetaUrl(_tok), { cache:'no-store' });
+        if(_mr.ok){
+          const _m = await _mr.json();
+          if(_m && _m.t != null && (lastMetaT==null || _m.t > lastMetaT)){
+            userChangedData = false;                       // yerel bayat -> bulut gercek
+            try{ localStorage.removeItem('vf_pending_sync'); }catch(e){}
+          }
+        }
+      }catch(e){}
+    }
+    await pullFromCloud();
+  }catch(e){}
+  startCloudPolling();
+}
+
+// ═══ v406: BU CIHAZI BULUTTAN SIFIRLA ═══
+// Eski/bayat cihazlarda (baska tarayici/PC) tek tikla yereli temizleyip buluttan yeniden yukler.
+async function resetDeviceFromCloud(){
+  if(!confirm('Bu cihazdaki YEREL veriler silinip her şey buluttan yeniden yüklenecek.\n\nBu cihazda henüz buluta gitmemiş değişiklik varsa kaybolur. (Ana cihazında her şeyin senkron/yedekli olduğundan emin ol.)\n\nDevam edilsin mi?')) return;
+  try{
+    userChangedData = false;
+    lastMetaT = null; if(typeof lastCloudHash!=='undefined') lastCloudHash = null;
+    const keys=[STORE_KEY_ENTRIES,STORE_KEY_LOG,STORE_KEY_PRICES,STORE_KEY_YATIRILAN,STORE_KEY_HEDEF,STORE_KEY_HEDEF_KAT,STORE_KEY_FINANS,STORE_KEY_GELIR,STORE_KEY_NOTLAR,STORE_KEY_TRASH,STORE_KEY_KAMPANYA,STORE_KEY_TARIFE,STORE_KEY_MUSTERILER,'vf_hedef_aciklama_v1','vf_sermaye_hedef_v1','vf_pending_sync','vf_last_meta_t','vf_last_auto_snap'];
+    if(typeof STORE_KEY_GELIR_KAT!=='undefined') keys.push(STORE_KEY_GELIR_KAT);
+    if(typeof STORE_KEY_KASA!=='undefined') keys.push(STORE_KEY_KASA);
+    if(typeof STORE_KEY_ELDEN!=='undefined') keys.push(STORE_KEY_ELDEN);
+    if(typeof STORE_KEY_ISLOG!=='undefined') keys.push(STORE_KEY_ISLOG);
+    keys.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+    try{ if(typeof showToast==='function') showToast('☁️ Buluttan yeniden yükleniyor…','info'); }catch(e){}
+    await pullFromCloud();
+    alert('✓ Bu cihaz buluttan yeniden yüklendi. Sayfa yenileniyor.');
+    location.reload();
+  }catch(e){ alert('Hata: '+((e&&e.message)||e)); }
 }
 
 let lastPlatformInfo = '';
@@ -18308,13 +18353,12 @@ if(typeof migrateGelirKategorilerV151==='function') migrateGelirKategorilerV151(
 // v152: önceki oturumdan kalan senkron kuyruğu varsa gönder
 if(localStorage.getItem('vf_pending_sync')==='1'){
   userChangedData = true;
-  if(navigator.onLine){ setTimeout(()=>{ try{ pushToCloud(); }catch(e){} }, 4000); }
-  else updateCloudIndicator('queued');
+  if(!navigator.onLine) updateCloudIndicator('queued');
 }
-// Buluttan veri çek — localStorage'dan daha yeni veri varsa uygula
+// Buluttan veri çek — v406: acilista ONCE buluttan taze cek (bulut = gercek kaynak)
 setTimeout(()=>{
   // v207: Bulut senkronu artik girise bagli. Giris yoksa once giris ekrani gosterilir.
-  if(fbIsLoggedIn()){ pullFromCloud().then(()=>startCloudPolling()); }
+  if(fbIsLoggedIn()){ initialCloudSync(); }
   else { showLoginScreen(); }
   // Bulut gostergesine dokununca hesap cikisi (uzun surekli goruntude pratik)
   try{
@@ -20969,6 +21013,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v407',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'ACILISTA TAZE BULUT: Uygulama her acilista once buluttan taze veri cekiyor; bulut bu cihazin gordugunden yeniyse bekleyen bayat gonderim iptal edilip guncel veri aliniyor. Boylece hangi cihazdan girersen gir, en guncel veriyle baslarsin (Firebase gercek kaynak).' },
+      { type: 'new', text: 'YENI: Ayarlar > Veri Yonetimi > "☁️ Buluttan Sıfırla". Eski/bayat bir tarayici veya PC\'den giris yaptiginda, bu dugmeye basinca o cihazdaki yerel veri silinip her sey buluttan yeniden yuklenir. Eski cihazlarin guncel veriyi bozma riskini tamamen ortadan kaldirir.' },
+    ]
+  },
   {
     version: 'v406',
     date: '19.07.2026',
