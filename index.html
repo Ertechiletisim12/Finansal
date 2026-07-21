@@ -4030,7 +4030,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v405';
+const APP_VERSION = 'v406';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -7818,10 +7818,20 @@ async function writeAutoBackup(){
       const req = await backupDirHandle.requestPermission({mode:'readwrite'});
       if(req !== 'granted') return;
     }
-    const fileHandle = await backupDirHandle.getFileHandle('vodafone_prim_otomatik_yedek.json', {create:true});
-    const writable = await fileHandle.createWritable();
-    await writable.write(JSON.stringify(getBackupData(), null, 2));
-    await writable.close();
+    const json = JSON.stringify(getBackupData(), null, 2);
+    // 1) "En guncel" hizli kopya (uzerine yazilir — her zaman en son hali)
+    const latest = await backupDirHandle.getFileHandle('vodafone_prim_otomatik_yedek.json', {create:true});
+    let w = await latest.createWritable(); await w.write(json); await w.close();
+    // 2) v405: TARIH-SAAT-SANIYELI AYRI SNAPSHOT — asla ezilmez.
+    //    Boylece olasi bir problemde eski (dogru) yedekler korunur.
+    //    Klasoru bogmasin diye en fazla 60 sn'de bir yeni snapshot dosyasi olusur.
+    let lastSnap = 0; try{ lastSnap = parseInt(localStorage.getItem('vf_last_auto_snap')||'0',10)||0; }catch(e){}
+    if(Date.now() - lastSnap >= 60000){
+      const snapName = 'vodafone_prim_otomatik_' + todayStr() + '_' + timeStr() + '.json';
+      const snap = await backupDirHandle.getFileHandle(snapName, {create:true});
+      let w2 = await snap.createWritable(); await w2.write(json); await w2.close();
+      try{ localStorage.setItem('vf_last_auto_snap', String(Date.now())); }catch(e){}
+    }
     markBackupDone();
     updateAutoBackupUI('ok');
   }catch(err){
@@ -20959,6 +20969,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v406',
+    date: '19.07.2026',
+    items: [
+      { type: 'fix', text: 'OTOMATIK YEDEK ARTIK EZILMIYOR: Onceden otomatik yedek hep ayni dosyanin uzerine yaziyordu; bir problemde guncel/dogru veri kayboluyordu. Artik her otomatik yedek TARIH-SAAT-SANIYELI AYRI bir dosya olarak kaydediliyor (vodafone_prim_otomatik_2026-07-19_14-30-05.json gibi) ve asla ezilmiyor. Klasoru bogmamak icin en fazla 60 saniyede bir yeni snapshot olusur (bu sure ayarlanabilir). Ayrica her zaman guncel hali tutan tek bir "..._otomatik_yedek.json" kopyasi da var. Klasor cok buyurse eski snapshotlari elle silebilirsin.' },
+    ]
+  },
   {
     version: 'v405',
     date: '19.07.2026',
