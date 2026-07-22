@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v408';
+const APP_VERSION = 'v409';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21014,6 +21014,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v409',
+    date: '22.07.2026',
+    items: [
+      { type: 'fix', text: 'Alt bardaki Menu artik TUM menuyu aciyor (Gorunum, Veri Yonetimi, Sistem — Yedekle, Buluttan Sifirla, Guncelle, Geri Yukle, Bildirimler, Kilit/PIN, Sifirla vb. hepsi). Onceki surumde sadece 6 sayfa vardi. Menu yandan degil, Defter temasinda ALTTAN YUKARI acilan bir sayfa olarak geliyor; icerik ayni, sadece konum/animasyon degisti, hicbir islev kaybolmadi.' },
+    ]
+  },
+  {
     version: 'v408',
     date: '19.07.2026',
     items: [
@@ -24404,7 +24411,7 @@ body.defter #defterBtn, body.defter #defterBtnMobile{ color:var(--gold); border-
   <div class="dtab" data-p="finans" onclick="switchPage('finans')"><div class="dic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l3-4 3 2 4-6"/></svg></div></div>
   <div class="dfab" id="defterFab" onclick="toggleDefterSheet()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
   <div class="dtab" data-p="kasa" onclick="switchPage('kasa')"><div class="dic"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M4 8h4M4 13h4"/></svg></div></div>
-  <div class="dtab" id="defterMenuBtn" onclick="toggleDefterMenu()"><div class="dic"><svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="18" r="1.6"/><path d="M10 6h10M10 12h10M10 18h10"/></svg></div></div>
+  <div class="dtab" id="defterMenuBtn" onclick="closeDefterPopups(); openMobileMenu();"><div class="dic"><svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="18" r="1.6"/><path d="M10 6h10M10 12h10M10 18h10"/></svg></div></div>
 </div>
 <script>
 /* ===== v388: alt sekme cubugu aktif-vurgu (switchPage'i sararak) ===== */
@@ -25143,5 +25150,21 @@ body.defter #defterMenuSheet.show{ opacity:1; pointer-events:auto; transform:tra
   }catch(e){}
 })();
 </script>
+<style>
+/* ===== v409: Defter'de tam menu drawer'i ALTTAN YUKARI acilan sayfa yap ===== */
+@media(max-width:700px){
+  body.defter .sidebar.mob-open{
+    top:auto !important; left:0 !important; right:0 !important; bottom:0 !important;
+    width:100% !important; max-width:460px !important; margin:0 auto !important;
+    height:auto !important; max-height:82vh !important;
+    border-radius:24px 24px 0 0 !important;
+    border-top:2px solid var(--gold) !important;
+    overflow-y:auto !important;
+    animation: defterMenuUp .26s cubic-bezier(.2,.7,.3,1);
+    box-shadow:0 -18px 50px rgba(0,0,0,.5) !important;
+  }
+}
+@keyframes defterMenuUp{ from{ transform:translateY(100%); opacity:.6 } to{ transform:translateY(0); opacity:1 } }
+</style>
 </body>
 </html>
