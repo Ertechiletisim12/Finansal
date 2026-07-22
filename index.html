@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v411';
+const APP_VERSION = 'v412';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -9681,6 +9681,7 @@ function renderSettingsPanel(){
     // --- VERİ YÖNETİMİ ---
     H += '<div class="ds-sec-t">Veri Y\u00f6netimi</div><div class="st-group">'
        + row('\ud83d\udcbe','Yedekle','T\u00fcm veriyi dosyaya kaydet','backupData()',null,'b')
+       + row('\u2601\ufe0f','Buluttan S\u0131f\u0131rla','Yereli silip buluttan yeniden y\u00fckle','resetDeviceFromCloud()',null,'b')
        + row('\ud83d\udd04','G\u00fcncelle','Yeni s\u00fcr\u00fcm\u00fc kontrol et','openGithubGuncelleModal()',null,'g')
        + '<label class="st-row" style="cursor:pointer"><span class="st-ico p">\ud83d\udcc2</span>'
        + '<span class="st-txt"><span class="st-t">Geri Y\u00fckle</span><span class="st-s">Yedek dosyas\u0131ndan y\u00fckle</span></span>'
@@ -21013,6 +21014,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v412',
+    date: '22.07.2026',
+    items: [
+      { type: 'fix', text: 'Masaustu Ayarlar panelinde Veri Yonetimi altina "Buluttan Sifirla" eklendi (onceden sadece eski yan menude vardi, yeni panelde gorunmuyordu).' },
+    ]
+  },
   {
     version: 'v411',
     date: '22.07.2026',
