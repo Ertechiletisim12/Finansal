@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v409';
+const APP_VERSION = 'v410';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21014,6 +21014,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v410',
+    date: '22.07.2026',
+    items: [
+      { type: 'new', text: 'Alt bar + tam Menu tamamlandi: (1) Alt barda Kasa yerine Prim Sayfasi geldi (Kasa menude). (2) Menu artik prototipteki gibi bolumlu sik kutucuklarla alttan aciliyor: SAYFALAR (6 sayfa), GORUNUM (Koyu Mod/Defter/Tutarlari Gizle — durum gostergeli), Bulut durumu, VERI YONETIMI (Yedekle, Buluttan Sifirla, Guncelle, Geri Yukle, Oto Yedek Klasoru), Depolama cubugu, SISTEM (Yonetici Raporu, Islem Gecmisi, Bildirimler — rozetli, Kilit/PIN, Giris Loglari) ve kirmizi Tehlikeli Bolge (Finansal/Tum Sifirla). Hepsi dogru islevlere bagli.' },
+    ]
+  },
+  {
     version: 'v409',
     date: '22.07.2026',
     items: [
@@ -24410,8 +24417,8 @@ body.defter #defterBtn, body.defter #defterBtnMobile{ color:var(--gold); border-
   <div class="dtab" data-p="dash" onclick="switchPage('dash')"><div class="dic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div></div>
   <div class="dtab" data-p="finans" onclick="switchPage('finans')"><div class="dic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l3-4 3 2 4-6"/></svg></div></div>
   <div class="dfab" id="defterFab" onclick="toggleDefterSheet()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
-  <div class="dtab" data-p="kasa" onclick="switchPage('kasa')"><div class="dic"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M4 8h4M4 13h4"/></svg></div></div>
-  <div class="dtab" id="defterMenuBtn" onclick="closeDefterPopups(); openMobileMenu();"><div class="dic"><svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="18" r="1.6"/><path d="M10 6h10M10 12h10M10 18h10"/></svg></div></div>
+  <div class="dtab" data-p="prim" onclick="switchPage('prim')"><div class="dic"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div></div>
+  <div class="dtab" id="defterMenuBtn" onclick="openDefterFullMenu()"><div class="dic"><svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="18" r="1.6"/><path d="M10 6h10M10 12h10M10 18h10"/></svg></div></div>
 </div>
 <script>
 /* ===== v388: alt sekme cubugu aktif-vurgu (switchPage'i sararak) ===== */
@@ -25166,5 +25173,113 @@ body.defter #defterMenuSheet.show{ opacity:1; pointer-events:auto; transform:tra
 }
 @keyframes defterMenuUp{ from{ transform:translateY(100%); opacity:.6 } to{ transform:translateY(0); opacity:1 } }
 </style>
+<style>
+/* ===== v410: tam Menu (bolumlu kutucuklar, alttan acilir) ===== */
+#defterFullMenu{ display:none }
+body.defter #defterFullMenu{ display:block; position:fixed; left:0;right:0;bottom:0; max-width:460px;margin:0 auto; z-index:602; background:#1c2530; border-top:2px solid var(--gold); border-radius:24px 24px 0 0; max-height:86vh; overflow-y:auto; transform:translateY(100%); transition:transform .28s cubic-bezier(.2,.7,.3,1); box-shadow:0 -18px 50px rgba(0,0,0,.5); padding:0 15px calc(20px + env(safe-area-inset-bottom)); }
+body.defter #defterFullMenu.show{ transform:translateY(0) }
+#defterFullMenu .fm-handle{ width:42px;height:5px;border-radius:3px;background:#3a4652;margin:10px auto 4px }
+#defterFullMenu .fm-title{ color:#eef1f4;font-size:16px;font-weight:800;text-align:center;padding:2px 0 8px }
+#defterFullMenu .fm-sec{ font-size:11px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.07em;margin:14px 6px 9px }
+#defterFullMenu .fm-grid{ display:grid;grid-template-columns:1fr 1fr;gap:10px }
+#defterFullMenu .fm-grid.g3{ grid-template-columns:1fr 1fr 1fr }
+#defterFullMenu .fm-tile{ background:#28323d;border:1px solid #3a4652;border-radius:16px;padding:13px 8px;cursor:pointer;transition:.12s;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;position:relative;min-height:82px;justify-content:center }
+#defterFullMenu .fm-tile:active{ transform:scale(.95) }
+#defterFullMenu .fm-tile svg{ width:23px;height:23px;stroke:var(--gold);stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round }
+#defterFullMenu .fm-tile .t{ font-size:11.5px;font-weight:700;color:#eef1f4;line-height:1.2 }
+#defterFullMenu .fm-tile.on{ border-color:var(--gold);background:rgba(217,154,52,.13) }
+#defterFullMenu .fm-tile .state{ font-size:9.5px;color:var(--gold);font-weight:700 }
+#defterFullMenu .fm-tile .badge{ position:absolute;top:7px;right:7px;background:#d0503a;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 5px }
+#defterFullMenu .fm-tile.danger svg{ stroke:#d0503a } #defterFullMenu .fm-tile.danger .t{ color:#f0a99b } #defterFullMenu .fm-tile.danger{ border-color:rgba(208,80,58,.4) }
+#defterFullMenu .fm-info{ background:#28323d;border:1px solid #3a4652;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:11px;margin-top:10px }
+#defterFullMenu .fm-info svg{ width:22px;height:22px;stroke:var(--gold);stroke-width:1.9;fill:none;stroke-linecap:round;flex:0 0 auto }
+#defterFullMenu .fm-info .l{ flex:1;min-width:0 } #defterFullMenu .fm-info .l .n{ font-size:12.5px;font-weight:700;color:#eef1f4 } #defterFullMenu .fm-info .l .d{ font-size:11px;color:#9aa6b2;margin-top:2px }
+#defterFullMenu .fm-info .ok{ color:#3f9d5f;font-weight:800;font-size:14px }
+#defterFullMenu .fm-bar{ height:7px;border-radius:4px;background:#3a4652;overflow:hidden;margin-top:6px } #defterFullMenu .fm-bar>div{ height:100%;background:var(--gold);border-radius:4px }
+</style>
+<div id="defterFullMenu">
+  <div class="fm-handle"></div>
+  <div class="fm-title">Menü</div>
+  <div class="fm-sec">Sayfalar</div>
+  <div class="fm-grid g3">
+    <div class="fm-tile" onclick="defterGo('dash')"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><div class="t">Anasayfa</div></div>
+    <div class="fm-tile" onclick="defterGo('prim')"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><div class="t">Prim</div></div>
+    <div class="fm-tile" onclick="defterGo('finans')"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 5-6"/></svg><div class="t">Finansal</div></div>
+    <div class="fm-tile" onclick="defterGo('kasa')"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M4 8h4M4 13h4"/></svg><div class="t">Kasa</div></div>
+    <div class="fm-tile" onclick="defterGo('gelir')"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg><div class="t">Gelir</div></div>
+    <div class="fm-tile" onclick="defterGo('not')"><svg viewBox="0 0 24 24"><path d="M20 12l-8 8-9-9V3h8z"/><circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg><div class="t">Not</div></div>
+  </div>
+  <div class="fm-sec">Görünüm</div>
+  <div class="fm-grid">
+    <div class="fm-tile" id="mKoyu" onclick="defterCall('toggleTheme')"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg><div class="t">Koyu Mod</div><div class="state"></div></div>
+    <div class="fm-tile" id="mDefter" onclick="defterCall('toggleDefter')"><svg viewBox="0 0 24 24"><path d="M4 4h11a3 3 0 013 3v13H7a3 3 0 01-3-3z"/><path d="M4 4v13a3 3 0 003 3"/></svg><div class="t">Defter Teması</div><div class="state"></div></div>
+    <div class="fm-tile" id="mGizli" onclick="defterCall('toggleGizliMod')"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><div class="t">Tutarları Gizle</div><div class="state"></div></div>
+  </div>
+  <div class="fm-info"><svg viewBox="0 0 24 24"><path d="M18 10a5 5 0 00-9.6-1.6A4 4 0 006 18h11a4 4 0 001-7.9z"/><path d="M9.5 14.5l2 2 4-4"/></svg><div class="l"><div class="n">Bulut Senkron</div><div class="d">Bağlı ve güncel</div></div><div class="ok">✓</div></div>
+  <div class="fm-sec">Veri Yönetimi</div>
+  <div class="fm-grid">
+    <div class="fm-tile" onclick="defterCall('backupData')"><svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7M8 14h8M8 17h8"/></svg><div class="t">Yedekle</div></div>
+    <div class="fm-tile" onclick="defterCall('resetDeviceFromCloud')"><svg viewBox="0 0 24 24"><path d="M18 10a5 5 0 00-9.6-1.6A4 4 0 006 18h11a4 4 0 001-7.9z"/><path d="M12 11v5M9.5 13.5L12 11l2.5 2.5"/></svg><div class="t">Buluttan Sıfırla</div></div>
+    <div class="fm-tile" onclick="defterCall('openGithubGuncelleModal')"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-2.6-6.4M21 3v5h-5"/></svg><div class="t">Güncelle</div></div>
+    <div class="fm-tile" onclick="closeDefterPopups(); defterRestore();"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v9a2 2 0 01-2 2H3z"/><path d="M12 16V11M9.5 13l2.5-2.5 2.5 2.5"/></svg><div class="t">Geri Yükle</div></div>
+    <div class="fm-tile" onclick="defterCall('chooseBackupFolder')"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v9a2 2 0 01-2 2H3z"/></svg><div class="t">Oto. Yedek Klasörü</div></div>
+  </div>
+  <div class="fm-info"><svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7"/></svg><div class="l"><div class="n">Depolama</div><div class="d" id="mStorageTxt">—</div><div class="fm-bar"><div id="mStorageBar" style="width:0%"></div></div></div></div>
+  <div class="fm-sec">Sistem</div>
+  <div class="fm-grid">
+    <div class="fm-tile" onclick="defterCall('printManagerReport')"><svg viewBox="0 0 24 24"><path d="M6 2h9l3 3v17H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><div class="t">Yönetici Raporu</div></div>
+    <div class="fm-tile" id="mIslem" onclick="defterCall('openIslemLogModal')"><span class="badge" style="display:none"></span><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M11 8v3l2 2M20 20l-3.5-3.5"/></svg><div class="t">İşlem Geçmişi</div></div>
+    <div class="fm-tile" id="mBildirim" onclick="defterCall('toggleNotifPanel')"><span class="badge" style="display:none"></span><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10.5 21a2 2 0 003 0"/></svg><div class="t">Bildirimler</div></div>
+    <div class="fm-tile" onclick="defterCall('openPinModal')"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><div class="t">Kilit / PIN</div></div>
+    <div class="fm-tile" onclick="defterCall('openGirisLogModal')"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><div class="t">Giriş Logları</div></div>
+  </div>
+  <div class="fm-sec">Tehlikeli Bölge</div>
+  <div class="fm-grid">
+    <div class="fm-tile danger" onclick="defterCall('resetFinansData')"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8M3 3v5h5"/></svg><div class="t">Finansal Veriyi Sıfırla</div></div>
+    <div class="fm-tile danger" onclick="defterCall('clearAllData')"><svg viewBox="0 0 24 24"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg><div class="t">Tüm Verileri Sıfırla</div></div>
+  </div>
+</div>
+<script>
+/* ===== v410: tam Menu mantigi (dogru fonksiyonlara bagli) ===== */
+(function(){
+  function setTog(id,on){ var e=document.getElementById(id); if(!e) return; e.classList.toggle('on',!!on); var s=e.querySelector('.state'); if(s) s.textContent=on?'Açık':'Kapalı'; }
+  function setBadge(id,n){ var e=document.getElementById(id); if(!e) return; var b=e.querySelector('.badge'); if(!b) return; if(n==null||n<=0){ b.style.display='none'; } else { b.style.display=''; b.textContent=n; } }
+  function refreshStates(){
+    try{
+      var b=document.body;
+      setTog('mDefter', b.classList.contains('defter'));
+      setTog('mKoyu', !b.classList.contains('light'));
+      setTog('mGizli', (typeof gizliMod!=='undefined' && !!gizliMod));
+      try{ setBadge('mIslem', (typeof islemLog!=='undefined'&&islemLog)?islemLog.length:null); }catch(e){}
+      try{ setBadge('mBildirim', (typeof collectAlerts==='function')?(collectAlerts()||[]).length:null); }catch(e){}
+      try{
+        var tot=0; for(var k in localStorage){ if(Object.prototype.hasOwnProperty.call(localStorage,k)) tot+=((localStorage[k]||'').length + k.length); }
+        var kb=Math.round(tot/1024); var pc=Math.min(100,Math.round(kb/5120*100));
+        var t=document.getElementById('mStorageTxt'); if(t) t.textContent=kb.toLocaleString('tr-TR')+' KB / 5120 KB · %'+pc;
+        var bar=document.getElementById('mStorageBar'); if(bar) bar.style.width=pc+'%';
+      }catch(e){}
+    }catch(e){}
+  }
+  window.openDefterFullMenu=function(){
+    try{
+      var as=document.getElementById('defterSheet'); if(as) as.classList.remove('show');
+      var ms=document.getElementById('defterMenuSheet'); if(ms) ms.classList.remove('show');
+      var f=document.getElementById('defterFab'); if(f) f.classList.remove('open');
+      refreshStates();
+      var m=document.getElementById('defterFullMenu'), sc=document.getElementById('defterScrim');
+      if(m) m.classList.add('show'); if(sc) sc.classList.add('show');
+    }catch(e){}
+  };
+  // closeDefterPopups'i genislet
+  window.closeDefterPopups=function(){
+    ['defterSheet','defterMenuSheet','defterFullMenu'].forEach(function(id){ var e=document.getElementById(id); if(e) e.classList.remove('show'); });
+    var f=document.getElementById('defterFab'); if(f) f.classList.remove('open');
+    var sc=document.getElementById('defterScrim'); if(sc) sc.classList.remove('show');
+  };
+  window.defterGo=function(p){ window.closeDefterPopups(); setTimeout(function(){ try{ switchPage(p); }catch(e){} },170); };
+  window.defterCall=function(fn){ window.closeDefterPopups(); setTimeout(function(){ try{ if(typeof window[fn]==='function') window[fn](); }catch(e){} },170); };
+  window.defterRestore=function(){ try{ var inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=function(ev){ try{ restoreData(ev); }catch(e){} }; inp.click(); }catch(e){} };
+})();
+</script>
 </body>
 </html>
