@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v410';
+const APP_VERSION = 'v411';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21013,6 +21013,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v411',
+    date: '22.07.2026',
+    items: [
+      { type: 'fix', text: 'ONEMLI — GUNCELLEME SORUNU: Service worker surum damgasi (sw.js) v379\'da takili kalmisti; bu yuzden bazi cihazlar (ozellikle PC/eski tarayicilar) eski onbelleğe alinmis surumu tutup yeni ozellikleri (or. "Buluttan Sifirla") GOREMIYORDU. Damga guncellendi ve bundan sonra her surumde birlikte guncellenecek; cihazlar acilista otomatik en son surume gececek, eski onbellek temizlenecek. Not: "Buluttan Sifirla" PC\'de zaten sol menu > Veri Yonetimi altinda; guncelleme gelince gorunecek.' },
+    ]
+  },
   {
     version: 'v410',
     date: '22.07.2026',
