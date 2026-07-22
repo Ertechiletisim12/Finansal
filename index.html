@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v407';
+const APP_VERSION = 'v408';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21014,6 +21014,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v408',
+    date: '19.07.2026',
+    items: [
+      { type: 'new', text: 'Defter alt bar yenilendi: (1) Emoji ikonlar yerine temiz cizgisel SVG ikonlar (aktif olan altin). (2) Sagdaki Menu artik slide/yan panel yerine, tipki ortadaki "+" gibi YUKARI ACILIR kutucuk menusu; icinde tum sayfalar: Anasayfa, Prim Sayfasi, Finansal Analiz, Kasa Sayimi, Gelir Takibi, Not & Etiket. Disariya dokununca kapanir; "+" ile menu birbirini otomatik kapatir.' },
+    ]
+  },
+  {
     version: 'v407',
     date: '19.07.2026',
     items: [
@@ -24393,11 +24400,11 @@ body.defter #defterBtn, body.defter #defterBtnMobile{ color:var(--gold); border-
 #defterTabBar .dfab{ width:58px;height:58px;border-radius:50%;background:var(--gold);color:#2a2010;display:grid;place-items:center;font-size:29px;font-weight:800;margin-top:-22px;box-shadow:0 6px 18px rgba(207,149,48,.55);flex:0 0 auto;cursor:pointer }
 </style>
 <div id="defterTabBar">
-  <div class="dtab" data-p="dash" onclick="switchPage('dash')"><div class="dic">▦</div>Özet</div>
-  <div class="dtab" data-p="finans" onclick="switchPage('finans')"><div class="dic">📊</div>Finans</div>
-  <div class="dfab" id="defterFab" onclick="toggleDefterSheet()">+</div>
-  <div class="dtab" data-p="kasa" onclick="switchPage('kasa')"><div class="dic">🧮</div>Kasa</div>
-  <div class="dtab" onclick="openMobileMenu()"><div class="dic">☰</div>Menü</div>
+  <div class="dtab" data-p="dash" onclick="switchPage('dash')"><div class="dic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div></div>
+  <div class="dtab" data-p="finans" onclick="switchPage('finans')"><div class="dic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l3-4 3 2 4-6"/></svg></div></div>
+  <div class="dfab" id="defterFab" onclick="toggleDefterSheet()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+  <div class="dtab" data-p="kasa" onclick="switchPage('kasa')"><div class="dic"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M4 8h4M4 13h4"/></svg></div></div>
+  <div class="dtab" id="defterMenuBtn" onclick="toggleDefterMenu()"><div class="dic"><svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="18" r="1.6"/><path d="M10 6h10M10 12h10M10 18h10"/></svg></div></div>
 </div>
 <script>
 /* ===== v388: alt sekme cubugu aktif-vurgu (switchPage'i sararak) ===== */
@@ -24607,7 +24614,7 @@ body.defter #defterSheet.show{ opacity:1; pointer-events:auto; transform:transla
 body.defter #defterScrim{ display:block; position:fixed; inset:0; background:rgba(10,12,16,.45); z-index:600; opacity:0; pointer-events:none; transition:.22s }
 body.defter #defterScrim.show{ opacity:1; pointer-events:auto }
 </style>
-<div id="defterScrim" onclick="toggleDefterSheet()"></div>
+<div id="defterScrim" onclick="closeDefterPopups()"></div>
 <div id="defterSheet">
   <div class="tile" onclick="defterAction('switchPage','prim')"><div class="ic">🧾</div><div class="t">Yeni İşlem</div></div>
   <div class="tile" onclick="defterAction('openFinansAyModal')"><div class="ic">🗓️</div><div class="t">Ay Kapanışı</div></div>
@@ -25075,6 +25082,65 @@ body.defter #dhInner .dh-pos{ color:#2f9e5f } body.defter #dhInner .dh-neg{ colo
   ensureObserver();
   window.addEventListener('load', ensureObserver);
   try{ window.renderDefterFinansHero(); ensureObserver(); }catch(e){}
+})();
+</script>
+<style>
+/* ===== v408: alt bar SVG ikonlari + acilir Menu ===== */
+body.defter #defterTabBar .dic svg{ width:24px;height:24px;stroke:#aeb8c2;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round;display:block }
+body.defter #defterTabBar .dic svg circle{ fill:#aeb8c2;stroke:none }
+body.defter #defterTabBar .dtab.on .dic svg{ stroke:var(--gold) }
+body.defter #defterTabBar .dtab.on .dic svg circle{ fill:var(--gold) }
+body.defter #defterFab svg{ width:28px;height:28px;stroke:#2a1e08;stroke-width:2.4;fill:none;stroke-linecap:round;display:block }
+/* menu sheet */
+#defterMenuSheet{ display:none }
+body.defter #defterMenuSheet{
+  display:grid; position:fixed; left:50%; transform:translateX(-50%) translateY(20px);
+  bottom:100px; z-index:601; grid-template-columns:1fr 1fr; gap:11px; width:min(88%,380px);
+  background:#1c2530; border:1px solid #33404c; border-radius:24px; padding:15px;
+  box-shadow:0 22px 50px rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:.22s;
+}
+body.defter #defterMenuSheet.show{ opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0) }
+#defterMenuSheet .mtile{ background:#28323d; border:1px solid #3a4652; border-radius:18px; padding:15px 8px; text-align:center; cursor:pointer; transition:.12s; display:flex; flex-direction:column; align-items:center; gap:8px }
+#defterMenuSheet .mtile:active{ transform:scale(.95) }
+#defterMenuSheet .mtile svg{ width:25px;height:25px;stroke:var(--gold);stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round }
+#defterMenuSheet .mtile .t{ font-size:12.5px;font-weight:700;color:#eef1f4 }
+</style>
+<div id="defterMenuSheet">
+  <div class="mtile" onclick="defterMenuGo('dash')"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><div class="t">Anasayfa</div></div>
+  <div class="mtile" onclick="defterMenuGo('prim')"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><div class="t">Prim Sayfası</div></div>
+  <div class="mtile" onclick="defterMenuGo('finans')"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 5-6"/></svg><div class="t">Finansal Analiz</div></div>
+  <div class="mtile" onclick="defterMenuGo('kasa')"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M4 8h4M4 13h4"/></svg><div class="t">Kasa Sayımı</div></div>
+  <div class="mtile" onclick="defterMenuGo('gelir')"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg><div class="t">Gelir Takibi</div></div>
+  <div class="mtile" onclick="defterMenuGo('not')"><svg viewBox="0 0 24 24"><path d="M20 12l-8 8-9-9V3h8z"/><circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg><div class="t">Not & Etiket</div></div>
+</div>
+<script>
+/* ===== v408: acilir Menu mantigi (Menu = + gibi yukari acilir) ===== */
+(function(){
+  window.closeDefterPopups=function(){
+    ['defterSheet','defterMenuSheet'].forEach(function(id){ var e=document.getElementById(id); if(e) e.classList.remove('show'); });
+    var f=document.getElementById('defterFab'); if(f) f.classList.remove('open');
+    var sc=document.getElementById('defterScrim'); if(sc) sc.classList.remove('show');
+  };
+  window.toggleDefterMenu=function(){
+    try{
+      var m=document.getElementById('defterMenuSheet'), sc=document.getElementById('defterScrim');
+      if(!m) return;
+      var on=!m.classList.contains('show');
+      // digerini kapat
+      var as=document.getElementById('defterSheet'); if(as) as.classList.remove('show');
+      var f=document.getElementById('defterFab'); if(f) f.classList.remove('open');
+      m.classList.toggle('show',on); if(sc) sc.classList.toggle('show',on);
+    }catch(e){}
+  };
+  window.defterMenuGo=function(p){ try{ window.closeDefterPopups(); }catch(e){} setTimeout(function(){ try{ switchPage(p); }catch(e){} },170); };
+  // + acilinca menuyu kapat (sarmalayarak)
+  try{
+    if(typeof toggleDefterSheet==='function' && !toggleDefterSheet.__menuAware){
+      var _ts=toggleDefterSheet;
+      window.toggleDefterSheet=function(){ var m=document.getElementById('defterMenuSheet'); if(m) m.classList.remove('show'); return _ts.apply(this,arguments); };
+      window.toggleDefterSheet.__menuAware=true;
+    }
+  }catch(e){}
 })();
 </script>
 </body>
