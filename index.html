@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v413';
+const APP_VERSION = 'v414';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21015,6 +21015,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v414',
+    date: '23.07.2026',
+    items: [
+      { type: 'fix', text: 'Defter finans hero: (1) TUTARLARI GIZLE artik hero kartlarinda da calisiyor — mevcut sermaye, donem basi, donem degisimi, toplam kar/zarar, kar ve masraf hepsi maskeleniyor (onceden bu yeni kartlar acikta kaliyordu). Gizle dugmesine basinca aninda tazeleniyor. (2) Hero ustteki filtre seridinin altinda kalabiliyordu: ust bosluk artik her cizimde yeniden olculuyor ve baslik gozlemcisi guncel baslige yeniden baglaniyor (yil/ay filtresi ile baslik uzasa da dogru).' },
+    ]
+  },
+  {
     version: 'v413',
     date: '22.07.2026',
     items: [
@@ -25301,6 +25308,102 @@ body.defter #defterFullMenu.show{ transform:translateY(0) }
   window.defterGo=function(p){ window.closeDefterPopups(); setTimeout(function(){ try{ switchPage(p); }catch(e){} },170); };
   window.defterCall=function(fn){ window.closeDefterPopups(); setTimeout(function(){ try{ if(typeof window[fn]==='function') window[fn](); }catch(e){} },170); };
   window.defterRestore=function(){ try{ var inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=function(ev){ try{ restoreData(ev); }catch(e){} }; inp.click(); }catch(e){} };
+})();
+</script>
+
+<script>
+/* ===== v414: hero'da GIZLI MOD maskesi + ust bosluk gercek olcumle duzeltme ===== */
+(function(){
+  function masked(){ try{ return (typeof gizliMod!=='undefined' && gizliMod); }catch(e){ return false; } }
+  function M(){ try{ return (typeof PARA_MASKE!=='undefined') ? PARA_MASKE : '****'; }catch(e){ return '****'; } }
+  function fmtM(n){ return masked() ? M() : (Math.round(n).toLocaleString('tr-TR') + ' ₺'); }
+  function pctM(v){ return masked() ? '%**' : ('%' + Math.abs(v).toFixed(0)); }
+  function pct1M(v){ return masked() ? '%**' : ('%' + Math.abs(v).toFixed(1)); }
+  function pct(a,b){ return b? ((a-b)/Math.abs(b)*100) : 0; }
+
+  window.renderDefterFinansHero=function(){
+    try{
+      var fc=document.getElementById('finansContent'); if(!fc) return;
+      var old=fc.querySelector('#dhInner'); if(old) old.remove();
+      if(!document.body.classList.contains('defter')) return;
+      if(typeof finansData==='undefined' || !Array.isArray(finansData) || !finansData.length) return;
+      var st=fc.querySelector('.section-title'); if(st) st.style.display='none';
+      var rows=fc.querySelectorAll('.stats-row');
+      if(rows[0]) rows[0].style.display='none';
+      if(rows[1]){ var fs=rows[1].querySelector('.stat'); if(fs) fs.style.display='none'; }
+
+      var yf=(typeof finansYearFilter!=='undefined')?finansYearFilter:'all';
+      var mf=(typeof finansMonthFilter!=='undefined')?finansMonthFilter:'all';
+      var ef=(typeof finansEntityFilter!=='undefined')?finansEntityFilter:'all';
+      var kzF=ef==='vodafone'?'vodKarZarar':(ef==='mixy'?'mixyKarZarar':'topKarZarar');
+      var karF=ef==='vodafone'?'vodKarTutari':(ef==='mixy'?'mixyKarTutari':'topKarTutari');
+      var masF=ef==='vodafone'?'vodMasraf':(ef==='mixy'?'mixyMasraf':'topMasrafTutari');
+      var elabel=ef==='vodafone'?' · Vodafone':(ef==='mixy'?' · MİXY':'');
+      var d=finansData.filter(function(x){return x&&x.ym;}).slice().sort(function(a,b){return a.ym<b.ym?-1:(a.ym>b.ym?1:0);});
+      if(yf!=='all') d=d.filter(function(x){return String(x.yil)===String(yf);});
+      if(mf!=='all') d=d.filter(function(x){return String(x.ayNo||'')===String(mf);});
+      if(!d.length) return;
+      var last=d[d.length-1], prev=d.length>1?d[d.length-2]:last, first=d[0];
+      var serm=+last.mevcutSermaye||0, sermP=+prev.mevcutSermaye||0, sermF=+first.mevcutSermaye||0;
+      var dAy=serm-sermP, dDon=serm-sermF;
+      var totKar=d.reduce(function(a,b){return a+(+b[karF]||0);},0);
+      var totMas=d.reduce(function(a,b){return a+(+b[masF]||0);},0);
+      var totKZ=d.reduce(function(a,b){return a+(+b[kzF]||0);},0);
+      var kzPos=totKZ>=0, ayPos=dAy>=0, donetiket=(yf==='all')?'Tüm zamanlar':(''+yf);
+
+      var h='<div class="dh-hero"><div class="dh-k">Mevcut sermaye'+elabel+'</div>'+
+        '<div class="dh-big">'+fmtM(serm)+'</div>'+
+        '<div class="dh-chip" style="background:'+(ayPos?'rgba(47,158,95,.2)':'rgba(224,80,58,.2)')+';color:'+(ayPos?'#7ee2a6':'#f6a99b')+'">'+(ayPos?'▲ ':'▼ ')+fmtM(Math.abs(dAy))+' · '+pctM(pct(serm,sermP))+'</div>'+
+        ' <span style="font-size:12px;color:rgba(255,255,255,.55);margin-left:6px">'+(last.ay||'')+' '+(last.yil||'')+'</span></div>'+
+        '<div class="dh-grid">'+
+          '<div class="dh-stat"><div class="k">Dönem başı sermaye</div><div class="v">'+fmtM(sermF)+'</div><div class="s">'+(first.ay||'')+' '+(first.yil||'')+'</div></div>'+
+          '<div class="dh-stat"><div class="k">Dönem değişimi</div><div class="v '+(dDon>=0?'dh-pos':'dh-neg')+'">'+(masked()?M():((dDon>=0?'+':'')+Math.round(dDon).toLocaleString('tr-TR')+' ₺'))+'</div><div class="s '+(dDon>=0?'dh-pos':'dh-neg')+'">'+pct1M(pct(serm,sermF))+' '+(dDon>=0?'artış':'azalış')+'</div></div>'+
+        '</div>'+
+        '<div class="dh-pnl'+(kzPos?'':' neg')+'"><div style="font-size:12px;color:#847c6d;font-weight:700">Toplam Kâr / Zarar'+elabel+' · '+donetiket+'</div>'+
+          '<div class="v '+(kzPos?'dh-pos':'dh-neg')+'">'+(kzPos?'▲ ':'▼ ')+fmtM(Math.abs(totKZ))+'</div>'+
+          '<div class="sub"><span class="dh-pos">↑ Kâr: '+fmtM(totKar)+'</span><span class="dh-neg">↓ Masraf: '+fmtM(totMas)+'</span></div></div>';
+      fc.insertAdjacentHTML('afterbegin','<div id="dhInner">'+h+'</div>');
+      fixOverlap();
+    }catch(e){ console.warn('defter hero v414:', e); }
+  };
+
+  // --- ust bosluk: TAHMIN yerine GERCEK CAKISMAYI olc ve duzelt ---
+  function fixOverlap(){
+    try{
+      if(window.innerWidth>700) return;
+      if(!document.body.classList.contains('defter')) return;
+      var pg=document.getElementById('page-finans'); if(!pg||pg.style.display==='none') return;
+      var sh=pg.querySelector('.sticky-header'); if(!sh) return;
+      var hero=document.getElementById('dhInner'); if(!hero) return;
+      var sc=(document.scrollingElement||document.documentElement).scrollTop||0;
+      var mainEl=document.querySelector('.main'); var msc=mainEl?mainEl.scrollTop:0;
+      if(sc>6 || msc>6) return;                      // kullanici asagi kaydirdiysa dokunma
+      var gap=sh.getBoundingClientRect().bottom - hero.getBoundingClientRect().top;
+      if(gap>0){
+        var cur=parseFloat(getComputedStyle(pg).paddingTop)||0;
+        pg.style.setProperty('padding-top',(cur+gap+12)+'px','important');
+      }
+    }catch(e){}
+  }
+  window.__fixHeroOverlap=fixOverlap;
+  [150,400,800,1400].forEach(function(t){ setTimeout(fixOverlap,t); });
+  window.addEventListener('resize', function(){ setTimeout(fixOverlap,120); });
+  window.addEventListener('orientationchange', function(){ setTimeout(fixOverlap,250); });
+
+  // gizli mod / defter degisince hero'yu tazele
+  ['toggleGizliMod','toggleDefter'].forEach(function(fn){
+    try{
+      if(typeof window[fn]==='function' && !window[fn].__heroRefresh){
+        var _o=window[fn];
+        var w=function(){ var r=_o.apply(this,arguments);
+          setTimeout(function(){ try{ window.renderDefterFinansHero(); }catch(e){} },60);
+          [200,500].forEach(function(t){ setTimeout(fixOverlap,t); });
+          return r; };
+        w.__heroRefresh=true; window[fn]=w;
+      }
+    }catch(e){}
+  });
+  try{ window.renderDefterFinansHero(); }catch(e){}
 })();
 </script>
 </body>
