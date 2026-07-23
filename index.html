@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v416';
+const APP_VERSION = 'v417';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21015,6 +21015,20 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v417',
+    date: '23.07.2026',
+    items: [
+      { type: 'new', text: 'Defter temasi TUM sayfalara yayildi: Finansal Analiz\'de olusturulan kart/baslik kalitesi (beyaz yuvarlak kartlar, yumusak golge, ferah dizilim, bolum basliklari, font birligi, kart ici kutucuklarin yumusak tonu) artik Anasayfa, Prim, Kasa, Gelir ve Not sayfalarinda da gecerli. Onceden bu stiller sadece finans sayfasina kilitliydi.' },
+    ]
+  },
+  {
+    version: 'v416',
+    date: '23.07.2026',
+    items: [
+      { type: 'fix', text: 'Defter finans hero ust boslugu: olcum yerine net bir bosluk verildi (8px). Kartin ustu artik filtre seridinin altinda kalmiyor, gereksiz bosluk da olusmuyor.' },
+    ]
+  },
+  {
     version: 'v414',
     date: '23.07.2026',
     items: [
@@ -25411,6 +25425,40 @@ body.defter #defterFullMenu.show{ transform:translateY(0) }
 @media(max-width:860px){
   body.defter #dhInner{ margin-top:8px !important; }
 }
+</style>
+<style>
+/* ===== v417: finanstaki kart/baslik kalitesini TUM sayfalara genislet ===== */
+/* bolum basliklari */
+body.defter .main .section-title{
+  font-size:12.5px !important; font-weight:800 !important; color:#847c6d !important;
+  text-transform:uppercase; letter-spacing:.05em; margin:16px 4px 10px !important;
+}
+/* istatistik satirlari: tasmadan, ferah */
+body.defter .main .stats-row{
+  display:flex !important; flex-wrap:wrap !important; gap:12px !important; align-items:stretch !important;
+}
+/* kartlar: beyaz, yuvarlak, yumusak golge */
+body.defter .main .stat{
+  background:#fff !important; border:1px solid #ece3d1 !important; border-radius:20px !important;
+  padding:15px 16px !important; box-shadow:0 1px 3px rgba(35,28,14,.05),0 12px 30px rgba(35,28,14,.09) !important;
+  min-width:240px !important; flex:1 1 240px !important;
+}
+@media(max-width:520px){ body.defter .main .stat{ flex:1 1 100% !important; } }
+/* kart ici krem kutucuklar -> yumusak ton */
+body.defter .main .stat [style*="var(--panel2)"],
+body.defter .main .stat [style*="#f0e8d8"]{
+  background:#fbf7ef !important; border-color:#ece3d1 !important; border-radius:13px !important;
+}
+/* font birligi */
+body.defter .main, body.defter .main *{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif !important;
+}
+/* satir-ici cizilen kartlar (panel arka planli) tum sayfalarda yuvarlak+golgeli */
+body.defter .main div[style*="var(--panel)"]{
+  border-radius:18px !important; background:#fefdfb !important;
+  box-shadow:0 1px 3px rgba(45,36,18,.06), 0 14px 34px rgba(45,36,18,.11) !important;
+}
+body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
 </style>
 </body>
 </html>
