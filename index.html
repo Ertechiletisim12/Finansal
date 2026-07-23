@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v414';
+const APP_VERSION = 'v415';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -25406,5 +25406,11 @@ body.defter #defterFullMenu.show{ transform:translateY(0) }
   try{ window.renderDefterFinansHero(); }catch(e){}
 })();
 </script>
+<style>
+/* ===== v415: hero'yu net asagi kaydir (baslik altinda kalmasin) ===== */
+@media(max-width:860px){
+  body.defter #dhInner{ margin-top:64px !important; }
+}
+</style>
 </body>
 </html>
