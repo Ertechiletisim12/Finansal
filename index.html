@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v417';
+const APP_VERSION = 'v418';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -25460,5 +25460,36 @@ body.defter .main div[style*="var(--panel)"]{
 }
 body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
 </style>
+<script>
+/* ===== v418: Prim sayfasi ust boslugu (Defter'de sabit 250px yetmiyor) ===== */
+(function(){
+  function fixPrimTop(){
+    try{
+      if(window.innerWidth>860) return;
+      if(!document.body.classList.contains('defter')) return;
+      var pg=document.getElementById('page-prim');
+      if(!pg || pg.style.display==='none') return;
+      var sh=pg.querySelector('.sticky-header');
+      if(!sh) return;
+      var b=sh.getBoundingClientRect().bottom;
+      if(b>0) pg.style.setProperty('padding-top', Math.round(b+12)+'px', 'important');
+    }catch(e){}
+  }
+  window.__fixPrimTop=fixPrimTop;
+  [200,600,1200].forEach(function(t){ setTimeout(fixPrimTop,t); });
+  window.addEventListener('resize', function(){ setTimeout(fixPrimTop,120); });
+  window.addEventListener('orientationchange', function(){ setTimeout(fixPrimTop,250); });
+  // sayfa gecisi ve tema degisiminde yeniden olc
+  ['switchPage','toggleDefter','renderPrimAra'].forEach(function(fn){
+    try{
+      if(typeof window[fn]==='function' && !window[fn].__primTopFix){
+        var _o=window[fn];
+        var w=function(){ var r=_o.apply(this,arguments); [80,300,700].forEach(function(t){ setTimeout(fixPrimTop,t); }); return r; };
+        w.__primTopFix=true; window[fn]=w;
+      }
+    }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>
