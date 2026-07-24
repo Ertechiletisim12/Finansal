@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v418';
+const APP_VERSION = 'v419';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21015,6 +21015,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v418',
+    date: '24.07.2026',
+    items: [
+      { type: 'fix', text: 'Prim sayfasinin ust boslugu koda sabit 250px olarak yazilmisti; Defter temasinda ust serit uzayinca yetmiyordu. Artik sabit deger yerine seridin gercek alt kenari olculup bosluk otomatik ayarlaniyor (sayfa gecisi, tema degisimi, liste yenilenmesi ve ekran donusunde yeniden hesaplanir). Yalnizca Defter temasinda; klasik tema etkilenmez.' },
+    ]
+  },
+  {
     version: 'v417',
     date: '23.07.2026',
     items: [
@@ -25491,5 +25498,11 @@ body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
   });
 })();
 </script>
+<style>
+/* ===== v419: prim islem listesi kabina guvenlik boslugu ===== */
+@media(max-width:860px){
+  body.defter #page-prim .activity-col{ margin-top:10px !important; }
+}
+</style>
 </body>
 </html>
