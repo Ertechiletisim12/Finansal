@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v419';
+const APP_VERSION = 'v420';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21015,6 +21015,20 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v420',
+    date: '24.07.2026',
+    items: [
+      { type: 'fix', text: 'Surum Notlari penceresinde versiyon etiketi (v419 gibi) sabit BEYAZ yaziliyordu; koyu modda gorunuyor ama acik modda ve Defter temasinda beyaz zeminde kayboluyordu. Artik tema rengine uyuyor, her modda okunuyor.' },
+    ]
+  },
+  {
+    version: 'v419',
+    date: '24.07.2026',
+    items: [
+      { type: 'fix', text: 'Prim islem listesi kabina ek guvenlik boslugu (Defter temasi).' },
+    ]
+  },
+  {
     version: 'v418',
     date: '24.07.2026',
     items: [
@@ -23797,7 +23811,7 @@ function toggleChangelog(){
   const rows = CHANGELOG_DATA.map(v => `
     <div style="margin-bottom:18px">
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">
-        <span style="font-size:15px;font-weight:800;color:#fff">${v.version}</span>
+        <span style="font-size:15px;font-weight:800;color:var(--txt)">${v.version}</span>
         <span style="font-size:11px;color:var(--muted)">${v.date}</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px">
