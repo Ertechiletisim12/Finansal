@@ -4039,7 +4039,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v424';
+const APP_VERSION = 'v425';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -8576,7 +8576,26 @@ function render(){
     }
     // O gün bu kategoride kaç işlem logu var
     const dayLogs = entryLog.filter(l=>l.date===activeDate && l.cat===cat);
-    div.innerHTML = `<div class="label" style="color:${_katRenk}">${cat}</div>
+    // v425: kart kampanya rozeti — TUM turler (fiyat gosterir + kademeli/bonus/tekrarli)
+    let kampRozet = '';
+    (function(){
+      const parts = [];
+      if(kampanyaVar) parts.push('<span style="font-size:9px;font-weight:800;border-radius:5px;padding:2px 6px;background:rgba(255,183,77,0.2);color:#ffb74d;white-space:nowrap">🎯 '+fmt(kdvBrut(price))+'</span>');
+      if(typeof kampanyaData!=='undefined' && kampanyaData && kampanyaData.length){
+        let kad=false, tek=false, bon=false;
+        kampanyaData.forEach(k=>{
+          if(k.ym!==activeYm) return;
+          const kc = (k.catList && k.catList.length) ? k.catList : [k.cat];
+          if(kc.indexOf(cat)<0) return;
+          if(k.tip==='kademeli') kad=true; else if(k.tip==='tekrarli') tek=true; else if(k.tip==='bonus') bon=true;
+        });
+        if(kad) parts.push('<span style="font-size:9px;font-weight:800;border-radius:5px;padding:2px 6px;background:rgba(184,132,240,0.18);color:#b884f0;white-space:nowrap">📊 Kademeli</span>');
+        if(tek) parts.push('<span style="font-size:9px;font-weight:800;border-radius:5px;padding:2px 6px;background:rgba(192,132,252,0.18);color:#c084fc;white-space:nowrap">🔁 Tekrarlı</span>');
+        if(bon) parts.push('<span style="font-size:9px;font-weight:800;border-radius:5px;padding:2px 6px;background:rgba(255,210,122,0.18);color:#ffd27a;white-space:nowrap">🎁 Bonus</span>');
+      }
+      kampRozet = parts.join(' ');
+    })();
+    div.innerHTML = `<div class="label" style="color:${_katRenk};display:flex;align-items:center;gap:6px;flex-wrap:wrap">${cat}${kampRozet?' '+kampRozet:''}</div>
       <div class="ctrl">
         <button onclick="openIslemListModal('${cat}','${activeDate}')" style="background:rgba(226,35,26,0.15);border-color:rgba(226,35,26,0.4);color:#ff7070;font-size:14px" title="İşlem listesi / sil">📋</button>
         <span class="cnt">${raCnt(cat)}</span>
@@ -8586,7 +8605,7 @@ function render(){
       ${lastTime ? `<div style="font-size:10.5px;color:var(--muted);margin-top:4px">🕒 ${lastTime.time}${lastTime.platform ? ` <span style="opacity:.7">${lastTime.platform}</span>` : ''}</div>` : ''}
       ${mnpInfo}${intInfo}${tarifeInfo}
       </div>
-      <div class="amt">${fmtCiftHtml(raAmt(cat))}${kampanyaVar ? ` <span style="font-size:9px;background:rgba(255,183,77,0.2);color:#ffb74d;border-radius:4px;padding:1px 5px;font-weight:700">🎯 ${fmt(kdvBrut(price))}</span>` : ''}</div>`;
+      <div class="amt">${fmtCiftHtml(raAmt(cat))}</div>`;
     cardsDiv.appendChild(div);
   });
 
@@ -21189,6 +21208,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v425',
+    date: '25.07.2026',
+    items: [
+      { type: 'new', text: 'Prim sayfasi kategori kartlarinda KAMPANYA ROZETI genisletildi: onceden yalniz "Fiyat Degisimi" kampanyasinda ciyordu; artik o kategoride/tarifede aktif olan TUM kampanya turleri kartta ustte, kategori adinin yaninda gorunuyor — 🎯 Fiyat (yeni fiyati da yazar), 📊 Kademeli, 🔁 Tekrarli, 🎁 Bonus. Boylece hangi kategoride kampanya oldugu tek bakista belli (kademeli dahil).' },
+    ]
+  },
   {
     version: 'v424',
     date: '25.07.2026',
