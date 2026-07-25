@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v422';
+const APP_VERSION = 'v423';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -14316,18 +14316,66 @@ function renderTarifeList(){
       div.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px">'+cat+' için henüz '+(cat==='Diğer'?'kampanya':'tarife')+' eklenmedi.</div>';
       return;
     }
-    div.innerHTML = list.map(t => `
-      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px;gap:6px">
-        <span style="font-size:12px;font-weight:700;color:var(--txt);min-width:0;overflow:hidden;text-overflow:ellipsis">${t.ad}${t.donemler&&t.donemler.length?` <span style="font-size:9px;background:rgba(255,183,77,0.18);color:var(--gold);border-radius:8px;padding:1px 6px;font-weight:700;white-space:nowrap">📅 ${t.donemler.length} dönem</span>`:''}</span>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-          ${(()=>{const c=fiyatCifti(t.fiyat,t.kdvDahil); return c
-            ? `<span style="font-size:12px;font-weight:700;color:#4cd964">${c.brut.toLocaleString('tr-TR',{maximumFractionDigits:2})} ₺ <span style="font-size:8px;color:var(--muted);font-weight:600">KDV dahil · hariç ${c.net.toLocaleString('tr-TR',{maximumFractionDigits:2})}</span></span>`
-            : `<span style="font-size:10px;font-weight:700;color:var(--muted);background:var(--panel2);border:1px dashed var(--line);border-radius:5px;padding:2px 7px">kategori fiyatı</span>`;})()}
-          <button onclick="editTarife('${t.ad.replace(/'/g,"\\'")}','${cat}')" title="Ad/fiyat düzelt" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button>
-          <button onclick="openTarifeDonemModal('${cat}','${t.ad.replace(/'/g,"\\'")}')" title="Dönem fiyatları (tarih aralıklı)" style="background:rgba(255,183,77,0.1);border:1px solid rgba(255,183,77,0.3);color:var(--gold);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">📅</button>
-          <button onclick="deleteTarife('${t.ad.replace(/'/g,"\\'")}','${cat}')" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
-        </div>
-      </div>`).join('');
+    // v423: DIGER/Esnek kutusu ESKI haliyle kalir (dokunulmadi)
+    if(cat === 'Diğer'){
+      div.innerHTML = list.map(t => `
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px;gap:6px">
+          <span style="font-size:12px;font-weight:700;color:var(--txt);min-width:0;overflow:hidden;text-overflow:ellipsis">${t.ad}${t.donemler&&t.donemler.length?` <span style="font-size:9px;background:rgba(255,183,77,0.18);color:var(--gold);border-radius:8px;padding:1px 6px;font-weight:700;white-space:nowrap">📅 ${t.donemler.length} dönem</span>`:''}</span>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            ${(()=>{const c=fiyatCifti(t.fiyat,t.kdvDahil); return c
+              ? `<span style="font-size:12px;font-weight:700;color:#4cd964">${c.brut.toLocaleString('tr-TR',{maximumFractionDigits:2})} ₺ <span style="font-size:8px;color:var(--muted);font-weight:600">KDV dahil · hariç ${c.net.toLocaleString('tr-TR',{maximumFractionDigits:2})}</span></span>`
+              : `<span style="font-size:10px;font-weight:700;color:var(--muted);background:var(--panel2);border:1px dashed var(--line);border-radius:5px;padding:2px 7px">kategori fiyatı</span>`;})()}
+            <button onclick="editTarife('${t.ad.replace(/'/g,"\\'")}','${cat}')" title="Ad/fiyat düzelt" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button>
+            <button onclick="openTarifeDonemModal('${cat}','${t.ad.replace(/'/g,"\\'")}')" title="Dönem fiyatları (tarih aralıklı)" style="background:rgba(255,183,77,0.1);border:1px solid rgba(255,183,77,0.3);color:var(--gold);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">📅</button>
+            <button onclick="deleteTarife('${t.ad.replace(/'/g,"\\'")}','${cat}')" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
+          </div>
+        </div>`).join('');
+      return;
+    }
+    // v423: TARIFE kategorileri — hangi kural GECERLI net gorunsun (hesap DEGISMEDI, sadece okunuyor)
+    const _bugun = new Date().toISOString().slice(0,10);
+    div.innerHTML = list.map(t => {
+      // kaynak tespiti (salt okuma):
+      const kademeli = (typeof kademeliKapsarMi==='function') && kademeliKapsarMi(cat, t.ad, _bugun);
+      let donemAktif = null;
+      if(t.donemler && t.donemler.length){
+        for(let i=t.donemler.length-1;i>=0;i--){ const d=t.donemler[i]; if((!d.s||_bugun>=d.s)&&(!d.e||_bugun<=d.e)){ donemAktif=d; break; } }
+      }
+      let srcIcon,srcLabel,srcColor,srcBg,primHtml;
+      if(kademeli){
+        srcIcon='📊'; srcLabel='Kademeli'; srcColor='#b884f0'; srcBg='rgba(184,132,240,0.15)';
+        primHtml='<span style="font-size:12px;font-weight:800;color:#b884f0">adede göre</span>';
+      } else if(donemAktif){
+        srcIcon='📅'; srcLabel='Dönem'; srcColor='#e0a53c'; srcBg='rgba(224,165,60,0.15)';
+        const c=fiyatCifti(donemAktif.fiyat, donemAktif.kdvDahil);
+        primHtml = c ? `<span style="font-size:12px;font-weight:800;color:#e0a53c">${c.brut.toLocaleString('tr-TR',{maximumFractionDigits:2})} ₺</span>` : '—';
+      } else if(t.fiyat!=null && !isNaN(t.fiyat)){
+        srcIcon='💵'; srcLabel='Sabit'; srcColor='#3fa7e0'; srcBg='rgba(63,167,224,0.15)';
+        const c=fiyatCifti(t.fiyat, t.kdvDahil);
+        primHtml = c ? `<span style="font-size:12px;font-weight:800;color:#4cd964">${c.brut.toLocaleString('tr-TR',{maximumFractionDigits:2})} ₺</span>` : '—';
+      } else {
+        srcIcon='📁'; srcLabel='Kategori'; srcColor='#8fa1b3'; srcBg='rgba(143,161,179,0.15)';
+        primHtml='<span style="font-size:11px;font-weight:700;color:var(--muted)">kategori fiyatı</span>';
+      }
+      const donemSayi = (t.donemler&&t.donemler.length)?t.donemler.length:0;
+      const esc = t.ad.replace(/'/g,"\\'");
+      return `
+        <div style="background:var(--panel);border:1px solid var(--line);border-left:3px solid ${srcColor};border-radius:8px;padding:8px 10px;margin-bottom:1px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:12.5px;font-weight:800;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">${t.ad}</span>
+            <span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:10px;background:${srcBg};color:${srcColor};white-space:nowrap">${srcIcon} ${srcLabel}</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:6px">
+            <span style="font-size:9.5px;color:var(--muted)">Şu an geçerli prim${donemSayi?` · <span style="color:var(--gold)">${donemSayi} dönem tanımlı</span>`:''}</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              ${primHtml}
+              <button onclick="editTarife('${esc}','${cat}')" title="Ad/sabit fiyat düzelt" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button>
+              <button onclick="openTarifeDonemModal('${cat}','${esc}')" title="Dönem fiyatları (tarihli)" style="background:rgba(255,183,77,0.1);border:1px solid rgba(255,183,77,0.3);color:var(--gold);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">📅</button>
+              <button onclick="deleteTarife('${esc}','${cat}')" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
   };
   // v152: seçili kategori (yoksa Red) + Diğer esnek kampanyalar
   const sel = document.getElementById('tarifeCatSel');
@@ -21104,6 +21152,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v423',
+    date: '25.07.2026',
+    items: [
+      { type: 'new', text: 'TARIFE YONETIMI DAHA ANLASILIR: Her tarifenin priminin NEREDEN geldigi artik net gorunuyor — kart uzerinde renkli kaynak rozeti: 📊 Kademeli / 📅 Donem / 💵 Sabit / 📁 Kategori, ve "su an gecerli prim". Boylece hangi kuralin gecerli oldugu tek bakista belli. ONEMLI: Hesaplama HIC degismedi, sadece gorunum netlestirildi (mevcut veriler oldugu gibi okunuyor). "Diger — Esnek Kampanyalar" kutusu aynen korundu.' },
+    ]
+  },
   {
     version: 'v422',
     date: '25.07.2026',
