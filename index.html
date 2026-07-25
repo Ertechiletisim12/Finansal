@@ -3582,9 +3582,17 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <button class="m-kapat" onclick="closeTarifeDonemModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700">✕</button>
     </div>
     <div style="padding:14px 16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:10px">
-        <span style="font-size:11px;color:var(--muted);font-weight:700">TEMEL FİYAT (dönem dışı)</span>
-        <span id="tdBazFiyat" style="font-size:14px;font-weight:800;color:#4cd964">—</span>
+      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+        <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">✏️ Tarife adı & sabit prim</div>
+        <input type="text" id="tdAd" placeholder="Tarife adı" style="width:100%;box-sizing:border-box;font-size:12px;padding:7px;margin-bottom:6px">
+        <div id="tdAdKilit" style="display:none;font-size:9px;color:var(--gold);margin-bottom:6px"></div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:6px">
+          <input type="number" id="tdSabitFiyat" placeholder="Sabit prim (boş = kategori fiyatı)" style="width:100%;box-sizing:border-box;font-size:12px;padding:7px;min-width:0">
+          <button onclick="saveTarifeSabit()" style="padding:7px 14px;background:var(--accent);border:none;color:#062330;border-radius:6px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">💾 Kaydet</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted);margin-top:5px;cursor:pointer"><input type="checkbox" id="tdSabitKdv" style="width:13px;height:13px"> Girdiğim fiyat <b>KDV dahil</b></label>
+        <div id="tdKademeliNot" style="display:none;font-size:10px;color:#b884f0;background:rgba(184,132,240,0.1);border:1px solid rgba(184,132,240,0.25);border-radius:6px;padding:7px;margin-top:7px">📊 Bu tarife bu ay <b>kademeli kampanyayla</b> yönetiliyor — sabit/dönem fiyatı prim hesabında devre dışıdır; prim kademeli tablodan gelir.</div>
+        <span id="tdBazFiyat" style="display:none"></span>
       </div>
       <div style="font-size:10px;color:var(--muted);margin-bottom:10px">Her satış <b>kendi tarihinin</b> dönem fiyatıyla hesaplanır. Tarih hiçbir döneme düşmüyorsa temel fiyat kullanılır. Çakışan dönemlerde en son eklenen geçerlidir.</div>
       <div id="tdListe" style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px"></div>
@@ -4031,7 +4039,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v423';
+const APP_VERSION = 'v424';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -14189,17 +14197,47 @@ function openTarifeDonemModal(cat, ad){
   _donemCat = cat; _donemAd = ad;
   const t = (tarifeData[cat]||[]).find(x=>x.ad===ad);
   if(!t) return;
-  document.getElementById('tdBaslik').textContent = '📅 ' + ad + ' — Dönem Fiyatları';
-  // v165: temel fiyat boş (null) olabilir — .toLocaleString çağrısı null'da patlıyordu, modal hiç açılmıyordu
-  document.getElementById('tdBazFiyat').textContent =
-    (t.fiyat == null || isNaN(t.fiyat))
-      ? 'kategori fiyatı'
-      : (t.kdvDahil ? t.fiyat : t.fiyat*(1+KDV_ORANI)).toLocaleString('tr-TR',{maximumFractionDigits:2}) + ' ₺ KDV dahil';
+  document.getElementById('tdBaslik').textContent = '✏️ ' + ad + ' — Düzenle';
+  // v424: birleşik düzenleme — ad + sabit fiyat alanlarını doldur
+  const kullanim = entries.filter(e=>e.cat===cat && e.tarife===ad).length;
+  const adInp = document.getElementById('tdAd');
+  if(adInp){ adInp.value = t.ad; adInp.disabled = kullanim>0; }
+  const kilit = document.getElementById('tdAdKilit');
+  if(kilit){ if(kullanim>0){ kilit.style.display='block'; kilit.innerHTML='🔒 '+kullanim+' kayıtta kullanıldığı için ad değiştirilemez.'; } else kilit.style.display='none'; }
+  const sf = document.getElementById('tdSabitFiyat');
+  if(sf) sf.value = (t.fiyat!=null && !isNaN(t.fiyat)) ? t.fiyat : '';
+  const sk = document.getElementById('tdSabitKdv');
+  if(sk) sk.checked = !!t.kdvDahil;
+  // kademeli kampanya kapsamındaysa uyar
+  const not = document.getElementById('tdKademeliNot');
+  if(not){ const bugun=new Date().toISOString().slice(0,10); not.style.display = (typeof kademeliKapsarMi==='function' && kademeliKapsarMi(cat, ad, bugun)) ? 'block' : 'none'; }
   document.getElementById('tdStart').value = '';
   document.getElementById('tdEnd').value = '';
   document.getElementById('tdFiyat').value = '';
   renderTarifeDonemList();
   document.getElementById('tarifeDonemModal').style.display = 'flex';
+}
+// v424: birleşik düzenlemede sabit fiyat/ad kaydet (editTarife kurallarıyla aynı)
+function saveTarifeSabit(){
+  const cat=_donemCat, ad=_donemAd;
+  const t=(tarifeData[cat]||[]).find(x=>x.ad===ad);
+  if(!t) return;
+  const kullanim = entries.filter(e=>e.cat===cat && e.tarife===ad).length;
+  const yeniAd = (document.getElementById('tdAd').value||'').trim();
+  const fiyatRaw = document.getElementById('tdSabitFiyat').value;
+  const kdvDahil = !!document.getElementById('tdSabitKdv').checked;
+  if(kullanim===0 && yeniAd && yeniAd!==t.ad){
+    if((tarifeData[cat]||[]).some(x=>x.ad===yeniAd)){ alert('Bu adda kayıt zaten var.'); return; }
+    t.ad = yeniAd; _donemAd = yeniAd;
+  }
+  if(fiyatRaw===''||fiyatRaw==null){ t.fiyat=null; delete t.kdvDahil; }
+  else { t.fiyat=parseFloat(fiyatRaw)||0; if(kdvDahil) t.kdvDahil=true; else delete t.kdvDahil; }
+  saveTarifeStore();
+  if(typeof scheduleCloudSync==='function') scheduleCloudSync();
+  renderTarifeList();
+  if(typeof render==='function') render();
+  document.getElementById('tdBaslik').textContent = '✏️ ' + _donemAd + ' — Düzenle';
+  try{ if(typeof showToast==='function') showToast('Kaydedildi ✓','success'); }catch(e){}
 }
 function closeTarifeDonemModal(){
   document.getElementById('tarifeDonemModal').style.display = 'none';
@@ -14369,9 +14407,8 @@ function renderTarifeList(){
             <span style="font-size:9.5px;color:var(--muted)">Şu an geçerli prim${donemSayi?` · <span style="color:var(--gold)">${donemSayi} dönem tanımlı</span>`:''}</span>
             <div style="display:flex;align-items:center;gap:6px">
               ${primHtml}
-              <button onclick="editTarife('${esc}','${cat}')" title="Ad/sabit fiyat düzelt" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✏️</button>
-              <button onclick="openTarifeDonemModal('${cat}','${esc}')" title="Dönem fiyatları (tarihli)" style="background:rgba(255,183,77,0.1);border:1px solid rgba(255,183,77,0.3);color:var(--gold);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">📅</button>
-              <button onclick="deleteTarife('${esc}','${cat}')" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">🗑</button>
+              <button onclick="openTarifeDonemModal('${cat}','${esc}')" title="Düzenle (ad, sabit fiyat, dönemler)" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:5px;padding:0 10px;height:26px;font-size:11px;font-weight:700;cursor:pointer">✏️ Düzenle</button>
+              <button onclick="deleteTarife('${esc}','${cat}')" title="Sil" style="background:rgba(226,35,26,0.1);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:5px;width:26px;height:26px;font-size:11px;cursor:pointer">🗑</button>
             </div>
           </div>
         </div>`;
@@ -21152,6 +21189,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v424',
+    date: '25.07.2026',
+    items: [
+      { type: 'new', text: 'TARIFE DUZENLEME TEK EKRANDA: Onceden tarifede iki ayri buton vardi (✏️ ad/sabit fiyat, 📅 donem fiyatlari) ve ne yaptiklari belirsizdi. Artik tek "✏️ Duzenle" butonu — acilan pencerede tarife adi, sabit prim (KDV secenegiyle) VE donem fiyatlari (tarihli) hepsi bir arada yonetiliyor. Tarife kademeli kampanya kapsamindaysa ustte uyari cikar. Hesaplama degismedi; sadece duzenleme sadelesti. ("Diger" kutusu ayni kaldi.)' },
+    ]
+  },
   {
     version: 'v423',
     date: '25.07.2026',
