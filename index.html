@@ -4031,7 +4031,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v420';
+const APP_VERSION = 'v421';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4823,6 +4823,48 @@ function effectiveCountForYm(ym){
   });
   return map;
 }
+// ==================== KADEMELI PRIM (ek prim) ====================
+// Bir tarifeden yapilan satis ADEDINE gore, kademe tablosundan TOPLAM primi bulur.
+// Tam kademe varsa onu; yoksa son iki kademe farkini devam ettirir (or. 6 kademe girilir, 7+ otomatik).
+function kademeliTutarFor(kademeler, adet){
+  if(adet<=0 || !Array.isArray(kademeler) || !kademeler.length) return 0;
+  const s = kademeler.map(x=>({a:+x.a, p:+x.p})).filter(x=>!isNaN(x.a)&&!isNaN(x.p)).sort((a,b)=>a.a-b.a);
+  if(!s.length) return 0;
+  const tam = s.find(k=>k.a===adet);
+  if(tam) return tam.p;
+  const max = s[s.length-1];
+  if(adet>max.a){
+    const onc = s.length>1 ? s[s.length-2] : {a:0,p:0};
+    const adim = (max.a-onc.a) ? (max.p-onc.p)/(max.a-onc.a) : 0;
+    return max.p + (adet-max.a)*adim;
+  }
+  let alt = {a:0,p:0};
+  for(const k of s){ if(k.a<=adet) alt=k; }
+  const ust = s.find(k=>k.a>adet) || max;
+  const adim = (ust.a-alt.a) ? (ust.p-alt.p)/(ust.a-alt.a) : 0;
+  return alt.p + (adet-alt.a)*adim;
+}
+// Bir ayin TUM kademeli kampanyalarindan gelen toplam ek prim.
+// ONEMLI: O ayda kademeli kampanya yoksa 0 doner -> mevcut aylarin primi DEGISMEZ.
+function kademeliPrimFor(ym){
+  if(!kampanyaData || !kampanyaData.length) return 0;
+  let toplam = 0;
+  kampanyaData.forEach(k=>{
+    if(k.tip!=='kademeli' || k.ym!==ym) return;
+    if(!k.tarife || !Array.isArray(k.kademeler) || !k.kademeler.length) return;
+    let adet = 0;
+    entries.forEach(e=>{
+      if(e.cat!==k.cat) return;
+      if((e.tarife||'')!==k.tarife) return;
+      if(effectiveYm(e)!==ym) return;
+      if(k.startDate && e.date < k.startDate) return;
+      if(k.endDate && e.date > k.endDate) return;
+      adet += e.count;
+    });
+    if(adet>0) toplam += kademeliTutarFor(k.kademeler, adet);
+  });
+  return toplam;
+}
 // Bir ay için kampanya fiyatı dahil toplam prim tutarı
 function calcPrimWithKampanya(ym){
   let total = 0;
@@ -4843,6 +4885,7 @@ function calcPrimWithKampanya(ym){
     mnpDetay[c] = {mnp: mnpAdet, tesis: tesisAdet};
   });
   total += kampanyaTekrarliBonusToplam(ym, adetMap, mnpDetay);
+  total += kademeliPrimFor(ym);
   return total;
 }
 
@@ -4919,7 +4962,8 @@ function kapanisRaporVerisi(ym){
     };
   });
   const tekrarliToplam = kampanyaTekrarliBonusToplam(ym, adetMap, mnpDetay);
-  const bonusToplam = esikToplam + tekrarliToplam;
+  const kademeliToplam = kademeliPrimFor(ym);
+  const bonusToplam = esikToplam + tekrarliToplam + kademeliToplam;
 
   // v258: MNP kırılımı MÜŞTERİ kayıtlarından hesaplanır (prim sayfasıyla birebir aynı).
   // Önceden entries.mnp alanı okunuyordu; eski kayıtlarda bu alan boş olduğu için hep 0 çıkıyordu.
@@ -6952,6 +6996,7 @@ function financeFor(ym, mMap){
       mnpDetay2[c] = {mnp: mnpAdet, tesis: tesisAdet};
     });
     primTutar += kampanyaTekrarliBonusToplam(ym, m, mnpDetay2);
+    primTutar += kademeliPrimFor(ym);
   } else {
     // v152: kampanya yoksa da tarife fiyatlarını (Red/Diğer) hesaba kat
     const entriesYm2 = entries.filter(e=>effectiveYm(e)===ym);
@@ -8599,6 +8644,11 @@ function render(){
       (window._sonTekrarliDetay||[]).forEach(d=>{
         tekrarliBonusDetay.push({label: d.label + (bonusMonths.length>1?' ('+bAy+')':''), tutar: d.tutar});
       });
+    }
+    const bAyKademeli = kademeliPrimFor(bAy);
+    if(bAyKademeli > 0){
+      tekrarliBonusToplam += bAyKademeli;
+      tekrarliBonusDetay.push({label: 'Kademeli prim' + (bonusMonths.length>1?' ('+bAy+')':''), tutar: bAyKademeli});
     }
   });
   const tumBonusToplam = esikBonusToplam + tekrarliBonusToplam;
@@ -11139,6 +11189,11 @@ function renderDash(){
     (window._sonTekrarliDetay||[]).forEach(d=>{
       dashBonusDetay.push({label: d.cats + ' tekrarlı bonus', tutar: d.tutar, tip:'tekrarli'});
     });
+  }
+  const dashKademeli = kademeliPrimFor(now);
+  if(dashKademeli > 0){
+    dashBonusToplam += dashKademeli;
+    dashBonusDetay.push({label: 'Kademeli prim', tutar: dashKademeli, tip:'kademeli'});
   }
   // Bir sonraki tekrarlı bonus eşiğine ne kadar kaldı (bugün kartı için)
   const dashBonusYaklas = [];
@@ -14621,17 +14676,19 @@ function renderKampanyaList(){
           ? (k.startDate||'başlangıç')+' → '+(k.endDate||'ay sonu')
           : 'Tüm ay';
         const tipFiltreEtiket = k.tipFiltre==='mnp' ? ' (Sadece MNP)' : k.tipFiltre==='tesis' ? ' (Sadece Yeni Tesis)' : '';
-        const detay = k.tip==='fiyat'
+        const detay = k.tip==='kademeli'
+          ? (()=>{ const ks=(k.kademeler||[]).slice(0,4).map(x=>x.a+'→'+(+x.p).toLocaleString('tr-TR')).join(', '); return `<b style="color:#4a9bd8">${k.tarife||'?'}</b> tarifesi · kademeli: ${ks}${(k.kademeler||[]).length>4?'…':''} · ${tarihInfo}`; })()
+          : k.tip==='fiyat'
           ? (()=>{const c=fiyatCifti(k.deger,k.kdvDahil); return `Birim fiyat: <b style="color:#4cd964">${c.brut.toLocaleString('tr-TR',{maximumFractionDigits:2})} ₺</b> <span style="font-size:9px;color:var(--muted)">KDV dahil · hariç ${c.net.toLocaleString('tr-TR',{maximumFractionDigits:2})}</span> · ${tarihInfo}`;})()
           : k.tip==='tekrarli'
           ? `Her <b>${k.minAdet||0}</b> adede <b style="color:#c084fc">${k.deger.toLocaleString('tr-TR')} ₺</b>${tipFiltreEtiket} · ${tarihInfo}`
           : `Min <b>${k.minAdet||0}</b> adet → <b style="color:#ffb74d">${k.deger.toLocaleString('tr-TR')} ₺</b> bonus · ${tarihInfo}`;
-        const _tipRenk = k.tip==='fiyat'?'#4cd964':k.tip==='tekrarli'?'#c084fc':'#ffb74d';
+        const _tipRenk = k.tip==='fiyat'?'#4cd964':k.tip==='tekrarli'?'#c084fc':k.tip==='kademeli'?'#4a9bd8':'#ffb74d';
         return `<div style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid ${_tipRenk};border-radius:8px;padding:10px 12px;margin-bottom:6px">
           <div style="display:flex;align-items:flex-start;gap:8px">
             <div style="flex:1;min-width:0">
               <div style="font-size:12px;font-weight:700;color:var(--txt);margin-bottom:3px">
-                ${(k.catList && k.catList.length>1) ? k.catList.join(' + ') : k.cat} <span style="font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;${k.tip==='fiyat'?'background:rgba(76,217,100,0.15);color:#4cd964':k.tip==='tekrarli'?'background:rgba(192,132,252,0.15);color:#c084fc':'background:rgba(255,183,77,0.15);color:#ffb74d'}">${k.tip==='fiyat'?'💰 Fiyat':k.tip==='tekrarli'?'🔁 Tekrarlı':'🎁 Bonus'}</span>
+                ${(k.catList && k.catList.length>1) ? k.catList.join(' + ') : k.cat} <span style="font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;${k.tip==='fiyat'?'background:rgba(76,217,100,0.15);color:#4cd964':k.tip==='tekrarli'?'background:rgba(192,132,252,0.15);color:#c084fc':k.tip==='kademeli'?'background:rgba(74,155,216,0.15);color:#4a9bd8':'background:rgba(255,183,77,0.15);color:#ffb74d'}">${k.tip==='fiyat'?'💰 Fiyat':k.tip==='tekrarli'?'🔁 Tekrarlı':k.tip==='kademeli'?'📊 Kademeli':'🎁 Bonus'}</span>
               </div>
               <div style="font-size:11px;color:var(--muted)">${detay}</div>
               ${k.aciklama?`<div style="font-size:10px;color:var(--muted);margin-top:3px;font-style:italic">${esc(k.aciklama)}</div>`:''}
@@ -18737,11 +18794,19 @@ function renderHedefGecmis(){
             <div style="font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4">Her X adette bir <b>tekrar tekrar</b> öder. Örn: "her 2 satışa +1000₺". 6 satış = 3 kez = +3000₺.</div>
           </div>
         </div>
+        <div class="ktip-kart" data-tip="kademeli" onclick="secKampanyaTipi('kademeli')" style="display:flex;gap:10px;align-items:flex-start;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:11px 12px;cursor:pointer;transition:all .15s">
+          <div style="font-size:22px;line-height:1">📊</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:800;color:var(--txt)">Kademeli (Katla Kazan)</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4">Belirli bir <b>tarifeye</b> özel, <b>adede göre katlanan</b> ek prim. Örn: 1 adet 250, 2 adet 500, 3 adet 1000₺. Tarifenin normal primi yerine bu tablo geçerlidir.</div>
+          </div>
+        </div>
       </div>
       <select id="kTip" onchange="updateKampanyaForm()" style="display:none">
         <option value="fiyat">Fiyat Değişimi</option>
         <option value="bonus">Adet Bonusu</option>
         <option value="tekrarli">Tekrarlayan Bonus</option>
+        <option value="kademeli">Kademeli</option>
       </select>
 
       <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">2️⃣ Hangi ürün ve ne zaman?</div>
@@ -18758,6 +18823,10 @@ function renderHedefGecmis(){
           </select>
         </div>
       </div>
+      <div id="kTarifeDiv" style="display:none;margin-bottom:8px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Hangi tarife? <span style="opacity:.6">(kademeli prim bu tarifeye özel)</span></div>
+        <select id="kTarife" onchange="guncelleKampanyaOnizleme()" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box"></select>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Başlangıç Tarihi <span style="opacity:.6">(boş = ay başı)</span></div>
@@ -18770,10 +18839,21 @@ function renderHedefGecmis(){
       </div>
 
       <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600" id="kAdim3Baslik">3️⃣ Tutar</div>
-      <div style="margin-bottom:8px">
+      <div style="margin-bottom:8px" id="kDegerWrap">
         <div style="font-size:10px;color:var(--muted);margin-bottom:3px" id="kDegerLabel">Yeni Birim Fiyat (₺)</div>
         <input type="number" id="kDeger" placeholder="0" oninput="guncelleKampanyaOnizleme()" style="width:100%;padding:7px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px;box-sizing:border-box">
         <label id="kKdvDahilWrap" style="display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted);margin-top:4px;cursor:pointer"><input type="checkbox" id="kKdvDahil" onchange="guncelleKampanyaOnizleme()" style="width:13px;height:13px;cursor:pointer"> Tutar <b>KDV dahil</b> (işaretliyse girilen tutarın içinde KDV var sayılır)</label>
+      </div>
+      <div id="kKademeDiv" style="display:none;margin-bottom:8px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:5px">Kademeler — <b>adet → toplam prim (₺)</b></div>
+        <div id="kKademeList"></div>
+        <button type="button" onclick="kademeEkleSatir()" style="width:100%;background:var(--panel2);border:1px dashed var(--line);color:var(--accent);border-radius:6px;padding:8px;font-size:11px;font-weight:700;cursor:pointer;margin-top:2px">+ Kademe ekle</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;align-items:center">
+          <span style="font-size:9.5px;color:var(--muted)">Hızlı:</span>
+          <button type="button" onclick="kademeHizli()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:14px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer">250 / her 3'te çift</button>
+          <button type="button" onclick="kademeTemizle()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:14px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer">Temizle</button>
+        </div>
+        <div style="font-size:9.5px;color:var(--muted);margin-top:6px;line-height:1.4">Not: Ay içinde tablodaki en yüksek adetten fazla satarsan son adım devam eder. Kesinlik için "hızlı doldur" bol kademe üretir.</div>
       </div>
       <div id="kBonusFields" style="display:none;margin-bottom:8px">
         <div style="font-size:10px;color:var(--muted);margin-bottom:3px" id="kMinAdetLabel">Minimum Adet Eşiği</div>
@@ -21014,6 +21094,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v421',
+    date: '25.07.2026',
+    items: [
+      { type: 'new', text: 'YENI KAMPANYA TIPI — 📊 KADEMELI (Katla Kazan): Belirli bir TARIFEYE ozel, adede gore KATLANAN ek prim. Kampanya modalinda tip olarak "Kademeli" secilir; kategori + tarife secilir ve adet→toplam prim tablosu girilir (1 adet 250, 2 adet 500, 3 adet 1000... gibi). "Hizli doldur" ile 250/her 3te cift kalibi tek tusla olusur. O tarifeden ay icinde kac adet satildiysa tablodan toplam prim bulunup EK olarak eklenir. ONEMLI: Bu tarifenin normal prim yerine kademeli tablo gecerli olsun istiyorsan, Tarife Yonetiminden o tarifenin normal primini 0 gir. Guvenlik: kademeli kampanya tanimlanmamis aylar HIC etkilenmez (gecmis prim degismez).' },
+    ]
+  },
   {
     version: 'v420',
     date: '24.07.2026',
@@ -25518,5 +25605,126 @@ body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
   body.defter #page-prim .activity-col{ margin-top:10px !important; }
 }
 </style>
+<script>
+/* ===== v421: Kademeli kampanya — modal mantigi (mevcut fonksiyonlari sararak) ===== */
+(function(){
+  window.kademeState = window.kademeState || [];
+  window.renderKademeList=function(){
+    var c=document.getElementById('kKademeList'); if(!c) return;
+    c.innerHTML = kademeState.map(function(k,i){
+      return '<div style="display:grid;grid-template-columns:70px 1fr 30px;gap:6px;align-items:center;margin-bottom:5px">'
+        +'<input type="number" value="'+k.a+'" onchange="kademeUpd('+i+',\'a\',this.value)" style="text-align:center;padding:6px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px">'
+        +'<input type="number" value="'+k.p+'" placeholder="toplam prim" onchange="kademeUpd('+i+',\'p\',this.value)" style="padding:6px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;color:var(--txt);font-size:12px">'
+        +'<button type="button" onclick="kademeSil('+i+')" style="background:rgba(208,80,58,.15);border:1px solid rgba(208,80,58,.3);color:#f0a99b;border-radius:6px;height:32px;cursor:pointer">✕</button></div>';
+    }).join('');
+  };
+  window.kademeUpd=function(i,f,v){ if(!kademeState[i])return; kademeState[i][f] = (f==='a')?(parseInt(v)||0):(parseFloat(v)||0); };
+  window.kademeSil=function(i){ kademeState.splice(i,1); renderKademeList(); };
+  window.kademeEkleSatir=function(){ var son=kademeState.length?kademeState[kademeState.length-1]:{a:0,p:0}; kademeState.push({a:son.a+1,p:son.p+250}); renderKademeList(); };
+  window.kademeHizli=function(){ kademeState=[]; for(var a=1;a<=20;a++){ var blok=Math.floor(a/3)*1000; var kalan=a%3; var ek=[0,250,500][kalan]; kademeState.push({a:a,p:blok+ek}); } renderKademeList(); };
+  window.kademeTemizle=function(){ kademeState=[{a:1,p:0}]; renderKademeList(); };
+
+  function tarifeDropdownDoldur(){
+    var cat=document.getElementById('kCat').value;
+    var sel=document.getElementById('kTarife'); if(!sel) return;
+    var list=(typeof tarifeData!=='undefined' && tarifeData[cat]) ? tarifeData[cat] : [];
+    var cur=sel.value;
+    sel.innerHTML = list.length ? list.map(function(t){return '<option value="'+t.ad+'">'+t.ad+'</option>';}).join('') : '<option value="">(bu kategoride tarife yok)</option>';
+    if(cur && list.some(function(t){return t.ad===cur;})) sel.value=cur;
+  }
+
+  // updateKampanyaForm sar
+  if(typeof updateKampanyaForm==='function' && !updateKampanyaForm.__kad){
+    var _u=updateKampanyaForm;
+    window.updateKampanyaForm=function(){
+      _u.apply(this,arguments);
+      var tip=document.getElementById('kTip').value, kad=(tip==='kademeli');
+      var td=document.getElementById('kTarifeDiv'), kd=document.getElementById('kKademeDiv'),
+          dw=document.getElementById('kDegerWrap'), bf=document.getElementById('kBonusFields');
+      if(td) td.style.display=kad?'block':'none';
+      if(kd) kd.style.display=kad?'block':'none';
+      if(dw) dw.style.display=kad?'none':'block';
+      if(kad){
+        if(bf) bf.style.display='none';
+        tarifeDropdownDoldur();
+        if(!kademeState || !kademeState.length) kademeState=[{a:1,p:250},{a:2,p:500},{a:3,p:1000}];
+        renderKademeList();
+        var tek=document.getElementById('kCatTekDiv'); if(tek) tek.style.display='block';
+        var mult=document.getElementById('kMultiCatDiv'); if(mult) mult.style.display='none';
+        var a3=document.getElementById('kAdim3Baslik'); if(a3) a3.textContent='3️⃣ Kademeli prim tablosu';
+        document.querySelectorAll('.ktip-kart').forEach(function(kart){
+          if(kart.dataset.tip==='kademeli'){ kart.style.borderColor='#4a9bd8'; kart.style.background='rgba(74,155,216,0.1)'; }
+        });
+      }
+    };
+    window.updateKampanyaForm.__kad=true;
+  }
+
+  // guncelleKampanyaOnizleme sar (kategori degisince tarife tazele)
+  if(typeof guncelleKampanyaOnizleme==='function' && !guncelleKampanyaOnizleme.__kad){
+    var _o=guncelleKampanyaOnizleme;
+    window.guncelleKampanyaOnizleme=function(){
+      try{ _o.apply(this,arguments); }catch(e){}
+      if(document.getElementById('kTip') && document.getElementById('kTip').value==='kademeli') tarifeDropdownDoldur();
+    };
+    window.guncelleKampanyaOnizleme.__kad=true;
+  }
+
+  // resetKampanyaForm sar
+  if(typeof resetKampanyaForm==='function' && !resetKampanyaForm.__kad){
+    var _r=resetKampanyaForm;
+    window.resetKampanyaForm=function(){
+      _r.apply(this,arguments);
+      kademeState=[];
+      var td=document.getElementById('kTarifeDiv'); if(td) td.style.display='none';
+      var kd=document.getElementById('kKademeDiv'); if(kd) kd.style.display='none';
+      var dw=document.getElementById('kDegerWrap'); if(dw) dw.style.display='block';
+    };
+    window.resetKampanyaForm.__kad=true;
+  }
+
+  // editKampanya sar
+  if(typeof editKampanya==='function' && !editKampanya.__kad){
+    var _e=editKampanya;
+    window.editKampanya=function(id){
+      _e.apply(this,arguments);
+      var k=(kampanyaData||[]).find(function(x){return x.id===id;});
+      if(k && k.tip==='kademeli'){
+        document.getElementById('kTip').value='kademeli';
+        kademeState=(k.kademeler||[]).map(function(x){return {a:+x.a,p:+x.p};});
+        updateKampanyaForm();
+        var sel=document.getElementById('kTarife'); if(sel && k.tarife) sel.value=k.tarife;
+        renderKademeList();
+      }
+    };
+    window.editKampanya.__kad=true;
+  }
+
+  // saveKampanya sar — kademeli ise kendi kaydini yap
+  if(typeof saveKampanya==='function' && !saveKampanya.__kad){
+    var _s=saveKampanya;
+    window.saveKampanya=function(){
+      var tip=document.getElementById('kTip').value;
+      if(tip!=='kademeli') return _s.apply(this,arguments);
+      var editId=document.getElementById('kEditId').value;
+      var ym=document.getElementById('kAy').value;
+      var cat=document.getElementById('kCat').value;
+      var tarife=document.getElementById('kTarife').value;
+      var startDate=document.getElementById('kStartDate').value||null;
+      var endDate=document.getElementById('kEndDate').value||null;
+      var aciklama=document.getElementById('kAciklama').value.trim();
+      if(!ym){ alert('Ay seçiniz.'); return; }
+      if(!tarife){ alert('Kademeli kampanya için bir tarife seçiniz.'); return; }
+      var kademeler=(kademeState||[]).filter(function(k){return k.a>0;}).map(function(k){return {a:+k.a,p:+k.p};}).sort(function(a,b){return a.a-b.a;});
+      if(!kademeler.length){ alert('En az bir kademe (adet → prim) giriniz.'); return; }
+      var k={ ym:ym, cat:cat, catList:[cat], tip:'kademeli', tarife:tarife, kademeler:kademeler, startDate:startDate, endDate:endDate, aciklama:aciklama, deger:0 };
+      if(editId){ var idx=kampanyaData.findIndex(function(x){return x.id===editId;}); if(idx>=0){ k.id=editId; kampanyaData[idx]=k; } }
+      else { k.id=Date.now().toString(); kampanyaData.push(k); }
+      saveKampanyaStore(); resetKampanyaForm(); renderKampanyaList(); render();
+    };
+    window.saveKampanya.__kad=true;
+  }
+})();
+</script>
 </body>
 </html>
