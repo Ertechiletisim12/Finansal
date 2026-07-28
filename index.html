@@ -4039,7 +4039,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v425';
+const APP_VERSION = 'v426';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -8580,18 +8580,26 @@ function render(){
     let kampRozet = '';
     (function(){
       const parts = [];
-      if(kampanyaVar) parts.push('<span style="font-size:9px;font-weight:800;border-radius:5px;padding:2px 6px;background:rgba(255,183,77,0.2);color:#ffb74d;white-space:nowrap">🎯 '+fmt(kdvBrut(price))+'</span>');
+      function rozet(bg,renk,ikon,etiket,detay){
+        const d = (detay||'').replace(/"/g,'&quot;').replace(/'/g,"\\'");
+        return '<span onclick="event.stopPropagation();kampRozetNot(this)" data-detay="'+d+'" title="'+d+'" style="font-size:9px;font-weight:800;border-radius:5px;padding:2px 6px;background:'+bg+';color:'+renk+';white-space:nowrap;cursor:pointer">'+ikon+' '+etiket+'</span>';
+      }
+      if(kampanyaVar) parts.push(rozet('rgba(255,183,77,0.2)','#ffb74d','🎯',fmt(kdvBrut(price)),'Fiyat kampanyası: her satış '+fmt(kdvBrut(price))+' ₺ (normal fiyat yerine)'));
       if(typeof kampanyaData!=='undefined' && kampanyaData && kampanyaData.length){
-        let kad=false, tek=false, bon=false;
         kampanyaData.forEach(k=>{
           if(k.ym!==activeYm) return;
           const kc = (k.catList && k.catList.length) ? k.catList : [k.cat];
           if(kc.indexOf(cat)<0) return;
-          if(k.tip==='kademeli') kad=true; else if(k.tip==='tekrarli') tek=true; else if(k.tip==='bonus') bon=true;
+          const tarih = (k.startDate||k.endDate) ? ('  •  '+(k.startDate||'ay başı')+' → '+(k.endDate||'ay sonu')) : '';
+          if(k.tip==='kademeli'){
+            const kd = (k.kademeler||[]).map(x=>x.a+'→'+fmt(x.p)).join(', ');
+            parts.push(rozet('rgba(184,132,240,0.18)','#b884f0','📊','Kademeli','📊 Kademeli — '+(k.tarife||'')+' tarifesi'+'\n'+kd+tarih+(k.aciklama?'\n'+k.aciklama:'')));
+          } else if(k.tip==='tekrarli'){
+            parts.push(rozet('rgba(192,132,252,0.18)','#c084fc','🔁','Tekrarlı','🔁 Tekrarlı — her '+(k.minAdet||0)+' adette '+fmt(k.deger)+' ₺'+tarih+(k.aciklama?'\n'+k.aciklama:'')));
+          } else if(k.tip==='bonus'){
+            parts.push(rozet('rgba(255,210,122,0.18)','#ffd27a','🎁','Bonus','🎁 Bonus — '+(k.minAdet||0)+' adete ulaşınca +'+fmt(k.deger)+' ₺ (bir kez)'+tarih+(k.aciklama?'\n'+k.aciklama:'')));
+          }
         });
-        if(kad) parts.push('<span style="font-size:9px;font-weight:800;border-radius:5px;padding:2px 6px;background:rgba(184,132,240,0.18);color:#b884f0;white-space:nowrap">📊 Kademeli</span>');
-        if(tek) parts.push('<span style="font-size:9px;font-weight:800;border-radius:5px;padding:2px 6px;background:rgba(192,132,252,0.18);color:#c084fc;white-space:nowrap">🔁 Tekrarlı</span>');
-        if(bon) parts.push('<span style="font-size:9px;font-weight:800;border-radius:5px;padding:2px 6px;background:rgba(255,210,122,0.18);color:#ffd27a;white-space:nowrap">🎁 Bonus</span>');
       }
       kampRozet = parts.join(' ');
     })();
@@ -21209,6 +21217,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v426',
+    date: '25.07.2026',
+    items: [
+      { type: 'new', text: 'Kategori kartindaki kampanya rozetine DOKUNUNCA / uzerine gelince kampanya icerigi not olarak cikiyor (kademeli tablosu, tekrarli/bonus kurali, tarih araligi, aciklama). Masaustunde fare ile uzerine gelince balon; telefonda rozete dokununca kutucuk.' },
+    ]
+  },
+  {
     version: 'v425',
     date: '25.07.2026',
     items: [
@@ -25869,6 +25884,30 @@ body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
     };
     window.saveKampanya.__kad=true;
   }
+})();
+</script>
+<script>
+/* ===== v425: rozete dokununca kampanya detayini not olarak goster ===== */
+(function(){
+  window.kampRozetNot=function(el){
+    try{
+      var d = el.getAttribute('data-detay')||''; if(!d) return;
+      var eski = document.getElementById('kampRozetPop'); if(eski) eski.remove();
+      var r = el.getBoundingClientRect();
+      var pop = document.createElement('div');
+      pop.id='kampRozetPop';
+      pop.textContent = d;
+      pop.style.cssText = 'position:fixed;z-index:99999;max-width:260px;background:#1c2530;color:#eef1f4;border:1px solid #3a4652;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.5;white-space:pre-line;box-shadow:0 12px 34px rgba(0,0,0,.5)';
+      document.body.appendChild(pop);
+      var pw = pop.offsetWidth, ph = pop.offsetHeight;
+      var left = Math.min(Math.max(8, r.left + r.width/2 - pw/2), window.innerWidth - pw - 8);
+      var top = r.top - ph - 8; if(top < 8) top = r.bottom + 8;
+      pop.style.left = left+'px'; pop.style.top = top+'px';
+      var kapat = function(ev){ if(ev && pop.contains(ev.target)) return; pop.remove(); document.removeEventListener('click', kapat, true); };
+      setTimeout(function(){ document.addEventListener('click', kapat, true); }, 30);
+      setTimeout(function(){ if(document.getElementById('kampRozetPop')) pop.remove(); }, 6000);
+    }catch(e){}
+  };
 })();
 </script>
 </body>
