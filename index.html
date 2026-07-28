@@ -4039,7 +4039,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v428';
+const APP_VERSION = 'v429';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -15134,10 +15134,10 @@ function renderMusteriRapor(){
     filtered = filtered.filter(m=>m.cat===_musteriRaporCat);
   }
   // Arama filtresi - isim veya telefon
-  const aramaTerim = (document.getElementById('raporAramaInput')?.value || '').trim().toLowerCase();
+  const aramaTerim = trAra(document.getElementById('raporAramaInput')?.value || '');
   if(aramaTerim){
     filtered = filtered.filter(m=>{
-      const ad = (m.ad||'').toLowerCase();
+      const ad = trAra(m.ad||'');
       const tel = (m.tel||'').replace(/\s/g,'');
       return ad.includes(aramaTerim) || tel.includes(aramaTerim.replace(/\s/g,''));
     });
@@ -15308,47 +15308,54 @@ function setMusteriDurum(durum){
   const m = musteriler.find(x=>x.id===_durumEditId);
   if(!m){ closeMusteriDurum(); return; }
 
+  const eskiDurum = m.durum;                       // v428: önceki durumu yakala
+  const dusenler = ['iptal','tasima','gecissiz'];
+  const eskiDusuk = dusenler.includes(eskiDurum);  // adet zaten düşürülmüş müydü?
+  const yeniDusuk = dusenler.includes(durum);      // yeni durum adeti düşürür mü?
+
   m.durum = durum;
   m.durumTarihi = todayStr();
-
-  // Durum güncelle - her durumda kaydet ve kartları yenile
-  if(['iptal','tasima','gecissiz'].includes(durum)){
-    m.primDurum = 'haric';
-  } else {
-    m.primDurum = durum==='aktif' ? 'dahil' : 'bekliyor';
-  }
+  if(yeniDusuk){ m.primDurum = 'haric'; }
+  else { m.primDurum = durum==='aktif' ? 'dahil' : 'bekliyor'; }
 
   closeMusteriDurum();
   saveMusteriStore();
-  renderMusteriRapor();
-  checkMusteriTakip();
-  render(); // Her durumda kartları güncelle
 
-  // İptal/taşıma/geçişsiz ise primi OTOMATIK düş (tarife uyumlu, sormadan)
-  if(['iptal','tasima','gecissiz'].includes(durum)){
-    const isMnp = m.tip==='mnp';
-    const mTarife = m.tarife || '';
-    // Once musteri kaydina bagli logId varsa, o logdaki tarifeyi kullan (en kesin yontem)
-    let hedefTarife = mTarife;
-    if(m.logId){
-      const lg = entryLog.find(l=>l.id===m.logId);
-      if(lg && lg.tarife) hedefTarife = lg.tarife;
-    }
-    // Once tarife eslesmesiyle ara, bulamazsa genel ara
+  const isMnp = m.tip==='mnp';
+  const useSub = MNP_CATS.includes(m.cat);
+
+  // DÜŞÜR: yeni durum düşük ama eskisi düşük değilse (adeti bir kez çıkar)
+  if(yeniDusuk && !eskiDusuk){
+    let hedefTarife = m.tarife || '';
+    if(m.logId){ const lg = entryLog.find(l=>l.id===m.logId); if(lg && lg.tarife) hedefTarife = lg.tarife; }
     let e = entries.find(x=>x.date===m.entryDate && x.cat===m.cat && !!x.mnp===isMnp && (x.tarife||'')===hedefTarife)
          || entries.find(x=>x.date===m.entryDate && x.cat===m.cat && !!x.mnp===isMnp);
     if(e && e.count>0){
       e.count--;
       if(e.count===0) entries = entries.filter(x=>x!==e);
-      // EntryLog'dan da sil - logId varsa onunla, yoksa genel
       let logIdx = m.logId ? entryLog.findIndex(l=>l.id===m.logId) : -1;
       if(logIdx<0) logIdx = entryLog.findLastIndex(l=>l.date===m.entryDate&&l.cat===m.cat&&!!l.mnp===isMnp);
-      if(logIdx>=0){ markDeleted('log', entryLog[logIdx].id); entryLog.splice(logIdx,1); } // v181
-      saveEntries();
-      saveEntryLog();
-      render();
+      if(logIdx>=0){ markDeleted('log', entryLog[logIdx].id); entryLog.splice(logIdx,1); }
+      m._eskiLogId = m.logId; m.logId = null;   // geri ekleyebilmek için işaretle
+      saveEntries(); saveEntryLog();
     }
   }
+  // GERİ EKLE: eskisi düşüktü, yenisi düşük değilse (adeti geri koy)
+  else if(!yeniDusuk && eskiDusuk){
+    const hedefTarife = m.tarife || '';
+    let e = entries.find(x=>x.date===m.entryDate && x.cat===m.cat && !!x.mnp===isMnp && (x.tarife||'')===hedefTarife);
+    if(!e){ e = { id:'ent_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,5), date:m.entryDate, cat:m.cat, count:0 }; if(isMnp) e.mnp=true; if(hedefTarife) e.tarife=hedefTarife; entries.push(e); }
+    e.count++;
+    const lid = 'e_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6);
+    const log = { id:lid, entryId:e.id, date:m.entryDate, cat:m.cat, time:m.entryTime||'', platform:'durum-geri' };
+    if(isMnp) log.mnp=true; if(hedefTarife) log.tarife=hedefTarife;
+    entryLog.push(log); m.logId = lid; delete m._eskiLogId;
+    saveEntries(); saveEntryLog();
+  }
+
+  renderMusteriRapor();
+  checkMusteriTakip();
+  render();
 }
 function toggleSelectAll(checked){
   document.querySelectorAll('.mkSelectBox').forEach(cb => cb.checked = checked);
@@ -21218,6 +21225,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v429',
+    date: '28.07.2026',
+    items: [
+      { type: 'fix', text: 'MUSTERI TAKIP — DURUM GUNCELLEME artik cift yonlu: Once iptal/tasima/gecissiz yapip adet dususunce, sonra tekrar Aktif/Bekliyor a cevirince adet GERI EKLENIYOR (onceden tek yonluydu, geri donunce etki etmiyordu). Durumlar arasi her gecis artik dogru sayiyi ve primi veriyor.' },
+      { type: 'fix', text: 'MUSTERI TAKIP ARAMA — Turkce buyuk/kucuk harf duzeltildi: "ismail" yazinca "ISMAIL/Ismail", "sukru" yazinca "SUKRU/Sukru" bulunuyor. Turkce I/i ve aksanli harfler (s,g,u,o,c) arama disinda tutuluyor; isim ve telefon uzerinden aranabiliyor.' },
+    ]
+  },
+  {
     version: 'v428',
     date: '28.07.2026',
     items: [
@@ -26030,6 +26045,16 @@ body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
     alert('✓ Onarım tamam.\n• Temizlenen fazla kayıt: '+temizlendi+'\n• Doğru bağlanan müşteri: '+baglandi+'\n• Gerçekten eklenen: '+eklendi+'\n\nAdetler artık müşteri kayıtlarıyla tutarlı.');
   };
 })();
+</script>
+<script>
+/* v428: Türkçe-uyumlu arama normalize — İ/I küçük-büyük harf ve aksan sorununu çözer */
+window.trAra = function(s){
+  return (s==null?'':String(s))
+    .replace(/İ/g,'i').replace(/I/g,'ı').replace(/Ş/g,'ş').replace(/Ğ/g,'ğ').replace(/Ü/g,'ü').replace(/Ö/g,'ö').replace(/Ç/g,'ç')
+    .toLowerCase()
+    .replace(/ı/g,'i').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o').replace(/ç/g,'c')
+    .trim();
+};
 </script>
 </body>
 </html>
