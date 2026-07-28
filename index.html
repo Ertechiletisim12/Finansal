@@ -2866,7 +2866,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <!-- Üst: büyük hakediş rakamı -->
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
-              <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:4px" id="hakedisAralikLabel">Genel Hakediş</div>
+              <div style="font-size:11px;font-weight:700;letter-spacing:0;color:rgba(255,255,255,0.55);margin-bottom:4px" id="hakedisAralikLabel">Genel Hakediş</div>
               <div style="font-size:21px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1.05" id="hakedisToplamRakam">—</div>
               <div style="font-size:10.5px;font-weight:800;color:#ffd27a;margin-top:4px;display:none" id="hakedisBeklenenLabel"></div>
             </div>
@@ -4040,7 +4040,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v432';
+const APP_VERSION = 'v433';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -8745,8 +8745,9 @@ function render(){
     hToplamRakam.innerHTML = fmtCiftHtml(genelHakedis);
     const _bekLbl = document.getElementById('hakedisBeklenenLabel');
     if(_bekLbl){
-      if(bekleyenTutar > 0){ _bekLbl.style.display='block'; _bekLbl.innerHTML='⏳ Beklenen: +'+fmtCiftHtml(bekleyenTutar,'sm')+' <span style="opacity:.65;font-weight:600">('+bekleyenAdet+' onay bekliyor)</span>'; }
-      else { _bekLbl.style.display='none'; }
+      _bekLbl.style.display='block';
+      if(bekleyenTutar > 0){ _bekLbl.style.color='#ffd27a'; _bekLbl.innerHTML='⏳ Beklenen: +'+fmtCiftHtml(bekleyenTutar,'sm')+' <span style="opacity:.65;font-weight:600">('+bekleyenAdet+' onay bekliyor)</span>'; }
+      else { _bekLbl.style.color='rgba(255,255,255,0.4)'; _bekLbl.innerHTML='⏳ Beklenen prim yok <span style="opacity:.7;font-weight:600">(onay bekleyen müşteri yok)</span>'; }
     }
     hAralikLabel.textContent = rStart + ' – ' + rEnd;
     hAdetLabel.textContent = rangeCount + ' adet' + (bonusMonths.length > 1 ? ' · ' + bonusMonths.map(m=>monthLabel(m)).join('+') + ' kampanyaları' : '');
@@ -21236,6 +21237,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v433',
+    date: '29.07.2026',
+    items: [
+      { type: 'fix', text: 'Prim Toplam karti ust kisim: (1) BEKLENEN PRIM artik her zaman gorunuyor — onay bekleyen musteri varsa tutariyla, yoksa "Beklenen prim yok" olarak. (2) Ust taraftaki tarih araliginin harf araliklari cok genisti (bosluklu goruynuyordu), normal/duzgun hale getirildi.' },
+    ]
+  },
   {
     version: 'v432',
     date: '29.07.2026',
