@@ -4040,7 +4040,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v435';
+const APP_VERSION = 'v436';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -20673,7 +20673,7 @@ function openExportPreview(tableId, fileLabel){
           const logE = dayLogs.find(l=>l.id===m.logId);
           // v259: MNP aktivasyon tarihi + devir durumu (seçili aralığa göre)
           const isMnp = m.tip==='mnp';
-          const akt = isMnp ? ((m.aktivasyonTarihi||mnpActivationDate(m.entryDate)).slice(0,10)) : '';
+          const akt = isMnp ? ((m.aktivasyonTarihi||mnpActivationDate(m.entryDate)).slice(0,10)) : g.date;
           let devir = '';
           if(isMnp && akt){
             if(_devirGrubu)       devir = 'onceki';   // v282: onceki donemden devreden (girisi bu araligin oncesinde)
@@ -20693,12 +20693,12 @@ function openExportPreview(tableId, fileLabel){
         const kalan = g.count - ilgiliM.length;
         if(kalan>0){
           const _ek = (notlarData||[]).find(n => n.entryKey === g.date+'_'+g.cat);
-          musteriRows.push({date:g.date,cat:g.cat,count:kalan,amt:birimAmt*kalan,ad:'-',tel:'-',tarife:'-',tip:'-',akt:'-',devir:'',bekliyor:false,
+          musteriRows.push({date:g.date,cat:g.cat,count:kalan,amt:birimAmt*kalan,ad:'-',tel:'-',tarife:'-',tip:'-',akt:g.date,devir:'',bekliyor:false,
             not:(_ek&&_ek.metin)||'', etiket:(_ek&&_ek.etiketler&&_ek.etiketler.length)?_ek.etiketler.join(', '):''});
         }
       } else {
         const _ek = (notlarData||[]).find(n => n.entryKey === g.date+'_'+g.cat);
-        musteriRows.push({date:g.date,cat:g.cat,count:g.count,amt:birimAmt*g.count,ad:'-',tel:'-',tarife:'-',tip:'-',akt:'-',devir:'',bekliyor:false,
+        musteriRows.push({date:g.date,cat:g.cat,count:g.count,amt:birimAmt*g.count,ad:'-',tel:'-',tarife:'-',tip:'-',akt:g.date,devir:'',bekliyor:false,
           not:(_ek&&_ek.metin)||'', etiket:(_ek&&_ek.etiketler&&_ek.etiketler.length)?_ek.etiketler.join(', '):''});
       }
     });
@@ -21248,6 +21248,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v436',
+    date: '29.07.2026',
+    items: [
+      { type: 'imp', text: 'Islem Listesi Disa Aktar: "Aktivasyon / Devir" sutunu Yeni Tesis (MNP olmayan) satirlarda bos kaliyordu; artik oraya o kaydin GIRIS TARIHI yaziliyor. MNP satirlar eskisi gibi aktivasyon tarihi + devir okuyla gorunur. Hem ekran onizlemede hem Excel ciktisinda gecerli.' },
+    ]
+  },
   {
     version: 'v435',
     date: '29.07.2026',
