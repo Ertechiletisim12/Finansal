@@ -4039,7 +4039,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v429';
+const APP_VERSION = 'v430';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -8341,6 +8341,7 @@ function showPrimGrupDetay(tip){
     let list = [];
     if(tip==='ileri'){ baslik='⏳ İleride Aktive Olacak MNP'; list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.entryDate>=rStart && m.entryDate<=rEnd && aktOf(m)>rEnd); }
     else if(tip==='bekleyen'){ baslik='⏳ Onay Bekleyen MNP'; list = musteriler.filter(m=>inMnp(m) && m.tip==='mnp' && m.durum==='bekliyor' && aktOf(m)>=rStart && aktOf(m)<=rEnd); }
+    else if(tip==='iptal'){ baslik='❌ İptal / Taşıma / Geçişsiz'; list = musteriler.filter(m=>(m.durum==='iptal'||m.durum==='tasima'||m.durum==='gecissiz') && m.entryDate>=rStart && m.entryDate<=rEnd); }
     list = srt(list);
     toplam = list.length;
     ic = list.map(satirHTML).join('');
@@ -8747,13 +8748,15 @@ function render(){
     // v220: ADET KIRILIMI — tüm kategorilerin toplamı, müşteri kayıtlarından (sayı ile liste birebir).
     const _aktOf = m => (m.aktivasyonTarihi ? m.aktivasyonTarihi : mnpActivationDate(m.entryDate)).slice(0,10);
     const _inMnp = m => MNP_CATS.includes(m.cat);
-    const gYeniTesis  = musteriler.filter(m=> m.tip==='tesis' && m.entryDate>=rStart && m.entryDate<=rEnd).length; // v221: tüm kategoriler (MNP tesis + P2P/Mccm/İnternet/Diğer)
-    const gAktiveList = musteriler.filter(m=>_inMnp(m) && m.tip==='mnp' && m.durum!=='bekliyor' && _aktOf(m)>=rStart && _aktOf(m)<=rEnd); // v221: bekleyenler hariç
+    const _sayilmaz = m => (m.durum==='iptal' || m.durum==='tasima' || m.durum==='gecissiz'); // v430: adete/prime GİRMEZ
+    const gYeniTesis  = musteriler.filter(m=> m.tip==='tesis' && !_sayilmaz(m) && m.entryDate>=rStart && m.entryDate<=rEnd).length;
+    const gAktiveList = musteriler.filter(m=>_inMnp(m) && m.tip==='mnp' && m.durum!=='bekliyor' && !_sayilmaz(m) && _aktOf(m)>=rStart && _aktOf(m)<=rEnd);
     const gAktive     = gAktiveList.length;
     const gAktiveDevir= gAktiveList.filter(m=>ymKey(m.entryDate)!==ymKey(_aktOf(m))).length;
     const gAktiveDonem= gAktive - gAktiveDevir;
-    const gIleri      = musteriler.filter(m=>_inMnp(m) && m.tip==='mnp' && m.entryDate>=rStart && m.entryDate<=rEnd && _aktOf(m)>rEnd).length;
+    const gIleri      = musteriler.filter(m=>_inMnp(m) && m.tip==='mnp' && !_sayilmaz(m) && m.entryDate>=rStart && m.entryDate<=rEnd && _aktOf(m)>rEnd).length;
     const gBekleyen   = musteriler.filter(m=>_inMnp(m) && m.tip==='mnp' && m.durum==='bekliyor' && _aktOf(m)>=rStart && _aktOf(m)<=rEnd).length;
+    const gIptalGecis = musteriler.filter(m=> _sayilmaz(m) && m.entryDate>=rStart && m.entryDate<=rEnd).length; // v430: iptal/taşıma/geçişsiz
     const _satir = (tip,ikon,etiket,sayi,renk,ekstra) => '<div onclick="showPrimGrupDetay(\''+tip+'\')" style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;padding:3px 0;cursor:pointer"><span style="opacity:.82">'+ikon+' '+etiket+(ekstra||'')+'</span><span style="font-weight:700;color:'+renk+';text-decoration:underline dotted">'+sayi+'</span></div>';
     let gAdetBlok = '<div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:9px 11px;margin-bottom:8px">'
       + '<div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:6px">Adet Kırılımı</div>'
@@ -8761,6 +8764,7 @@ function render(){
       + _satir('aktive','🔄','MNP aktive',gAktive,'#fff',' <span style="opacity:.6;font-size:10px">('+gAktiveDonem+' bu dönem · '+gAktiveDevir+' devir)</span>')
       + (gIleri ? _satir('ileri','⏳','İleride aktive',gIleri,'#5ac8fa') : '')
       + (gBekleyen ? _satir('bekleyen','⏳','Onay bekliyor',gBekleyen,'#ffd27a') : '')
+      + (gIptalGecis ? _satir('iptal','❌','İptal / Taşıma / Geçişsiz',gIptalGecis,'#ff7070',' <span style="opacity:.6;font-size:10px">(primden hariç)</span>') : '')
       + '</div>';
 
     let detayHTML = gAdetBlok;
@@ -21225,6 +21229,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v430',
+    date: '28.07.2026',
+    items: [
+      { type: 'fix', text: 'PRIM TOPLAM KARTI — ADET KIRILIMI DUZELTILDI: iptal/tasima/gecissiz musteriler artik "MNP aktive" ve "Yeni Tesis" sayilarina DAHIL DEGIL (onceden gecissizler MNP aktive icine sayiliyor, ust toplamla tutmuyordu — 80 yerine 81 gibi). Bunlar artik ayri satirda: "❌ Iptal / Tasima / Gecissiz (primden haric)" — tiklaninca listesi acilir. Boylece kirilim ust toplamla birebir tutuyor.' },
+    ]
+  },
+  {
     version: 'v429',
     date: '28.07.2026',
     items: [
@@ -25951,6 +25962,7 @@ body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
   }
   function keyEnt(e){ return keyParts(e.date,e.cat,!!e.mnp,e.tarife||''); }
   function keyLog(l){ return keyParts(l.date,l.cat,!!l.mnp,l.tarife||''); }
+  function dcKey(date,cat){ return date+'\u0001'+cat; }
   // müşterileri key'e göre grupla (aktif/bekliyor sayılır; iptal/taşıma/geçişsiz sayılmaz)
   function gruplar(){
     var g={};
