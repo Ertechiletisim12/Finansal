@@ -4040,7 +4040,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v431';
+const APP_VERSION = 'v432';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -13663,6 +13663,7 @@ function renderIslemList(cat, date){
           ` : `<span style="font-size:10px;color:var(--muted);font-style:italic">👤 Müşteri kaydı yok</span>`}
         </div>
       </div>
+      ${musteri ? `<button onclick="closeIslemListModal();openMusteriEdit('${musteri.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;flex-shrink:0" title="Düzenle">✏️</button>` : ''}
       <button data-logid="${deleteLogId}" data-cat="${cat}" data-date="${l.date}" data-mnp="${isMnp===true}" onclick="confirmDeleteIslem(this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="Sil">🗑</button>
     </div>`;
   }).join('');
@@ -13706,6 +13707,7 @@ function renderIslemList(cat, date){
           </div>
           ${musteriHTML}
         </div>
+        ${m ? `<button onclick="closeIslemListModal();openMusteriEdit('${m.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;flex-shrink:0" title="Düzenle">✏️</button>` : ''}
         <button onclick="deleteEntryDirect('${cat}','${e.date}',${isMnpE},this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="1 sil">🗑</button>
       </div>`;
     }
@@ -21234,6 +21236,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v432',
+    date: '29.07.2026',
+    items: [
+      { type: 'new', text: 'Islem Listesi (kategori kartindaki 📋): her satirda silme (🗑) yaninda artik DUZENLE (✏️) butonu var. Musteri kaydi olan satirlarda dokununca o musterinin duzenleme ekrani acilir (ad, telefon, tarife, tarih, saat, durum). Boylece listeden cikmadan kaydi duzeltebilirsin.' },
+    ]
+  },
   {
     version: 'v431',
     date: '28.07.2026',
