@@ -25942,99 +25942,85 @@ body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
 })();
 </script>
 <script>
-/* ===== v426: TUTARLILIK KONTROL & ONAR (adet ile müşteri kaydı uyuşmazlığı) ===== */
+/* ===== v429: ADET TUTARLILIK — müşteri kayıtları TEK GERÇEK KAYNAK ===== */
 (function(){
-  function keyOf(date,cat,mnp,tarife){ return date+'|'+cat+'|'+(MNP_CATS.includes(cat)?(mnp?'1':'0'):'-')+'|'+(tarife||''); }
-  function analiz(){
-    var logCount={};
-    (entryLog||[]).forEach(function(l){ var k=keyOf(l.date,l.cat,!!l.mnp,l.tarife||''); logCount[k]=(logCount[k]||0)+1; });
-    var eksik=[], fazla=[];
-    (entries||[]).forEach(function(e){
-      var k=keyOf(e.date,e.cat,!!e.mnp,e.tarife||'');
-      var bek=logCount[k]||0;
-      if(bek>0 && e.count<bek) eksik.push({e:e,mevcut:e.count,beklenen:bek,k:k});
-      else if(bek>0 && e.count>bek) fazla.push({e:e,mevcut:e.count,beklenen:bek,k:k});
-    });
-    var orphan=[];
+  var SAYILMAZ=['iptal','tasima','gecissiz']; // bunlar adete GİRMEZ
+  function keyParts(date,cat,mnp,tarife){
+    var useSub=MNP_CATS.includes(cat);
+    return date+'\u0001'+cat+'\u0001'+(useSub?(mnp?'1':'0'):'-')+'\u0001'+(tarife||'');
+  }
+  function keyEnt(e){ return keyParts(e.date,e.cat,!!e.mnp,e.tarife||''); }
+  function keyLog(l){ return keyParts(l.date,l.cat,!!l.mnp,l.tarife||''); }
+  // müşterileri key'e göre grupla (aktif/bekliyor sayılır; iptal/taşıma/geçişsiz sayılmaz)
+  function gruplar(){
+    var g={};
     (musteriler||[]).forEach(function(m){
-      var log=m.logId?(entryLog||[]).find(function(l){return l.id===m.logId;}):null;
-      var ent=log?(entries||[]).find(function(e){return e.id===log.entryId;}):null;
-      if(!ent) orphan.push(m);
+      if(!m.entryDate||!m.cat) return;
+      var mnp=(m.tip==='mnp'), useSub=MNP_CATS.includes(m.cat);
+      var k=keyParts(m.entryDate,m.cat,mnp,m.tarife||'');
+      if(!g[k]) g[k]={date:m.entryDate,cat:m.cat,mnp:mnp,useSub:useSub,tarife:m.tarife||'',aktif:[],hepsi:[]};
+      g[k].hepsi.push(m);
+      if(SAYILMAZ.indexOf(m.durum)<0) g[k].aktif.push(m);
     });
-    // önceki hatalı onarımın bıraktığı fazla kayıtlar (temizlenecek)
-    var hayalet=(entryLog||[]).filter(function(l){return l.platform==='onarım';}).length;
-    return {eksik:eksik, fazla:fazla, orphan:orphan, hayalet:hayalet};
+    return g;
+  }
+  // önizleme: müşterisi olan key'lerde mevcut adet vs olması gereken (aktif müşteri)
+  function onizle(){
+    var g=gruplar(), fark=[], eskiKorunan=0, dokunulan={};
+    Object.keys(g).forEach(function(k){ dokunulan[k]=true; });
+    // mevcut entries'i key'e göre topla
+    var mevcut={};
+    (entries||[]).forEach(function(e){ var k=keyEnt(e); mevcut[k]=(mevcut[k]||0)+(e.count||0); if(!dokunulan[k]) eskiKorunan++; });
+    Object.keys(g).forEach(function(k){
+      var olmasi=g[k].aktif.length, simdi=mevcut[k]||0;
+      if(olmasi!==simdi) fark.push({g:g[k], simdi:simdi, olmasi:olmasi});
+    });
+    return {fark:fark, eskiKorunan:eskiKorunan};
   }
   window.tutarlilikKontrol=function(){
-    var r=analiz();
-    var toplam=r.eksik.length+r.orphan.length+r.fazla.length+(r.hayalet||0);
+    var o=onizle();
     var html='<div style="font-size:13px;line-height:1.6">';
-    if(toplam===0){
-      html+='<div style="color:#4cd964;font-weight:700;text-align:center;padding:10px">✓ Her şey tutarlı. Adetler ile müşteri kayıtları birbirini tutuyor.</div>';
+    if(!o.fark.length){
+      html+='<div style="color:#4cd964;font-weight:700;text-align:center;padding:10px">✓ Adetler müşteri kayıtlarıyla tutarlı. Düzeltme gerekmez.</div>';
     } else {
-      if(r.hayalet){
-        html+='<div style="font-weight:800;color:#ff7070;margin-bottom:4px">⚠ Önceki onarımdan kalan fazla kayıt ('+r.hayalet+') — temizlenecek:</div>';
-        html+='<div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">• Bir önceki onarım, bazı müşterileri fazladan saymıştı (isimsiz adetler). Onar bunları temizleyip adetleri doğru sayıya çeker.</div>';
-      }
-      if(r.eksik.length){
-        html+='<div style="font-weight:800;color:#ffb74d;margin-bottom:4px">⚠ Adet eksik ('+r.eksik.length+') — müşteri var ama adete yansımamış:</div>';
-        r.eksik.forEach(function(s){ var p=s.k.split('|'); html+='<div style="font-size:11.5px;color:var(--muted);margin-bottom:3px">• '+p[0]+' · '+p[1]+(p[3]?' · '+p[3]:'')+' → adet <b style="color:#ff7070">'+s.mevcut+'</b>, olması gereken <b style="color:#4cd964">'+s.beklenen+'</b></div>'; });
-      }
-      if(r.orphan.length){
-        html+='<div style="font-weight:800;color:#ffb74d;margin:8px 0 4px">⚠ Bağı kopuk müşteri ('+r.orphan.length+') — adete hiç bağlanmamış:</div>';
-        r.orphan.forEach(function(m){ html+='<div style="font-size:11.5px;color:var(--muted);margin-bottom:3px">• '+(m.entryDate||'?')+' · '+m.cat+' · '+(m.ad||'(isimsiz)')+'</div>'; });
-      }
-      if(r.fazla.length){
-        html+='<div style="font-weight:800;color:#c084fc;margin:8px 0 4px">ℹ Adet fazla ('+r.fazla.length+') — elle eklenmiş ya da eski kayıt olabilir (otomatik dokunulmaz):</div>';
-        r.fazla.forEach(function(s){ var p=s.k.split('|'); html+='<div style="font-size:11.5px;color:var(--muted);margin-bottom:3px">• '+p[0]+' · '+p[1]+(p[3]?' · '+p[3]:'')+' → adet <b>'+s.mevcut+'</b>, log '+s.beklenen+'</div>'; });
-      }
-      html+='<div style="margin-top:10px;font-size:11px;color:var(--muted)">Onar: yalnızca <b>eksik</b> adetleri ve <b>kopuk</b> müşterileri düzeltir (adet ekler). Hiçbir kayıt silinmez, fazlalıklara dokunulmaz.</div>';
+      html+='<div style="font-weight:800;color:#ffb74d;margin-bottom:6px">'+o.fark.length+' yerde adet, müşteri sayısıyla uyuşmuyor:</div>';
+      o.fark.slice(0,40).forEach(function(f){
+        var g=f.g, renk = f.olmasi<f.simdi ? '#ff7070' : '#4cd964';
+        html+='<div style="font-size:11.5px;color:var(--muted);margin-bottom:3px">• '+g.date+' · '+g.cat+(g.useSub?(g.mnp?' (MNP)':' (Tesis)'):'')+(g.tarife?' · '+g.tarife:'')
+          +' → adet <b style="color:#ff7070">'+f.simdi+'</b>, gerçek müşteri <b style="color:#4cd964">'+f.olmasi+'</b></div>';
+      });
+      if(o.fark.length>40) html+='<div style="font-size:11px;color:var(--muted)">…ve '+(o.fark.length-40)+' tane daha</div>';
+      html+='<div style="margin-top:10px;font-size:11px;color:var(--muted)">Düzelt: adetleri <b>gerçek müşteri sayısına</b> eşitler. İptal/taşıma/geçişsiz müşteriler sayılmaz. <b>Müşteri kaydı olmayan eski dönemlere DOKUNULMAZ</b> ('+o.eskiKorunan+' eski kayıt korunur). Hiçbir müşteri silinmez.</div>';
     }
     html+='</div>';
-    var ov=document.createElement('div');
-    ov.id='tkModal';
+    var ov=document.createElement('div'); ov.id='tkModal';
     ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px';
-    ov.innerHTML='<div style="background:var(--panel,#16202c);border:1px solid var(--line,#263440);border-radius:14px;max-width:460px;width:100%;max-height:82vh;overflow-y:auto;padding:16px">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><b style="font-size:15px">🔧 Tutarlılık Kontrolü</b><button onclick="document.getElementById(\'tkModal\').remove()" style="background:var(--panel2,#22303d);border:1px solid var(--line,#263440);color:var(--muted,#8fa1b3);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">×</button></div>'
+    ov.innerHTML='<div style="background:var(--panel,#16202c);border:1px solid var(--line,#263440);border-radius:14px;max-width:470px;width:100%;max-height:82vh;overflow-y:auto;padding:16px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><b style="font-size:15px">🔧 Adet Tutarlılık</b><button onclick="document.getElementById(\'tkModal\').remove()" style="background:var(--panel2,#22303d);border:1px solid var(--line,#263440);color:var(--muted,#8fa1b3);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">×</button></div>'
       +html
-      +(toplam>0?'<button onclick="tutarlilikOnar()" style="width:100%;margin-top:14px;background:#4cd964;color:#062812;border:none;border-radius:10px;padding:12px;font-weight:800;font-size:14px;cursor:pointer">🔧 Onar ('+((r.hayalet||0)+r.eksik.length+r.orphan.length)+')</button>':'')
+      +(o.fark.length?'<button onclick="tutarlilikOnar()" style="width:100%;margin-top:14px;background:#4cd964;color:#062812;border:none;border-radius:10px;padding:12px;font-weight:800;font-size:14px;cursor:pointer">🔧 Adetleri müşteri kayıtlarına göre düzelt</button>':'')
       +'</div>';
     document.body.appendChild(ov);
   };
   window.tutarlilikOnar=function(){
-    if(!confirm('Onarım: önce hatalı oluşmuş fazla kayıtlar temizlenir, sonra bağı kopuk müşteriler DOĞRU şekilde (adet artırmadan) bağlanır. Gerçekten eksik olan varsa eklenir. Hiçbir müşteri silinmez.\n\n(Önce yedek almanız önerilir.) Devam?')) return;
-    var eklendi=0, baglandi=0, temizlendi=0;
-    // 1) önceki HATALI onarımı geri al: platform='onarım' loglarını kaldır, entry count'u düş
-    var silinen={};
-    for(var i=entryLog.length-1;i>=0;i--){
-      if(entryLog[i].platform==='onarım'){
-        var lg=entryLog[i];
-        var ent0=entries.find(function(e){return e.id===lg.entryId;});
-        if(ent0 && ent0.count>0) ent0.count--;
-        silinen[lg.id]=true; entryLog.splice(i,1); temizlendi++;
-      }
-    }
-    musteriler.forEach(function(m){ if(m.logId && silinen[m.logId]) m.logId=null; });
-    // 2) sahipli logları çıkar
-    var sahipli={}; musteriler.forEach(function(m){ if(m.logId) sahipli[m.logId]=true; });
-    // 3) kopuk müşterileri DOĞRU bağla
-    musteriler.forEach(function(m){
-      var log=m.logId?entryLog.find(function(l){return l.id===m.logId;}):null;
-      var ent=log?entries.find(function(e){return e.id===log.entryId;}):null;
-      if(ent) return; // zaten bağlı
-      var mnp=(m.tip==='mnp'), tarife=m.tarife||'', useSub=MNP_CATS.includes(m.cat), date=m.entryDate;
-      if(!date) return;
-      // aynı key'de SAHİPSİZ bir log var mı? → adet ARTIRMADAN bağla
-      var bos=entryLog.find(function(l){ return !sahipli[l.id] && l.date===date && l.cat===m.cat && (useSub?(!!l.mnp===mnp):true) && ((l.tarife||'')===tarife); });
-      if(bos){ m.logId=bos.id; sahipli[bos.id]=true; baglandi++; return; }
-      // gerçekten eksik → yeni entry+log ekle
-      var e=entries.find(function(x){return x.date===date && x.cat===m.cat && (useSub?(!!x.mnp===mnp):true) && ((x.tarife||'')===tarife);});
-      if(!e){ e={id:'ent_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,5),date:date,cat:m.cat,count:0}; if(useSub)e.mnp=mnp; if(tarife)e.tarife=tarife; entries.push(e); }
-      e.count++;
-      var lid='e_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6);
-      var l2={id:lid,entryId:e.id,date:date,cat:m.cat,time:m.entryTime||'',platform:'onarım2'};
-      if(useSub)l2.mnp=mnp; if(tarife)l2.tarife=tarife;
-      entryLog.push(l2); m.logId=lid; sahipli[lid]=true; eklendi++;
+    if(!confirm('Adetler, gerçek müşteri kayıtlarına göre yeniden hesaplanacak.\n\n• İptal/taşıma/geçişsiz müşteriler sayılmayacak\n• Müşterisiz (boş/hayalet) fazlalıklar temizlenecek\n• Müşteri kaydı olmayan eski dönemlere DOKUNULMAYACAK\n• Hiçbir müşteri silinmeyecek\n\nÖnce YEDEK almanız önerilir. Devam?')) return;
+    var g=gruplar();
+    var dokunulan={}; Object.keys(g).forEach(function(k){ dokunulan[k]=true; });
+    // dokunulan key'lerdeki eski entry+log at (müşterisi olmayan key'ler korunur)
+    entries = (entries||[]).filter(function(e){ return !dokunulan[keyEnt(e)]; });
+    entryLog = (entryLog||[]).filter(function(l){ return !dokunulan[keyLog(l)]; });
+    var say=0;
+    Object.keys(g).forEach(function(k){
+      var grp=g[k]; if(!grp.aktif.length) return; // hepsi iptal/taşıma/geçişsiz → adet yok
+      var e={id:'ent_'+Date.now().toString(36)+'_'+(say++)+Math.random().toString(36).slice(2,4),date:grp.date,cat:grp.cat,count:grp.aktif.length};
+      if(grp.useSub) e.mnp=grp.mnp; if(grp.tarife) e.tarife=grp.tarife;
+      entries.push(e);
+      grp.aktif.forEach(function(m){
+        var lid='e_'+Date.now().toString(36)+'_'+(say++)+Math.random().toString(36).slice(2,4);
+        var log={id:lid,entryId:e.id,date:grp.date,cat:grp.cat,time:m.entryTime||''};
+        if(grp.useSub) log.mnp=grp.mnp; if(grp.tarife) log.tarife=grp.tarife;
+        entryLog.push(log); m.logId=lid;
+      });
     });
     try{ if(typeof saveEntries==='function') saveEntries(); }catch(e){}
     try{ if(typeof saveEntryLog==='function') saveEntryLog(); }catch(e){}
@@ -26042,7 +26028,7 @@ body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
     try{ if(typeof scheduleCloudSync==='function') scheduleCloudSync(); }catch(e){}
     try{ if(typeof render==='function') render(); }catch(e){}
     var mm=document.getElementById('tkModal'); if(mm) mm.remove();
-    alert('✓ Onarım tamam.\n• Temizlenen fazla kayıt: '+temizlendi+'\n• Doğru bağlanan müşteri: '+baglandi+'\n• Gerçekten eklenen: '+eklendi+'\n\nAdetler artık müşteri kayıtlarıyla tutarlı.');
+    alert('✓ Adetler müşteri kayıtlarına göre düzeltildi.\nİptal/taşıma/geçişsiz sayılmadı, boş/hayalet fazlalıklar temizlendi. Eski dönemlere dokunulmadı.');
   };
 })();
 </script>
