@@ -4040,7 +4040,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v433';
+const APP_VERSION = 'v435';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -8745,9 +8745,16 @@ function render(){
     hToplamRakam.innerHTML = fmtCiftHtml(genelHakedis);
     const _bekLbl = document.getElementById('hakedisBeklenenLabel');
     if(_bekLbl){
+      let _bek = 0;
+      try{
+        const _mMap = {};
+        entries.forEach(e=>{ const k=effectiveYm(e); if(!_mMap[k]) _mMap[k]={}; _mMap[k][e.cat]=(_mMap[k][e.cat]||0)+e.count; });
+        let _m = ymKey(rStart); const _son = ymKey(rEnd);
+        for(let i=0;i<36 && _m<=_son;i++){ _bek += beklenenPrim(_m, _mMap); _m = addMonths(_m,1); }
+      }catch(e){}
       _bekLbl.style.display='block';
-      if(bekleyenTutar > 0){ _bekLbl.style.color='#ffd27a'; _bekLbl.innerHTML='⏳ Beklenen: +'+fmtCiftHtml(bekleyenTutar,'sm')+' <span style="opacity:.65;font-weight:600">('+bekleyenAdet+' onay bekliyor)</span>'; }
-      else { _bekLbl.style.color='rgba(255,255,255,0.4)'; _bekLbl.innerHTML='⏳ Beklenen prim yok <span style="opacity:.7;font-weight:600">(onay bekleyen müşteri yok)</span>'; }
+      _bekLbl.style.color='#ffd27a';
+      _bekLbl.innerHTML='⏳ Beklenen Prim: '+fmt(_bek)+' <span style="opacity:.6;font-weight:600;font-size:9px">(%70 bu ay + %30 devir)</span>';
     }
     hAralikLabel.textContent = rStart + ' – ' + rEnd;
     hAdetLabel.textContent = rangeCount + ' adet' + (bonusMonths.length > 1 ? ' · ' + bonusMonths.map(m=>monthLabel(m)).join('+') + ' kampanyaları' : '');
@@ -13664,8 +13671,10 @@ function renderIslemList(cat, date){
           ` : `<span style="font-size:10px;color:var(--muted);font-style:italic">👤 Müşteri kaydı yok</span>`}
         </div>
       </div>
-      ${musteri ? `<button onclick="closeIslemListModal();openMusteriEdit('${musteri.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;flex-shrink:0" title="Düzenle">✏️</button>` : ''}
-      <button data-logid="${deleteLogId}" data-cat="${cat}" data-date="${l.date}" data-mnp="${isMnp===true}" onclick="confirmDeleteIslem(this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="Sil">🗑</button>
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+      ${musteri ? `<button onclick="closeIslemListModal();openMusteriEdit('${musteri.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer" title="Düzenle">✏️</button>` : ''}
+      <button data-logid="${deleteLogId}" data-cat="${cat}" data-date="${l.date}" data-mnp="${isMnp===true}" onclick="confirmDeleteIslem(this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer" title="Sil">🗑</button>
+      </div>
     </div>`;
   }).join('');
 
@@ -13708,8 +13717,10 @@ function renderIslemList(cat, date){
           </div>
           ${musteriHTML}
         </div>
-        ${m ? `<button onclick="closeIslemListModal();openMusteriEdit('${m.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;flex-shrink:0" title="Düzenle">✏️</button>` : ''}
-        <button onclick="deleteEntryDirect('${cat}','${e.date}',${isMnpE},this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0" title="1 sil">🗑</button>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        ${m ? `<button onclick="closeIslemListModal();openMusteriEdit('${m.id}')" style="background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer" title="Düzenle">✏️</button>` : ''}
+        <button onclick="deleteEntryDirect('${cat}','${e.date}',${isMnpE},this)" style="background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer" title="1 sil">🗑</button>
+        </div>
       </div>`;
     }
   });
@@ -21237,6 +21248,20 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v435',
+    date: '29.07.2026',
+    items: [
+      { type: 'fix', text: 'Prim sayfasi Toplam kartindaki BEKLENEN PRIM artik anasayfadaki ile AYNI hesap: %70 bu ay + %30 iki ay onceki (or. 41.448 TL). Onceki surumde yanlislikla "onay bekleyen musteri primi" gosteriliyordu ve cogu zaman bos ciktigi icin "beklenen prim yok" yaziyordu. Artik anasayfayla tutarli.' },
+    ]
+  },
+  {
+    version: 'v434',
+    date: '29.07.2026',
+    items: [
+      { type: 'imp', text: 'Islem Listesinde duzenle (✏️) ve sil (🗑) butonlari artik ALT ALTA (dikey) — yan yana degil. Daha derli toplu gorunuyor.' },
+    ]
+  },
   {
     version: 'v433',
     date: '29.07.2026',
