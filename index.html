@@ -2867,7 +2867,8 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
           <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
             <div>
               <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:4px" id="hakedisAralikLabel">Genel Hakediş</div>
-              <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:-.8px;line-height:1" id="hakedisToplamRakam">—</div>
+              <div style="font-size:21px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1.05" id="hakedisToplamRakam">—</div>
+              <div style="font-size:10.5px;font-weight:800;color:#ffd27a;margin-top:4px;display:none" id="hakedisBeklenenLabel"></div>
             </div>
             <div style="text-align:right">
               <div style="font-size:9.5px;color:rgba(255,255,255,0.45);margin-bottom:3px" id="hakedisAdetLabel">—</div>
@@ -4039,7 +4040,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v430';
+const APP_VERSION = 'v431';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -8742,6 +8743,11 @@ function render(){
     const hWrapper = document.getElementById('hakedisStatsRow');
     if(hWrapper) hWrapper.style.display = 'flex';
     hToplamRakam.innerHTML = fmtCiftHtml(genelHakedis);
+    const _bekLbl = document.getElementById('hakedisBeklenenLabel');
+    if(_bekLbl){
+      if(bekleyenTutar > 0){ _bekLbl.style.display='block'; _bekLbl.innerHTML='⏳ Beklenen: +'+fmtCiftHtml(bekleyenTutar,'sm')+' <span style="opacity:.65;font-weight:600">('+bekleyenAdet+' onay bekliyor)</span>'; }
+      else { _bekLbl.style.display='none'; }
+    }
     hAralikLabel.textContent = rStart + ' – ' + rEnd;
     hAdetLabel.textContent = rangeCount + ' adet' + (bonusMonths.length > 1 ? ' · ' + bonusMonths.map(m=>monthLabel(m)).join('+') + ' kampanyaları' : '');
 
@@ -21228,6 +21234,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v431',
+    date: '28.07.2026',
+    items: [
+      { type: 'imp', text: 'Prim Toplam kartinda ust kisim: buyuk hakediş rakaminin fontu biraz kucultuldu ve altina BEKLENEN PRIM eklendi — "⏳ Beklenen: +X ₺ (N onay bekliyor)" (onay bekleyen musteri varsa gorunur). Boylece onaylanan + beklenen tek bakista gorulur.' },
+    ]
+  },
   {
     version: 'v430',
     date: '28.07.2026',
