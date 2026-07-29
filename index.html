@@ -4022,7 +4022,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v438';
+const APP_VERSION = 'v439';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -9767,7 +9767,10 @@ function renderSettingsPanel(){
     H += '<div class="ds-sec-t">Gizlilik</div>'
        + '<div class="ds-row" onclick="toggleGizliMod()"><div class="ds-row-l">'
        + '<div class="ds-row-h">Tutarlar\u0131 gizle</div><div class="ds-row-s">T\u00fcm tutarlar maskelenir</div>'
-       + '</div><div class="ds-sw" id="dsSwGizli"><i></i></div></div>';
+       + '</div><div class="ds-sw" id="dsSwGizli"><i></i></div></div>'
+       + '<div class="ds-row" onclick="toggleFinansKilit()"><div class="ds-row-l">'
+       + '<div class="ds-row-h">Finansal Analiz\'i PIN ile kilitle</div><div class="ds-row-s">Finansal sayfas\u0131 PIN girilene kadar gizli kal\u0131r (uygulama PIN\'i gerekir)</div>'
+       + '</div><div class="ds-sw" id="dsSwFinansKilit"><i></i></div></div>';
 
     // --- BULUT & DEPOLAMA (oturum/bildirim art\u0131k \u00fcst men\u00fcde) ---
     H += '<div class="ds-sec-t">Bulut &amp; Depolama</div>'
@@ -9846,6 +9849,8 @@ function syncDeskSettings(){
   try{ syncThemeCards(); }catch(e){}
   try{ const sw=document.getElementById('dsSwGizli');
        if(sw && typeof gizliMod!=='undefined') sw.classList.toggle('on', !!gizliMod); }catch(e){}
+  try{ const sw2=document.getElementById('dsSwFinansKilit');
+       if(sw2 && typeof finansKilitAcik==='function') sw2.classList.toggle('on', finansKilitAcik()); }catch(e){}
 }
 // Cihaz temasi degisirse ve 'auto' secilise, aninda uygula
 try{
@@ -10159,7 +10164,7 @@ function switchPage(page, yon, animsiz){
   }
   if(page==='dash') renderDash();
   if(page==='hedef') renderHedefOzet();
-  if(page==='finans') renderFinans();
+  if(page==='finans'){ renderFinans(); try{ finansPinGate(); }catch(e){} }
   if(page==='gelir') renderGelir();
   if(page==='not') renderNotPage();
   if(page==='rapor') renderRaporPage();
@@ -21216,6 +21221,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v439',
+    date: '29.07.2026',
+    items: [
+      { type: 'new', text: 'FINANSAL ANALIZ PIN KILIDI: Ayarlar > Gizlilik altindan acilir. Acikken Finansal Analiz sayfasi PIN girilene kadar kilit ekraniyla gizli kalir; uygulama PIN'i girilince o oturum boyunca acik kalir (uygulama yeniden acilinca tekrar sorar). Ayri sifre yok, mevcut uygulama PIN'ini kullanir (PIN yoksa once onu belirlemek gerekir).' },
+    ]
+  },
+  {
     version: 'v438',
     date: '29.07.2026',
     items: [
@@ -26096,6 +26108,54 @@ window.trAra = function(s){
     .replace(/ı/g,'i').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o').replace(/ç/g,'c')
     .trim();
 };
+</script>
+<script>
+/* ===== v439: Finansal Analiz PIN kilidi (mevcut uygulama PIN'i ile) ===== */
+window._finansUnlocked = false;
+function finansKilitAcik(){ try{ return localStorage.getItem('vf_finans_pin_kilit')==='1'; }catch(e){ return false; } }
+function toggleFinansKilit(){
+  var yeni = !finansKilitAcik();
+  if(yeni && !(typeof hasPinSet==='function' && hasPinSet())){
+    alert('Önce uygulama PIN\'i belirlemelisiniz (Ayarlar > Güvenlik / PIN). Finansal kilit uygulama PIN\'ini kullanır.');
+    return;
+  }
+  try{ localStorage.setItem('vf_finans_pin_kilit', yeni?'1':'0'); }catch(e){}
+  if(yeni) window._finansUnlocked = false; // kilit açılınca tekrar sorulsun
+  var sw=document.getElementById('dsSwFinansKilit'); if(sw) sw.classList.toggle('on', yeni);
+  if(!yeni){ var ov=document.getElementById('finansKilitOverlay'); if(ov) ov.remove(); }
+  else if(typeof currentPage!=='undefined' && currentPage==='finans'){ try{ finansPinGate(); }catch(e){} }
+}
+function finansPinGate(){
+  var el = document.getElementById('page-finans'); if(!el) return;
+  var eski = document.getElementById('finansKilitOverlay'); if(eski) eski.remove();
+  var pinVar = (typeof hasPinSet==='function' && hasPinSet());
+  if(!finansKilitAcik() || !pinVar || window._finansUnlocked) return;
+  try{ if(getComputedStyle(el).position==='static') el.style.position='relative'; }catch(e){ el.style.position='relative'; }
+  var ov=document.createElement('div');
+  ov.id='finansKilitOverlay';
+  ov.style.cssText='position:absolute;inset:0;z-index:60;background:var(--bg,#0e1621);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center';
+  ov.innerHTML='<div style="font-size:46px">🔒</div>'
+    +'<div style="font-size:16px;font-weight:800;color:var(--txt,#e8eef4)">Finansal Analiz kilitli</div>'
+    +'<div style="font-size:12px;color:var(--muted,#8fa1b3);max-width:280px;line-height:1.5">Bu bölümü görmek için uygulama PIN\'inizi girin.</div>'
+    +'<input id="finansPinInput" type="password" inputmode="numeric" maxlength="12" placeholder="PIN" onkeydown="if(event.key===\'Enter\')finansPinAc()" style="width:170px;text-align:center;letter-spacing:5px;font-size:20px;padding:11px;background:var(--panel2,#1e2a38);border:1px solid var(--line,#2a3846);border-radius:12px;color:var(--txt,#e8eef4);box-sizing:border-box">'
+    +'<button onclick="finansPinAc()" style="background:var(--accent,#3fa7e0);color:#062330;border:none;border-radius:12px;padding:12px 28px;font-weight:800;font-size:15px;cursor:pointer">🔓 Aç</button>'
+    +'<div id="finansPinHata" style="font-size:11.5px;color:#ff7070;min-height:16px;font-weight:600"></div>';
+  el.appendChild(ov);
+  setTimeout(function(){ var i=document.getElementById('finansPinInput'); if(i) i.focus(); }, 120);
+}
+async function finansPinAc(){
+  var inp=document.getElementById('finansPinInput');
+  var hata=document.getElementById('finansPinHata');
+  if(!inp) return;
+  var ok=false;
+  try{ ok = await verifyPin((inp.value||'').trim()); }catch(e){ ok=false; }
+  if(ok){ window._finansUnlocked=true; var ov=document.getElementById('finansKilitOverlay'); if(ov) ov.remove(); }
+  else { if(hata) hata.textContent='❌ Yanlış PIN'; inp.value=''; inp.focus(); }
+}
+// Ayarlar panelinde anahtarın durumunu tazele
+(function(){
+  var _orig = window.renderDesktopSettings || null;
+})();
 </script>
 </body>
 </html>
