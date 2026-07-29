@@ -4035,7 +4035,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v447';
+const APP_VERSION = 'v448';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -10032,16 +10032,16 @@ function renderContextPanel(page){
           delta = (Number(f.mevcutSermaye)||0) - (Number(onceki.mevcutSermaye)||0);
         }
         var altm = ayEt;
-        if(delta!=null){
+        if(delta!=null && !_finKilitli()){
           altm += ' \u00b7 <b class="'+(delta<0?'neg':'pos')+'">'+(delta>0?'\u25b2 ':'\u25bc ')+_fmt(Math.abs(delta))+'</b>';
         }
         H += sec('\ud83d\udcb9 Sermaye') + '<div class="ctx-card">'
-           + hero('Mevcut sermaye', _fmt(f.mevcutSermaye||0), altm, '', "switchPage('finans')") + '</div>';
+           + hero('Mevcut sermaye', (_finKilitli()?PARA_MASKE:_fmt(f.mevcutSermaye||0)), altm, '', "switchPage('finans')") + '</div>';
         var sf = Number(f.sermayeFarki)||0, kz = Number(f.topKarZarar)||0;
         H += sec('\ud83d\udcc8 Analiz') + '<div class="ctx-card">'
-           + '<div class="ctx-kv"><span>Sermaye fark\u0131</span><b class="'+(Math.abs(sf)>0.5?(sf<0?'neg':'pos'):'')+'">'+_fmt(sf)+'</b></div>'
-           + '<div class="ctx-kv"><span>Kar / Zarar</span><b class="'+(kz<0?'neg':(kz>0?'pos':''))+'">'+_fmt(kz)+'</b></div>'
-           + (Math.abs(sf) > 5000 ? '<div class="ctx-foot warn">\u26a0\ufe0f Sermaye fark\u0131 y\u00fcksek \u2014 kontrol edilebilir</div>' : '')
+           + '<div class="ctx-kv"><span>Sermaye fark\u0131</span><b class="'+(_finKilitli()?'':(Math.abs(sf)>0.5?(sf<0?'neg':'pos'):''))+'">'+(_finKilitli()?PARA_MASKE:_fmt(sf))+'</b></div>'
+           + '<div class="ctx-kv"><span>Kar / Zarar</span><b class="'+(_finKilitli()?'':(kz<0?'neg':(kz>0?'pos':'')))+'">'+(_finKilitli()?PARA_MASKE:_fmt(kz))+'</b></div>'
+           + ((Math.abs(sf) > 5000 && !_finKilitli()) ? '<div class="ctx-foot warn">\u26a0\ufe0f Sermaye fark\u0131 y\u00fcksek \u2014 kontrol edilebilir</div>' : '')
            + '</div>';
       } else {
         H += sec('\ud83d\udcb9 Sermaye') + '<div class="ctx-card"><div class="ctx-empty">Kay\u0131t yok</div></div>';
@@ -21243,6 +21243,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v448',
+    date: '29.07.2026',
+    items: [
+      { type: 'fix', text: 'Finansal Analiz kilitliyken sagdaki panel (Mevcut Sermaye, Sermaye Farki, Kar/Zarar ve gecen aya gore degisim) de artik maskeleniyor — onceden kilit ekrani aciktir gibi gorunse de sag panelde finansal veriler sizmaya devam ediyordu. PIN girilince hepsi geri geliyor.' },
+    ]
+  },
+  {
     version: 'v447',
     date: '29.07.2026',
     items: [
@@ -26230,7 +26237,7 @@ async function finansPinAc(){
   if(!inp) return;
   var ok=false;
   try{ ok = await verifyPin((inp.value||'').trim()); }catch(e){ ok=false; }
-  if(ok){ window._finansUnlocked=true; var ov=document.getElementById('finansKilitOverlay'); if(ov) ov.remove(); try{guncelleFinansKilitIkon();}catch(e){} try{if(typeof renderDash==='function')renderDash();}catch(e){} }
+  if(ok){ window._finansUnlocked=true; var ov=document.getElementById('finansKilitOverlay'); if(ov) ov.remove(); try{guncelleFinansKilitIkon();}catch(e){} try{if(typeof render==='function')render();}catch(e){} try{if(typeof renderContextPanel==='function')renderContextPanel(typeof currentPage!=='undefined'?currentPage:'finans');}catch(e){} }
   else { if(hata) hata.textContent='❌ Yanlış PIN'; inp.value=''; inp.focus(); }
 }
 // Mobil (Defter menü) için: durumu değiştir + bildir
