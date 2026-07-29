@@ -4022,7 +4022,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v439';
+const APP_VERSION = 'v440';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21221,10 +21221,17 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v440',
+    date: '29.07.2026',
+    items: [
+      { type: 'fix', text: 'Finansal Analiz PIN kilidi anahtari mobilde de erisilebilir: Defter menu > Sistem altina "Finansal Kilit" eklendi (onceden yalniz masaustu Ayarlar panelindeydi). Dokununca kilidi acar/kapatir ve durumu bildirir.' },
+    ]
+  },
+  {
     version: 'v439',
     date: '29.07.2026',
     items: [
-      { type: 'new', text: 'FINANSAL ANALIZ PIN KILIDI: Ayarlar > Gizlilik altindan acilir. Acikken Finansal Analiz sayfasi PIN girilene kadar kilit ekraniyla gizli kalir; uygulama PIN'i girilince o oturum boyunca acik kalir (uygulama yeniden acilinca tekrar sorar). Ayri sifre yok, mevcut uygulama PIN'ini kullanir (PIN yoksa once onu belirlemek gerekir).' },
+      { type: 'new', text: 'FINANSAL ANALIZ PIN KILIDI: Ayarlar > Gizlilik altindan acilir. Acikken Finansal Analiz sayfasi PIN girilene kadar kilit ekraniyla gizli kalir; uygulama PIN girilince o oturum boyunca acik kalir (uygulama yeniden acilinca tekrar sorar). Ayri sifre yok, mevcut uygulama PIN kodunu kullanir (PIN yoksa once onu belirlemek gerekir).' },
     ]
   },
   {
@@ -25637,6 +25644,7 @@ body.defter #defterFullMenu.show{ transform:translateY(0) }
     <div class="fm-tile" onclick="defterCall('openPinModal')"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><div class="t">Kilit / PIN</div></div>
     <div class="fm-tile" onclick="defterCall('openGirisLogModal')"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><div class="t">Giriş Logları</div></div>
     <div class="fm-tile" onclick="defterCall('tutarlilikKontrol')"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg><div class="t">Tutarlılık Kontrol</div></div>
+    <div class="fm-tile" onclick="defterCall('defterFinansKilitToggle')"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg><div class="t">Finansal Kilit</div></div>
   </div>
   <div class="fm-sec">Tehlikeli Bölge</div>
   <div class="fm-grid">
@@ -26152,6 +26160,17 @@ async function finansPinAc(){
   if(ok){ window._finansUnlocked=true; var ov=document.getElementById('finansKilitOverlay'); if(ov) ov.remove(); }
   else { if(hata) hata.textContent='❌ Yanlış PIN'; inp.value=''; inp.focus(); }
 }
+// Mobil (Defter menü) için: durumu değiştir + bildir
+window.defterFinansKilitToggle = function(){
+  var onceki = finansKilitAcik();
+  toggleFinansKilit();              // PIN yoksa kendi uyarısını verir, değiştirmez
+  var yeni = finansKilitAcik();
+  if(yeni !== onceki){
+    alert(yeni
+      ? '🔒 Finansal Analiz PIN kilidi AÇILDI.\nBu bölüm artık PIN girilene kadar gizli kalır.'
+      : '🔓 Finansal Analiz PIN kilidi KAPATILDI.');
+  }
+};
 // Ayarlar panelinde anahtarın durumunu tazele
 (function(){
   var _orig = window.renderDesktopSettings || null;
