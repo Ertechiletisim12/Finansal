@@ -4037,7 +4037,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v451';
+const APP_VERSION = 'v452';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -11924,33 +11924,29 @@ function renderFinans(){
   container.innerHTML = `
     <div class="section-title">Özet (${finansYearFilter==='all' ? 'Tüm Zamanlar' : (finansMonthFilter==='all' ? finansYearFilter : monthNamesFull[finansMonthFilter-1]+' '+finansYearFilter)})</div>
     <div class="stats-row">
-      <div class="stat" style="min-width:240px">
-        <div class="t">Sermaye (Önceki Ay → Güncel)</div>
+      <div class="stat" style="flex:1;min-width:280px">
+        <div class="t">Sermaye — Önceki Aya Göre</div>
         <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;flex-wrap:wrap">
           <span style="font-size:13px;color:var(--muted)">${prevBeforeLast ? fmtF(prevBeforeLast.mevcutSermaye) : '—'}</span>
           <span style="color:var(--muted)">→</span>
           <span style="font-size:18px;font-weight:700">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</span>
         </div>
-        <div class="sub">${last.ay} ${last.yil} itibarıyla (güncel)${lastKapali ? '' : ' — <span style="color:var(--gold)">kapanış bekleniyor</span>'}</div>
+        <div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--line)">
+          <div style="font-size:15px;font-weight:700;color:${sermayeArtisOnceki===null?'var(--muted)':(sermayeArtisOnceki>=0?'#4cd964':'#ff5252')}">${sermayeArtisOnceki===null?'—':(sermayeArtisOnceki>=0?'▲':'▼')+' '+fmtF(Math.abs(sermayeArtisOnceki))}</div>
+          <div class="sub">${sermayeArtisOncekiPct===null?'Önceki ay verisi yok':sermayeArtisOncekiPct.toFixed(1)+'% değişim'} ${prevBeforeLast?'· '+prevBeforeLast.ay+' '+prevBeforeLast.yil+' → '+last.ay+' '+last.yil:''}${lastKapali ? '' : ' · <span style="color:var(--gold)">kapanış bekleniyor</span>'}</div>
+        </div>
       </div>
-      <div class="stat" style="min-width:240px">
-        <div class="t">Dönem Sermayesi (Başlangıç → Bitiş)</div>
+      <div class="stat" style="flex:1;min-width:280px">
+        <div class="t">Dönem Sermayesi — Dönem Başına Göre</div>
         <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;flex-wrap:wrap">
           <span style="font-size:13px;color:var(--muted)">${fmtF(periodBaseSermaye)}</span>
           <span style="color:var(--muted)">→</span>
           <span style="font-size:18px;font-weight:700">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</span>
         </div>
-        <div class="sub">${prevBeforePeriod ? prevBeforePeriod.ay+' '+prevBeforePeriod.yil : first.ay+' '+first.yil} – ${last.ay} ${last.yil}</div>
-      </div>
-      <div class="stat">
-        <div class="t">Sermaye Değişimi — Dönem Başına Göre</div>
-        <div class="v" style="color:${sermayeArtisDonem>=0?'#4cd964':'#ff5252'}">${sermayeArtisDonem>=0?'▲':'▼'} ${fmtF(Math.abs(sermayeArtisDonem))}</div>
-        <div class="sub">${sermayeArtisDonemPct.toFixed(1)}% değişim</div>
-      </div>
-      <div class="stat">
-        <div class="t">Sermaye Değişimi — Önceki Aya Göre</div>
-        <div class="v" style="color:${sermayeArtisOnceki===null?'var(--muted)':(sermayeArtisOnceki>=0?'#4cd964':'#ff5252')}">${sermayeArtisOnceki===null?'—':(sermayeArtisOnceki>=0?'▲':'▼')+' '+fmtF(Math.abs(sermayeArtisOnceki))}</div>
-        <div class="sub">${sermayeArtisOncekiPct===null?'Önceki ay verisi yok':sermayeArtisOncekiPct.toFixed(1)+'% değişim'} ${prevBeforeLast?'('+prevBeforeLast.ay+' '+prevBeforeLast.yil+' → '+last.ay+' '+last.yil+')':''}</div>
+        <div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--line)">
+          <div style="font-size:15px;font-weight:700;color:${sermayeArtisDonem>=0?'#4cd964':'#ff5252'}">${sermayeArtisDonem>=0?'▲':'▼'} ${fmtF(Math.abs(sermayeArtisDonem))}</div>
+          <div class="sub">${sermayeArtisDonemPct.toFixed(1)}% değişim · ${prevBeforePeriod ? prevBeforePeriod.ay+' '+prevBeforePeriod.yil : first.ay+' '+first.yil} – ${last.ay} ${last.yil}</div>
+        </div>
       </div>
     </div>
 
@@ -21296,6 +21292,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v452',
+    date: '29.07.2026',
+    items: [
+      { type: 'imp', text: 'Finansal Analiz ozet satiri sadelesti: ust taraftaki 4 kart 2 karta indirildi. "Sermaye — Onceki Aya Gore" (onceki ay to guncel sermaye + degisim) ve "Donem Sermayesi — Donem Basina Gore" (donem basi to bitis + degisim) — her kartta gecis ustte, degisim (▲/▼ %) altinda.' },
+    ]
+  },
   {
     version: 'v451',
     date: '29.07.2026',
