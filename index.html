@@ -4037,7 +4037,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v455';
+const APP_VERSION = 'v456';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -15329,7 +15329,9 @@ function renderMusteriRapor(){
     bekliyor:'Takipte', aktif:'Hat Aktif', iptal:'İptal', tasima:'Taşındı', gecissiz:'Geçişsiz'
   };
 
-  list.innerHTML = filtered.map(m=>{
+  const _mrLimit = 80;
+  const _mrGoster = filtered.slice(0, _mrLimit);
+  list.innerHTML = _mrGoster.map(m=>{
     const renk = m._gecikti ? '#ff5252' : (durumRenk[m.durum]||'#888');
     // v372: takipTarihi bos olabilir (eski yedek / eski surumden gelen kayit).
     // Korumasizdi -> ekranda "Takip: undefined (NaN gun gecti!)" yaziyordu.
@@ -15369,7 +15371,7 @@ function renderMusteriRapor(){
         <button class="mk-btn mk-sil" onclick="deleteMusteriKayit('${m.id}')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 6px;background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.25);color:#ff5252;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🗑 Sil</button>
       </div>
     </div>`
-  }).join('');
+  }).join('') + (filtered.length > _mrLimit ? `<div style="text-align:center;color:var(--muted);padding:16px 12px;font-size:11.5px;line-height:1.5">İlk <b>${_mrLimit}</b> sonuç gösteriliyor · toplam <b>${filtered.length}</b> kayıt.<br>Aramayı daraltın ya da filtre kullanın.</div>` : '');
 }
 
 // ===== DURUM GÜNCELLEME =====
@@ -19298,7 +19300,7 @@ function renderHedefGecmis(){
 
 <!-- v271: ekrana ortalandi -->
 <div id="musteriRaporModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:14px">
-  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:560px;height:90vh;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="display:flex;align-items:center;padding:14px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0">
       <div style="flex:1;font-size:15px;font-weight:800;color:var(--txt)">📊 Müşteri Takip Raporu</div>
       <button onclick="exportMusteriTakip()" title="Dışa aktar — Yazdır / PDF / Excel / Paylaş" style="background:rgba(63,208,255,0.12);border:1px solid rgba(63,208,255,0.32);color:var(--accent);height:32px;padding:0 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;margin-right:6px">📤 Dışa Aktar</button>
@@ -21307,6 +21309,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v456',
+    date: '29.07.2026',
+    items: [
+      { type: 'fix', text: 'Musteri Takip Arama hizlandirildi ve modal ziplamasi giderildi: (1) modal artik SABIT yukseklikte — arama sonucu degisince kuculuyup yeniden ortalanmiyordu, artik yerinde sabit kaliyor. (2) Cok kayitta (1005) tum liste cizildigi icin agir calisiyordu; artik ilk 80 sonuc gosteriliyor + toplam sayisi ve daraltma notu. Turkce karakter aramasi (s/ş, c/ç, i/İ/ı, g/ğ, u/ü, o/ö) zaten calisiyor.' },
+    ]
+  },
   {
     version: 'v455',
     date: '29.07.2026',
