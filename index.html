@@ -4035,7 +4035,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v445';
+const APP_VERSION = 'v446';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -11765,6 +11765,10 @@ function fmtF(n){
   const v = Math.round((n||0)*100)/100;
   return v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + " ₺";
 }
+// v446: finans-kilit maske yardımcıları — renderDash açılışta çağırdığı için ANA blokta tanımlı (hoisting)
+function finansKilitAcik(){ try{ return localStorage.getItem('vf_finans_pin_kilit')==='1'; }catch(e){ return false; } }
+function _finKilitli(){ return (finansKilitAcik() && !window._finansUnlocked); }
+function fmtFin(n){ return _finKilitli() ? PARA_MASKE : fmtF(n); }
 function fmtPct(n){ return (n||0).toFixed(0) + '%'; }
 
 let finansYearFilter = 'all';
@@ -21239,6 +21243,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v446',
+    date: '29.07.2026',
+    items: [
+      { type: 'fix', text: 'Anasayfa yenileyince beyaz ekran hatasi duzeltildi. Neden: finans-kilit maske yardimcilari (fmtFin) gec yuklenen bir script blogundaydi; anasayfa acilista onlari cagirinca hata verip icerik bos kaliyordu (sekme degisince duzeliyordu). Yardimcilar ana script blooguna alindi.' },
+    ]
+  },
+  {
     version: 'v445',
     date: '29.07.2026',
     items: [
@@ -26175,10 +26186,7 @@ window.trAra = function(s){
 <script>
 /* ===== v439: Finansal Analiz PIN kilidi (mevcut uygulama PIN'i ile) ===== */
 window._finansUnlocked = false;
-function finansKilitAcik(){ try{ return localStorage.getItem('vf_finans_pin_kilit')==='1'; }catch(e){ return false; } }
-// v445: sadece anasayfadaki "Son Finansal Kayıt" kartı için hedefli maske
-function _finKilitli(){ return (finansKilitAcik() && !window._finansUnlocked); }
-function fmtFin(n){ return _finKilitli() ? PARA_MASKE : fmtF(n); }
+// finansKilitAcik / _finKilitli / fmtFin erken tanımlandı (fmtF yanında) — renderDash açılışta çağırıyor.
 function toggleFinansKilit(){
   var yeni = !finansKilitAcik();
   if(yeni && !(typeof hasPinSet==='function' && hasPinSet())){
