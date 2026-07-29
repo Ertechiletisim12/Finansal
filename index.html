@@ -4022,7 +4022,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v437';
+const APP_VERSION = 'v438';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -15266,10 +15266,10 @@ function renderMusteriRapor(){
         <span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--panel2);color:var(--muted)">${m.cat}</span>
         ${m.tarife?`<span style="font-size:10px;padding:1px 7px;border-radius:10px;background:rgba(124,58,237,0.18);color:#c4a5f7;font-weight:700">${m.cat==='Diğer'?'🎁':'📶'} ${m.tarife}</span>`:''}
       </div>
-      <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span>📅 ${m.entryDate}${m.entryTime?' '+m.entryTime:''}</span>
-        ${m.aktivasyonTarihi?`<span style="opacity:.85">🔓 ${m.aktivasyonTarihi}</span>`:''}
-        ${_ttGecerli?`<span style="color:${m._gecikti?'#ff5252':'var(--muted)'}">📆 ${_tt} <b>(${kalan})</b></span>`:''}
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:10.5px;font-weight:600">
+        <span style="padding:2px 8px;border-radius:8px;background:rgba(63,208,255,0.12);color:#5ac8fa;white-space:nowrap">📅 Giriş: ${m.entryDate}${m.entryTime?' '+String(m.entryTime).slice(0,5):''}</span>
+        ${m.aktivasyonTarihi?`<span style="padding:2px 8px;border-radius:8px;background:rgba(76,217,100,0.13);color:#4cd964;white-space:nowrap">🔓 Aktif: ${m.aktivasyonTarihi}</span>`:''}
+        ${_ttGecerli?`<span style="padding:2px 8px;border-radius:8px;background:${m._gecikti?'rgba(255,82,82,0.15)':'rgba(224,165,60,0.14)'};color:${m._gecikti?'#ff5252':'#e0a53c'};white-space:nowrap">📆 Takip: ${_tt} <b>(${kalan})</b></span>`:''}
       </div>
       ${m.not?`<div style="font-size:10.5px;color:var(--muted);margin-top:5px;font-style:italic">💬 ${esc(m.not)}</div>`:''}
       <div style="display:flex;gap:6px;margin-top:10px">
@@ -21215,6 +21215,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v438',
+    date: '29.07.2026',
+    items: [
+      { type: 'imp', text: 'Musteri Takip kartinda tarih satiri renklendirildi: 📅 Giris (mavi), 🔓 Aktif/aktivasyon (yesil), 📆 Takip (altin; gecikmisse kirmizi) — her tarih ayri renkli etiket ve adiyla, bir bakista ayirt ediliyor.' },
+    ]
+  },
   {
     version: 'v437',
     date: '29.07.2026',
