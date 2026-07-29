@@ -4035,7 +4035,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v444';
+const APP_VERSION = 'v445';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -11715,22 +11715,22 @@ function _renderDashInner(){
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div>
             <div style="font-size:9.5px;color:var(--muted);margin-bottom:2px">Mevcut Sermaye</div>
-            <div style="font-size:14px;font-weight:700">${fmtF(lastF.mevcutSermaye)}</div>
-            ${prevF2?`<div style="font-size:9.5px;color:${lastF.mevcutSermaye>=prevF2.mevcutSermaye?'#4cd964':'#ff5252'};margin-top:1px">${lastF.mevcutSermaye>=prevF2.mevcutSermaye?'▲':'▼'} ${fmtF(Math.abs(lastF.mevcutSermaye-prevF2.mevcutSermaye))}</div>`:''}
+            <div style="font-size:14px;font-weight:700">${fmtFin(lastF.mevcutSermaye)}</div>
+            ${prevF2?`<div style="font-size:9.5px;color:${lastF.mevcutSermaye>=prevF2.mevcutSermaye?'#4cd964':'#ff5252'};margin-top:1px">${_finKilitli()?'':(lastF.mevcutSermaye>=prevF2.mevcutSermaye?'▲':'▼')} ${fmtFin(Math.abs(lastF.mevcutSermaye-prevF2.mevcutSermaye))}</div>`:''}
           </div>
           <div>
             <div style="font-size:9.5px;color:var(--muted);margin-bottom:2px">Net Kâr/Zarar</div>
-            <div style="font-size:14px;font-weight:700;color:${lastF.topKarZarar>=0?'#4cd964':'#ff5252'}">${lastF.topKarZarar>=0?'+':''}${fmtF(lastF.topKarZarar)}</div>
+            <div style="font-size:14px;font-weight:700;color:${_finKilitli()?'var(--muted)':(lastF.topKarZarar>=0?'#4cd964':'#ff5252')}">${_finKilitli()?'':(lastF.topKarZarar>=0?'+':'')}${fmtFin(lastF.topKarZarar)}</div>
           </div>
           <div>
             <div style="font-size:9.5px;color:var(--muted);margin-bottom:2px">Sermaye Farkı</div>
-            <div style="font-size:14px;font-weight:700;color:${lastF.sermayeFarki>=0?'#4cd964':'#ff5252'}">${lastF.sermayeFarki>=0?'+':''}${fmtF(lastF.sermayeFarki)}</div>
+            <div style="font-size:14px;font-weight:700;color:${_finKilitli()?'var(--muted)':(lastF.sermayeFarki>=0?'#4cd964':'#ff5252')}">${_finKilitli()?'':(lastF.sermayeFarki>=0?'+':'')}${fmtFin(lastF.sermayeFarki)}</div>
           </div>
           <div>
             <div style="font-size:9.5px;color:var(--muted);margin-bottom:4px">Pay Dağılımı</div>
             <div style="display:flex;border-radius:4px;overflow:hidden;height:16px">
-              <div style="flex:${lastF.vodMarj};background:#e2231a;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700;color:#fff">%${lastF.vodMarj}</div>
-              <div style="flex:${lastF.mixyMarj};background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700;color:#000">%${lastF.mixyMarj}</div>
+              <div style="flex:${lastF.vodMarj};background:#e2231a;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700;color:#fff">${_finKilitli()?'••':'%'+lastF.vodMarj}</div>
+              <div style="flex:${lastF.mixyMarj};background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700;color:#000">${_finKilitli()?'••':'%'+lastF.mixyMarj}</div>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:9px;margin-top:2px;color:var(--muted)"><span style="color:#e2231a">Vod</span><span style="color:var(--accent)">MİXY</span></div>
           </div>
@@ -21239,6 +21239,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v445',
+    date: '29.07.2026',
+    items: [
+      { type: 'new', text: 'Anasayfa HEDEFLI maske: finans kilidi aktif ve kilitliyken SADECE alttaki "Son Finansal Kayit" karti maskelenir (Mevcut Sermaye, Net Kar/Zarar, Sermaye Farki, Pay Dagilimi ****/•• olur). Prim Durumu, Bugun, hedef, kategori dagilimi vb. ACIK kalir. PIN girilince gercek degerler doner.' },
+    ]
+  },
+  {
     version: 'v444',
     date: '29.07.2026',
     items: [
@@ -26169,6 +26176,9 @@ window.trAra = function(s){
 /* ===== v439: Finansal Analiz PIN kilidi (mevcut uygulama PIN'i ile) ===== */
 window._finansUnlocked = false;
 function finansKilitAcik(){ try{ return localStorage.getItem('vf_finans_pin_kilit')==='1'; }catch(e){ return false; } }
+// v445: sadece anasayfadaki "Son Finansal Kayıt" kartı için hedefli maske
+function _finKilitli(){ return (finansKilitAcik() && !window._finansUnlocked); }
+function fmtFin(n){ return _finKilitli() ? PARA_MASKE : fmtF(n); }
 function toggleFinansKilit(){
   var yeni = !finansKilitAcik();
   if(yeni && !(typeof hasPinSet==='function' && hasPinSet())){
