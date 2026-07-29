@@ -4037,7 +4037,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v454';
+const APP_VERSION = 'v455';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -11927,10 +11927,11 @@ function renderFinans(){
 
   container.innerHTML = `
     <div class="section-title">Özet (${finansYearFilter==='all' ? 'Tüm Zamanlar' : (finansMonthFilter==='all' ? finansYearFilter : monthNamesFull[finansMonthFilter-1]+' '+finansYearFilter)})</div>
-    <div class="stats-row">
+    <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px">
+      <div style="flex:1;min-width:320px;display:flex;flex-direction:column;gap:8px">
       <div class="stat" style="flex:1;min-width:280px">
         <div class="t">Sermaye — Önceki Aya Göre</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:5px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;justify-content:flex-start;gap:28px;margin-top:5px;flex-wrap:wrap">
           <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
             <span style="font-size:13px;color:var(--muted)">${prevBeforeLast ? fmtF(prevBeforeLast.mevcutSermaye) : '—'}</span>
             <span style="color:var(--muted)">→</span>
@@ -11943,24 +11944,7 @@ function renderFinans(){
         </div>
         <div class="sub" style="margin-top:4px">${prevBeforeLast?prevBeforeLast.ay+' '+prevBeforeLast.yil+' → '+last.ay+' '+last.yil:last.ay+' '+last.yil}${lastKapali ? '' : ' · <span style="color:var(--gold)">kapanış bekleniyor</span>'}</div>
       </div>
-      <div class="stat" style="flex:1;min-width:280px">
-        <div class="t">Dönem Sermayesi — Dönem Başına Göre</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:5px;flex-wrap:wrap">
-          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-            <span style="font-size:13px;color:var(--muted)">${fmtF(periodBaseSermaye)}</span>
-            <span style="color:var(--muted)">→</span>
-            <span style="font-size:18px;font-weight:700">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</span>
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div style="font-size:16px;font-weight:800;color:${sermayeArtisDonem>=0?'#4cd964':'#ff5252'}">${sermayeArtisDonem>=0?'▲':'▼'} ${fmtF(Math.abs(sermayeArtisDonem))}</div>
-            <div class="sub">${sermayeArtisDonemPct.toFixed(1)}% değişim</div>
-          </div>
-        </div>
-        <div class="sub" style="margin-top:4px">${prevBeforePeriod ? prevBeforePeriod.ay+' '+prevBeforePeriod.yil : first.ay+' '+first.yil} – ${last.ay} ${last.yil}</div>
-      </div>
-    </div>
-
-    <div class="stats-row">
+        <div class="stats-row" style="margin:0">
       <div class="stat" style="border:2px solid ${toplamKarZararSum>=0?'#2fae4e':'#e2231a'};background:${toplamKarZararSum>=0?'rgba(47,174,78,0.12)':'rgba(226,35,26,0.12)'}">
         <div class="t">Toplam Kâr/Zarar${entityLabel}</div>
         <div class="v" style="color:${toplamKarZararSum>=0?'#4cd964':'#ff5252'};font-size:24px">${toplamKarZararSum>=0?'▲ KÂR':'▼ ZARAR'} ${fmtF(Math.abs(toplamKarZararSum))}</div>
@@ -11978,6 +11962,25 @@ function renderFinans(){
           <span style="color:var(--gold)">MİXY: ${fmtF(filtered.reduce((a,d)=>a+d.mixyKarTutari,0))}</span>
         </div>
       </div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:320px;display:flex;flex-direction:column;gap:8px">
+      <div class="stat" style="flex:1;min-width:280px">
+        <div class="t">Dönem Sermayesi — Dönem Başına Göre</div>
+        <div style="display:flex;align-items:center;justify-content:flex-start;gap:28px;margin-top:5px;flex-wrap:wrap">
+          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;color:var(--muted)">${fmtF(periodBaseSermaye)}</span>
+            <span style="color:var(--muted)">→</span>
+            <span style="font-size:18px;font-weight:700">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</span>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:16px;font-weight:800;color:${sermayeArtisDonem>=0?'#4cd964':'#ff5252'}">${sermayeArtisDonem>=0?'▲':'▼'} ${fmtF(Math.abs(sermayeArtisDonem))}</div>
+            <div class="sub">${sermayeArtisDonemPct.toFixed(1)}% değişim</div>
+          </div>
+        </div>
+        <div class="sub" style="margin-top:4px">${prevBeforePeriod ? prevBeforePeriod.ay+' '+prevBeforePeriod.yil : first.ay+' '+first.yil} – ${last.ay} ${last.yil}</div>
+      </div>
+        <div class="stats-row" style="margin:0">
       <div class="stat">
         <div class="t">En İyi Ay (Kâr/Zarar)${entityLabel}</div>
         <div class="v" style="color:#4cd964">▲ ${fmtF(bestM[kzField])}</div>
@@ -11989,6 +11992,8 @@ function renderFinans(){
         <div class="v" style="color:#ff5252">▼ ${fmtF(worstM[kzField])}</div>
         <div class="sub">${worstM.ay} ${worstM.yil}</div>
         <div class="sub" style="margin-top:4px;border-top:1px solid var(--line);padding-top:4px;color:#4cd964;font-weight:700">Karlılık: ${fmtF(worstM[karField])}</div>
+      </div>
+        </div>
       </div>
     </div>
 
@@ -21302,6 +21307,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v455',
+    date: '29.07.2026',
+    items: [
+      { type: 'imp', text: 'Finansal Analiz ozeti 2 sutuna alindi: SOL sutun Sermaye—Onceki Aya Gore + (Toplam Kar/Zarar | Ortalama Kar Marji); SAG sutun Donem Sermayesi—Donem Basina Gore + (En Iyi Ay | En Kotu Ay). Iki sutun ayni yukseklikte, alt hizali. Ozet 2 kartinda gecis+degisim artik yan yana kompakt (ortadaki genis bosluk kalkti).' },
+    ]
+  },
   {
     version: 'v454',
     date: '29.07.2026',
