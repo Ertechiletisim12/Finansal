@@ -4037,7 +4037,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v452';
+const APP_VERSION = 'v453';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -11926,27 +11926,33 @@ function renderFinans(){
     <div class="stats-row">
       <div class="stat" style="flex:1;min-width:280px">
         <div class="t">Sermaye — Önceki Aya Göre</div>
-        <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;flex-wrap:wrap">
-          <span style="font-size:13px;color:var(--muted)">${prevBeforeLast ? fmtF(prevBeforeLast.mevcutSermaye) : '—'}</span>
-          <span style="color:var(--muted)">→</span>
-          <span style="font-size:18px;font-weight:700">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:5px;flex-wrap:wrap">
+          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;color:var(--muted)">${prevBeforeLast ? fmtF(prevBeforeLast.mevcutSermaye) : '—'}</span>
+            <span style="color:var(--muted)">→</span>
+            <span style="font-size:18px;font-weight:700">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</span>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:16px;font-weight:800;color:${sermayeArtisOnceki===null?'var(--muted)':(sermayeArtisOnceki>=0?'#4cd964':'#ff5252')}">${sermayeArtisOnceki===null?'—':(sermayeArtisOnceki>=0?'▲':'▼')+' '+fmtF(Math.abs(sermayeArtisOnceki))}</div>
+            <div class="sub">${sermayeArtisOncekiPct===null?'veri yok':sermayeArtisOncekiPct.toFixed(1)+'% değişim'}</div>
+          </div>
         </div>
-        <div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--line)">
-          <div style="font-size:15px;font-weight:700;color:${sermayeArtisOnceki===null?'var(--muted)':(sermayeArtisOnceki>=0?'#4cd964':'#ff5252')}">${sermayeArtisOnceki===null?'—':(sermayeArtisOnceki>=0?'▲':'▼')+' '+fmtF(Math.abs(sermayeArtisOnceki))}</div>
-          <div class="sub">${sermayeArtisOncekiPct===null?'Önceki ay verisi yok':sermayeArtisOncekiPct.toFixed(1)+'% değişim'} ${prevBeforeLast?'· '+prevBeforeLast.ay+' '+prevBeforeLast.yil+' → '+last.ay+' '+last.yil:''}${lastKapali ? '' : ' · <span style="color:var(--gold)">kapanış bekleniyor</span>'}</div>
-        </div>
+        <div class="sub" style="margin-top:4px">${prevBeforeLast?prevBeforeLast.ay+' '+prevBeforeLast.yil+' → '+last.ay+' '+last.yil:last.ay+' '+last.yil}${lastKapali ? '' : ' · <span style="color:var(--gold)">kapanış bekleniyor</span>'}</div>
       </div>
       <div class="stat" style="flex:1;min-width:280px">
         <div class="t">Dönem Sermayesi — Dönem Başına Göre</div>
-        <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;flex-wrap:wrap">
-          <span style="font-size:13px;color:var(--muted)">${fmtF(periodBaseSermaye)}</span>
-          <span style="color:var(--muted)">→</span>
-          <span style="font-size:18px;font-weight:700">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:5px;flex-wrap:wrap">
+          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;color:var(--muted)">${fmtF(periodBaseSermaye)}</span>
+            <span style="color:var(--muted)">→</span>
+            <span style="font-size:18px;font-weight:700">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</span>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:16px;font-weight:800;color:${sermayeArtisDonem>=0?'#4cd964':'#ff5252'}">${sermayeArtisDonem>=0?'▲':'▼'} ${fmtF(Math.abs(sermayeArtisDonem))}</div>
+            <div class="sub">${sermayeArtisDonemPct.toFixed(1)}% değişim</div>
+          </div>
         </div>
-        <div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--line)">
-          <div style="font-size:15px;font-weight:700;color:${sermayeArtisDonem>=0?'#4cd964':'#ff5252'}">${sermayeArtisDonem>=0?'▲':'▼'} ${fmtF(Math.abs(sermayeArtisDonem))}</div>
-          <div class="sub">${sermayeArtisDonemPct.toFixed(1)}% değişim · ${prevBeforePeriod ? prevBeforePeriod.ay+' '+prevBeforePeriod.yil : first.ay+' '+first.yil} – ${last.ay} ${last.yil}</div>
-        </div>
+        <div class="sub" style="margin-top:4px">${prevBeforePeriod ? prevBeforePeriod.ay+' '+prevBeforePeriod.yil : first.ay+' '+first.yil} – ${last.ay} ${last.yil}</div>
       </div>
     </div>
 
@@ -12203,10 +12209,10 @@ function renderFinans(){
           if(!kapaliAylar.length){
             return `<div class="note" style="margin:0">Bu dönemde kapanışı girilmiş ay bulunmuyor.</div>`;
           }
-          // Dönem başı ve sonu (ilk ve son kapanmış ay)
-          const donemBasi   = kapaliAylar[0];
+          // Dönem başı = dönem ÖNCESİ ay (üst karttaki periodBaseSermaye ile tutarlı), sonu = son kapanmış ay
+          const donemBasi   = prevBeforePeriod || kapaliAylar[0];
           const donemSonu   = kapaliAylar[kapaliAylar.length-1];
-          const basSermaye  = donemBasi.mevcutSermaye;
+          const basSermaye  = periodBaseSermaye;
           const sonSermaye  = donemSonu.mevcutSermaye;
           const netDegisim  = sonSermaye - basSermaye;
           // Ort. fark ve toplam fark (sermayeFarki = mevcut − gereken, per month)
@@ -21292,6 +21298,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v453',
+    date: '29.07.2026',
+    items: [
+      { type: 'imp', text: 'Finansal Analiz ozet 2 kartinda degisim degerleri (▲/▼ %) artik gecisin YANINA (sagina) tasindi — alt satir yerine yan yana, bosluk azaldi.' },
+      { type: 'fix', text: 'Sermaye Yeterliligi > Donem Bazli: Donem Basi artik donem ONCESI ayi (or. Aralik 2025) gosteriyor — onceden ilk kapanmis ayi (Ocak) gosteriyordu ve ust karttaki Donem Sermayesi ile tutmuyordu. Donem Net Degisim de artik ust kartla tutarli.' },
+    ]
+  },
   {
     version: 'v452',
     date: '29.07.2026',
