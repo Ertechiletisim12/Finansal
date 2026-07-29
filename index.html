@@ -4036,7 +4036,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v449';
+const APP_VERSION = 'v450';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -11150,7 +11150,9 @@ function renderDash(){
 function _renderDashInner(){
   const el = document.getElementById('dashContent');
   if(!el) return;
-  const now = thisMonthKey();
+  const gercekAy = thisMonthKey();
+  const now = window._dashAy || gercekAy;      // v450: anasayfa ay filtresi (seçili ay)
+  const gecmisAy = (now !== gercekAy);          // geçmiş bir ay seçili mi
   const prevYm = addMonths(now, -1);
   const today = todayStr();
   const d = nowTR();
@@ -11352,7 +11354,28 @@ function _renderDashInner(){
   // Kategori renkleri
   const CAT_COLORS = {PostPaid:'#3fd0ff',PrePaid:'#4cd964','Red Tarife':'#ff5252',P2P:'#ffb74d',Mccm:'#14b8a6',İnternet:'#ec4899'};
 
+  // v450: Anasayfa ay seçici (◀ ▶ + açılır liste)
+  const _tumAylar = (()=>{
+    const set = new Set();
+    try{ entries.forEach(e=>{ const k=effectiveYm(e); if(k) set.add(k); }); }catch(e){}
+    try{ (finansData||[]).forEach(f=>{ if(f && f.ym) set.add(f.ym); }); }catch(e){}
+    set.add(gercekAy);
+    return [...set].filter(Boolean).sort((a,b)=>b.localeCompare(a)); // en yeni üstte
+  })();
+  const _ayLabel = ym => { const p=String(ym).split('-'); return `${MONTHS[(+p[1]||1)-1]} ${p[0]}`; };
+  const _aySecici = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <button onclick="dashAyKaydir(-1)" title="Önceki ay" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);cursor:pointer;font-size:14px;flex-shrink:0">◀</button>
+      <select onchange="dashAySec(this.value)" style="height:34px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);font-size:12.5px;font-weight:700;padding:0 12px;cursor:pointer;max-width:180px">
+        ${_tumAylar.map(ym=>`<option value="${ym}" ${ym===now?'selected':''}>${_ayLabel(ym)}${ym===gercekAy?' • bu ay':''}</option>`).join('')}
+      </select>
+      <button onclick="dashAyKaydir(1)" ${now>=gercekAy?'disabled':''} title="Sonraki ay" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);cursor:${now>=gercekAy?'not-allowed':'pointer'};font-size:14px;flex-shrink:0;opacity:${now>=gercekAy?0.35:1}">▶</button>
+      ${gecmisAy?`<button onclick="dashAySec('${gercekAy}')" style="height:34px;border-radius:9px;border:1px solid var(--gold);background:rgba(255,183,77,0.12);color:var(--gold);cursor:pointer;font-size:11.5px;font-weight:700;padding:0 14px;flex-shrink:0">↩ Bu aya dön</button>
+      <span style="font-size:11px;color:var(--gold);font-weight:700">📅 ${_ayLabel(now)} görüntüleniyor</span>`:''}
+    </div>`;
+
   el.innerHTML = `
+    ${_aySecici}
     <!-- ── Anomali + MNP 3'lü kart yan yana ── -->
     <div style="display:flex;gap:6px;margin-bottom:8px;align-items:stretch;flex-wrap:wrap">
 
@@ -11528,7 +11551,18 @@ function _renderDashInner(){
       <!-- Sağ sütun: Bugün + Ay Sonu yan yana, altında Hedef -->
       <div style="display:flex;flex-direction:column;gap:8px;flex:1 1 340px;min-width:min(300px,100%)">
 
-        <!-- Bugün + Ay Sonu yan yana -->
+        <!-- Bugün + Ay Sonu yan yana (bu ay) / Kesinleşmiş (geçmiş ay) -->
+        ${gecmisAy ? `
+        <div style="background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:600">✓ ${monthLabel(now)} — Kesinleşmiş</div>
+          <div style="font-size:20px;font-weight:800;color:var(--gold)">${fmtF(curKdv)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Ay kapandı · gerçekleşen toplam (KDV dahil)</div>
+          ${hedef ? `
+          <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">
+            <div style="font-size:10.5px;font-weight:700;color:${curKdv>=hedef?'#4cd964':'#ff9f0a'}">${curKdv>=hedef?'✓ Hedef tutturuldu':'⚡ '+fmtF(hedef-curKdv)+' altında kalındı'}</div>
+          </div>` : ''}
+        </div>
+        ` : `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div style="background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px">
             <div style="font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:600">Bugün</div>
@@ -11572,6 +11606,7 @@ function _renderDashInner(){
             </div>` : ''}
           </div>
         </div>
+        `}
 
         <!-- Hedef kartı -->
         <div style="background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px;flex:1">
@@ -11770,6 +11805,19 @@ function fmtF(n){
 function finansKilitAcik(){ try{ return localStorage.getItem('vf_finans_pin_kilit')==='1'; }catch(e){ return false; } }
 function _finKilitli(){ return (finansKilitAcik() && !window._finansUnlocked); }
 function fmtFin(n){ return _finKilitli() ? PARA_MASKE : fmtF(n); }
+// v450: Anasayfa ay filtresi durumu + kontrol
+window._dashAy = null; // null = bu ay (gerçek)
+function dashAyKaydir(delta){
+  var cur = window._dashAy || thisMonthKey();
+  var yeni = addMonths(cur, delta);
+  if(yeni > thisMonthKey()) return;            // gelecek aya gitme
+  window._dashAy = (yeni === thisMonthKey()) ? null : yeni;
+  try{ renderDash(); }catch(e){}
+}
+function dashAySec(ym){
+  window._dashAy = (ym === thisMonthKey()) ? null : ym;
+  try{ renderDash(); }catch(e){}
+}
 function fmtPct(n){ return (n||0).toFixed(0) + '%'; }
 
 let finansYearFilter = 'all';
@@ -21243,6 +21291,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v450',
+    date: '29.07.2026',
+    items: [
+      { type: 'new', text: 'ANASAYFA AY FILTRESI eklendi: en uste ay secici (◀ ▶ oklari + acilir liste + Bu aya don). Secilen ay tum AYLIK kartlara uygulanir (Prim Durumu, Kategori Dagilimi, Hedef, gecen aya gore vb.). Gunluk Bugun karti gecmis ay secilince gizlenir. Ay Sonu Tahmini yerine gecmis ayda o ayin KESINLESMIS gercek toplami gosterilir (hedef tutturuldu/altinda kalindi ile). Bu ay secili degilken her sey eskisi gibi.' },
+    ]
+  },
   {
     version: 'v449',
     date: '29.07.2026',
