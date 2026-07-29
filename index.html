@@ -2563,6 +2563,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     <button class="db-bell" id="deskBellBtn" onclick="toggleNotifMod()" title="Bildirimler">🔔<span class="db-bell-b" id="deskNotifB" style="display:none">0</span></button>
     <div class="db-clock" id="clockTop"></div>
     <div class="db-ver" id="deskVerBtn" onclick="toggleChangelog()" title="Sürüm notlarını göster">⋯</div>
+    <div class="db-ver" id="finansKilitKisayolBtnPc" onclick="finansKilitKisayol()" title="Finansal Kilit — tıkla: kilitle/aç" style="cursor:pointer">🔓</div>
     <button class="db-btn" id="deskSetBtn" onclick="toggleSettingsPanel()" title="Ayarlar: tema, gizlilik, veri yönetimi, sistem">⚙ Ayarlar</button>
   </div>
 </nav>
@@ -2673,6 +2674,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <div style="flex:1;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
     <span onclick="toggleChangelog()" id="mobileVerBadge" title="Sürüm notları" style="font-size:9px;font-weight:700;color:var(--gold);background:rgba(255,183,77,0.15);border:1px solid rgba(255,183,77,0.3);border-radius:8px;padding:1px 6px;cursor:pointer;white-space:nowrap;flex-shrink:0">⋯</span>
+    <span onclick="finansKilitKisayol()" id="finansKilitKisayolBtn" title="Finansal Kilit — dokun: kilitle/aç" style="font-size:12px;cursor:pointer;flex-shrink:0;padding:1px 6px;border-radius:8px;background:rgba(63,167,224,0.15);border:1px solid rgba(63,167,224,0.35)">🔓</span>
   </div>
   <span id="mobileVersionInfo" style="display:none"></span>
   <!-- Offline göstergesi -->
@@ -4022,7 +4024,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v440';
+const APP_VERSION = 'v441';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4655,7 +4657,7 @@ function guncelleGizliModButon(){
   // v349: masaustu ayarlar panelindeki anahtar da ayni kaynaktan guncellensin
   try{ const sw=document.getElementById('dsSwGizli'); if(sw) sw.classList.toggle('on', !!gizliMod); }catch(e){}
 }
-function fmt(n){ if(gizliMod) return PARA_MASKE; return (Math.round(n*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + " \u20ba"; }
+function fmt(n){ if(gizliMod || window._finansMaskActive) return PARA_MASKE; return (Math.round(n*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + " \u20ba"; }
 function ymKey(d){ return d.slice(0,7); }
 function monthLabel(ym){
   const [y,m]=ym.split('-');
@@ -11130,6 +11132,10 @@ function checkMasrafAnomali(){
 
 // ==================== ANA ÖZET DASHBOARD ====================
 function renderDash(){
+  try{ window._finansMaskActive = (typeof finansKilitAcik==='function' && finansKilitAcik() && !window._finansUnlocked); }catch(e){ window._finansMaskActive=false; }
+  try{ return _renderDashInner(); } finally { window._finansMaskActive=false; }
+}
+function _renderDashInner(){
   const el = document.getElementById('dashContent');
   if(!el) return;
   const now = thisMonthKey();
@@ -11744,7 +11750,7 @@ function renderDash(){
 // ==================== ANA ÖZET DASHBOARD SONU ====================
 
 function fmtF(n){
-  if(gizliMod) return PARA_MASKE;
+  if(gizliMod || window._finansMaskActive) return PARA_MASKE;
   const v = Math.round((n||0)*100)/100;
   return v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + " ₺";
 }
@@ -18533,6 +18539,7 @@ setTimeout(()=>{ try{ ayarlaTopbarBoslugu(); }catch(e){} }, 600);
 loadTheme();
 guncelleGizliModButon();
 try{ const _vb=document.getElementById('mobileVerBadge'); if(_vb) _vb.textContent=APP_VERSION; }catch(e){}
+try{ if(typeof guncelleFinansKilitIkon==='function') guncelleFinansKilitIkon(); }catch(e){}
 updateOfflineIndicator();
 checkLock();
 load();
@@ -21220,6 +21227,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v441',
+    date: '29.07.2026',
+    items: [
+      { type: 'new', text: 'Finansal Kilit KISAYOLU ust bara, surum rozetinin yanina eklendi (mobil + PC). Dokun: gorunuyorsa aninda kilitler, kilitliyse PIN sorar. Ikon durumu gosterir (🔒 kilitli / 🔓 acik).' },
+      { type: 'new', text: 'KILIT MODUNDA ANASAYFA MASKESI: Finansal kilit aktif ve kilitliyken anasayfadaki finansal tutarlar ****,** olarak maskelenir (Toplam Prim, Beklenen Prim, gecen ay vb.). PIN girilince gercek degerler gorunur.' },
+    ]
+  },
   {
     version: 'v440',
     date: '29.07.2026',
@@ -26157,7 +26172,7 @@ async function finansPinAc(){
   if(!inp) return;
   var ok=false;
   try{ ok = await verifyPin((inp.value||'').trim()); }catch(e){ ok=false; }
-  if(ok){ window._finansUnlocked=true; var ov=document.getElementById('finansKilitOverlay'); if(ov) ov.remove(); }
+  if(ok){ window._finansUnlocked=true; var ov=document.getElementById('finansKilitOverlay'); if(ov) ov.remove(); try{guncelleFinansKilitIkon();}catch(e){} try{if(typeof renderDash==='function')renderDash();}catch(e){} }
   else { if(hata) hata.textContent='❌ Yanlış PIN'; inp.value=''; inp.focus(); }
 }
 // Mobil (Defter menü) için: durumu değiştir + bildir
@@ -26170,7 +26185,67 @@ window.defterFinansKilitToggle = function(){
       ? '🔒 Finansal Analiz PIN kilidi AÇILDI.\nBu bölüm artık PIN girilene kadar gizli kalır.'
       : '🔓 Finansal Analiz PIN kilidi KAPATILDI.');
   }
+  guncelleFinansKilitIkon();
 };
+// Üst bar kısayolu: görünürse ANINDA kilitle, kilitliyse PIN sorup aç
+window.finansKilitKisayol = function(){
+  if(!finansKilitAcik()){
+    // özellik kapalı → aç (PIN gerekiyorsa uyarır), sonra kilitle
+    toggleFinansKilit();
+    if(finansKilitAcik()){ window._finansUnlocked=false; _finansMaskeYenile(); }
+  } else if(window._finansUnlocked){
+    // açık ve görünür → ŞİMDİ kilitle (maskele)
+    window._finansUnlocked=false; _finansMaskeYenile();
+  } else {
+    // kilitli → PIN sor
+    finansUnlockPrompt();
+  }
+  guncelleFinansKilitIkon();
+};
+function _finansMaskeYenile(){
+  try{ if(typeof render==='function') render(); }catch(e){}
+  try{ if(typeof renderDash==='function' && (typeof currentPage==='undefined'||currentPage==='dash')) renderDash(); }catch(e){}
+  var ov=document.getElementById('finansKilitOverlay'); if(ov) ov.remove();
+  if(typeof currentPage!=='undefined' && currentPage==='finans'){ try{ finansPinGate(); }catch(e){} }
+}
+function guncelleFinansKilitIkon(){
+  var kilitli = finansKilitAcik() && !window._finansUnlocked;
+  ['finansKilitKisayolBtn','finansKilitKisayolBtnPc'].forEach(function(id){
+    var el=document.getElementById(id); if(!el) return;
+    el.textContent = kilitli ? '🔒' : '🔓';
+    el.style.background = kilitli ? 'rgba(255,183,77,0.18)' : 'rgba(63,167,224,0.15)';
+    el.style.borderColor = kilitli ? 'rgba(255,183,77,0.4)' : 'rgba(63,167,224,0.35)';
+  });
+}
+function finansUnlockPrompt(){
+  var eski=document.getElementById('finansUnlockModal'); if(eski) eski.remove();
+  var ov=document.createElement('div');
+  ov.id='finansUnlockModal';
+  ov.style.cssText='position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML='<div style="background:var(--panel,#16202c);border:1px solid var(--line,#2a3846);border-radius:16px;max-width:320px;width:100%;padding:22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px">'
+    +'<div style="font-size:40px">🔒</div>'
+    +'<div style="font-size:15px;font-weight:800;color:var(--txt,#e8eef4)">Finansal kilidi aç</div>'
+    +'<input id="finansUnlockInput" type="password" inputmode="numeric" maxlength="12" placeholder="PIN" onkeydown="if(event.key===\'Enter\')finansUnlockOnayla()" style="width:100%;text-align:center;letter-spacing:5px;font-size:19px;padding:11px;background:var(--panel2,#1e2a38);border:1px solid var(--line,#2a3846);border-radius:12px;color:var(--txt,#e8eef4);box-sizing:border-box">'
+    +'<div id="finansUnlockHata" style="font-size:11.5px;color:#ff7070;min-height:15px;font-weight:600"></div>'
+    +'<div style="display:flex;gap:8px;width:100%">'
+    +'<button onclick="document.getElementById(\'finansUnlockModal\').remove()" style="flex:1;background:var(--panel2,#22303d);border:1px solid var(--line,#2a3846);color:var(--muted,#8fa1b3);border-radius:10px;padding:11px;font-weight:700;cursor:pointer">Vazgeç</button>'
+    +'<button onclick="finansUnlockOnayla()" style="flex:1;background:var(--accent,#3fa7e0);color:#062330;border:none;border-radius:10px;padding:11px;font-weight:800;cursor:pointer">🔓 Aç</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ var i=document.getElementById('finansUnlockInput'); if(i) i.focus(); }, 120);
+}
+async function finansUnlockOnayla(){
+  var inp=document.getElementById('finansUnlockInput');
+  var hata=document.getElementById('finansUnlockHata');
+  if(!inp) return;
+  var ok=false;
+  try{ ok = await verifyPin((inp.value||'').trim()); }catch(e){ ok=false; }
+  if(ok){
+    window._finansUnlocked=true;
+    var m=document.getElementById('finansUnlockModal'); if(m) m.remove();
+    _finansMaskeYenile(); guncelleFinansKilitIkon();
+  } else { if(hata) hata.textContent='❌ Yanlış PIN'; inp.value=''; inp.focus(); }
+}
 // Ayarlar panelinde anahtarın durumunu tazele
 (function(){
   var _orig = window.renderDesktopSettings || null;
