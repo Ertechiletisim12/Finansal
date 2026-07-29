@@ -4035,7 +4035,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v446';
+const APP_VERSION = 'v447';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -10113,9 +10113,9 @@ function renderContextPanel(page){
           var lf=_finans[_finans.length-1];
           var d2=null;
           if(_finans.length>1) d2=(Number(lf.mevcutSermaye)||0)-(Number(_finans[_finans.length-2].mevcutSermaye)||0);
-          var alt2 = d2!=null ? ('<b class="'+(d2<0?'neg':'pos')+'">'+(d2>0?'\u25b2 ':'\u25bc ')+_fmt(Math.abs(d2))+'</b> ge\u00e7en aya g\u00f6re') : '';
+          var alt2 = (d2!=null && !_finKilitli()) ? ('<b class="'+(d2<0?'neg':'pos')+'">'+(d2>0?'\u25b2 ':'\u25bc ')+_fmt(Math.abs(d2))+'</b> ge\u00e7en aya g\u00f6re') : '';
           H += sec('\ud83d\udcb9 Sermaye') + '<div class="ctx-card">'
-             + hero('Son sermaye', _fmt(lf.mevcutSermaye||0), alt2, '', "switchPage('finans')") + '</div>';
+             + hero('Son sermaye', (_finKilitli()?PARA_MASKE:_fmt(lf.mevcutSermaye||0)), alt2, '', "switchPage('finans')") + '</div>';
         }
         var ayA=0, bugA=0;
         _entries.forEach(function(e){
@@ -21242,6 +21242,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v447',
+    date: '29.07.2026',
+    items: [
+      { type: 'imp', text: 'Finans kilidi kilitliyken sagdaki SERMAYE paneli (Son Sermaye ve gecen aya gore degisim) de maskeleniyor. Boylece anasayfada hem alttaki Son Finansal Kayit karti hem sag sermaye ozeti gizli; PIN girilince ikisi de geri geliyor.' },
+    ]
+  },
   {
     version: 'v446',
     date: '29.07.2026',
