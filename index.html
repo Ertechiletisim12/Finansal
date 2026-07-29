@@ -1522,7 +1522,8 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
     align-items:stretch!important; justify-content:flex-start!important;
     gap:6px!important; flex-wrap:nowrap!important;
   }
-  #page-finans .finans-toolbar{ gap:6px!important; }
+  #page-finans .topbar{ width:100%!important; }
+  #page-finans .finans-toolbar{ width:100%!important; justify-content:flex-start!important; gap:6px!important; }
   #page-finans .finans-toolbar .btn-soft,
   #page-finans .finans-toolbar > div > button{
     padding:6px 10px!important; font-size:11px!important;
@@ -4035,7 +4036,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v448';
+const APP_VERSION = 'v449';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21243,6 +21244,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v449',
+    date: '29.07.2026',
+    items: [
+      { type: 'fix', text: 'PC Finansal ust arac cubugu duzeltildi: column duzene gecince entity filtresi + butonlar sol uste sikisip cirkin duruyordu. Artik tam genislige yayildi (operator filtresi solda, aksiyon butonlari sagda).' },
+      { type: 'fix', text: 'Finans kilidi PIN girilince sag panel maskesi ANINDA acilmiyordu (maskeli kalabiliyordu). Kilit ac/kapa ve PIN girisinde sag context paneli acikca yeniden ciziliyor; artik aninda guncelleniyor.' },
+    ]
+  },
+  {
     version: 'v448',
     date: '29.07.2026',
     items: [
@@ -26268,10 +26277,12 @@ window.finansKilitKisayol = function(){
   guncelleFinansKilitIkon();
 };
 function _finansMaskeYenile(){
+  var pg = (typeof currentPage!=='undefined') ? currentPage : 'dash';
   try{ if(typeof render==='function') render(); }catch(e){}
-  try{ if(typeof renderDash==='function' && (typeof currentPage==='undefined'||currentPage==='dash')) renderDash(); }catch(e){}
+  try{ if(typeof renderContextPanel==='function') renderContextPanel(pg); }catch(e){}
+  try{ if(typeof renderDash==='function' && (pg==='dash')) renderDash(); }catch(e){}
   var ov=document.getElementById('finansKilitOverlay'); if(ov) ov.remove();
-  if(typeof currentPage!=='undefined' && currentPage==='finans'){ try{ finansPinGate(); }catch(e){} }
+  if(pg==='finans'){ try{ finansPinGate(); }catch(e){} }
 }
 function guncelleFinansKilitIkon(){
   var kilitli = finansKilitAcik() && !window._finansUnlocked;
