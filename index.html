@@ -366,6 +366,16 @@ html{scrollbar-gutter:stable}
 .content-col, #dashContent, .table-wrap,
 .trend-bars-wrap, .filterbar, .quick { overflow:auto; }
 
+/* v442: PC'de Finansal yıl/ay filtre barlari overflow:auto yuzunden tiklayinca
+   saga kayiyordu. Genis ekranda duz sar (wrap), kaydirma yok, sola hizali. */
+@media(min-width:701px){
+  #finansYearMonthFilterTop .filterbar{
+    overflow:visible!important;
+    flex-wrap:wrap!important;
+    justify-content:flex-start!important;
+  }
+}
+
 /* Trend bar */
 .trend-bars-wrap{ overflow-x:auto !important; }
 
@@ -4024,7 +4034,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v441';
+const APP_VERSION = 'v442';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21227,6 +21237,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v442',
+    date: '29.07.2026',
+    items: [
+      { type: 'fix', text: 'PC: Finansal sayfada yil filtresinde 2026 disindaki bir yila basinca butonlarin saga kaymasi duzeltildi. Filtre bari genis ekranda artik duz sariyor (overflow kaynakli kaydirma kaldirildi), sola hizali kaliyor.' },
+    ]
+  },
   {
     version: 'v441',
     date: '29.07.2026',
