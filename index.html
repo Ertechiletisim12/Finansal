@@ -367,15 +367,9 @@ html{scrollbar-gutter:stable}
 .trend-bars-wrap, .filterbar, .quick { overflow:auto; }
 
 /* v443: PC'de Finansal yıl/ay filtresi tıklayınca sağa kayıyordu.
-   Kök neden: sticky-header flex row-reverse ve filtre bloğu onun flex kardeşi;
-   ay satırı eklenince blok genişleyip space-between ile kayıyordu.
-   Çözüm: filtre bloğunu tam genişlikte KENDİ satırına al + barları sola yasla. */
+   Kök neden: sticky-header row-reverse+space-between idi, blok genişleyince kayıyordu.
+   Çözüm: sticky-header dikey (column) yapıldı; filtre barları sola yaslı. */
 @media(min-width:701px){
-  #page-finans #finansYearMonthFilterTop{
-    flex:0 0 100%!important;
-    width:100%!important;
-    order:5!important;
-  }
   #finansYearMonthFilterTop .filterbar{
     overflow:visible!important;
     flex-wrap:wrap!important;
@@ -1524,9 +1518,9 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);font
 
   /* E) Finansal Analiz: filtreler yılların hizasında, sağda, yıl butonu boyutunda */
   #page-finans .sticky-header{
-    display:flex!important; flex-direction:row-reverse!important;
-    align-items:center!important; justify-content:space-between!important;
-    gap:10px!important; flex-wrap:wrap!important;
+    display:flex!important; flex-direction:column!important;
+    align-items:stretch!important; justify-content:flex-start!important;
+    gap:6px!important; flex-wrap:nowrap!important;
   }
   #page-finans .finans-toolbar{ gap:6px!important; }
   #page-finans .finans-toolbar .btn-soft,
@@ -4041,7 +4035,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v443';
+const APP_VERSION = 'v444';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -11149,8 +11143,8 @@ function checkMasrafAnomali(){
 
 // ==================== ANA ÖZET DASHBOARD ====================
 function renderDash(){
-  try{ window._finansMaskActive = (typeof finansKilitAcik==='function' && finansKilitAcik() && !window._finansUnlocked); }catch(e){ window._finansMaskActive=false; }
-  try{ return _renderDashInner(); } finally { window._finansMaskActive=false; }
+  window._finansMaskActive = false;
+  return _renderDashInner();
 }
 function _renderDashInner(){
   const el = document.getElementById('dashContent');
@@ -21244,6 +21238,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v444',
+    date: '29.07.2026',
+    items: [
+      { type: 'fix', text: 'PC Finansal ust bardaki gereksiz bos alanlar giderildi: ust bar row-reverse+space-between yerine temiz DIKEY duzene alindi (baslik/araclar ust satir, yil/ay filtresi alt satir sola yasli). Bos bosluklar kalkti.' },
+      { type: 'fix', text: 'Anasayfa maskesi geri alindi: finans kilidi anasayfadaki TUM tutarlari maskeliyordu. Simdilik anasayfa maskelenmez (yalniz Finansal Analiz sayfasi PIN ile kilitli). Hangi kartlarin maskelenecegi netlesince yeniden, hedefli eklenecek.' },
+    ]
+  },
   {
     version: 'v443',
     date: '29.07.2026',
