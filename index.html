@@ -366,9 +366,16 @@ html{scrollbar-gutter:stable}
 .content-col, #dashContent, .table-wrap,
 .trend-bars-wrap, .filterbar, .quick { overflow:auto; }
 
-/* v442: PC'de Finansal yıl/ay filtre barlari overflow:auto yuzunden tiklayinca
-   saga kayiyordu. Genis ekranda duz sar (wrap), kaydirma yok, sola hizali. */
+/* v443: PC'de Finansal yıl/ay filtresi tıklayınca sağa kayıyordu.
+   Kök neden: sticky-header flex row-reverse ve filtre bloğu onun flex kardeşi;
+   ay satırı eklenince blok genişleyip space-between ile kayıyordu.
+   Çözüm: filtre bloğunu tam genişlikte KENDİ satırına al + barları sola yasla. */
 @media(min-width:701px){
+  #page-finans #finansYearMonthFilterTop{
+    flex:0 0 100%!important;
+    width:100%!important;
+    order:5!important;
+  }
   #finansYearMonthFilterTop .filterbar{
     overflow:visible!important;
     flex-wrap:wrap!important;
@@ -4034,7 +4041,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v442';
+const APP_VERSION = 'v443';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -21237,6 +21244,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v443',
+    date: '29.07.2026',
+    items: [
+      { type: 'fix', text: 'PC: Finansal yil filtresi kaymasi KESIN cozuldu. Gercek neden: ust bar (sticky-header) genis ekranda flex row-reverse idi ve yil/ay filtre blogu onun flex kardesiydi; yil secince ay satiri eklenince blok genisleyip saga kayiyordu. Artik filtre blogu tam genislikte kendi satirinda, sola yasli ve sabit.' },
+    ]
+  },
   {
     version: 'v442',
     date: '29.07.2026',
