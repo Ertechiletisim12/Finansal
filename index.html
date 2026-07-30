@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v467';
+const APP_VERSION = 'v468';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '30.07.2026 21:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '30.07.2026 21:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -21332,6 +21332,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v468',
+    date: '30.07.2026',
+    items: [
+      { type: 'new', text: 'Yil Sonu Sermaye Hedefi modali cok daha detayli: secili yil icin Baslangic sermayesi (onceki Aralik sonu), Bitis sermayesi, Net sermaye degisimi, Net kar/zarar, Toplam kar ve Toplam masraf kartlari; hedef varsa ulasildi/ulasilamadi + kac TL fark + ortalama aylik sermaye artisi; ve o yilin 12 ayinin sermaye seyri mini grafigi. Yila tiklayinca tum detay o yila gore yeniden hesaplaniyor.' },
+    ]
+  },
+  {
     version: 'v467',
     date: '30.07.2026',
     items: [
@@ -24877,6 +24884,7 @@ function toggleChangelog(){
 (function(){
   var KEY='vf_sermaye_hedef_v1';
   function fmtTL(n){ return Math.round(n).toLocaleString('tr-TR'); }
+  function _ayLabelSH(ym){ var p=String(ym).split('-'); var MN=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']; return MN[(+p[1]||1)-1]+' '+p[0]; }
   function parseNum(s){ return parseFloat(String(s).replace(/[^0-9]/g,''))||0; }
   // v466: hedefler yillara gore saklanir {"2025":800000,"2026":900000}. Eski tek-kayit {tutar,yil} otomatik tasinir.
   function loadHedefMap(){
@@ -24921,6 +24929,18 @@ function toggleChangelog(){
       var viewCur = _vr.length ? (+_vr[_vr.length-1].mevcutSermaye||0) : cur;
       var refRec = _vr.length ? _vr[_vr.length-1] : last;
       var refY=+refRec.ym.split('-')[0], refM=+refRec.ym.split('-')[1];
+      // v468: secili yil detay metrikleri
+      var _yrRecs=_vr;
+      var _oncekiler=recs.filter(function(x){ return x.ym < String(targetYear)+'-01'; });
+      var bitisSermaye = _yrRecs.length ? (+_yrRecs[_yrRecs.length-1].mevcutSermaye||0) : viewCur;
+      var baslangicSermaye = _oncekiler.length ? (+_oncekiler[_oncekiler.length-1].mevcutSermaye||0)
+        : (_yrRecs.length ? ((+_yrRecs[0].mevcutSermaye||0)-(+_yrRecs[0].topKarZarar||0)) : 0);
+      var netDegisim = bitisSermaye - baslangicSermaye;
+      var yilKar = _yrRecs.reduce(function(a,x){return a+(+x.topKarTutari||0);},0);
+      var yilMasraf = _yrRecs.reduce(function(a,x){return a+(+x.topMasrafTutari||0);},0);
+      var yilNet = _yrRecs.reduce(function(a,x){return a+(+x.topKarZarar||0);},0);
+      var ayAdet = _yrRecs.length;
+      var ortAylikArtis = ayAdet ? netDegisim/ayAdet : 0;
 
       // öneri (trend ile yıl sonu tahmini, 50.000'e yuvarlı)
       var caps=recs.map(function(x){return +x.mevcutSermaye||0;});
@@ -24983,7 +25003,40 @@ function toggleChangelog(){
           }).join('')+
           '</div>';
       }
-      body.innerHTML=form+durumHtml+gecmisHtml;
+      var detayHtml='';
+      if(_yrRecs.length){
+        var _pos='color:#16a34a', _neg='color:#dc2626';
+        var _mc=function(label,val,sub,cls){ return '<div style="background:var(--panel2,#212326);border:1px solid var(--line,#3a3d42);border-radius:10px;padding:10px 11px">'+
+          '<div style="font-size:10px;color:var(--muted,#9aa0a8);font-weight:700;text-transform:uppercase;letter-spacing:.03em">'+label+'</div>'+
+          '<div style="font-size:15px;font-weight:800;margin-top:4px;'+(cls||'')+'">'+val+'</div>'+
+          (sub?'<div style="font-size:10px;color:var(--muted,#9aa0a8);margin-top:1px">'+sub+'</div>':'')+'</div>'; };
+        detayHtml='<div style="margin-top:14px;border-top:1px solid var(--line,#3a3d42);padding-top:12px">'+
+          '<div style="font-size:10.5px;font-weight:800;color:var(--muted,#9aa0a8);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">\uD83D\uDCCA '+targetYear+' Yıl Detayı</div>'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+            _mc('\uD83C\uDFC1 Başlangıç sermayesi', fmtTL(baslangicSermaye)+' \u20ba', (_oncekiler.length?_ayLabelSH(_oncekiler[_oncekiler.length-1].ym)+' sonu':(targetYear+' başı'))) +
+            _mc('\uD83C\uDFAF Bitiş sermayesi', fmtTL(bitisSermaye)+' \u20ba', (_yrRecs.length?_ayLabelSH(_yrRecs[_yrRecs.length-1].ym)+' sonu':'')) +
+            _mc('\uD83D\uDCC8 Net sermaye değişimi', (netDegisim>=0?'+':'')+fmtTL(netDegisim)+' \u20ba', ayAdet+' ay', netDegisim>=0?_pos:_neg) +
+            _mc('\uD83E\uDDEE Net kâr/zarar', (yilNet>=0?'+':'')+fmtTL(yilNet)+' \u20ba', 'kâr \u2212 masraf', yilNet>=0?_pos:_neg) +
+            _mc('\uD83D\uDCB0 Toplam kâr', fmtTL(yilKar)+' \u20ba', ayAdet+' ay toplamı') +
+            _mc('\uD83D\uDCB8 Toplam masraf', fmtTL(yilMasraf)+' \u20ba', ayAdet+' ay toplamı') +
+          '</div>';
+        if(hedefTutar>0){
+          var _ulas=bitisSermaye>=hedefTutar, _fark=bitisSermaye-hedefTutar, _bitti=targetYear<nowYear;
+          detayHtml+='<div style="background:'+(_ulas?'rgba(22,163,74,.08)':'rgba(220,38,38,.07)')+';border:1px solid '+(_ulas?'rgba(22,163,74,.3)':'rgba(220,38,38,.3)')+';border-radius:10px;padding:11px 12px;margin-top:10px">'+
+            '<div style="font-size:12px;font-weight:800;'+(_ulas?_pos:_neg)+'">'+(_ulas?'\u2705 Hedefe ulaşıldı':(_bitti?'\u2717 Hedefe ulaşılamadı':'\u23F3 Hedefe henüz ulaşılmadı'))+'</div>'+
+            '<div style="font-size:11.5px;color:var(--muted,#9aa0a8);margin-top:2px">Bitiş sermayesi hedefi <b style="'+(_ulas?_pos:_neg)+'">'+(_fark>=0?'+':'')+fmtTL(_fark)+' \u20ba</b> '+(_ulas?'aştı':'altında kaldı')+'.'+(ayAdet?' Ortalama aylık sermaye artışı <b>'+(ortAylikArtis>=0?'+':'')+fmtTL(ortAylikArtis)+' \u20ba</b>.':'')+'</div></div>';
+        }
+        var _caps=_yrRecs.map(function(x){return +x.mevcutSermaye||0;});
+        if(_caps.length){
+          var _mn=Math.min.apply(null,_caps), _mx=Math.max.apply(null,_caps), _rng=(_mx-_mn)||1;
+          detayHtml+='<div style="margin-top:12px"><div style="font-size:10.5px;font-weight:700;color:var(--muted,#9aa0a8);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">'+targetYear+' aylık sermaye seyri</div>'+
+            '<div style="display:flex;align-items:flex-end;gap:3px;height:44px">'+
+            _yrRecs.map(function(x,i){ var h=30+((+x.mevcutSermaye||0)-_mn)/_rng*70; var son=(i===_yrRecs.length-1); return '<i title="'+_ayLabelSH(x.ym)+': '+fmtTL(+x.mevcutSermaye||0)+' \u20ba" style="flex:1;border-radius:2px 2px 0 0;height:'+h+'%;background:'+(son?'var(--gold,#ffb74d)':'rgba(63,208,255,.4)')+'"></i>'; }).join('')+
+            '</div></div>';
+        }
+        detayHtml+='</div>';
+      }
+      body.innerHTML=form+durumHtml+detayHtml+gecmisHtml;
     }catch(e){ console.warn('Sermaye hedefi:', e); body.innerHTML='<p style="color:var(--muted,#9aa0a8);font-size:12px">Panel çizilemedi.</p>'; }
   };
 
