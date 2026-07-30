@@ -4037,7 +4037,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v456';
+const APP_VERSION = 'v457';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -11365,18 +11365,18 @@ function _renderDashInner(){
   })();
   const _ayLabel = ym => { const p=String(ym).split('-'); return `${MONTHS[(+p[1]||1)-1]} ${p[0]}`; };
   const _aySecici = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-      <div style="display:inline-flex;align-items:center;background:var(--panel2);border:1px solid ${gecmisAy?'rgba(255,183,77,0.5)':'var(--line)'};border-radius:12px;padding:3px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
-        <button onclick="dashAyKaydir(-1)" title="Önceki ay" style="width:30px;height:30px;border:none;background:transparent;color:var(--muted);border-radius:9px;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .15s" onmouseover="this.style.background='var(--line)'" onmouseout="this.style.background='transparent'">‹</button>
-        <div style="position:relative;display:flex;align-items:center">
-          <span style="font-size:12.5px;font-weight:800;color:${gecmisAy?'var(--gold)':'var(--txt)'};padding:0 8px;white-space:nowrap;display:flex;align-items:center;gap:5px;pointer-events:none">📅 ${_ayLabel(now)}<span style="font-size:8px;opacity:.55">▼</span></span>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="display:inline-flex;align-items:center;gap:10px">
+        <button onclick="dashAyKaydir(-1)" title="Önceki ay" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 2px rgba(16,24,40,.05)">‹</button>
+        <div style="position:relative;display:inline-flex;align-items:center">
+          <span style="font-size:15px;font-weight:800;color:var(--txt);border-bottom:2.5px solid ${gecmisAy?'var(--gold)':'#e2231a'};padding:2px 3px 4px;display:inline-flex;gap:6px;align-items:center;white-space:nowrap;pointer-events:none">${_ayLabel(now)}<span style="font-size:9px;color:var(--muted)">▼</span></span>
           <select onchange="dashAySec(this.value)" title="Ay seç" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none">
             ${_tumAylar.map(ym=>`<option value="${ym}" ${ym===now?'selected':''}>${_ayLabel(ym)}${ym===gercekAy?' • bu ay':''}</option>`).join('')}
           </select>
         </div>
-        <button onclick="dashAyKaydir(1)" ${now>=gercekAy?'disabled':''} title="Sonraki ay" style="width:30px;height:30px;border:none;background:transparent;color:var(--muted);border-radius:9px;cursor:${now>=gercekAy?'not-allowed':'pointer'};font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;opacity:${now>=gercekAy?0.3:1};transition:background .15s" ${now>=gercekAy?'':`onmouseover="this.style.background='var(--line)'" onmouseout="this.style.background='transparent'"`}>›</button>
+        <button onclick="dashAyKaydir(1)" ${now>=gercekAy?'disabled':''} title="Sonraki ay" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:${now>=gercekAy?'not-allowed':'pointer'};font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:${now>=gercekAy?0.35:1};box-shadow:0 1px 2px rgba(16,24,40,.05)">›</button>
       </div>
-      ${gecmisAy?`<button onclick="dashAySec('${gercekAy}')" title="Bu aya dön" style="height:36px;border-radius:11px;border:1px solid rgba(255,183,77,0.4);background:rgba(255,183,77,0.12);color:var(--gold);cursor:pointer;font-size:11.5px;font-weight:700;padding:0 12px;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;transition:background .15s" onmouseover="this.style.background='rgba(255,183,77,0.22)'" onmouseout="this.style.background='rgba(255,183,77,0.12)'">↩ Bugüne dön</button>`:''}
+      ${gecmisAy?`<button onclick="dashAySec('${gercekAy}')" title="Bu aya dön" style="height:32px;border-radius:9px;border:1px solid rgba(224,144,15,0.4);background:rgba(224,144,15,0.1);color:var(--gold);cursor:pointer;font-size:11.5px;font-weight:700;padding:0 12px;flex-shrink:0;display:inline-flex;align-items:center;gap:5px">↩ Bu aya dön</button>`:''}
     </div>`;
 
   const _slotEl = document.getElementById('dashAySeciciSlot');
@@ -11930,19 +11930,13 @@ function renderFinans(){
     <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px">
       <div style="flex:1;min-width:320px;display:flex;flex-direction:column;gap:8px">
       <div class="stat" style="flex:1;min-width:280px">
-        <div class="t">Sermaye — Önceki Aya Göre</div>
-        <div style="display:flex;align-items:center;justify-content:flex-start;gap:28px;margin-top:5px;flex-wrap:wrap">
-          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-            <span style="font-size:13px;color:var(--muted)">${prevBeforeLast ? fmtF(prevBeforeLast.mevcutSermaye) : '—'}</span>
-            <span style="color:var(--muted)">→</span>
-            <span style="font-size:18px;font-weight:700">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</span>
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div style="font-size:16px;font-weight:800;color:${sermayeArtisOnceki===null?'var(--muted)':(sermayeArtisOnceki>=0?'#4cd964':'#ff5252')}">${sermayeArtisOnceki===null?'—':(sermayeArtisOnceki>=0?'▲':'▼')+' '+fmtF(Math.abs(sermayeArtisOnceki))}</div>
-            <div class="sub">${sermayeArtisOncekiPct===null?'veri yok':sermayeArtisOncekiPct.toFixed(1)+'% değişim'}</div>
-          </div>
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Sermaye · Önceki Aya Göre</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</div>
+          ${sermayeArtisOnceki===null?'':`<span style="display:inline-flex;align-items:center;gap:5px;font-weight:800;font-size:12.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;line-height:1;background:${sermayeArtisOnceki>=0?'rgba(22,163,74,.12)':'rgba(220,38,38,.1)'};color:${sermayeArtisOnceki>=0?'#16a34a':'#dc2626'}">${sermayeArtisOnceki>=0?'▲':'▼'} %${Math.abs(sermayeArtisOncekiPct).toFixed(1)}</span>`}
         </div>
-        <div class="sub" style="margin-top:4px">${prevBeforeLast?prevBeforeLast.ay+' '+prevBeforeLast.yil+' → '+last.ay+' '+last.yil:last.ay+' '+last.yil}${lastKapali ? '' : ' · <span style="color:var(--gold)">kapanış bekleniyor</span>'}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:7px">Önceki: ${prevBeforeLast ? fmtF(prevBeforeLast.mevcutSermaye) : '—'}${sermayeArtisOnceki===null?'':` · <b style="color:${sermayeArtisOnceki>=0?'#16a34a':'#dc2626'};font-weight:700">${sermayeArtisOnceki>=0?'+':''}${fmtF(sermayeArtisOnceki)}</b>`}</div>
+        <div class="sub" style="border-top:1px solid var(--line);margin-top:11px;padding-top:9px">${prevBeforeLast?prevBeforeLast.ay+' '+prevBeforeLast.yil+' → '+last.ay+' '+last.yil:last.ay+' '+last.yil}${lastKapali ? '' : ' · <span style="color:var(--gold)">kapanış bekleniyor</span>'}</div>
       </div>
         <div class="stats-row" style="margin:0">
       <div class="stat" style="border:2px solid ${toplamKarZararSum>=0?'#2fae4e':'#e2231a'};background:${toplamKarZararSum>=0?'rgba(47,174,78,0.12)':'rgba(226,35,26,0.12)'}">
@@ -11966,19 +11960,13 @@ function renderFinans(){
       </div>
       <div style="flex:1;min-width:320px;display:flex;flex-direction:column;gap:8px">
       <div class="stat" style="flex:1;min-width:280px">
-        <div class="t">Dönem Sermayesi — Dönem Başına Göre</div>
-        <div style="display:flex;align-items:center;justify-content:flex-start;gap:28px;margin-top:5px;flex-wrap:wrap">
-          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-            <span style="font-size:13px;color:var(--muted)">${fmtF(periodBaseSermaye)}</span>
-            <span style="color:var(--muted)">→</span>
-            <span style="font-size:18px;font-weight:700">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</span>
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div style="font-size:16px;font-weight:800;color:${sermayeArtisDonem>=0?'#4cd964':'#ff5252'}">${sermayeArtisDonem>=0?'▲':'▼'} ${fmtF(Math.abs(sermayeArtisDonem))}</div>
-            <div class="sub">${sermayeArtisDonemPct.toFixed(1)}% değişim</div>
-          </div>
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Dönem Sermayesi · Dönem Başına Göre</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</div>
+          <span style="display:inline-flex;align-items:center;gap:5px;font-weight:800;font-size:12.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;line-height:1;background:${sermayeArtisDonem>=0?'rgba(22,163,74,.12)':'rgba(220,38,38,.1)'};color:${sermayeArtisDonem>=0?'#16a34a':'#dc2626'}">${sermayeArtisDonem>=0?'▲':'▼'} %${Math.abs(sermayeArtisDonemPct).toFixed(1)}</span>
         </div>
-        <div class="sub" style="margin-top:4px">${prevBeforePeriod ? prevBeforePeriod.ay+' '+prevBeforePeriod.yil : first.ay+' '+first.yil} – ${last.ay} ${last.yil}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:7px">Dönem başı: ${fmtF(periodBaseSermaye)} · <b style="color:${sermayeArtisDonem>=0?'#16a34a':'#dc2626'};font-weight:700">${sermayeArtisDonem>=0?'+':''}${fmtF(sermayeArtisDonem)}</b></div>
+        <div class="sub" style="border-top:1px solid var(--line);margin-top:11px;padding-top:9px">${prevBeforePeriod ? prevBeforePeriod.ay+' '+prevBeforePeriod.yil : first.ay+' '+first.yil} – ${last.ay} ${last.yil}</div>
       </div>
         <div class="stats-row" style="margin:0">
       <div class="stat">
@@ -21309,6 +21297,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v457',
+    date: '29.07.2026',
+    items: [
+      { type: 'imp', text: 'Prototipte secilenler uygulandi. (1) Anasayfa ay secici: minimal alt-cizgili tasarim — [‹ Ay Yil ▼ ›], secili ay kirmizi alt cizgi, gecmis ayda altin. (2) Finansal Ozet 2 karti: buyuk sermaye degeri solda hero, degisim SAG UST kosede renkli chip (▲/▼ %), altinda onceki+fark, en altta tarih. Degerler artik yuzmuyor, net hizali.' },
+    ]
+  },
   {
     version: 'v456',
     date: '29.07.2026',
