@@ -4037,7 +4037,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v457';
+const APP_VERSION = 'v458';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -11927,9 +11927,9 @@ function renderFinans(){
 
   container.innerHTML = `
     <div class="section-title">Özet (${finansYearFilter==='all' ? 'Tüm Zamanlar' : (finansMonthFilter==='all' ? finansYearFilter : monthNamesFull[finansMonthFilter-1]+' '+finansYearFilter)})</div>
-    <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px">
+    <div class="finans-ozet-cols" style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px">
       <div style="flex:1;min-width:320px;display:flex;flex-direction:column;gap:8px">
-      <div class="stat" style="flex:1;min-width:280px">
+      <div class="stat defter-gizle" style="flex:1;min-width:280px">
         <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Sermaye · Önceki Aya Göre</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</div>
@@ -11939,7 +11939,7 @@ function renderFinans(){
         <div class="sub" style="border-top:1px solid var(--line);margin-top:11px;padding-top:9px">${prevBeforeLast?prevBeforeLast.ay+' '+prevBeforeLast.yil+' → '+last.ay+' '+last.yil:last.ay+' '+last.yil}${lastKapali ? '' : ' · <span style="color:var(--gold)">kapanış bekleniyor</span>'}</div>
       </div>
         <div class="stats-row" style="margin:0">
-      <div class="stat" style="border:2px solid ${toplamKarZararSum>=0?'#2fae4e':'#e2231a'};background:${toplamKarZararSum>=0?'rgba(47,174,78,0.12)':'rgba(226,35,26,0.12)'}">
+      <div class="stat defter-gizle" style="border:2px solid ${toplamKarZararSum>=0?'#2fae4e':'#e2231a'};background:${toplamKarZararSum>=0?'rgba(47,174,78,0.12)':'rgba(226,35,26,0.12)'}">
         <div class="t">Toplam Kâr/Zarar${entityLabel}</div>
         <div class="v" style="color:${toplamKarZararSum>=0?'#4cd964':'#ff5252'};font-size:24px">${toplamKarZararSum>=0?'▲ KÂR':'▼ ZARAR'} ${fmtF(Math.abs(toplamKarZararSum))}</div>
         <div class="sub" style="margin-top:6px">
@@ -11959,7 +11959,7 @@ function renderFinans(){
         </div>
       </div>
       <div style="flex:1;min-width:320px;display:flex;flex-direction:column;gap:8px">
-      <div class="stat" style="flex:1;min-width:280px">
+      <div class="stat defter-gizle" style="flex:1;min-width:280px">
         <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Dönem Sermayesi · Dönem Başına Göre</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</div>
@@ -21298,6 +21298,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v458',
+    date: '30.07.2026',
+    items: [
+      { type: 'fix', text: 'Mobil (Defter) Finansal Analizde ayni kart 2 kez gorunuyordu: yeni 2 sutun ozet duzeni, mobildeki hero karti gizleme kurallarini atlatmisti (Sermaye + Toplam Kar/Zarar hem heroda hem ozette cikiyordu). Defter mobilde bu mukerrer kartlar tekrar gizlendi; ozet dikey ve duzenli akiyor. Masaustunde 2 sutun tasarim aynen kaliyor.' },
+    ]
+  },
+  {
     version: 'v457',
     date: '29.07.2026',
     items: [
@@ -25363,6 +25370,13 @@ body.defter #finansContent > .section-title:first-child{ display:none !important
 body.defter #finansContent > .section-title:first-child + .stats-row{ display:none !important; }
 /* ikinci satirdaki Toplam Kar/Zarar karti (hero'da var); marj + en iyi/kotu KALSIN */
 body.defter #finansContent > .section-title:first-child + .stats-row + .stats-row > .stat:first-child{ display:none !important; }
+/* v458: yeni 2 sutun ozet (masaustu) defter mobilde hero ile cakisiyordu.
+   Defter'de dikey akar; hero'da olan Sermaye/Donem/ToplamKZ gizlenir (Marj + En Iyi/Kotu kalir).
+   Gizli kart iceren satir tek sutuna iner ki kalan kart tam genislik olsun. */
+body.defter #finansContent .finans-ozet-cols{ display:flex !important; flex-direction:column !important; gap:12px !important; margin-bottom:12px !important; }
+body.defter #finansContent .finans-ozet-cols > div{ width:100% !important; }
+body.defter #finansContent .finans-ozet-cols .stats-row:has(> .defter-gizle){ grid-template-columns:1fr !important; }
+body.defter #finansContent .defter-gizle{ display:none !important; }
 /* icerik yuzen dock'un altinda kalmasin */
 @media(max-width:860px){ body.defter .main [id^="page-"]{ padding-bottom:140px !important } }
 </style>
