@@ -370,10 +370,28 @@ html{scrollbar-gutter:stable}
    Kök neden: sticky-header row-reverse+space-between idi, blok genişleyince kayıyordu.
    Çözüm: sticky-header dikey (column) yapıldı; filtre barları sola yaslı. */
 @media(min-width:701px){
+  /* v459: filtre şeridi araç çubuğuna yaslanıp tam genişliği kullansın (3. resim: yukarı + sağa yay) */
+  #finansYearMonthFilterTop{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:6px!important;
+    margin-top:8px!important;
+    width:100%!important;
+  }
   #finansYearMonthFilterTop .filterbar{
     overflow:visible!important;
     flex-wrap:wrap!important;
-    justify-content:flex-start!important;
+    justify-content:stretch!important;
+    width:100%!important;
+    margin-top:0!important;
+    gap:6px!important;
+  }
+  /* butonlar satırı eşit bölerek tam kenardan kenara yayılır → sağ taraf boş kalmaz */
+  #finansYearMonthFilterTop .filterbar .qbtn{
+    flex:1 1 0!important;
+    min-width:0!important;
+    text-align:center!important;
+    white-space:nowrap!important;
   }
 }
 
@@ -4037,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v458';
+const APP_VERSION = 'v459';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4150,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '18.07.2026 09:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '30.07.2026 10:35'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -11928,7 +11946,7 @@ function renderFinans(){
   container.innerHTML = `
     <div class="section-title">Özet (${finansYearFilter==='all' ? 'Tüm Zamanlar' : (finansMonthFilter==='all' ? finansYearFilter : monthNamesFull[finansMonthFilter-1]+' '+finansYearFilter)})</div>
     <div class="finans-ozet-cols" style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px">
-      <div style="flex:1;min-width:320px;display:flex;flex-direction:column;gap:8px">
+      <div style="flex:1 1 0;min-width:320px;display:flex;flex-direction:column;gap:8px">
       <div class="stat defter-gizle" style="flex:1;min-width:280px">
         <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Sermaye · Önceki Aya Göre</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
@@ -11958,7 +11976,7 @@ function renderFinans(){
       </div>
         </div>
       </div>
-      <div style="flex:1;min-width:320px;display:flex;flex-direction:column;gap:8px">
+      <div style="flex:1 1 0;min-width:320px;display:flex;flex-direction:column;gap:8px">
       <div class="stat defter-gizle" style="flex:1;min-width:280px">
         <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Dönem Sermayesi · Dönem Başına Göre</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
@@ -21297,6 +21315,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v459',
+    date: '30.07.2026',
+    items: [
+      { type: 'fix', text: 'Finansal Analiz > Ozet: sol ve sag kart sutunu artik tam 50/50 kilitli (flex:1 1 0). Onceden uzun rakamlar bir sutunu genisletip kartlarin sag kenari/hizasi kayabiliyordu; artik veri ne olursa olsun iki sutunun kenarlari ayni cizgide biter.' },
+      { type: 'imp', text: 'Finansal Analiz filtre seridi (Tum Yillar/… ve Tum Aylar/…) arac cubuguna yaslandi ve butonlar esit parcalar halinde tam genislige yayildi — solda toplanip sagi bos birakmiyor, kenardan kenara diziliyor.' },
+    ]
+  },
   {
     version: 'v458',
     date: '30.07.2026',
