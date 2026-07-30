@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v461';
+const APP_VERSION = 'v462';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '30.07.2026 18:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '30.07.2026 19:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -11945,7 +11945,7 @@ function renderFinans(){
 
   container.innerHTML = `
     <div class="section-title">Özet (${finansYearFilter==='all' ? 'Tüm Zamanlar' : (finansMonthFilter==='all' ? finansYearFilter : monthNamesFull[finansMonthFilter-1]+' '+finansYearFilter)})</div>
-    <div class="finans-ozet-cols" style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px">
+    <div class="finans-ozet-cols" style="display:flex;gap:2px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px">
       <div style="flex:1 1 0;min-width:320px;display:flex;flex-direction:column;gap:8px">
       <div class="stat defter-gizle" style="flex:0 0 auto !important;min-width:280px">
         <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Sermaye · Önceki Aya Göre</div>
@@ -21315,6 +21315,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v462',
+    date: '30.07.2026',
+    items: [
+      { type: 'imp', text: 'Finansal Analiz > Ozet: iki sutun arasindaki bosluk 8px -> 2px; sol ve sag kart gruplari merkeze yaklastirildi. Kart hizalari (ust ve alt kenarlar) aynen korunuyor.' },
+    ]
+  },
   {
     version: 'v461',
     date: '30.07.2026',
