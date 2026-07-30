@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v463';
+const APP_VERSION = 'v465';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '30.07.2026 19:25'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '30.07.2026 20:05'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -10332,7 +10332,7 @@ function _araVurgula(metin, terim){
   metin = esc(metin==null ? '' : String(metin));
   if(!terim) return metin;
   const et = esc(String(terim));
-  const idx = _trLower(metin).indexOf(_trLower(et));
+  const idx = trAra(metin).indexOf(trAra(et));
   if(idx === -1) return metin;
   return metin.slice(0,idx) + '<mark style="background:rgba(255,183,77,0.45);color:inherit;border-radius:2px;padding:0 1px">' + metin.slice(idx, idx+et.length) + '</mark>' + metin.slice(idx+et.length);
 }
@@ -10346,10 +10346,10 @@ function renderPrimAra(){
     list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px 16px;font-size:12px">🔍<br><br>Geçmiş tüm işlem kayıtlarında arama yapılır.<br>Aynı müşterinin birden fazla işlemi varsa hepsi ayrı ayrı listelenir.</div>';
     return;
   }
-  const terimL = _trLower(terim);
+  const terimL = trAra(terim);
   const terimTel = terim.replace(/\s/g,'');
   const bulunan = musteriler.filter(m=>{
-    const ad = _trLower(m.ad||'');
+    const ad = trAra(m.ad||'');
     const tel = (m.tel||'').replace(/\s/g,'');
     return ad.includes(terimL) || (terimTel && tel.includes(terimTel));
   }).sort((a,b)=>(b.entryDate||'').localeCompare(a.entryDate||''));
@@ -15169,7 +15169,7 @@ function setRaporTarih(t){
 let _musteriAramaTimer = null;
 function filtreliMusteriRender(){
   clearTimeout(_musteriAramaTimer);
-  _musteriAramaTimer = setTimeout(()=>{ renderMusteriRapor(); }, 250);
+  _musteriAramaTimer = setTimeout(()=>{ renderMusteriRapor(); }, 60);
 }
 
 function renderMusteriRapor(){
@@ -15358,6 +15358,11 @@ function renderMusteriRapor(){
           : ''}
         <span style="font-size:13px;font-weight:800;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.ad||'İsimsiz Müşteri')}</span>
         <span style="font-size:10.5px;font-weight:800;padding:3px 10px;border-radius:20px;background:${renk}22;color:${renk};white-space:nowrap;flex-shrink:0">${durumIcon[m.durum]||'⏳'} ${durumLabel[m.durum]||m.durum}</span>
+        <div style="display:flex;gap:4px;flex-shrink:0;margin-left:2px">
+          <button class="mk-btn mk-durum" onclick="openMusteriDurum('${m.id}')" title="Durum Güncelle" style="width:29px;height:29px;display:flex;align-items:center;justify-content:center;padding:0;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;font-size:14px;cursor:pointer">📋</button>
+          <button class="mk-btn mk-duzenle" onclick="openMusteriEdit('${m.id}')" title="Düzenle" style="width:29px;height:29px;display:flex;align-items:center;justify-content:center;padding:0;background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:8px;font-size:14px;cursor:pointer">✏️</button>
+          <button class="mk-btn mk-sil" onclick="deleteMusteriKayit('${m.id}')" title="Sil" style="width:29px;height:29px;display:flex;align-items:center;justify-content:center;padding:0;background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.25);color:#ff5252;border-radius:8px;font-size:14px;cursor:pointer">🗑</button>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px">
         ${m.tel?`<span style="font-size:11.5px;color:var(--accent);font-weight:600">📞 ${esc(m.tel)}</span>`:''}
@@ -15371,11 +15376,6 @@ function renderMusteriRapor(){
         ${_ttGecerli?`<span style="padding:2px 8px;border-radius:8px;background:${m._gecikti?'rgba(255,82,82,0.15)':'rgba(224,165,60,0.14)'};color:${m._gecikti?'#ff5252':'#e0a53c'};white-space:nowrap">📆 Takip: ${_tt} <b>(${kalan})</b></span>`:''}
       </div>
       ${m.not?`<div style="font-size:10.5px;color:var(--muted);margin-top:5px;font-style:italic">💬 ${esc(m.not)}</div>`:''}
-      <div style="display:flex;gap:6px;margin-top:10px">
-        <button class="mk-btn mk-durum" onclick="openMusteriDurum('${m.id}')" style="flex:2;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 6px;background:rgba(226,35,26,0.12);border:1px solid rgba(226,35,26,0.3);color:#ff7070;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">📋 Durum</button>
-        <button class="mk-btn mk-duzenle" onclick="openMusteriEdit('${m.id}')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 6px;background:rgba(63,208,255,0.1);border:1px solid rgba(63,208,255,0.3);color:var(--accent);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">✏️ Düzenle</button>
-        <button class="mk-btn mk-sil" onclick="deleteMusteriKayit('${m.id}')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 6px;background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.25);color:#ff5252;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🗑 Sil</button>
-      </div>
     </div>`
   }).join('') + (filtered.length > _mrLimit ? `<div style="text-align:center;color:var(--muted);padding:16px 12px;font-size:11.5px;line-height:1.5">İlk <b>${_mrLimit}</b> sonuç gösteriliyor · toplam <b>${filtered.length}</b> kayıt.<br>Aramayı daraltın ya da filtre kullanın.</div>` : '');
 }
@@ -21315,6 +21315,21 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v465',
+    date: '30.07.2026',
+    items: [
+      { type: 'imp', text: 'Musteri Arama modali (rapor disindaki arama) artik rapor aramasiyla ayni Turkce mantigini kullaniyor (trAra): diakritik yok sayiliyor — "sebnem" yazinca Sebnem, "gul" yazinca Gul, "cetin" yazinca Cetin bulunuyor. Eslesen sonuclarda vurgulama (highlight) da buna uygun calisiyor.' },
+    ]
+  },
+  {
+    version: 'v464',
+    date: '30.07.2026',
+    items: [
+      { type: 'ui', text: 'Musteri Takip Raporu kart butonlari (Durum/Duzenle/Sil) alttaki tam-genislik satirdan cikarilip sag uste, durum rozetinin yanina TASINDI ve sadece simge (📋 ✏️ 🗑) yapildi. Kartlar daha kompakt.' },
+      { type: 'imp', text: 'Rapor arama kutusu artik anlik (debounce 250ms -> 60ms) — yazarken sonuclar Musteri Arama modalindaki kadar hizli guncelleniyor.' },
+    ]
+  },
   {
     version: 'v463',
     date: '30.07.2026',
