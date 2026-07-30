@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v462';
+const APP_VERSION = 'v463';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '30.07.2026 19:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '30.07.2026 19:25'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -11945,7 +11945,7 @@ function renderFinans(){
 
   container.innerHTML = `
     <div class="section-title">Özet (${finansYearFilter==='all' ? 'Tüm Zamanlar' : (finansMonthFilter==='all' ? finansYearFilter : monthNamesFull[finansMonthFilter-1]+' '+finansYearFilter)})</div>
-    <div class="finans-ozet-cols" style="display:flex;gap:2px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px">
+    <div class="finans-ozet-cols" style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px">
       <div style="flex:1 1 0;min-width:320px;display:flex;flex-direction:column;gap:8px">
       <div class="stat defter-gizle" style="flex:0 0 auto !important;min-width:280px">
         <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Sermaye · Önceki Aya Göre</div>
@@ -12003,8 +12003,8 @@ function renderFinans(){
       </div>
     </div>
 
-    <div class="stats-row">
-      <div class="stat" style="min-width:420px;flex:2;padding:16px 18px;overflow:hidden;box-sizing:border-box">
+    <div class="stats-row" style="gap:8px">
+      <div class="stat" style="min-width:420px;flex:0 0 calc(50% - 4px);padding:16px 18px;overflow:hidden;box-sizing:border-box">
         <div class="t" style="display:flex;align-items:center;gap:7px;font-size:13px;margin-bottom:2px">
           <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;background:linear-gradient(135deg,var(--accent),var(--gold));font-size:11px;color:#1a1c1e">⇄</span>
           Vodafone vs MİXY Pay Dağılımı
@@ -21315,6 +21315,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v463',
+    date: '30.07.2026',
+    items: [
+      { type: 'fix', text: 'Finansal Analiz > Ozet: ust blok ile alt blok (Pay Dagilimi | Aylik+Sermaye) arasindaki dikey ayrac artik birebir cakisiyor. Ust iki sutun 50%-4px, alttaki Pay Dagilimi karti da calc(50% - 4px) olarak sabitlendi; boylece ana dikey cizgi her ekran boyutunda ayni x_te. v462_deki 2px daraltma geri alindi (tekrar 8px).' },
+    ]
+  },
   {
     version: 'v462',
     date: '30.07.2026',
