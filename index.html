@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v466';
+const APP_VERSION = 'v467';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '30.07.2026 20:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '30.07.2026 21:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -11382,27 +11382,32 @@ function _renderDashInner(){
     return [...set].filter(Boolean).sort((a,b)=>b.localeCompare(a)); // en yeni üstte
   })();
   const _ayLabel = ym => { const p=String(ym).split('-'); return `${MONTHS[(+p[1]||1)-1]} ${p[0]}`; };
+  // v467: Anasayfa tarih filtresi — Finansal Analiz gibi yil + ay buton satirlari (2. secenek)
+  const _seciliYil = String(now).slice(0,4);
+  const _seciliAyNo = String(now).slice(5,7);
+  window._dashTumAylarCache = _tumAylar;
+  const _dashYillar = [...new Set(_tumAylar.map(m=>m.slice(0,4)))].sort();
+  const _dashPill = (act,dis)=>`padding:5px 12px;border-radius:16px;border:1px solid ${act?'#e2231a':'var(--line)'};background:${act?'#e2231a':'var(--panel)'};color:${act?'#fff':(dis?'var(--line)':'var(--muted)')};font-size:11.5px;cursor:${dis?'not-allowed':'pointer'};white-space:nowrap;flex-shrink:0;font-weight:${act?'700':'400'};${dis?'opacity:.45':''}`;
+  const _dashYilBtns = _dashYillar.map(y=>`<button onclick="dashAyYilSec('${y}')" style="${_dashPill(y===_seciliYil,false)}">${y}</button>`).join('');
+  const _dashAyBtns = MONTHS.map((mn,i)=>{
+    const mm=String(i+1).padStart(2,'0'), ym=_seciliYil+'-'+mm;
+    const dis=(ym>gercekAy)||!_tumAylar.includes(ym), act=(mm===_seciliAyNo);
+    return `<button ${dis?'disabled':''} ${dis?'':`onclick="dashAySec('${ym}')"`} title="${_ayLabel(ym)}" style="${_dashPill(act,dis)}">${mn}</button>`;
+  }).join('');
   const _aySecici = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
-      <div style="display:inline-flex;align-items:center;gap:10px">
-        <button onclick="dashAyKaydir(-1)" title="Önceki ay" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 2px rgba(16,24,40,.05)">‹</button>
-        <div style="position:relative;display:inline-flex;align-items:center">
-          <span style="font-size:15px;font-weight:800;color:var(--txt);border-bottom:2.5px solid ${gecmisAy?'var(--gold)':'#e2231a'};padding:2px 3px 4px;display:inline-flex;gap:6px;align-items:center;white-space:nowrap;pointer-events:none">${_ayLabel(now)}<span style="font-size:9px;color:var(--muted)">▼</span></span>
-          <select onchange="dashAySec(this.value)" title="Ay seç" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none">
-            ${_tumAylar.map(ym=>`<option value="${ym}" ${ym===now?'selected':''}>${_ayLabel(ym)}${ym===gercekAy?' • bu ay':''}</option>`).join('')}
-          </select>
-        </div>
-        <button onclick="dashAyKaydir(1)" ${now>=gercekAy?'disabled':''} title="Sonraki ay" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:${now>=gercekAy?'not-allowed':'pointer'};font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:${now>=gercekAy?0.35:1};box-shadow:0 1px 2px rgba(16,24,40,.05)">›</button>
+    <div style="margin-bottom:12px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:7px">
+        ${_dashYilBtns}
+        ${gecmisAy?`<button onclick="dashAySec('${gercekAy}')" title="Bu aya dön" style="height:28px;border-radius:9px;border:1px solid rgba(224,144,15,0.4);background:rgba(224,144,15,0.1);color:var(--gold);cursor:pointer;font-size:11px;font-weight:700;padding:0 12px;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;margin-left:auto">↩ Bu aya dön</button>`:''}
       </div>
-      ${gecmisAy?`<button onclick="dashAySec('${gercekAy}')" title="Bu aya dön" style="height:32px;border-radius:9px;border:1px solid rgba(224,144,15,0.4);background:rgba(224,144,15,0.1);color:var(--gold);cursor:pointer;font-size:11.5px;font-weight:700;padding:0 12px;flex-shrink:0;display:inline-flex;align-items:center;gap:5px">↩ Bu aya dön</button>`:''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${_dashAyBtns}
+      </div>
     </div>`;
-
   const _slotEl = document.getElementById('dashAySeciciSlot');
-  const _aySeciciSlot = (typeof window!=='undefined' && window.innerWidth > 700 && _slotEl) ? _slotEl : null;
-  if(_aySeciciSlot) _aySeciciSlot.innerHTML = _aySecici;
-  else if(_slotEl) _slotEl.innerHTML = ''; // dar ekranda yuvayı boşalt (üstte gösterilecek)
+  if(_slotEl) _slotEl.innerHTML = ''; // v467: buton satiri filtresi header slotuna degil, icerige tam genislik
   el.innerHTML = `
-    ${_aySeciciSlot ? '' : _aySecici}
+    ${_aySecici}
     <!-- ── Anomali + MNP 3'lü kart yan yana ── -->
     <div style="display:flex;gap:6px;margin-bottom:8px;align-items:stretch;flex-wrap:wrap">
 
@@ -11844,6 +11849,17 @@ function dashAyKaydir(delta){
 function dashAySec(ym){
   window._dashAy = (ym === thisMonthKey()) ? null : ym;
   try{ renderDash(); }catch(e){}
+}
+function dashAyYilSec(y){
+  var real = thisMonthKey();
+  var curMonth = String(window._dashAy || real).slice(5,7);
+  var target = y+'-'+curMonth;
+  var avail = window._dashTumAylarCache || [];
+  if(target > real || avail.indexOf(target)===-1){
+    var cand = avail.filter(function(m){return m.slice(0,4)===String(y) && m<=real;}).sort();
+    target = cand.length ? cand[cand.length-1] : (String(y)+'-01');
+  }
+  dashAySec(target);
 }
 function fmtPct(n){ return (n||0).toFixed(0) + '%'; }
 
@@ -21315,6 +21331,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v467',
+    date: '30.07.2026',
+    items: [
+      { type: 'ui', text: 'Anasayfa tarih filtresi degistirildi: eski "< Ay Yil v >" ok+menu secici yerine Finansal Analiz gibi YIL + AY buton satirlari geldi. Yil butonlari (verinin oldugu yillar) ve ay butonlari (Ocak..Aralik) — tikla-sec. Gelecek/veri olmayan aylar pasif. Gecmis aydayken "Bu aya don" butonu kaliyor. Filtre artik header yerine icerikte tam genislik.' },
+    ]
+  },
   {
     version: 'v466',
     date: '30.07.2026',
