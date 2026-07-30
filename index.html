@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v459';
+const APP_VERSION = 'v460';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '30.07.2026 10:35'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '30.07.2026 13:45'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -11945,9 +11945,9 @@ function renderFinans(){
 
   container.innerHTML = `
     <div class="section-title">Özet (${finansYearFilter==='all' ? 'Tüm Zamanlar' : (finansMonthFilter==='all' ? finansYearFilter : monthNamesFull[finansMonthFilter-1]+' '+finansYearFilter)})</div>
-    <div class="finans-ozet-cols" style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:8px">
+    <div class="finans-ozet-cols" style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px">
       <div style="flex:1 1 0;min-width:320px;display:flex;flex-direction:column;gap:8px">
-      <div class="stat defter-gizle" style="flex:1;min-width:280px">
+      <div class="stat defter-gizle" style="flex:0 0 auto;min-width:280px">
         <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Sermaye · Önceki Aya Göre</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</div>
@@ -11977,7 +11977,7 @@ function renderFinans(){
         </div>
       </div>
       <div style="flex:1 1 0;min-width:320px;display:flex;flex-direction:column;gap:8px">
-      <div class="stat defter-gizle" style="flex:1;min-width:280px">
+      <div class="stat defter-gizle" style="flex:0 0 auto;min-width:280px">
         <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Dönem Sermayesi · Dönem Başına Göre</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1">${lastKapali ? fmtF(last.mevcutSermaye) : '—'}</div>
@@ -21315,6 +21315,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v460',
+    date: '30.07.2026',
+    items: [
+      { type: 'fix', text: 'Finansal Analiz > Ozet: ust iki kart (Sermaye + Donem Sermayesi) esit boya sabitlendi (flex:0 0 auto). Onceden sag kart ~10px daha uzundu, alt satirdaki kartlarla hizalari kayiyordu; artik ikisinin alt cizgisi ayni yerde bitiyor ve alttaki kartlar ayni hizada basliyor.' },
+    ]
+  },
   {
     version: 'v459',
     date: '30.07.2026',
