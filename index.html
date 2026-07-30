@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v465';
+const APP_VERSION = 'v466';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '30.07.2026 20:05'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '30.07.2026 20:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -21316,6 +21316,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v466',
+    date: '30.07.2026',
+    items: [
+      { type: 'fix', text: 'Yil Sonu Sermaye Hedefi artik GECMIS YILLARI da tutuyor. Onceden tek bir {tutar,yil} saklaniyordu; yeni yil girince eskisinin uzerine yaziyordu. Simdi hedefler yillara gore ayri saklaniyor (or. 2025, 2026 ayri ayri). Eski tek kayit otomatik yeni bicime tasiniyor, veri kaybolmuyor.' },
+      { type: 'new', text: 'Sermaye Hedefi modalinde "Kayitli Yil Hedefleri" listesi eklendi: her yilin hedefi, o yila ait gerceklesen sermaye ve gecmis yillar icin ulasildi/ulasilamadi durumu gorunuyor. Yila tiklayinca o yil yuklenir, cop kutusu ile tek yil silinebilir. Ilerleme/tahmin secili yilin kendi verisine gore hesaplaniyor.' },
+    ]
+  },
+  {
     version: 'v465',
     date: '30.07.2026',
     items: [
@@ -24847,10 +24855,19 @@ function toggleChangelog(){
   var KEY='vf_sermaye_hedef_v1';
   function fmtTL(n){ return Math.round(n).toLocaleString('tr-TR'); }
   function parseNum(s){ return parseFloat(String(s).replace(/[^0-9]/g,''))||0; }
-  function loadHedef(){ try{ return JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ return null; } }
-  function saveHedef(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){}
+  // v466: hedefler yillara gore saklanir {"2025":800000,"2026":900000}. Eski tek-kayit {tutar,yil} otomatik tasinir.
+  function loadHedefMap(){
+    var raw; try{ raw=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ raw=null; }
+    if(!raw || typeof raw!=='object') return {};
+    if(raw.tutar!==undefined && raw.yil!==undefined){ var mm={}; mm[String(raw.yil)]=+raw.tutar||0; return mm; }
+    if(raw.hedefler && typeof raw.hedefler==='object') raw=raw.hedefler;
+    var out={}; Object.keys(raw).forEach(function(k){ if(/^\d{4}$/.test(k)){ var v=+raw[k]||0; if(v>0) out[k]=v; } });
+    return out;
+  }
+  function saveHedefMap(m){ try{ localStorage.setItem(KEY, JSON.stringify(m)); }catch(e){}
     try{ if(typeof scheduleCloudSync==='function') scheduleCloudSync(); }catch(e){}
     try{ if(typeof scheduleAutoBackup==='function') scheduleAutoBackup(); }catch(e){} }
+  var _shViewYear = null; // o an goruntulenen/duzenlenen yil
   function linreg(ys){ var n=ys.length,mx=(n-1)/2,my=0,i;
     for(i=0;i<n;i++)my+=ys[i]; my/=n; var num=0,den=0;
     for(i=0;i<n;i++){num+=(i-mx)*(ys[i]-my);den+=(i-mx)*(i-mx);}
@@ -24871,8 +24888,16 @@ function toggleChangelog(){
       var cur=+last.mevcutSermaye||0;
       var lp=last.ym.split('-'), lastY=+lp[0], lastM=+lp[1];
       var nowYear=(new Date()).getFullYear();
-      var hedef=loadHedef();
-      var targetYear = hedef&&hedef.yil ? hedef.yil : Math.max(nowYear,lastY);
+      var hedefMap=loadHedefMap();
+      var kayitliYillar=Object.keys(hedefMap).map(Number).sort(function(a,b){return b-a;});
+      var targetYear = _shViewYear!=null ? _shViewYear : (kayitliYillar.length ? kayitliYillar[0] : Math.max(nowYear,lastY));
+      var hedefTutar = +hedefMap[String(targetYear)] || 0;
+      var hedef = hedefTutar>0 ? {tutar:hedefTutar, yil:targetYear} : null;
+      // v466: goruntulenen yila ait yil sonu (gerceklesen) sermaye + referans ay
+      var _vr = recs.filter(function(x){ return x.ym.slice(0,4)===String(targetYear); });
+      var viewCur = _vr.length ? (+_vr[_vr.length-1].mevcutSermaye||0) : cur;
+      var refRec = _vr.length ? _vr[_vr.length-1] : last;
+      var refY=+refRec.ym.split('-')[0], refM=+refRec.ym.split('-')[1];
 
       // öneri (trend ile yıl sonu tahmini, 50.000'e yuvarlı)
       var caps=recs.map(function(x){return +x.mevcutSermaye||0;});
@@ -24888,7 +24913,7 @@ function toggleChangelog(){
         '<div style="flex:1"><label style="font-size:10.5px;color:var(--muted,#9aa0a8);font-weight:700;display:block;margin-bottom:4px">HEDEF SERMAYE (₺)</label>'+
         '<input id="shTutar" type="text" inputmode="numeric" value="'+(hedef?fmtTL(hedef.tutar):'')+'" placeholder="'+fmtTL(oneri)+'" style="width:100%;box-sizing:border-box;font-size:15px;font-weight:700;padding:8px 10px"></div>'+
         '<div style="width:92px"><label style="font-size:10.5px;color:var(--muted,#9aa0a8);font-weight:700;display:block;margin-bottom:4px">YIL</label>'+
-        '<input id="shYil" type="number" value="'+targetYear+'" style="width:100%;box-sizing:border-box;font-size:15px;font-weight:700;padding:8px 10px"></div>'+
+        '<input id="shYil" type="number" value="'+targetYear+'" onchange="sermayeHedefYilDegis(this.value)" style="width:100%;box-sizing:border-box;font-size:15px;font-weight:700;padding:8px 10px"></div>'+
         '<button onclick="saveSermayeHedef()" style="background:var(--gold,#ffb74d);color:#3a2600;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap">Kaydet</button>'+
         '</div>'+
         (!hedef?'<div style="font-size:11px;color:var(--muted,#9aa0a8);margin-top:8px">Öneri (trende göre '+targetYear+' sonu): <b>'+fmtTL(oneri)+' ₺</b></div>':'')+
@@ -24897,14 +24922,14 @@ function toggleChangelog(){
       var durumHtml='';
       if(hedef && hedef.tutar>0){
         var goal=hedef.tutar;
-        var pct=Math.max(0,Math.min(100,cur/goal*100));
-        var kalanAy=Math.max(0,(targetYear-lastY)*12+(12-lastM));
-        var projeksiyon = kalanAy>0 ? f(baseIdx+kalanAy) : cur;
+        var pct=Math.max(0,Math.min(100,viewCur/goal*100));
+        var kalanAy=Math.max(0,(targetYear-refY)*12+(12-refM));
+        var projeksiyon = kalanAy>0 ? f(baseIdx+kalanAy) : viewCur;
         var yolunda = projeksiyon>=goal;
-        var fark = goal-cur;
+        var fark = goal-viewCur;
         var aylikGereken = kalanAy>0 ? fark/kalanAy : fark;
         durumHtml=
-          '<div style="font-size:22px;font-weight:800;letter-spacing:-.02em">'+fmtTL(cur)+' <span style="font-size:13px;color:var(--muted,#9aa0a8);font-weight:600">/ '+fmtTL(goal)+' ₺</span></div>'+
+          '<div style="font-size:22px;font-weight:800;letter-spacing:-.02em">'+fmtTL(viewCur)+' <span style="font-size:13px;color:var(--muted,#9aa0a8);font-weight:600">/ '+fmtTL(goal)+' \u20ba</span></div>'+
           '<div style="height:14px;border-radius:7px;background:var(--panel2,#212326);border:1px solid var(--line,#3a3d42);overflow:hidden;margin:9px 0 6px"><i style="display:block;height:100%;width:'+pct.toFixed(0)+'%;background:linear-gradient(90deg,var(--gold,#ffb74d),var(--accent,#3fd0ff))"></i></div>'+
           '<div style="font-size:12px;color:var(--muted,#9aa0a8);line-height:1.6">Hedefin <b style="color:var(--txt,#e8eaed)">%'+pct.toFixed(0)+'</b>\'ine ulaşıldı ('+targetYear+' sonu hedefi).<br>'+
           'Trend sürerse yıl sonu ~<b style="color:'+(yolunda?'var(--pos,#34d399)':'var(--neg,#f87171)')+'">'+fmtTL(projeksiyon)+' ₺</b> → hedefin <b style="color:'+(yolunda?'var(--pos,#34d399)':'var(--neg,#f87171)')+'">'+(yolunda?'yolunda':'gerisinde')+'</b>.'+
@@ -24914,7 +24939,28 @@ function toggleChangelog(){
       } else {
         durumHtml='<p style="font-size:12px;color:var(--muted,#9aa0a8);line-height:1.5">Bir hedef belirle, sana ilerlemeni ve yıl sonu tahminini göstereyim.</p>';
       }
-      body.innerHTML=form+durumHtml;
+      var gecmisHtml='';
+      if(kayitliYillar.length){
+        gecmisHtml='<div style="margin-top:16px;border-top:1px solid var(--line,#3a3d42);padding-top:12px">'+
+          '<div style="font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--muted,#9aa0a8);text-transform:uppercase;margin-bottom:8px">📅 Kayıtlı Yıl Hedefleri</div>'+
+          kayitliYillar.map(function(yy){
+            var t=hedefMap[String(yy)];
+            var _yr=recs.filter(function(x){return x.ym.slice(0,4)===String(yy);});
+            var _cap=_yr.length?(+_yr[_yr.length-1].mevcutSermaye||0):0;
+            var _bitti = yy<nowYear;
+            var _ulasildi = _cap>=t;
+            var durumEt = _bitti ? (_ulasildi?'<span style="color:var(--pos,#34d399);font-weight:700">✅ ulaşıldı</span>':'<span style="color:var(--neg,#f87171);font-weight:700">✗ ulaşılamadı</span>') : (_cap>0?('%'+Math.round(Math.min(100,_cap/t*100))):'—');
+            var aktif = yy===targetYear;
+            return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;margin-bottom:5px;background:'+(aktif?'rgba(255,183,77,0.14)':'var(--panel2,#212326)')+';border:1px solid '+(aktif?'var(--gold,#ffb74d)':'var(--line,#3a3d42)')+'">'+
+              '<button onclick="sermayeHedefYilDegis('+yy+')" style="background:none;border:none;color:var(--txt,#e8eaed);font-weight:800;font-size:13px;cursor:pointer;padding:0">'+yy+'</button>'+
+              '<span style="font-size:12.5px;font-weight:700;color:var(--gold,#ffb74d)">'+fmtTL(t)+' \u20ba</span>'+
+              '<span style="font-size:11px;color:var(--muted,#9aa0a8);margin-left:auto">'+durumEt+'</span>'+
+              '<button onclick="sermayeHedefSil('+yy+')" title="Sil" style="background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.25);color:#ff5252;border-radius:6px;width:24px;height:24px;font-size:12px;cursor:pointer;padding:0;flex-shrink:0">\uD83D\uDDD1</button>'+
+              '</div>';
+          }).join('')+
+          '</div>';
+      }
+      body.innerHTML=form+durumHtml+gecmisHtml;
     }catch(e){ console.warn('Sermaye hedefi:', e); body.innerHTML='<p style="color:var(--muted,#9aa0a8);font-size:12px">Panel çizilemedi.</p>'; }
   };
 
@@ -24923,12 +24969,27 @@ function toggleChangelog(){
       var t=parseNum(document.getElementById('shTutar').value);
       var y=parseInt(document.getElementById('shYil').value,10)||(new Date()).getFullYear();
       if(t<=0){ if(typeof showToast==='function') showToast('Geçerli bir hedef tutarı girin.','err'); return; }
-      saveHedef({tutar:t, yil:y});
+      var map=loadHedefMap(); map[String(y)]=t; saveHedefMap(map);
+      _shViewYear=y;
       window.renderSermayeHedef();
-      if(typeof showToast==='function') showToast('🎯 Sermaye hedefi kaydedildi.','ok');
+      if(typeof showToast==='function') showToast('🎯 '+y+' sermaye hedefi kaydedildi.','ok');
     }catch(e){ console.warn('Sermaye hedefi kayit:', e); }
   };
+  window.sermayeHedefYilDegis = function(y){
+    y=parseInt(y,10); if(!y) return;
+    _shViewYear=y;
+    try{ window.renderSermayeHedef(); }catch(e){}
+  };
+  window.sermayeHedefSil = function(y){
+    y=parseInt(y,10); if(!y) return;
+    if(typeof confirm==='function' && !confirm(y+' yılı sermaye hedefini silmek istediğine emin misin?')) return;
+    var map=loadHedefMap(); delete map[String(y)]; saveHedefMap(map);
+    if(_shViewYear===y) _shViewYear=null;
+    try{ window.renderSermayeHedef(); }catch(e){}
+    if(typeof showToast==='function') showToast(y+' hedefi silindi.','ok');
+  };
   window.openSermayeHedefModal = function(){
+    _shViewYear=null;
     try{ window.renderSermayeHedef(); }catch(e){}
     var m=document.getElementById('sermayeHedefModal'); if(m) m.style.display='flex';
   };
