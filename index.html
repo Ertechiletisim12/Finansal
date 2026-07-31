@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v470';
+const APP_VERSION = 'v471';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '30.07.2026 22:20'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '31.07.2026 17:05'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5950,7 +5950,8 @@ function _htmlCiz(c, el, x, y, g, zorlaYuk){
 
   // Kutu
   if(kutuMu){
-    const icX = x + mm(st.pSol), icG = g - mm(st.pSol + st.pSag);
+    const kutuG = (st.genislik > 0 && mm(st.genislik) < g) ? mm(st.genislik) : g;  // v471: rozet vb. kendi genisligini korur (tum genislige "bar" cizilmez)
+    const icX = x + mm(st.pSol), icG = kutuG - mm(st.pSol + st.pSag);
     const olcC = Object.assign({}, c, { olc:true, zemin:arka, derinlik:(c.derinlik||0)+1 });
     let icY = y + mm(st.pUst);
     Array.from(el.childNodes).forEach(k => { icY = _htmlCiz(olcC, k, icX, icY, icG); });
@@ -5959,7 +5960,7 @@ function _htmlCiz(c, el, x, y, g, zorlaYuk){
     if(!c.derinlik && c.y != null && !c.olc && zorlaYuk == null) y = c.y;
     const solRenk = st.solKal > 1.5 ? _renkCoz(st.solRenk, tema, null) : null;
     if(solRenk) solRenk.kal = mm(st.solKal);
-    _KutuCiz(c, x, y, g, yuk, arkaVar ? arka : null, kenarRenk, yaricap, solRenk, st.kenar === 'dashed');
+    _KutuCiz(c, x, y, kutuG, yuk, arkaVar ? arka : null, kenarRenk, Math.min(yaricap, kutuG/2, yuk/2), solRenk, st.kenar === 'dashed');
     const icC = Object.assign({}, c, { zemin:arka, derinlik:(c.derinlik||0)+1 });
     let yy = y + mm(st.pUst);
     Array.from(el.childNodes).forEach(k => { yy = _htmlCiz(icC, k, icX, yy, icG); });
@@ -13394,10 +13395,14 @@ function buildManagerReportHTML(){
 
   // --- Bugünkü durum ---
   const todayK = todayStr();
+  const todayYmR = ymKey(todayK);
   const todayCatData = CATS.map(c=>{
     const cnt = getCount(todayK, c);
-    const ents = entries.filter(e=>e.date===todayK&&e.cat===c);
-    const amt = ents.reduce((a,e)=>a+e.count*(kampanyaFiyatFor(e.date,c,priceFor(ymKey(todayK),c))||0),0);
+    // v471: tutar, getCount ile AYNI kayit kumesinden hesaplanir (MNP kategorilerde effectiveYm bu ay olanlar dahil).
+    const ents = MNP_CATS.includes(c)
+      ? entries.filter(e => e.cat===c && ((!e.mnp && e.date===todayK) || (!!e.mnp && effectiveYm(e)===todayYmR)))
+      : entries.filter(e => e.cat===c && e.date===todayK);
+    const amt = ents.reduce((a,e)=>a+e.count*(kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c))||0),0);
     return {cat:c, cnt, amt};
   });
   const todayTotalCnt = todayCatData.reduce((a,d)=>a+d.cnt,0);
@@ -21432,6 +21437,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v471',
+    date: '31.07.2026',
+    items: [
+      { type: 'fix', text: 'Yonetici Raporu > Bugunku Girisler: adetler dogru ama tutarlar 0,00 TL cikiyordu. Sebep: PrePaid/PostPaid/Red (MNP kategorileri) adedi getCount ile bu aya effectiveYm dusen MNP kayitlarini da sayiyordu, ama tutar sadece tarihi tam bugun olanlari topluyordu. Tutar artik adetle AYNI kayit kumesinden ve her kaydin kendi ayinin fiyatiyla hesaplaniyor.' },
+      { type: 'fix', text: 'Kapanis Raporu PDF: "Nasil hesaplandi" adim rozetleri (1/2/=) tum genislige BAR olarak cizilip yaziyi ortuyordu. PDF cizim motoru artik kendi genisligi olan kutulari (rozet vb.) o genislikte ciziyor ve kose yaricapini kutuya sigacak sekilde sinirliyor; bar/tasma sorunu gitti.' },
+    ]
+  },
   {
     version: 'v470',
     date: '30.07.2026',
