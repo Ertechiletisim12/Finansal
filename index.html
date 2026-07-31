@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v468';
+const APP_VERSION = 'v469';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '30.07.2026 21:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '30.07.2026 21:50'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -21332,6 +21332,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v469',
+    date: '30.07.2026',
+    items: [
+      { type: 'fix', text: 'Sermaye Hedefi > Kayitli Yil Hedefleri listesinde artik TUM satir tiklanabilir (mobilde kucuk yil rakamina denk getirme derdi bitti). Bir yila dokununca o yilin tum detayi (baslangic/bitis sermayesi, kar/masraf, grafik, hedef durumu) yukleniyor. Silme butonu satir secimini tetiklemiyor (stopPropagation). Dokunma alani ve satir yuksekligi buyutuldu, aktif yilda tik isareti.' },
+    ]
+  },
+  {
     version: 'v468',
     date: '30.07.2026',
     items: [
@@ -24994,11 +25001,12 @@ function toggleChangelog(){
             var _ulasildi = _cap>=t;
             var durumEt = _bitti ? (_ulasildi?'<span style="color:var(--pos,#34d399);font-weight:700">✅ ulaşıldı</span>':'<span style="color:var(--neg,#f87171);font-weight:700">✗ ulaşılamadı</span>') : (_cap>0?('%'+Math.round(Math.min(100,_cap/t*100))):'—');
             var aktif = yy===targetYear;
-            return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;margin-bottom:5px;background:'+(aktif?'rgba(255,183,77,0.14)':'var(--panel2,#212326)')+';border:1px solid '+(aktif?'var(--gold,#ffb74d)':'var(--line,#3a3d42)')+'">'+
-              '<button onclick="sermayeHedefYilDegis('+yy+')" style="background:none;border:none;color:var(--txt,#e8eaed);font-weight:800;font-size:13px;cursor:pointer;padding:0">'+yy+'</button>'+
+            return '<div onclick="sermayeHedefYilDegis('+yy+')" style="display:flex;align-items:center;gap:8px;padding:11px 12px;border-radius:8px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,183,77,0.25);background:'+(aktif?'rgba(255,183,77,0.14)':'var(--panel2,#212326)')+';border:1px solid '+(aktif?'var(--gold,#ffb74d)':'var(--line,#3a3d42)')+'">'+
+              '<span style="color:var(--txt,#e8eaed);font-weight:800;font-size:14px">'+yy+'</span>'+
               '<span style="font-size:12.5px;font-weight:700;color:var(--gold,#ffb74d)">'+fmtTL(t)+' \u20ba</span>'+
               '<span style="font-size:11px;color:var(--muted,#9aa0a8);margin-left:auto">'+durumEt+'</span>'+
-              '<button onclick="sermayeHedefSil('+yy+')" title="Sil" style="background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.25);color:#ff5252;border-radius:6px;width:24px;height:24px;font-size:12px;cursor:pointer;padding:0;flex-shrink:0">\uD83D\uDDD1</button>'+
+              (aktif?'<span style="color:var(--gold,#ffb74d);font-size:15px;font-weight:800">\u2713</span>':'<span style="color:var(--muted,#9aa0a8);font-size:16px">\u203a</span>')+
+              '<button onclick="event.stopPropagation();sermayeHedefSil('+yy+')" title="Sil" style="background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.25);color:#ff5252;border-radius:6px;width:30px;height:30px;font-size:13px;cursor:pointer;padding:0;flex-shrink:0">\uD83D\uDDD1</button>'+
               '</div>';
           }).join('')+
           '</div>';
