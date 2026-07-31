@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v469';
+const APP_VERSION = 'v470';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '30.07.2026 21:50'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '30.07.2026 22:20'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13538,8 +13538,100 @@ function buildManagerReportHTML(){
   `;
 }
 
+// ===== v470: Yonetici Raporu — Aylik / Yillik gorunum =====
+let _yrMode='genel', _yrPeriod=null;
+function _yrFmt(n){ return (typeof gizliMod!=='undefined' && gizliMod) ? (typeof PARA_MASKE!=='undefined'?PARA_MASKE:'****') : (Math.round((+n||0)*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' \u20ba'; }
+function _yrMonthMap(){ var mm={}; entries.forEach(function(e){ var k=effectiveYm(e); if(!mm[k])mm[k]={}; mm[k][e.cat]=(mm[k][e.cat]||0)+e.count; }); return mm; }
+function _yrKpi(label,val,sub,color){ return '<div class="report-kpi"><div class="kpi-label">'+label+'</div><div class="kpi-val"'+(color?' style="color:'+color+'"':'')+'>'+val+'</div>'+(sub?'<div class="kpi-sub">'+sub+'</div>':'')+'</div>'; }
+function _yrAylikHTML(ym){
+  if(!ym){ return '<div class="report-doc"><div class="report-section">Ay verisi yok.</div></div>'; }
+  var f=finansData.find(function(d){return d.ym===ym;});
+  var mm=_yrMonthMap();
+  var pf=financeFor(ym, mm), bek=beklenenPrim(ym, mm), yat=yatirilan[ym];
+  var kapali=f?isKapanisYapildi(f):false, pos='#1e8e3e', neg='#d93025';
+  var sermayeBlok = (f&&kapali) ? (
+    '<div class="report-kpi-row">'+
+    _yrKpi('Mevcut Sermaye',_yrFmt(f.mevcutSermaye),monthLabel(ym))+
+    _yrKpi('Gereken Sermaye',_yrFmt(f.gerekenSermaye),'hedeflenen')+
+    _yrKpi('Sermaye Farkı',(f.sermayeFarki>=0?'+':'')+_yrFmt(f.sermayeFarki),f.sermayeFarki>=0?'sermaye arttı':'sermaye eksildi',f.sermayeFarki>=0?pos:neg)+
+    '</div><div class="report-kpi-row">'+
+    _yrKpi('Net Kâr/Zarar',(f.topKarZarar>=0?'+':'')+_yrFmt(f.topKarZarar),'kâr − masraf',f.topKarZarar>=0?pos:neg)+
+    _yrKpi('Toplam Kâr',_yrFmt(f.topKarTutari),'bu ay')+
+    _yrKpi('Toplam Masraf',_yrFmt(f.topMasrafTutari),'bu ay')+
+    '</div>'
+  ) : '<p style="font-size:11px;color:#888;padding:2px">Bu ayın kapanışı henüz yapılmadı.</p>';
+  var vodMixy = (f&&kapali) ? (
+    '<div class="report-h2 blue">Vodafone vs MİXY</div><table><thead><tr><th>Operatör</th><th>Kâr</th><th>Masraf</th><th>Net</th></tr></thead><tbody>'+
+    '<tr><td>Vodafone</td><td>'+_yrFmt(f.vodKarTutari)+'</td><td>'+_yrFmt(f.vodMasraf)+'</td><td class="'+((f.vodKarTutari-f.vodMasraf)>=0?'pos':'neg')+'">'+_yrFmt(f.vodKarTutari-f.vodMasraf)+'</td></tr>'+
+    '<tr><td>MİXY</td><td>'+_yrFmt(f.mixyKarTutari)+'</td><td>'+_yrFmt(f.mixyMasraf)+'</td><td class="'+((f.mixyKarTutari-f.mixyMasraf)>=0?'pos':'neg')+'">'+_yrFmt(f.mixyKarTutari-f.mixyMasraf)+'</td></tr>'+
+    '</tbody></table>'
+  ) : '';
+  var fark=(yat!=null)?(yat-bek):null;
+  var primBlok='<div class="report-h2 gold">Prim (bu ay)</div><div class="report-kpi-row">'+
+    _yrKpi('Gerçekleşen Prim',_yrFmt(pf.genelToplamTutar),'bu ay')+
+    _yrKpi('Beklenen Prim',_yrFmt(bek),'%70+%30 model')+
+    _yrKpi('Yatırılan',yat!=null?_yrFmt(yat):'—',fark!=null?((fark>=0?'+':'')+_yrFmt(fark)+' fark'):'girilmedi',fark!=null?(fark>=0?pos:neg):null)+
+    '</div>';
+  return '<div class="report-doc"><div class="report-cover"><h1>📊 '+monthLabel(ym)+' — Aylık Yönetici Raporu</h1><div class="rc-sub">Er-Tech İletişim</div></div>'+
+    '<div class="report-section"><div class="report-h2 red">Sermaye Durumu</div>'+sermayeBlok+vodMixy+primBlok+'</div>'+
+    '<div class="report-footer">Er-Tech İletişim · '+(typeof APP_VERSION!=='undefined'?APP_VERSION:'')+'</div></div>';
+}
+function _yrYillikHTML(yil){
+  var ys=getCapitalYearSummary().find(function(s){return s.yil===yil;});
+  if(!ys){ return '<div class="report-doc"><div class="report-section">Yıl verisi yok.</div></div>'; }
+  var months=[...finansData].filter(function(d){return d.yil===yil;}).sort(function(a,b){return a.ym.localeCompare(b.ym);});
+  var netKZ=months.reduce(function(a,d){return a+d.topKarZarar;},0), netDeg=ys.bitisSermaye-ys.baslangicSermaye, pos='#1e8e3e', neg='#d93025';
+  var vodKar=months.reduce(function(a,d){return a+d.vodKarTutari;},0), mixyKar=months.reduce(function(a,d){return a+d.mixyKarTutari;},0);
+  var vodMas=months.reduce(function(a,d){return a+d.vodMasraf;},0), mixyMas=months.reduce(function(a,d){return a+d.mixyMasraf;},0);
+  var satirlar=months.map(function(d){ return '<tr><td>'+d.ay+'</td><td>'+(isKapanisYapildi(d)?_yrFmt(d.mevcutSermaye):'⏳')+'</td><td class="'+(d.topKarZarar>=0?'pos':'neg')+'">'+(d.topKarZarar>=0?'+':'')+_yrFmt(d.topKarZarar)+'</td><td class="'+(d.sermayeFarki>=0?'pos':'neg')+'">'+(d.sermayeFarki>=0?'+':'')+_yrFmt(d.sermayeFarki)+'</td></tr>'; }).join('');
+  return '<div class="report-doc"><div class="report-cover"><h1>📊 '+yil+' — Yıllık Yönetici Raporu</h1><div class="rc-sub">Er-Tech İletişim · '+months.length+' ay</div></div>'+
+    '<div class="report-section"><div class="report-h2 red">Yıl Özeti</div><div class="report-kpi-row">'+
+      _yrKpi('Başlangıç Sermayesi',_yrFmt(ys.baslangicSermaye),(yil-1)+' sonu')+
+      _yrKpi('Bitiş Sermayesi',ys.kapaliBitis?_yrFmt(ys.bitisSermaye):'⏳ Bekliyor',yil+' sonu')+
+      _yrKpi('Net Sermaye Değişimi',(netDeg>=0?'+':'')+_yrFmt(netDeg),'yıl boyunca',netDeg>=0?pos:neg)+
+    '</div><div class="report-kpi-row">'+
+      _yrKpi('Toplam Kâr',_yrFmt(ys.toplamKar),months.length+' ay')+
+      _yrKpi('Toplam Masraf',_yrFmt(ys.toplamMasraf),months.length+' ay')+
+      _yrKpi('Net Kâr/Zarar',(netKZ>=0?'+':'')+_yrFmt(netKZ),'kâr − masraf',netKZ>=0?pos:neg)+
+    '</div>'+
+    '<div class="report-h2 blue">Vodafone vs MİXY (yıl)</div><table><thead><tr><th>Operatör</th><th>Kâr</th><th>Masraf</th><th>Net</th></tr></thead><tbody>'+
+      '<tr><td>Vodafone</td><td>'+_yrFmt(vodKar)+'</td><td>'+_yrFmt(vodMas)+'</td><td class="'+((vodKar-vodMas)>=0?'pos':'neg')+'">'+_yrFmt(vodKar-vodMas)+'</td></tr>'+
+      '<tr><td>MİXY</td><td>'+_yrFmt(mixyKar)+'</td><td>'+_yrFmt(mixyMas)+'</td><td class="'+((mixyKar-mixyMas)>=0?'pos':'neg')+'">'+_yrFmt(mixyKar-mixyMas)+'</td></tr>'+
+    '</tbody></table>'+
+    '<div class="report-h2 gold">Aylık Kırılım</div><table><thead><tr><th>Ay</th><th>Mevcut Sermaye</th><th>Net K/Z</th><th>Sermaye Farkı</th></tr></thead><tbody>'+satirlar+'</tbody></table>'+
+    '</div><div class="report-footer">Er-Tech İletişim · '+(typeof APP_VERSION!=='undefined'?APP_VERSION:'')+'</div></div>';
+}
+function yrRenderReport(){
+  var content=document.getElementById('managerReportContent'); if(!content) return;
+  var html;
+  try{
+    if(_yrMode==='aylik') html=_yrAylikHTML(_yrPeriod);
+    else if(_yrMode==='yillik') html=_yrYillikHTML(_yrPeriod);
+    else html=buildManagerReportHTML();
+  }catch(e){ html='<div class="report-doc"><div class="report-section">Rapor oluşturulamadı: '+((e&&e.message)||e)+'</div></div>'; }
+  content.innerHTML=html;
+  ['genel','aylik','yillik'].forEach(function(m){ var b=document.getElementById('yrM_'+m); if(b){ var on=(m===_yrMode); b.style.background=on?'#e2231a':'#2a2d31'; b.style.color=on?'#fff':'#cfd3d8'; } });
+  var sel=document.getElementById('yrPeriodSel');
+  if(sel){
+    if(_yrMode==='genel'){ sel.style.display='none'; }
+    else{
+      sel.style.display='';
+      var sorted=[...finansData].sort(function(a,b){return a.ym.localeCompare(b.ym);});
+      if(_yrMode==='aylik'){ sel.innerHTML=sorted.slice().reverse().map(function(d){ return '<option value="'+d.ym+'"'+(d.ym===_yrPeriod?' selected':'')+'>'+monthLabel(d.ym)+'</option>'; }).join(''); }
+      else{ var ys=[...new Set(sorted.map(function(d){return d.yil;}))].sort(function(a,b){return b-a;}); sel.innerHTML=ys.map(function(y){ return '<option value="'+y+'"'+(y===_yrPeriod?' selected':'')+'>'+y+'</option>'; }).join(''); }
+    }
+  }
+}
+function yrSetMode(mode){
+  _yrMode=mode;
+  var sorted=[...finansData].sort(function(a,b){return a.ym.localeCompare(b.ym);});
+  if(mode==='aylik'){ if(!/^\d{4}-\d{2}$/.test(String(_yrPeriod))) _yrPeriod=sorted.length?sorted[sorted.length-1].ym:null; }
+  else if(mode==='yillik'){ var ys=[...new Set(sorted.map(function(d){return d.yil;}))]; if(ys.indexOf(+_yrPeriod)<0) _yrPeriod=ys.length?ys[ys.length-1]:null; }
+  yrRenderReport();
+}
+function yrSetPeriod(v){ _yrPeriod=(_yrMode==='yillik')?(+v):v; yrRenderReport(); }
+
 function printManagerReport(){
-  const reportHtml = buildManagerReportHTML();
   const now = nowTR().toLocaleString('tr-TR');
 
   // Mobil uyumlu: uygulama içi modal kullan
@@ -13559,6 +13651,13 @@ function printManagerReport(){
       </div>
       <button onclick="shareManagerReport()" style="background:#1a5276;border:none;color:#fff;padding:7px 11px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">📤 Paylaş</button>
       <button class="m-kapat" onclick="document.getElementById('managerReportModal').remove()" style="background:#333;border:none;color:#fff;width:34px;height:34px;border-radius:6px;font-size:18px;cursor:pointer;flex-shrink:0">✕</button>
+    </div>
+    <!-- Genel / Aylık / Yıllık seçici -->
+    <div style="display:flex;gap:6px;align-items:center;padding:8px 12px;background:#181a1e;border-bottom:1px solid #2a2d31;flex-shrink:0;flex-wrap:wrap">
+      <button id="yrM_genel" onclick="yrSetMode('genel')" style="border:none;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;background:#e2231a;color:#fff">Genel</button>
+      <button id="yrM_aylik" onclick="yrSetMode('aylik')" style="border:none;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;background:#2a2d31;color:#cfd3d8">Aylık</button>
+      <button id="yrM_yillik" onclick="yrSetMode('yillik')" style="border:none;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;background:#2a2d31;color:#cfd3d8">Yıllık</button>
+      <select id="yrPeriodSel" onchange="yrSetPeriod(this.value)" style="display:none;margin-left:auto;background:#22252a;color:#fff;border:1px solid #3a3d42;border-radius:7px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer"></select>
     </div>
     <!-- İçerik -->
     <div id="managerReportBody" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#e8eaed">
@@ -13599,10 +13698,12 @@ function printManagerReport(){
         /* Tablo yatay scroll */
         #managerReportBody .report-section{overflow-x:auto}
       </style>
-      ${reportHtml}
+      <div id="managerReportContent"></div>
     </div>
   `;
   modal.style.display = 'flex';
+  _yrMode = 'genel'; _yrPeriod = null;
+  yrRenderReport();
 }
 
 // ===== İŞLEM LİSTESİ / SİLME MODAL FONKSİYONLARI =====
@@ -21331,6 +21432,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v470',
+    date: '30.07.2026',
+    items: [
+      { type: 'new', text: 'Yonetici Raporu artik AYLIK ve YILLIK gorunum destekliyor. Ust cubuktan Genel / Aylik / Yillik secilir; Aylik/Yillik secince yaninda ay/yil acilir menusu cikar. Aylik: secili ayin mevcut/gereken sermaye, sermaye farki, net kar/zarar, toplam kar/masraf, Vodafone-MIXY kirilimi ve prim (gerceklesen/beklenen/yatirilan). Yillik: baslangic/bitis sermayesi, net degisim, toplam kar/masraf/net, Vodafone-MIXY yil toplami ve aylik kirilim tablosu. Genel gorunum eskisi gibi kaliyor. (Not: Genel rapordaki hatali degerler ve Kapanis PDF kart/cizgi sorunu, kullanici ekran goruntusu paylasinca ayrica ele alinacak.)' },
+    ]
+  },
   {
     version: 'v469',
     date: '30.07.2026',
