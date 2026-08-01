@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v471';
+const APP_VERSION = 'v472';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '31.07.2026 17:05'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '01.08.2026 22:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5501,6 +5501,7 @@ function _hs(el){
     kenarKal:  _sayi(al('border-top-width'), _sayi(inl['border'], 0)),
     solRenk:   al('border-left-color'),
     solKal:    _sayi(al('border-left-width'), 0),
+    sagKal:    _sayi(al('border-right-width'), 0),
     altKal:    _sayi(al('border-bottom-width'), 0),
     altStil:   al('border-bottom-style'),
     altRenk:   al('border-bottom-color'),
@@ -5900,11 +5901,32 @@ function _htmlCiz(c, el, x, y, g, zorlaYuk){
 
   const arka = _harmanla(_renkCoz(st.arka, tema, null), c.zemin);
   const arkaVar = !!_renkCoz(st.arka, tema, null);
-  const kenarRenk = st.kenarKal > 0 ? _renkCoz(st.kenarRenk, tema, null) : null;
+  // v472: yalnizca border-top olan (arka plan/diger kenar yok) eleman bir AYRAC cizgisidir, tam kutu DEGIL.
+  const sadeceUstCizgi = st.kenarKal > 0 && !arkaVar && st.display !== 'flex' && (st.altKal||0) < 0.5 && (st.solKal||0) < 0.5 && (st.sagKal||0) < 0.5;
+  const kenarRenk = (st.kenarKal > 0 && !sadeceUstCizgi) ? _renkCoz(st.kenarRenk, tema, null) : null;
   const kutuMu = arkaVar || !!kenarRenk;
   const yaricap = mm(st.yaricap);
 
   y += mm(st.mUst);
+
+  // v472: Sadece ust ayrac cizgisi olan satir (MNP kirilimi satirlari, dashed notlar vb.) — kutu degil, tek cizgi
+  if(sadeceUstCizgi){
+    _sayfaKontrol(c, mm(st.pUst + st.pAlt) + mm(6));
+    if(!c.derinlik && c.y != null && !c.olc) y = c.y;
+    if(!c.olc){
+      const ucr = _renkCoz(st.kenarRenk, tema, tema.lineR);
+      c.doc.setDrawColor(ucr.r, ucr.g, ucr.b); c.doc.setLineWidth(0.12);
+      if(st.kenar === 'dashed' && c.doc.setLineDashPattern) c.doc.setLineDashPattern([0.7,0.7], 0);
+      c.doc.line(x, y, x + g, y);
+      if(c.doc.setLineDashPattern) c.doc.setLineDashPattern([], 0);
+    }
+    const icX = x + mm(st.pSol), icG = g - mm(st.pSol + st.pSag);
+    let yy = y + mm(st.pUst);
+    Array.from(el.childNodes).forEach(k => { yy = _htmlCiz(c, k, icX, yy, icG); });
+    yy += mm(st.pAlt);
+    if(!c.derinlik && !c.olc) c.y = yy + mm(st.mAlt);
+    return yy + mm(st.mAlt);
+  }
 
   const esnek = (st.display === 'flex');
   const cocuklar = Array.from(el.children);
@@ -21437,6 +21459,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v472',
+    date: '01.08.2026',
+    items: [
+      { type: 'fix', text: 'Kapanis Raporu PDF: MNP Kirilimi (ve benzeri) satir AYRAC cizgileri bozuktu. Kok neden: yalnizca border-top olan bir satiri PDF motoru TAM KUTU (4 kenar) sanip her satirin etrafina cerceve ciziyordu. Artik yalnizca ust cizgisi olan (arka planasiz, blok) satirlar tek bir ayrac cizgisi olarak ciziliyor; dashed ust cizgiler de kesikli ciziliyor. Kutu/cerceve karmasasi gitti.' },
+    ]
+  },
   {
     version: 'v471',
     date: '31.07.2026',
