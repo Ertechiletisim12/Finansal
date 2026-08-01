@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v472';
+const APP_VERSION = 'v473';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '01.08.2026 22:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '02.08.2026 00:05'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -5410,6 +5410,22 @@ const PX = 0.2646;                 // 1 CSS px ~ 0.2646 mm
 const mm = px => px * PX;
 
 function _pdfTema(){
+  // v473: PDF her zaman temiz, baski-dostu ACIK tema kullanir — uygulama temasindan (bej/koyu vb.) bagimsiz.
+  return {
+    bg:     '#ffffff',
+    panel:  '#ffffff',
+    panel2: '#f5f7f9',
+    line:   '#dfe3e8',
+    txt:    '#1a1c1e',
+    muted:  '#6b7280',
+    accent: '#1e73be',
+    gold:   '#b8730a',
+    red:    '#d93025',
+    thbg:   '#eef1f4',
+    thtxt:  '#1a1c1e',
+  };
+}
+function _pdfTemaEski(){
   let cs = null;
   try{ cs = getComputedStyle(document.body); }catch(e){}
   const oku = (ad, yedek) => {
@@ -6064,13 +6080,13 @@ function _kapanisPdfUret(govde){
 
   const ctx = {
     doc, F, simgeVar, tema:t, olc:false, zemin:t.panelR, derinlik:0,
-    ustSinir:27, altSinir:Y - 16, y:27,
+    ustSinir:23, altSinir:Y - 9, y:23,
     ustBant: () => { ustBant(); zeminBoya(); },
     altBant
   };
 
   ustBant(); zeminBoya();
-  ctx.y = 27;
+  ctx.y = 23;
 
   // v272: BIREBIR mod — govde ne iceriyorsa aynen cizilir; raporun kendi ortalanmis
   // basligi da korunur (ekrandaki modal ile ayni). Kirmizi ust bant, modal basligi
@@ -21459,6 +21475,14 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v473',
+    date: '02.08.2026',
+    items: [
+      { type: 'fix', text: 'Kapanis Raporu PDF renkleri: PDF artik uygulamanin temasini (bej/koyu vb.) okumuyor; her zaman sabit, temiz, baski-dostu ACIK tema kullaniyor (beyaz zemin, acik gri kartlar, koyu yazi, net mavi/altin/kirmizi vurgu). Bej/haki ton gitti; KATEGORI tablosu basligi da koyu yerine acik oldu.' },
+      { type: 'imp', text: 'Kapanis Raporu PDF: kisa rapor gereksiz yere 2. sayfaya tasip 1. sayfada bos alan birakiyordu. Sayfa ust/alt marjlari daraltilarak kullanilabilir yukseklik artirildi; "Nasil hesaplandi" bolumu artik 1. sayfaya sigmali.' },
+    ]
+  },
   {
     version: 'v472',
     date: '01.08.2026',
