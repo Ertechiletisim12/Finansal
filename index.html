@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v478';
+const APP_VERSION = 'v479';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.08.2026 22:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.08.2026 22:50'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -21497,6 +21497,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v479',
+    date: '04.08.2026',
+    items: [
+      { type: 'fix', text: 'Koyu Defter cok kahverengi/sepya cikiyordu — palet NOTR KOYU GRIYE cevrildi (koyu gri zemin/kartlar, acik yazi), Defter kimligi icin gold vurgu korundu. Boylece degisken (--bg/--panel/--txt...) bazli tum icerik koyuda dogru ve okunur; hero kartlarindaki sabit beyaz/krem ve koyu deger renkleri de koyuya cevrildi.' },
+    ]
+  },
+  {
     version: 'v478',
     date: '04.08.2026',
     items: [
@@ -25625,14 +25632,14 @@ body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
 /* ===== v393: rozet uyumu + finans buton sarma + kartlar beyaza ===== */
 /* kartlar beyaza -> krem zeminde belirgin kabarma */
 body.defter{ --panel:#fefdfb; }
-/* ===== v477: Defter KOYU MOD — sepya paletin koyu varyanti (body.defter, .light DEGIL) ===== */
+/* ===== v477: Defter KOYU MOD — notr koyu gri palet (gold vurgu korunur) ===== */
 body.defter:not(.light){
-  --bg:#17140f; --panel:#221d16; --panel2:#2a251b; --line:#3a3327;
-  --txt:#efe6d4; --muted:#a99f88; --accent:#e0b256; --gold:#e0b256;
-  --red:#e58267; --red-d:#c0503a; --green:#5cc487;
-  --th-bg:#2a251b; --th-txt:#efe6d4; --hover:#2f291e;
+  --bg:#1a1c1f; --panel:#25282c; --panel2:#2c2f34; --line:#3a3e44;
+  --txt:#e8eaed; --muted:#9aa0a6; --accent:#e0b256; --gold:#e0b256;
+  --red:#f0806a; --red-d:#c0503a; --green:#4cd987;
+  --th-bg:#2c2f34; --th-txt:#e8eaed; --hover:#2f3339;
 }
-body.defter:not(.light) .main div[style*="var(--panel)"]{ background:#221d16 !important; }
+body.defter:not(.light) .main div[style*="var(--panel)"]{ background:#25282c !important; }
 /* sabit beyaz/krem kartlar -> koyu */
 body.defter:not(.light) #defterFinansHero .dh-stat,
 body.defter:not(.light) #defterFinansHero .dh-pnl,
@@ -25641,7 +25648,7 @@ body.defter:not(.light) #finansContent .stat,
 body.defter:not(.light) #dhInner .dh-stat,
 body.defter:not(.light) #dhInner .dh-pnl,
 body.defter:not(.light) #dhInner .dh-chart{
-  background:#221d16 !important; border-color:#3a3327 !important;
+  background:#25282c !important; border-color:#3a3e44 !important;
 }
 /* kahverengi etiket/yazi -> acik */
 body.defter:not(.light) #defterFinansHero .dh-stat .k,
@@ -25649,14 +25656,14 @@ body.defter:not(.light) #defterFinansHero .dh-stat .s,
 body.defter:not(.light) #finansContent .section-title,
 body.defter:not(.light) #dhInner .dh-stat .k,
 body.defter:not(.light) #dhInner .dh-stat .s{
-  color:#a99f88 !important;
+  color:#9aa0a6 !important;
 }
 /* kart DEGERLERI (koyu kahve #211d17) koyu zeminde okunmuyordu -> acik */
 body.defter:not(.light) #defterFinansHero .dh-stat .v,
 body.defter:not(.light) #dhInner .dh-stat .v{
-  color:#efe6d4 !important;
+  color:#e8eaed !important;
 }
-body.defter:not(.light) #mobileTopBar{ background:#1a1610 !important; }
+body.defter:not(.light) #mobileTopBar{ background:#1a1c1f !important; }
 body.defter .main div[style*="var(--panel)"]{
   border-radius:18px !important;
   background:#fefdfb !important;
