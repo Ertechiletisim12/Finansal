@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v473';
+const APP_VERSION = 'v474';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '02.08.2026 00:05'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '02.08.2026 00:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13435,12 +13435,12 @@ function buildManagerReportHTML(){
   const todayK = todayStr();
   const todayYmR = ymKey(todayK);
   const todayCatData = CATS.map(c=>{
-    const cnt = getCount(todayK, c);
-    // v471: tutar, getCount ile AYNI kayit kumesinden hesaplanir (MNP kategorilerde effectiveYm bu ay olanlar dahil).
-    const ents = MNP_CATS.includes(c)
-      ? entries.filter(e => e.cat===c && ((!e.mnp && e.date===todayK) || (!!e.mnp && effectiveYm(e)===todayYmR)))
-      : entries.filter(e => e.cat===c && e.date===todayK);
-    const amt = ents.reduce((a,e)=>a+e.count*(kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c))||0),0);
+    // v474: "Bugunku Girisler" = tam anlamiyla BUGUN girilen kayitlar (e.date === bugun),
+    // hem adet hem tutar. Onceki hata: adet getCount ile geliyordu; getCount MNP kategorilerinde
+    // effectiveYm BU AY olan tum ayin MNP'lerini sayip "bugun" gibi gosteriyordu.
+    const ents = entries.filter(e => e.cat===c && e.date===todayK);
+    const cnt = ents.reduce((a,e)=>a+(+e.count||0),0);
+    const amt = ents.reduce((a,e)=>a+(+e.count||0)*(kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c))||0),0);
     return {cat:c, cnt, amt};
   });
   const todayTotalCnt = todayCatData.reduce((a,d)=>a+d.cnt,0);
@@ -21475,6 +21475,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v474',
+    date: '02.08.2026',
+    items: [
+      { type: 'fix', text: 'Yonetici Raporu > Bugunku Girisler DUZELTILDI (gercek kok neden). Adet getCount ile hesaplaniyordu; getCount MNP kategorilerinde (PrePaid/PostPaid/Red) bugun degil, effectiveYm BU AY olan tum ayin MNP kayitlarini sayip "bugun" gibi gosteriyordu. Artik hem adet hem tutar SADECE bugun girilen kayitlardan (e.date === bugun) hesaplaniyor. (v471 tutari yanlis tarafa esitlemisti; geri alindi.)' },
+    ]
+  },
   {
     version: 'v473',
     date: '02.08.2026',
