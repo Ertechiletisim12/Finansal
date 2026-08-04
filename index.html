@@ -2704,7 +2704,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
   <div style="flex:1;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px">
     <div style="font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
     <span onclick="toggleChangelog()" id="mobileVerBadge" title="Sürüm notları" style="font-size:9px;font-weight:700;color:var(--gold);background:rgba(255,183,77,0.15);border:1px solid rgba(255,183,77,0.3);border-radius:8px;padding:1px 6px;cursor:pointer;white-space:nowrap;flex-shrink:0">⋯</span>
-    <span onclick="finansKilitKisayol()" id="finansKilitKisayolBtn" title="Finansal Kilit — dokun: kilitle/aç" style="font-size:12px;cursor:pointer;flex-shrink:0;padding:1px 6px;border-radius:8px;background:rgba(63,167,224,0.15);border:1px solid rgba(63,167,224,0.35)">🔓</span>
+    <span onclick="finansKilitKisayol()" id="finansKilitKisayolBtn" title="Finansal Kilit — dokun: kilitle/aç" style="font-size:15px;cursor:pointer;flex-shrink:0;height:34px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 9px;border-radius:8px;background:rgba(63,167,224,0.15);border:1px solid rgba(63,167,224,0.35)">🔓</span>
   </div>
   <span id="mobileVersionInfo" style="display:none"></span>
   <!-- Offline göstergesi -->
@@ -2718,7 +2718,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div id="mobileOturumSure" style="font-size:11px;font-weight:700;color:var(--txt)">10:00</div>
       <div id="mobileAcikSure" style="font-size:10px;color:var(--muted)">0:00 açık</div>
     </div>
-    <button onclick="oturumKapat()" style="background:rgba(226,35,26,0.15);border:1px solid rgba(226,35,26,0.4);color:#ff7070;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer">🔒</button>
+    <button onclick="oturumKapat()" style="background:rgba(226,35,26,0.15);border:1px solid rgba(226,35,26,0.4);color:#ff7070;border-radius:8px;height:34px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 11px;font-size:15px;font-weight:700;cursor:pointer;flex-shrink:0">🔒</button>
   </div>
 </div>
 
@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v477';
+const APP_VERSION = 'v478';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.08.2026 22:10'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.08.2026 22:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -21497,6 +21497,14 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v478',
+    date: '04.08.2026',
+    items: [
+      { type: 'fix', text: 'Koyu Defter: finans hero alt kartlarindaki (Donem basi sermaye, Donem degisimi vb.) DEGER yazilari koyu kahve (#211d17) kaldigi icin koyu zeminde okunmuyordu; artik acik renk. Etiket/alt yazilar zaten aciklandi.' },
+      { type: 'ui', text: 'Ust bardaki finansal kilit (kilit) ve oturum (kirmizi kilit) butonlarinin yuksekligi digerleriyle (tema/defter/gizle) esitlendi — hepsi 34px.' },
+    ]
+  },
+  {
     version: 'v477',
     date: '04.08.2026',
     items: [
@@ -25642,6 +25650,11 @@ body.defter:not(.light) #finansContent .section-title,
 body.defter:not(.light) #dhInner .dh-stat .k,
 body.defter:not(.light) #dhInner .dh-stat .s{
   color:#a99f88 !important;
+}
+/* kart DEGERLERI (koyu kahve #211d17) koyu zeminde okunmuyordu -> acik */
+body.defter:not(.light) #defterFinansHero .dh-stat .v,
+body.defter:not(.light) #dhInner .dh-stat .v{
+  color:#efe6d4 !important;
 }
 body.defter:not(.light) #mobileTopBar{ background:#1a1610 !important; }
 body.defter .main div[style*="var(--panel)"]{
