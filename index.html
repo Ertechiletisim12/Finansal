@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v476';
+const APP_VERSION = 'v477';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.08.2026 21:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.08.2026 22:10'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -21497,6 +21497,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v477',
+    date: '04.08.2026',
+    items: [
+      { type: 'new', text: 'Defter temasi artik KOYU MODU destekliyor. Onceden Defter acilinca zorla acik tema uygulaniyordu; artik Defter, Ayarlar > Tema secimine (Koyu/Acik/Otomatik) uyuyor. Koyu Defter icin sepya paletin koyu varyanti eklendi (koyu kahve zemin, krem yazi, altin vurgu) ve sabit beyaz/krem kartlar (finans hero kartlari vb.) koyuya cevrildi.' },
+    ]
+  },
+  {
     version: 'v476',
     date: '04.08.2026',
     items: [
@@ -25414,20 +25421,18 @@ body.defter #defterBtn, body.defter #defterBtnMobile{ color:var(--gold); border-
   }
   window.toggleDefter=function(){
     var on=document.body.classList.toggle('defter');
-    if(on){ document.body.classList.add('light'); }
-    else{
-      try{ var t=localStorage.getItem('vf_theme')||'dark';
-        if(t==='light') document.body.classList.add('light');
-        else if(t!=='auto') document.body.classList.remove('light');
-      }catch(e){}
-    }
+    // v477: Defter artik kullanicinin secili temasina (koyu/acik/oto) uyar — zorla acik degil
+    try{ var t=localStorage.getItem('vf_theme')||'dark';
+      if(t==='auto'){ t=(typeof _temaOto==='function'?_temaOto():'dark'); }
+      if(t==='light') document.body.classList.add('light'); else document.body.classList.remove('light');
+    }catch(e){}
     try{ localStorage.setItem('vf_defter', on?'1':'0'); }catch(e){}
     upd(on);
     try{ if(typeof showToast==='function') showToast(on?'🪙 Defter teması açıldı':'Defter teması kapatıldı','ok'); }catch(e){}
   };
   function applyDefter(){
     try{
-      if(localStorage.getItem('vf_defter')==='1'){ document.body.classList.add('light'); document.body.classList.add('defter'); }
+      if(localStorage.getItem('vf_defter')==='1'){ document.body.classList.add('defter'); }
       upd(document.body.classList.contains('defter'));
     }catch(e){}
   }
@@ -25612,6 +25617,33 @@ body.defter .main div[style*="var(--panel2)"]{ border-radius:13px !important; }
 /* ===== v393: rozet uyumu + finans buton sarma + kartlar beyaza ===== */
 /* kartlar beyaza -> krem zeminde belirgin kabarma */
 body.defter{ --panel:#fefdfb; }
+/* ===== v477: Defter KOYU MOD — sepya paletin koyu varyanti (body.defter, .light DEGIL) ===== */
+body.defter:not(.light){
+  --bg:#17140f; --panel:#221d16; --panel2:#2a251b; --line:#3a3327;
+  --txt:#efe6d4; --muted:#a99f88; --accent:#e0b256; --gold:#e0b256;
+  --red:#e58267; --red-d:#c0503a; --green:#5cc487;
+  --th-bg:#2a251b; --th-txt:#efe6d4; --hover:#2f291e;
+}
+body.defter:not(.light) .main div[style*="var(--panel)"]{ background:#221d16 !important; }
+/* sabit beyaz/krem kartlar -> koyu */
+body.defter:not(.light) #defterFinansHero .dh-stat,
+body.defter:not(.light) #defterFinansHero .dh-pnl,
+body.defter:not(.light) #defterFinansHero .dh-chart,
+body.defter:not(.light) #finansContent .stat,
+body.defter:not(.light) #dhInner .dh-stat,
+body.defter:not(.light) #dhInner .dh-pnl,
+body.defter:not(.light) #dhInner .dh-chart{
+  background:#221d16 !important; border-color:#3a3327 !important;
+}
+/* kahverengi etiket/yazi -> acik */
+body.defter:not(.light) #defterFinansHero .dh-stat .k,
+body.defter:not(.light) #defterFinansHero .dh-stat .s,
+body.defter:not(.light) #finansContent .section-title,
+body.defter:not(.light) #dhInner .dh-stat .k,
+body.defter:not(.light) #dhInner .dh-stat .s{
+  color:#a99f88 !important;
+}
+body.defter:not(.light) #mobileTopBar{ background:#1a1610 !important; }
 body.defter .main div[style*="var(--panel)"]{
   border-radius:18px !important;
   background:#fefdfb !important;
