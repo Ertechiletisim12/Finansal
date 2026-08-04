@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v474';
+const APP_VERSION = 'v475';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '02.08.2026 00:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '02.08.2026 00:55'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -13586,6 +13586,26 @@ let _yrMode='genel', _yrPeriod=null;
 function _yrFmt(n){ return (typeof gizliMod!=='undefined' && gizliMod) ? (typeof PARA_MASKE!=='undefined'?PARA_MASKE:'****') : (Math.round((+n||0)*100)/100).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' \u20ba'; }
 function _yrMonthMap(){ var mm={}; entries.forEach(function(e){ var k=effectiveYm(e); if(!mm[k])mm[k]={}; mm[k][e.cat]=(mm[k][e.cat]||0)+e.count; }); return mm; }
 function _yrKpi(label,val,sub,color){ return '<div class="report-kpi"><div class="kpi-label">'+label+'</div><div class="kpi-val"'+(color?' style="color:'+color+'"':'')+'>'+val+'</div>'+(sub?'<div class="kpi-sub">'+sub+'</div>':'')+'</div>'; }
+function _yrKatTablo(ents, baslik){
+  // v475: secili doneme (ay/yil) ait kategori girisleri — adet + tutar
+  var rows = CATS.map(function(c){
+    var ce = ents.filter(function(e){ return e.cat===c; });
+    var cnt = ce.reduce(function(a,e){ return a+(+e.count||0); }, 0);
+    var amt = ce.reduce(function(a,e){ return a+(+e.count||0)*(kampanyaFiyatFor(e.date,c,priceFor(ymKey(e.date),c))||0); }, 0);
+    return { cat:c, cnt:cnt, amt:amt };
+  });
+  var totCnt = rows.reduce(function(a,r){ return a+r.cnt; }, 0);
+  var totAmt = rows.reduce(function(a,r){ return a+r.amt; }, 0);
+  var body = rows.filter(function(r){ return r.cnt>0; }).map(function(r){
+    return '<tr><td>'+r.cat+'</td><td><b>'+r.cnt+'</b></td><td>'+_yrFmt(r.amt)+'</td></tr>';
+  }).join('');
+  if(!body) body = '<tr><td colspan="3" style="color:#888">Bu dönemde giriş yok.</td></tr>';
+  return '<div class="report-h2 purple">'+baslik+'</div>'+
+    '<table><thead><tr><th>Kategori</th><th>Adet</th><th>Tutar</th></tr></thead><tbody>'+
+    body+
+    '<tr style="font-weight:800"><td>TOPLAM</td><td>'+totCnt+'</td><td>'+_yrFmt(totAmt)+'</td></tr>'+
+    '</tbody></table>';
+}
 function _yrAylikHTML(ym){
   if(!ym){ return '<div class="report-doc"><div class="report-section">Ay verisi yok.</div></div>'; }
   var f=finansData.find(function(d){return d.ym===ym;});
@@ -13616,7 +13636,7 @@ function _yrAylikHTML(ym){
     _yrKpi('Yatırılan',yat!=null?_yrFmt(yat):'—',fark!=null?((fark>=0?'+':'')+_yrFmt(fark)+' fark'):'girilmedi',fark!=null?(fark>=0?pos:neg):null)+
     '</div>';
   return '<div class="report-doc"><div class="report-cover"><h1>📊 '+monthLabel(ym)+' — Aylık Yönetici Raporu</h1><div class="rc-sub">Er-Tech İletişim</div></div>'+
-    '<div class="report-section"><div class="report-h2 red">Sermaye Durumu</div>'+sermayeBlok+vodMixy+primBlok+'</div>'+
+    '<div class="report-section"><div class="report-h2 red">Sermaye Durumu</div>'+sermayeBlok+vodMixy+primBlok+_yrKatTablo(entries.filter(function(e){return effectiveYm(e)===ym;}),'Kategori Girişleri — '+monthLabel(ym))+'</div>'+
     '<div class="report-footer">Er-Tech İletişim · '+(typeof APP_VERSION!=='undefined'?APP_VERSION:'')+'</div></div>';
 }
 function _yrYillikHTML(yil){
@@ -13642,6 +13662,7 @@ function _yrYillikHTML(yil){
       '<tr><td>MİXY</td><td>'+_yrFmt(mixyKar)+'</td><td>'+_yrFmt(mixyMas)+'</td><td class="'+((mixyKar-mixyMas)>=0?'pos':'neg')+'">'+_yrFmt(mixyKar-mixyMas)+'</td></tr>'+
     '</tbody></table>'+
     '<div class="report-h2 gold">Aylık Kırılım</div><table><thead><tr><th>Ay</th><th>Mevcut Sermaye</th><th>Net K/Z</th><th>Sermaye Farkı</th></tr></thead><tbody>'+satirlar+'</tbody></table>'+
+    _yrKatTablo(entries.filter(function(e){return String(effectiveYm(e)).slice(0,4)===String(yil);}),'Kategori Girişleri — '+yil)+
     '</div><div class="report-footer">Er-Tech İletişim · '+(typeof APP_VERSION!=='undefined'?APP_VERSION:'')+'</div></div>';
 }
 function yrRenderReport(){
@@ -21475,6 +21496,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v475',
+    date: '02.08.2026',
+    items: [
+      { type: 'new', text: 'Yonetici Raporu: kategori giris kirilimi artik sadece Genel > Bugunku Girisler ile sinirli degil. AYLIK gorunume "Kategori Girisleri — <ay>" (o ayin PrePaid/PostPaid/Red/... adet + tutar) ve YILLIK gorunume "Kategori Girisleri — <yil>" (o yilin toplami) tablolari eklendi. Ay/yil, girislerin effectiveYm bazina gore hesaplanir (prim mantigiyla tutarli).' },
+    ]
+  },
   {
     version: 'v474',
     date: '02.08.2026',
