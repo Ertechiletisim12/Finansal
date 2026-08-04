@@ -2701,9 +2701,9 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 <!-- Mobil üst navbar - tüm sayfalarda görünür -->
 <div id="mobileTopBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px;align-items:center;justify-content:space-between;gap:8px">
   <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
-  <div style="flex:1;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px">
+  <div style="flex:1;display:flex;align-items:center;justify-content:flex-start;gap:6px">
     <div style="display:none;font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <span onclick="toggleChangelog()" id="mobileVerBadge" title="Sürüm notları" style="font-size:9px;font-weight:700;color:var(--gold);background:rgba(255,183,77,0.15);border:1px solid rgba(255,183,77,0.3);border-radius:8px;padding:1px 6px;cursor:pointer;white-space:nowrap;flex-shrink:0">⋯</span>
+    <span onclick="toggleChangelog()" id="mobileVerBadge" title="Sürüm notları" style="font-size:12px;font-weight:700;color:var(--gold);background:rgba(255,183,77,0.15);border:1px solid rgba(255,183,77,0.3);border-radius:10px;height:34px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 11px;cursor:pointer;white-space:nowrap;flex-shrink:0">⋯</span>
     <span onclick="finansKilitKisayol()" id="finansKilitKisayolBtn" title="Finansal Kilit — dokun: kilitle/aç" style="font-size:15px;cursor:pointer;flex-shrink:0;height:34px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 9px;border-radius:8px;background:rgba(63,167,224,0.15);border:1px solid rgba(63,167,224,0.35)">🔓</span>
   </div>
   <span id="mobileVersionInfo" style="display:none"></span>
@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v480';
+const APP_VERSION = 'v481';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.08.2026 23:15'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.08.2026 23:30'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -21496,6 +21496,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v481',
+    date: '04.08.2026',
+    items: [
+      { type: 'ui', text: 'Ust bar: versiyon rozeti (vXXX) standart temada kucuk kaliyordu; diger butonlarla ayni yukseklige (34px) getirildi (Defterde zaten oyleydi). Ayrica versiyon + finansal kilit ikilisi flex:1 yuzunden ortada suzuluyordu; artik menu (=) yanina, sola hizali. Hem standart hem Defter temasinda ayni.' },
+    ]
+  },
   {
     version: 'v480',
     date: '04.08.2026',
