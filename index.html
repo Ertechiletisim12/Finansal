@@ -37,7 +37,7 @@
     bar.id = 'yeniSurumCubugu';
     bar.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:99999;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a1a1a;padding:11px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:12px;font-size:13px;font-weight:700;max-width:92vw';
     bar.innerHTML = '🎉 Yeni sürüm hazır!'
-      + '<button onclick="location.reload()" style="background:#1a1a1a;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer">Yenile</button>'
+      + '<button onclick="window._skipUnloadPrompt=true;location.reload()" style="background:#1a1a1a;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer">Yenile</button>'
       + '<button class="m-kapat" onclick="this.parentElement.remove()" style="background:transparent;border:none;color:#1a1a1a;font-size:18px;cursor:pointer;line-height:1;padding:0 2px" title="Sonra">×</button>';
     document.body.appendChild(bar);
   }
@@ -2841,7 +2841,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       </div>
 
       <!-- Sağ: üstte sabit filtre çubuğu, altında scroll eden içerik -->
-      <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto">
         <!-- Sabit filtre çubuğu -->
         <div style="flex-shrink:0;background:var(--bg);padding:8px 14px 6px;z-index:30">
           <div class="filterbar">
@@ -2901,7 +2901,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
         </div>
 
         <!-- Scroll eden içerik -->
-        <div class="content-col" style="overflow-y:auto;flex:1;padding-top:0">
+        <div class="content-col" style="overflow:visible;flex:0 0 auto;padding-top:0">
 
     <!-- v292: Genel Durum kartlari yukari (hakedis yanina) tasindi. Yil secici gorunur kalsin. -->
     <div class="section-title" id="genelDurumBaslik" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v482';
+const APP_VERSION = 'v484';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.08.2026 23:45'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.08.2026 11:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -6834,7 +6834,7 @@ async function resetDeviceFromCloud(){
     try{ if(typeof showToast==='function') showToast('☁️ Buluttan yeniden yükleniyor…','info'); }catch(e){}
     await pullFromCloud();
     alert('✓ Bu cihaz buluttan yeniden yüklendi. Sayfa yenileniyor.');
-    location.reload();
+    window._skipUnloadPrompt=true; location.reload();
   }catch(e){ alert('Hata: '+((e&&e.message)||e)); }
 }
 
@@ -7826,7 +7826,7 @@ function oturumKapat(){
   clearTimeout(_otoKilitTimeout);
   if(typeof cloudPollTimer !== 'undefined') clearInterval(cloudPollTimer);
   // Kısa gecikme ile yenile — devam eden işlemlerin bitmesini bekle
-  setTimeout(()=>{ location.reload(); }, 200);
+  window._skipUnloadPrompt=true; setTimeout(()=>{ location.reload(); }, 200);
 }
 
 
@@ -21481,7 +21481,7 @@ async function githubGuncelle(){
 
     setTimeout(()=>{
       durum.textContent = '🔃 Sayfa yenileniyor...';
-      setTimeout(()=> window.location.reload(true), 1000);
+      window._skipUnloadPrompt=true; setTimeout(()=> window.location.reload(true), 1000);
     }, 2500);
 
   } catch(e){
@@ -21496,6 +21496,21 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v484',
+    date: '05.08.2026',
+    items: [
+      { type: 'fix', text: 'Koyu Defter: grafik kutulari (.chart-box) sabit krem (#fbf8f1) kaldigi icin koyu modda beyaz gorunup icindeki yazilar okunmuyordu. Grafik kutulari ve ilgili kartlar (bottom-card, kapanis-kart, note-panel, ktip-kart, st-stat-card) koyu Defterde koyuya cekildi.' },
+      { type: 'new', text: 'Programdan cikarken/sekmeyi kapatirken onay sorusu eklendi (beforeunload). Surum guncelleme Yenile butonu ve program ici yeniden yuklemeler bu onayi atlar; sadece gercek kapanista sorulur.' },
+    ]
+  },
+  {
+    version: 'v483',
+    date: '05.08.2026',
+    items: [
+      { type: 'fix', text: 'Prim sayfasi: kategori kartlari + Genel Durum sabit basliktaydi, sadece alt icerik ayri kayiyordu; kucuk/kisa monitorlerde en alttaki Aylik Prim Grafigi gorunmuyordu. Artik sag icerik sutunu tek parca kayiyor — kartlar, genel durum ve grafik birlikte scroll oluyor, en alt her ekranda erisilebilir.' },
+    ]
+  },
   {
     version: 'v482',
     date: '04.08.2026',
@@ -25473,6 +25488,13 @@ body.defter #defterBtn, body.defter #defterBtnMobile{ color:var(--gold); border-
       upd(document.body.classList.contains('defter'));
     }catch(e){}
   }
+  // v484: programi kapatirken/ayrilirken onay sor
+  window.addEventListener('beforeunload', function(e){
+    if(window._skipUnloadPrompt) return;
+    e.preventDefault();
+    e.returnValue = 'Uygulamadan çıkmak istediğine emin misin?';
+    return e.returnValue;
+  });
   applyDefter();
   window.addEventListener('load', applyDefter);   // loadTheme'den sonra da uygula
 })();
@@ -25686,6 +25708,15 @@ body.defter:not(.light) #dhInner .dh-stat .v{
   color:#e8eaed !important;
 }
 body.defter:not(.light) #mobileTopBar{ background:#1a1c1f !important; }
+/* v484: grafik kutusu (#fbf8f1) ve diger kartlar koyuda beyaz kaliyordu -> koyu */
+body.defter:not(.light) .chart-box,
+body.defter:not(.light) .bottom-card,
+body.defter:not(.light) .kapanis-kart,
+body.defter:not(.light) .note-panel,
+body.defter:not(.light) .ktip-kart,
+body.defter:not(.light) .st-stat-card{
+  background:#25282c !important; border-color:#3a3e44 !important;
+}
 body.defter .main div[style*="var(--panel)"]{
   border-radius:18px !important;
   background:#fefdfb !important;
