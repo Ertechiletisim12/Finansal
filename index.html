@@ -2699,12 +2699,12 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
     </div>
   </div>
 <!-- Mobil üst navbar - tüm sayfalarda görünür -->
-<div id="mobileTopBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 12px;align-items:center;justify-content:space-between;gap:8px">
-  <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;flex-shrink:0">☰</button>
+<div id="mobileTopBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 7px;align-items:center;justify-content:space-between;gap:4px">
+  <button onclick="openMobileMenu()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:19px;flex-shrink:0">☰</button>
   <div style="flex:1;display:flex;align-items:center;justify-content:flex-start;gap:6px">
     <div style="display:none;font-size:14px;font-weight:800" id="mobilePageTitle">ER-TECH İLETİŞİM</div>
-    <span onclick="toggleChangelog()" id="mobileVerBadge" title="Sürüm notları" style="font-size:12px;font-weight:700;color:var(--gold);background:rgba(255,183,77,0.15);border:1px solid rgba(255,183,77,0.3);border-radius:10px;height:34px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 11px;cursor:pointer;white-space:nowrap;flex-shrink:0">⋯</span>
-    <span onclick="finansKilitKisayol()" id="finansKilitKisayolBtn" title="Finansal Kilit — dokun: kilitle/aç" style="font-size:15px;cursor:pointer;flex-shrink:0;height:34px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 9px;border-radius:8px;background:rgba(63,167,224,0.15);border:1px solid rgba(63,167,224,0.35)">🔓</span>
+    <span onclick="toggleChangelog()" id="mobileVerBadge" title="Sürüm notları" style="font-size:12px;font-weight:700;color:var(--gold);background:rgba(255,183,77,0.15);border:1px solid rgba(255,183,77,0.3);border-radius:10px;height:34px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 7px;cursor:pointer;white-space:nowrap;flex-shrink:0">⋯</span>
+    <span onclick="finansKilitKisayol()" id="finansKilitKisayolBtn" title="Finansal Kilit — dokun: kilitle/aç" style="font-size:15px;cursor:pointer;flex-shrink:0;height:34px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;border-radius:8px;background:rgba(63,167,224,0.15);border:1px solid rgba(63,167,224,0.35)">🔓</span>
   </div>
   <span id="mobileVersionInfo" style="display:none"></span>
   <!-- Offline göstergesi -->
@@ -2718,7 +2718,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
       <div id="mobileOturumSure" style="font-size:11px;font-weight:700;color:var(--txt)">10:00</div>
       <div id="mobileAcikSure" style="font-size:10px;color:var(--muted)">0:00 açık</div>
     </div>
-    <button onclick="oturumKapat()" style="background:rgba(226,35,26,0.15);border:1px solid rgba(226,35,26,0.4);color:#ff7070;border-radius:8px;height:34px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 11px;font-size:15px;font-weight:700;cursor:pointer;flex-shrink:0">🔒</button>
+    <button onclick="oturumKapat()" style="background:rgba(226,35,26,0.15);border:1px solid rgba(226,35,26,0.4);color:#ff7070;border-radius:8px;height:34px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 7px;font-size:15px;font-weight:700;cursor:pointer;flex-shrink:0">🔒</button>
   </div>
 </div>
 
@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v481';
+const APP_VERSION = 'v482';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '04.08.2026 23:30'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '04.08.2026 23:45'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -21496,6 +21496,13 @@ async function githubGuncelle(){
 <script>
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
+  {
+    version: 'v482',
+    date: '04.08.2026',
+    items: [
+      { type: 'fix', text: 'Ust bar sagdaki oturum kilidi ekran disina tasiyordu (butonlar 34px + iki kilit + saat dar ekrana sigmiyordu). Ogeler arasi bosluk 8->4px, yatay padding 12->7px, menu 36->34px, kilit/versiyon rozeti ic padding\'leri daraltildi; hepsi sigacak sekilde toparlandi. Standart ve Defter temasinda ayni.' },
+    ]
+  },
   {
     version: 'v481',
     date: '04.08.2026',
