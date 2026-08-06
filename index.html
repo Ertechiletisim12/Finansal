@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v485';
+const APP_VERSION = 'v486';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.08.2026 22:40'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.08.2026 23:00'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -7384,8 +7384,40 @@ function loadTheme(){
       if(btn){ btn.textContent = '☀️ Açık Mod'; btn.classList.add('active-theme'); }
       if(mobileBtn) mobileBtn.textContent = '☀️';
     }
+    try{ if(window._defterKartlar) window._defterKartlar(); }catch(e){}
   }catch(e){}
 }
+
+// v486: Koyu Defter kart arka planlarini GARANTILE (CSS bazi kartlarda tutmuyordu) — inline koyu, tema degisince temizlenir
+(function(){
+  var SEL='.stat,.chart-box,.bottom-card,.dh-stat,.dh-pnl,.dh-chart,.kapanis-kart,.note-panel,.st-stat-card,.ktip-kart';
+  function darkDefter(){ return document.body.classList.contains('defter') && !document.body.classList.contains('light'); }
+  function paint(el){ try{ el.style.setProperty('background','#25282c','important'); el.style.setProperty('border-color','#3a3e44','important'); el.setAttribute('data-dk','1'); }catch(e){} }
+  function unpaint(el){ try{ el.style.removeProperty('background'); el.style.removeProperty('border-color'); el.removeAttribute('data-dk'); }catch(e){} }
+  var obs=null;
+  try{
+    obs=new MutationObserver(function(muts){
+      if(!darkDefter()) return;
+      for(var i=0;i<muts.length;i++){ var a=muts[i].addedNodes; for(var j=0;j<a.length;j++){ var n=a[j]; if(!n||n.nodeType!==1) continue;
+        if(n.matches && n.matches(SEL)) paint(n);
+        if(n.querySelectorAll){ var q=n.querySelectorAll(SEL); for(var k=0;k<q.length;k++) paint(q[k]); }
+      } }
+    });
+  }catch(e){}
+  window._defterKartlar=function(){
+    try{
+      if(darkDefter()){
+        var els=document.querySelectorAll(SEL); for(var i=0;i<els.length;i++) paint(els[i]);
+        if(obs){ try{ obs.disconnect(); }catch(e){} try{ obs.observe(document.body,{childList:true,subtree:true}); }catch(e){} }
+      } else {
+        var d=document.querySelectorAll('[data-dk]'); for(var j=0;j<d.length;j++) unpaint(d[j]);
+        if(obs){ try{ obs.disconnect(); }catch(e){} }
+      }
+    }catch(e){}
+  };
+  if(document.readyState!=='loading'){ setTimeout(window._defterKartlar,0); }
+  else document.addEventListener('DOMContentLoaded', function(){ window._defterKartlar(); });
+})();
 
 // ==================== OFFLİNE GÖSTERGESİ ====================
 function updateOfflineIndicator(){
@@ -21497,6 +21529,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v486',
+    date: '05.08.2026',
+    items: [
+      { type: 'fix', text: 'Koyu Defter beyaz kart sorunu JavaScript ile GARANTIYE alindi. CSS override bazi .stat kartlarinda (Gelir/Kasa/Not sayfalari + modallar) nedendir tutmuyordu; artik koyu Defter aktifken kart arka planlari dogrudan (inline) koyuya cekiliyor ve yeni render edilen kartlar da otomatik yakalaniyor. Tema/Defter kapatilinca bu inline stiller temizleniyor, acik/standart temada iz birakmiyor.' },
+    ]
+  },
+  {
     version: 'v485',
     date: '05.08.2026',
     items: [
@@ -25487,12 +25526,14 @@ body.defter #defterBtn, body.defter #defterBtnMobile{ color:var(--gold); border-
     }catch(e){}
     try{ localStorage.setItem('vf_defter', on?'1':'0'); }catch(e){}
     upd(on);
+    try{ if(window._defterKartlar) window._defterKartlar(); }catch(e){}
     try{ if(typeof showToast==='function') showToast(on?'🪙 Defter teması açıldı':'Defter teması kapatıldı','ok'); }catch(e){}
   };
   function applyDefter(){
     try{
       if(localStorage.getItem('vf_defter')==='1'){ document.body.classList.add('defter'); }
       upd(document.body.classList.contains('defter'));
+      try{ if(window._defterKartlar) window._defterKartlar(); }catch(e){}
     }catch(e){}
   }
   // v484: programi kapatirken/ayrilirken onay sor
