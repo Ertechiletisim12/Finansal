@@ -4055,7 +4055,7 @@ table.main-table td.total-col,table.main-table th.total-col{background:var(--pan
 
 
 <script>
-const APP_VERSION = 'v484';
+const APP_VERSION = 'v485';
 
 // ==================== v158: UYGULAMA İÇİ DİYALOG SİSTEMİ ====================
 // Tarayıcının alert/confirm popup'ları yerine uygulama tasarımında modallar.
@@ -4168,7 +4168,7 @@ function appConfirm(msg){
 // alert() dönüş değeri hiçbir yerde kullanılmadığı için global devralma güvenlidir
 window.alert = appAlert;
 // ==================== DİYALOG SİSTEMİ SONU ====================
-const BUILD_DATE = '05.08.2026 11:00'; // Hazırlanma tarihi (dahili)
+const BUILD_DATE = '05.08.2026 22:40'; // Hazırlanma tarihi (dahili)
 
 // Gerçek yükleme zamanı: bu versiyon ilk kez açıldığında kaydedilir
 (function(){
@@ -21497,6 +21497,13 @@ async function githubGuncelle(){
 // ===================== SÜRÜM GEÇMİŞİ =====================
 const CHANGELOG_DATA = [
   {
+    version: 'v485',
+    date: '05.08.2026',
+    items: [
+      { type: 'fix', text: 'Koyu Defter: Gelir/Kasa/Not sayfalarindaki ve acilan MODALLARDAKI .stat kartlari hala beyaz kaliyordu (onceki koyu override sadece #finansContent icindeki kartlari kapsiyordu). Artik TUM .stat ve kart tipleri (bottom-card, chart-box, dh-stat vb.) koyu Defterde dogrudan koyuya cekiliyor — tum sayfalar ve modallar dahil. Icindeki yazilar okunur oldu.' },
+    ]
+  },
+  {
     version: 'v484',
     date: '05.08.2026',
     items: [
@@ -25715,6 +25722,16 @@ body.defter:not(.light) .kapanis-kart,
 body.defter:not(.light) .note-panel,
 body.defter:not(.light) .ktip-kart,
 body.defter:not(.light) .st-stat-card{
+  background:#25282c !important; border-color:#3a3e44 !important;
+}
+/* v485: TUM .stat ve kart tipleri koyu Defterde koyu — Gelir/Kasa/Not sayfalari VE acilan modallar dahil (#finansContent disi kartlar beyaz kaliyordu) */
+body.defter:not(.light) .stat,
+body.defter:not(.light) .dh-stat,
+body.defter:not(.light) .dh-pnl,
+body.defter:not(.light) .dh-chart,
+body.defter:not(.light) .m-body .stat,
+body.defter:not(.light) .modal-content .stat,
+body.defter:not(.light) [id$="Modal"] .stat{
   background:#25282c !important; border-color:#3a3e44 !important;
 }
 body.defter .main div[style*="var(--panel)"]{
